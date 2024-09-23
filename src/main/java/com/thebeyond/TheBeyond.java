@@ -1,6 +1,7 @@
 package com.thebeyond;
 
 import com.thebeyond.registers.RegisterBlocks;
+import com.thebeyond.registers.RegisterEntities;
 import com.thebeyond.registers.RegisterItems;
 import com.thebeyond.registers.RegisterTabs;
 import org.slf4j.Logger;
@@ -31,6 +32,7 @@ public class TheBeyond {
         RegisterBlocks.BLOCKS.register(modEventBus);
         RegisterItems.ITEMS.register(modEventBus);
         RegisterTabs.CREATIVE_MODE_TABS.register(modEventBus);
+        RegisterEntities.ENTITY_TYPES.register(modEventBus);
 
         /**
          * Register ourselves for server and other game events we are interested in.
@@ -50,12 +52,4 @@ public class TheBeyond {
         // Some common setup code
     }
 
-    // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
-    @EventBusSubscriber(modid = MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-    public static class ClientModEvents {
-        @SubscribeEvent
-        public static void onClientSetup(FMLClientSetupEvent event) {
-            // Some client setup code
-        }
-    }
 }

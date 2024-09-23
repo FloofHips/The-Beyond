@@ -1,6 +1,6 @@
 package com.thebeyond.registers;
 
-import com.thebeyond.blocks.PolarPillarBlock;
+import com.thebeyond.common.blocks.PolarPillarBlock;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;

@@ -1,4 +1,4 @@
-package com.thebeyond.blocks;
+package com.thebeyond.common.blocks;
 
 import com.mojang.serialization.MapCodec;
 import com.thebeyond.TheBeyond;
