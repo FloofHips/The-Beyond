@@ -2,6 +2,8 @@ package com.thebeyond.common.blocks;
 
 import com.mojang.serialization.MapCodec;
 import com.thebeyond.TheBeyond;
+import com.thebeyond.common.entity.EnderglopEntity;
+import com.thebeyond.registers.BeyondEntityTypes;
 import com.thebeyond.util.RandomUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -114,7 +116,7 @@ public class PolarPillarBlock extends Block {
                 if (state.getValue(GLOP_CHARGE) == 4 && state.getValue(IS_BULB)) {
                     level.setBlock(pos, state.setValue(GLOP_CHARGE, 0), 3);
 
-                    Entity slime = new Slime(EntityType.SLIME, level);
+                    Entity slime = new EnderglopEntity(BeyondEntityTypes.ENDERGLOP.get(), level);
                     slime.setPos(pos.getX()+0.5, pos.getY()+0.8, pos.getZ()+0.5);
                     slime.setDeltaMovement(RandomUtils.nextDouble(-0.25, 0.25), RandomUtils.nextDouble(0.5, 0.75), RandomUtils.nextDouble(-0.25, 0.25));
 

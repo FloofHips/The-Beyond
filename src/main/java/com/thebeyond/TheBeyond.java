@@ -1,21 +1,17 @@
 package com.thebeyond;
 
 import com.thebeyond.registers.RegisterBlocks;
-import com.thebeyond.registers.RegisterEntities;
+import com.thebeyond.registers.BeyondEntityTypes;
 import com.thebeyond.registers.RegisterItems;
 import com.thebeyond.registers.RegisterTabs;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
 
-import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 
 @Mod(TheBeyond.MODID)
@@ -32,7 +28,7 @@ public class TheBeyond {
         RegisterBlocks.BLOCKS.register(modEventBus);
         RegisterItems.ITEMS.register(modEventBus);
         RegisterTabs.CREATIVE_MODE_TABS.register(modEventBus);
-        RegisterEntities.ENTITY_TYPES.register(modEventBus);
+        BeyondEntityTypes.ENTITY_TYPES.register(modEventBus);
 
         /**
          * Register ourselves for server and other game events we are interested in.
