@@ -1,4 +1,4 @@
-package com.example.thebeyond;
+package com.thebeyond;
 
 import java.util.List;
 import java.util.Set;
