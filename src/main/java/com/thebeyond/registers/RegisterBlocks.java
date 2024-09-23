@@ -19,6 +19,9 @@ public class RegisterBlocks {
     public static final DeferredItem<BlockItem> EXAMPLE_BLOCK_ITEM = RegisterItems.ITEMS.registerSimpleBlockItem("example_block", EXAMPLE_BLOCK);
 
     public static final DeferredBlock<PolarPillarBlock> POLAR_PILLAR = BLOCKS.registerBlock("polar_pillar", PolarPillarBlock::new,
-            BlockBehaviour.Properties.of().mapColor(MapColor.DEEPSLATE));
+            BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.DEEPSLATE)
+                    .lightLevel(PolarPillarBlock.STATE_TO_LUMINANCE)
+    );
     public static final DeferredItem<BlockItem> POLAR_PILLAR_ITEM = RegisterItems.ITEMS.registerSimpleBlockItem("polar_pillar", POLAR_PILLAR);
 }

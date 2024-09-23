@@ -1,7 +1,12 @@
 package com.thebeyond.blocks;
 
 import com.mojang.serialization.MapCodec;
+import com.thebeyond.TheBeyond;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -9,11 +14,24 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.ticks.TickPriority;
+import oshi.util.tuples.Pair;
+
+import java.util.function.ToIntFunction;
 
 public class PolarPillarBlock extends Block {
     public static final MapCodec<PolarPillarBlock> CODEC = simpleCodec(PolarPillarBlock::new);
+
+    private int TICK_DELAY = 2;
+    public static ToIntFunction<BlockState> STATE_TO_LUMINANCE = new ToIntFunction<BlockState>() {
+        @Override
+        public int applyAsInt(BlockState value) {
+            return value.getValue(POLAR_CHARGE);
+        }
+    };
 
     public static final BooleanProperty IS_BULB;
     public static final IntegerProperty GLOP_CHARGE;
@@ -52,10 +70,49 @@ public class PolarPillarBlock extends Block {
     }
 
     @Override
-    protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
-        state.setValue(IS_BULB, false);
-        state.setValue(GLOP_CHARGE, 4);
-        state.setValue(POLAR_CHARGE, 0);
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+        if (level.isClientSide) return InteractionResult.sidedSuccess(level.isClientSide);
+
+        Pair<BlockPos, BlockState> lastPillar = new Pair<>(pos, state);
+
+        for (int offset = 1; offset <= 8; offset++) {
+            Pair<BlockPos, BlockState> newBlockFound = new Pair<>(new BlockPos(pos.getX(), pos.getY() - offset, pos.getZ()), level.getBlockState(new BlockPos(pos.getX(), pos.getY() - offset, pos.getZ())));
+            if (newBlockFound.getB().is(this)) {
+                if (!newBlockFound.getB().getValue(IS_BULB)) lastPillar = newBlockFound;
+            } else {
+                level.setBlock(lastPillar.getA(), lastPillar.getB().setValue(POLAR_CHARGE, 1), 3);
+                level.scheduleTick(lastPillar.getA(), lastPillar.getB().getBlock(), TICK_DELAY, TickPriority.HIGH);
+                break;
+            }
+        }
+
+        return InteractionResult.sidedSuccess(false);
+    }
+
+    @Override
+    protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        switch (state.getValue(POLAR_CHARGE)) {
+            case 1: {
+                level.setBlock(pos, state.setValue(POLAR_CHARGE, 2), 3);
+                level.scheduleTick(pos, state.getBlock(), TICK_DELAY, TickPriority.HIGH);
+                break;
+            }
+            case 2: {
+                level.setBlock(pos, state.setValue(POLAR_CHARGE, 3), 3);
+                if (level.getBlockState(pos.above()).is(this)) level.setBlock(pos.above(), state.setValue(POLAR_CHARGE, 1), 3);
+                level.scheduleTick(pos, state.getBlock(), TICK_DELAY, TickPriority.HIGH);
+                level.scheduleTick(pos.above(), state.getBlock(), TICK_DELAY, TickPriority.HIGH);
+                break;
+            }
+            case 3: {
+                level.setBlock(pos, state.setValue(POLAR_CHARGE, 4), 3);
+                level.scheduleTick(pos, state.getBlock(), TICK_DELAY, TickPriority.HIGH);
+                break;
+            }
+            case 4: {
+                level.setBlock(pos, state.setValue(POLAR_CHARGE, 0), 3);
+            }
+        }
     }
 
     static {
