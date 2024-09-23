@@ -2,10 +2,15 @@ package com.thebeyond.blocks;
 
 import com.mojang.serialization.MapCodec;
 import com.thebeyond.TheBeyond;
+import com.thebeyond.util.RandomUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.RandomSequence;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -20,6 +25,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.ticks.TickPriority;
 import oshi.util.tuples.Pair;
 
+import java.util.Random;
 import java.util.function.ToIntFunction;
 
 public class PolarPillarBlock extends Block {
@@ -57,11 +63,13 @@ public class PolarPillarBlock extends Block {
     }
 
     //VoxelShapes here
-    //
+    private VoxelShape FULL_CUBE = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D);
+    private VoxelShape OPEN_BULB = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 6.0D, 16.0D);
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return super.getShape(state, level, pos, context);
+        if (!state.getValue(IS_BULB)) return FULL_CUBE;
+        return state.getValue(GLOP_CHARGE) < 4 ? OPEN_BULB : FULL_CUBE;
     }
 
     @Override
@@ -99,9 +107,20 @@ public class PolarPillarBlock extends Block {
             }
             case 2: {
                 level.setBlock(pos, state.setValue(POLAR_CHARGE, 3), 3);
-                if (level.getBlockState(pos.above()).is(this)) level.setBlock(pos.above(), state.setValue(POLAR_CHARGE, 1), 3);
+                if (level.getBlockState(pos.above()).is(this)) level.setBlock(pos.above(), level.getBlockState(pos.above()).setValue(POLAR_CHARGE, 1), 3);
                 level.scheduleTick(pos, state.getBlock(), TICK_DELAY, TickPriority.HIGH);
                 level.scheduleTick(pos.above(), state.getBlock(), TICK_DELAY, TickPriority.HIGH);
+
+                if (state.getValue(GLOP_CHARGE) == 4 && state.getValue(IS_BULB)) {
+                    level.setBlock(pos, state.setValue(GLOP_CHARGE, 0), 3);
+
+                    Entity slime = new Slime(EntityType.SLIME, level);
+                    slime.setPos(pos.getX()+0.5, pos.getY()+0.8, pos.getZ()+0.5);
+                    slime.setDeltaMovement(RandomUtils.nextDouble(-0.25, 0.25), RandomUtils.nextDouble(0.5, 0.75), RandomUtils.nextDouble(-0.25, 0.25));
+
+                    level.addFreshEntity(slime);
+                }
+
                 break;
             }
             case 3: {
@@ -112,6 +131,13 @@ public class PolarPillarBlock extends Block {
             case 4: {
                 level.setBlock(pos, state.setValue(POLAR_CHARGE, 0), 3);
             }
+        }
+    }
+
+    @Override
+    protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        if (state.getValue(IS_BULB) && state.getValue(GLOP_CHARGE) < 4) {
+            //check with a timer and increase the glop charge here
         }
     }
 

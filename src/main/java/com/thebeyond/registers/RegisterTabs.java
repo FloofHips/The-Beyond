@@ -23,6 +23,6 @@ public class RegisterTabs {
 
     public static void addCreative(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS)
-            event.accept(RegisterBlocks.EXAMPLE_BLOCK_ITEM);
+            event.accept(RegisterBlocks.POLAR_PILLAR_ITEM);
     }
 }
