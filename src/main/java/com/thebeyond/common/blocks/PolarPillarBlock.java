@@ -25,6 +25,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.ticks.TickPriority;
+import net.neoforged.neoforge.common.CommonHooks;
 import oshi.util.tuples.Pair;
 
 import java.util.Random;
@@ -44,6 +45,7 @@ public class PolarPillarBlock extends Block {
     public static final BooleanProperty IS_BULB;
     public static final IntegerProperty GLOP_CHARGE;
     public static final IntegerProperty POLAR_CHARGE;
+    private int growTicker;
 
     public MapCodec<PolarPillarBlock> codec() {
         return CODEC;
@@ -51,6 +53,7 @@ public class PolarPillarBlock extends Block {
 
     public PolarPillarBlock(Properties properties) {
         super(properties);
+        this.growTicker = 0;
 
         registerDefaultState(this.stateDefinition.any()
                 .setValue(IS_BULB, false)
@@ -116,11 +119,15 @@ public class PolarPillarBlock extends Block {
                 if (state.getValue(GLOP_CHARGE) == 4 && state.getValue(IS_BULB)) {
                     level.setBlock(pos, state.setValue(GLOP_CHARGE, 0), 3);
 
-                    Entity slime = new EnderglopEntity(BeyondEntityTypes.ENDERGLOP.get(), level);
-                    slime.setPos(pos.getX()+0.5, pos.getY()+0.8, pos.getZ()+0.5);
-                    slime.setDeltaMovement(RandomUtils.nextDouble(-0.25, 0.25), RandomUtils.nextDouble(0.5, 0.75), RandomUtils.nextDouble(-0.25, 0.25));
+                    Entity enderglop = new EnderglopEntity(BeyondEntityTypes.ENDERGLOP.get(), level);
+                    enderglop.setPos(pos.getX()+0.5, pos.getY()+0.8, pos.getZ()+0.5);
+                    enderglop.setDeltaMovement(
+                            RandomUtils.nextDouble(0.2, 0.4) * (RandomUtils.nextBoolean() ? -1 : 1),
+                            RandomUtils.nextDouble(0.5, 0.75),
+                            RandomUtils.nextDouble(0.2, 0.4) * (RandomUtils.nextBoolean() ? -1 : 1)
+                    );
 
-                    level.addFreshEntity(slime);
+                    level.addFreshEntity(enderglop);
                 }
 
                 break;
@@ -136,11 +143,19 @@ public class PolarPillarBlock extends Block {
         }
     }
 
+
+    @Override
+    protected boolean isRandomlyTicking(BlockState state) {
+        return state.getValue(GLOP_CHARGE) != 4 && state.getValue(IS_BULB);
+    }
+
     @Override
     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        if (state.getValue(IS_BULB) && state.getValue(GLOP_CHARGE) < 4) {
-            //check with a timer and increase the glop charge here
-        }
+        if (!level.isAreaLoaded(pos, 1)) return;
+
+        if (this.growTicker < 3) { growTicker++;   return; }
+        level.setBlock(pos, state.setValue(GLOP_CHARGE, state.getValue(GLOP_CHARGE) + 1), 3);
+        growTicker = 0;
     }
 
     static {
