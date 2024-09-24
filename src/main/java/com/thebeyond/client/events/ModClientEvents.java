@@ -4,7 +4,8 @@ import com.thebeyond.TheBeyond;
 import com.thebeyond.client.models.EnderdropModel;
 import com.thebeyond.client.models.BeyondModelLayers;
 
-import com.thebeyond.client.renderers.EnderdropRenderer;
+import com.thebeyond.client.models.EnderglopModel;
+import com.thebeyond.client.renderers.EnderglopRenderer;
 import com.thebeyond.registers.BeyondEntityTypes;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.neoforged.api.distmarker.Dist;
@@ -18,12 +19,13 @@ public class ModClientEvents {
 
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event){
-        EntityRenderers.register(BeyondEntityTypes.ENDERGLOP.get(), EnderdropRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.ENDERGLOP.get(), EnderglopRenderer::new);
     }
 
     @SubscribeEvent
     public static void registerLayer(EntityRenderersEvent.RegisterLayerDefinitions event){
         event.registerLayerDefinition(BeyondModelLayers.ENDERDROP_LAYER, EnderdropModel::createBodyLayer);
+        event.registerLayerDefinition(BeyondModelLayers.ENDERGLOP_LAYER, EnderglopModel::createBodyLayer);
     }
 
 }
