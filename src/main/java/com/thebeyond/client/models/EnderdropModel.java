@@ -35,4 +35,5 @@ public class EnderdropModel<T extends EnderglopEntity> extends HierarchicalModel
 	public ModelPart root() {
 		return body;
 	}
+
 }
