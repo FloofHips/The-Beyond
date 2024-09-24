@@ -2,7 +2,7 @@ package com.thebeyond.common.events;
 
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.entity.EnderglopEntity;
-import com.thebeyond.registers.BeyondEntityTypes;
+import com.thebeyond.common.registry.BeyondEntityTypes;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;

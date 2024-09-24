@@ -1,18 +1,14 @@
 package com.thebeyond.common.blocks;
 
 import com.mojang.serialization.MapCodec;
-import com.thebeyond.TheBeyond;
 import com.thebeyond.common.entity.EnderglopEntity;
-import com.thebeyond.registers.BeyondEntityTypes;
+import com.thebeyond.common.registry.BeyondEntityTypes;
 import com.thebeyond.util.RandomUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.RandomSequence;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -25,17 +21,15 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.ticks.TickPriority;
-import net.neoforged.neoforge.common.CommonHooks;
 import oshi.util.tuples.Pair;
 
-import java.util.Random;
 import java.util.function.ToIntFunction;
 
 public class PolarPillarBlock extends Block {
     public static final MapCodec<PolarPillarBlock> CODEC = simpleCodec(PolarPillarBlock::new);
 
-    private int TICK_DELAY = 2;
-    public static ToIntFunction<BlockState> STATE_TO_LUMINANCE = new ToIntFunction<BlockState>() {
+    private final int TICK_DELAY = 2;
+    public static ToIntFunction<BlockState> STATE_TO_LUMINANCE = new ToIntFunction<>() {
         @Override
         public int applyAsInt(BlockState value) {
             return value.getValue(POLAR_CHARGE);

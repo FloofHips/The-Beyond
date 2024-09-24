@@ -1,4 +1,4 @@
-package com.thebeyond.registers;
+package com.thebeyond.common.registry;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -14,15 +14,14 @@ public class RegisterTabs {
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> EXAMPLE_TAB = CREATIVE_MODE_TABS.register("example_tab", () -> CreativeModeTab.builder()
-            .title(Component.translatable("itemGroup.the_beyond")) //The language key for the title of your CreativeModeTab
+            .title(Component.translatable("itemGroup.the_beyond"))
             .withTabsBefore(CreativeModeTabs.COMBAT)
-            .icon(() -> RegisterItems.EXAMPLE_ITEM.get().getDefaultInstance())
-            .displayItems((parameters, output) -> {
-                output.accept(RegisterItems.EXAMPLE_ITEM.get()); // Add the example item to the tab. For your own tabs, this method is preferred over the event
-            }).build());
+            .icon(() -> RegisterBlocks.POLAR_PILLAR.asItem().getDefaultInstance())
+            .displayItems((parameters, output) -> RegisterItems.CREATIVE_TAB_ITEMS.forEach((item) -> output.accept(item.get())))
+            .build());
 
     public static void addCreative(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS)
-            event.accept(RegisterBlocks.POLAR_PILLAR_ITEM);
+            event.accept(RegisterBlocks.POLAR_PILLAR.get());
     }
 }

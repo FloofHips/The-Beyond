@@ -1,9 +1,9 @@
 package com.thebeyond;
 
-import com.thebeyond.registers.RegisterBlocks;
-import com.thebeyond.registers.BeyondEntityTypes;
-import com.thebeyond.registers.RegisterItems;
-import com.thebeyond.registers.RegisterTabs;
+import com.thebeyond.common.registry.RegisterBlocks;
+import com.thebeyond.common.registry.BeyondEntityTypes;
+import com.thebeyond.common.registry.RegisterItems;
+import com.thebeyond.common.registry.RegisterTabs;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -41,7 +41,8 @@ public class TheBeyond {
         modEventBus.addListener(RegisterTabs::addCreative);
 
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
-        modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        modContainer.registerConfig(ModConfig.Type.COMMON, Config.COMMON_CONFIG);
+        modContainer.registerConfig(ModConfig.Type.CLIENT, Config.CLIENT_CONFIG);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {

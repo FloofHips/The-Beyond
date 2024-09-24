@@ -1,4 +1,4 @@
-package com.thebeyond.registers;
+package com.thebeyond.common.registry;
 
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.entity.EnderglopEntity;

@@ -6,8 +6,7 @@ import com.thebeyond.client.models.BeyondModelLayers;
 
 import com.thebeyond.client.models.EnderglopModel;
 import com.thebeyond.client.renderers.EnderglopRenderer;
-import com.thebeyond.registers.BeyondEntityTypes;
-import net.minecraft.client.renderer.block.BlockRenderDispatcher;
+import com.thebeyond.common.registry.BeyondEntityTypes;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
