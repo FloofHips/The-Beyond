@@ -62,8 +62,8 @@ public class PolarPillarBlock extends Block {
     }
 
     //VoxelShapes here
-    private VoxelShape FULL_CUBE = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D);
-    private VoxelShape OPEN_BULB = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 6.0D, 16.0D);
+    private final VoxelShape FULL_CUBE = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D);
+    private final VoxelShape OPEN_BULB = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 6.0D, 16.0D);
 
     public Pair<BlockPos, BlockState> activatePillar(BlockPos pos, BlockState state, Level level) {
         Pair<BlockPos, BlockState> lastPillar = new Pair<>(pos, state);
