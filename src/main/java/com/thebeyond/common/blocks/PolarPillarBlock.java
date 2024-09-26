@@ -65,6 +65,23 @@ public class PolarPillarBlock extends Block {
     private VoxelShape FULL_CUBE = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D);
     private VoxelShape OPEN_BULB = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 6.0D, 16.0D);
 
+    public Pair<BlockPos, BlockState> activatePillar(BlockPos pos, BlockState state, Level level) {
+        Pair<BlockPos, BlockState> lastPillar = new Pair<>(pos, state);
+
+        for (int offset = 1; offset <= 8; offset++) {
+            Pair<BlockPos, BlockState> newBlockFound = new Pair<>(new BlockPos(pos.getX(), pos.getY() - offset, pos.getZ()), level.getBlockState(new BlockPos(pos.getX(), pos.getY() - offset, pos.getZ())));
+            if (newBlockFound.getB().is(this)) {
+                if (!newBlockFound.getB().getValue(IS_BULB)) lastPillar = newBlockFound;
+            } else {
+                level.setBlock(lastPillar.getA(), lastPillar.getB().setValue(POLAR_CHARGE, 1), 3);
+                level.scheduleTick(lastPillar.getA(), lastPillar.getB().getBlock(), TICK_DELAY, TickPriority.HIGH);
+                break;
+            }
+        }
+
+        return lastPillar;
+    }
+
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         if (!state.getValue(IS_BULB)) return FULL_CUBE;
@@ -80,18 +97,7 @@ public class PolarPillarBlock extends Block {
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (level.isClientSide) return InteractionResult.sidedSuccess(level.isClientSide);
 
-        Pair<BlockPos, BlockState> lastPillar = new Pair<>(pos, state);
-
-        for (int offset = 1; offset <= 8; offset++) {
-            Pair<BlockPos, BlockState> newBlockFound = new Pair<>(new BlockPos(pos.getX(), pos.getY() - offset, pos.getZ()), level.getBlockState(new BlockPos(pos.getX(), pos.getY() - offset, pos.getZ())));
-            if (newBlockFound.getB().is(this)) {
-                if (!newBlockFound.getB().getValue(IS_BULB)) lastPillar = newBlockFound;
-            } else {
-                level.setBlock(lastPillar.getA(), lastPillar.getB().setValue(POLAR_CHARGE, 1), 3);
-                level.scheduleTick(lastPillar.getA(), lastPillar.getB().getBlock(), TICK_DELAY, TickPriority.HIGH);
-                break;
-            }
-        }
+        this.activatePillar(pos, state, level);
 
         return InteractionResult.sidedSuccess(false);
     }
