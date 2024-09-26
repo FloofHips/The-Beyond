@@ -1,4 +1,4 @@
-package com.thebeyond.client.models;
+package com.thebeyond.client.model;
 
 import com.thebeyond.TheBeyond;
 import net.minecraft.client.model.geom.ModelLayerLocation;

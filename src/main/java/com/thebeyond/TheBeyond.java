@@ -1,9 +1,6 @@
 package com.thebeyond;
 
-import com.thebeyond.common.registry.RegisterBlocks;
-import com.thebeyond.common.registry.BeyondEntityTypes;
-import com.thebeyond.common.registry.RegisterItems;
-import com.thebeyond.common.registry.RegisterTabs;
+import com.thebeyond.common.registry.*;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -25,10 +22,11 @@ public class TheBeyond {
     public TheBeyond(IEventBus modEventBus, ModContainer modContainer) {
         modEventBus.addListener(this::commonSetup);
 
-        RegisterBlocks.BLOCKS.register(modEventBus);
-        RegisterItems.ITEMS.register(modEventBus);
-        RegisterTabs.CREATIVE_MODE_TABS.register(modEventBus);
+        BeyondBlocks.BLOCKS.register(modEventBus);
+        BeyondItems.ITEMS.register(modEventBus);
+        BeyondTabs.CREATIVE_MODE_TABS.register(modEventBus);
         BeyondEntityTypes.ENTITY_TYPES.register(modEventBus);
+        BeyondParticleTypes.PARTICLE_TYPES.register(modEventBus);
 
         /**
          * Register ourselves for server and other game events we are interested in.
@@ -38,11 +36,11 @@ public class TheBeyond {
         //NeoForge.EVENT_BUS.register(this);
 
         // Register the item to a creative tab
-        modEventBus.addListener(RegisterTabs::addCreative);
+        modEventBus.addListener(BeyondTabs::addCreative);
 
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
-        modContainer.registerConfig(ModConfig.Type.COMMON, Config.COMMON_CONFIG);
-        modContainer.registerConfig(ModConfig.Type.CLIENT, Config.CLIENT_CONFIG);
+        modContainer.registerConfig(ModConfig.Type.COMMON, BeyondConfig.COMMON_CONFIG);
+        modContainer.registerConfig(ModConfig.Type.CLIENT, BeyondConfig.CLIENT_CONFIG);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {

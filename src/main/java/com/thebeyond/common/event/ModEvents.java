@@ -1,4 +1,4 @@
-package com.thebeyond.common.events;
+package com.thebeyond.common.event;
 
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.entity.EnderglopEntity;

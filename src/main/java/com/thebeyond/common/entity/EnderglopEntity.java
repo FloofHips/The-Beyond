@@ -1,7 +1,7 @@
 package com.thebeyond.common.entity;
 
+import com.thebeyond.common.registry.BeyondParticleTypes;
 import net.minecraft.core.particles.ParticleOptions;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -97,7 +97,7 @@ public class EnderglopEntity extends Mob implements Enemy {
     }
 
     public int getSize() {
-        return (Integer)this.entityData.get(ID_SIZE);
+        return this.entityData.get(ID_SIZE);
     }
 
     @Override
@@ -126,7 +126,7 @@ public class EnderglopEntity extends Mob implements Enemy {
     }
 
     protected ParticleOptions getParticleType() {
-        return ParticleTypes.DRAGON_BREATH;
+        return BeyondParticleTypes.GLOP.get();
     }
 
     public SoundSource getSoundSource() {

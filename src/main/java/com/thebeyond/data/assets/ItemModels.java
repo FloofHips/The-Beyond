@@ -1,9 +1,7 @@
 package com.thebeyond.data.assets;
 
 import com.thebeyond.TheBeyond;
-import com.thebeyond.common.registry.RegisterBlocks;
-import com.thebeyond.common.registry.RegisterItems;
-import net.minecraft.client.renderer.block.model.ItemModelGenerator;
+import com.thebeyond.common.registry.BeyondBlocks;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
@@ -28,7 +26,7 @@ public class ItemModels extends ItemModelProvider {
         Set<Item> items = BuiltInRegistries.ITEM.stream().filter(i -> TheBeyond.MODID.equals(BuiltInRegistries.ITEM.getKey(i).getNamespace()))
                 .collect(Collectors.toSet());
 
-        items.remove(RegisterBlocks.POLAR_PILLAR.asItem());
+        items.remove(BeyondBlocks.POLAR_PILLAR.asItem());
 
         takeAll(items, i -> i instanceof BlockItem).forEach(item -> blockBasedModel(item, ""));
 

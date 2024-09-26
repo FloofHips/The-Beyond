@@ -1,19 +1,12 @@
-package com.thebeyond.client.models;// Made with Blockbench 4.2.5
+package com.thebeyond.client.model;// Made with Blockbench 4.2.5
 // Exported for Minecraft version 1.17 - 1.18 with Mojang mappings
 // Paste this class into your mod and generate all required imports
 
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.thebeyond.common.entity.EnderglopEntity;
-import net.minecraft.client.model.EntityModel;
-import net.minecraft.client.model.HierarchicalModel;
-import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Entity;
 
 public class EnderglopModel<T extends EnderglopEntity> extends EnderdropModel<T> {
 

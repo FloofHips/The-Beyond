@@ -18,7 +18,7 @@ import java.util.function.Supplier;
 import static com.thebeyond.TheBeyond.MODID;
 
 @SuppressWarnings("unused")
-public class RegisterBlocks {
+public class BeyondBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
 
     public static LinkedHashSet<DeferredHolder<Item, BlockItem>> CREATIVE_TAB_ITEMS = Sets.newLinkedHashSet();
@@ -46,10 +46,10 @@ public class RegisterBlocks {
     }
 
     private static DeferredHolder<Item, BlockItem> registerBlockItem(String name, Supplier<? extends Block> block) {
-        return RegisterItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties()));
+        return BeyondItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties()));
     }
 
     private static DeferredHolder<Item, BlockItem> registerIntegrationBlockItem(String name, Supplier<? extends Block> block) {
-        return RegisterItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties()));
+        return BeyondItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties()));
     }
 }

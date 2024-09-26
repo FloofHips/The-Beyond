@@ -10,18 +10,18 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 import static com.thebeyond.TheBeyond.MODID;
 
-public class RegisterTabs {
+public class BeyondTabs {
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> EXAMPLE_TAB = CREATIVE_MODE_TABS.register("example_tab", () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.the_beyond"))
             .withTabsBefore(CreativeModeTabs.COMBAT)
-            .icon(() -> RegisterBlocks.POLAR_PILLAR.asItem().getDefaultInstance())
-            .displayItems((parameters, output) -> RegisterItems.CREATIVE_TAB_ITEMS.forEach((item) -> output.accept(item.get())))
+            .icon(() -> BeyondBlocks.POLAR_PILLAR.asItem().getDefaultInstance())
+            .displayItems((parameters, output) -> BeyondItems.CREATIVE_TAB_ITEMS.forEach((item) -> output.accept(item.get())))
             .build());
 
     public static void addCreative(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS)
-            event.accept(RegisterBlocks.POLAR_PILLAR.get());
+            event.accept(BeyondBlocks.POLAR_PILLAR.get());
     }
 }

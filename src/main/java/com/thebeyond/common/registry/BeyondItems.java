@@ -1,7 +1,6 @@
 package com.thebeyond.common.registry;
 
 import com.google.common.collect.Sets;
-import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -12,7 +11,7 @@ import java.util.function.Supplier;
 
 import static com.thebeyond.TheBeyond.MODID;
 
-public class RegisterItems {
+public class BeyondItems {
 
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
 
