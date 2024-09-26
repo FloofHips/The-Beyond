@@ -1,7 +1,6 @@
 package com.thebeyond.common.blocks;
 
 import com.mojang.serialization.MapCodec;
-import com.thebeyond.TheBeyond;
 import com.thebeyond.common.entity.EnderglopEntity;
 import com.thebeyond.registers.BeyondEntityTypes;
 import com.thebeyond.util.RandomUtils;
@@ -9,10 +8,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.RandomSequence;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -25,17 +21,16 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.ticks.TickPriority;
-import net.neoforged.neoforge.common.CommonHooks;
 import oshi.util.tuples.Pair;
 
-import java.util.Random;
+import javax.annotation.Nullable;
 import java.util.function.ToIntFunction;
 
 public class PolarPillarBlock extends Block {
     public static final MapCodec<PolarPillarBlock> CODEC = simpleCodec(PolarPillarBlock::new);
 
-    private int TICK_DELAY = 2;
-    public static ToIntFunction<BlockState> STATE_TO_LUMINANCE = new ToIntFunction<BlockState>() {
+    private final int TICK_DELAY = 2;
+    public static ToIntFunction<BlockState> STATE_TO_LUMINANCE = new ToIntFunction<>() {
         @Override
         public int applyAsInt(BlockState value) {
             return value.getValue(POLAR_CHARGE);
@@ -62,14 +57,31 @@ public class PolarPillarBlock extends Block {
         );
     }
 
+    public Pair<BlockPos, BlockState> activatePillar(BlockPos pos, BlockState state, Level level) {
+        Pair<BlockPos, BlockState> lastPillar = new Pair<>(pos, state);
+
+        for (int offset = 1; offset <= 8; offset++) {
+            Pair<BlockPos, BlockState> newBlockFound = new Pair<>(new BlockPos(pos.getX(), pos.getY() - offset, pos.getZ()), level.getBlockState(new BlockPos(pos.getX(), pos.getY() - offset, pos.getZ())));
+            if (newBlockFound.getB().is(this)) {
+                if (!newBlockFound.getB().getValue(IS_BULB)) lastPillar = newBlockFound;
+            } else {
+                level.setBlock(lastPillar.getA(), lastPillar.getB().setValue(POLAR_CHARGE, 1), 3);
+                level.scheduleTick(lastPillar.getA(), lastPillar.getB().getBlock(), TICK_DELAY, TickPriority.HIGH);
+                break;
+            }
+        }
+
+        return lastPillar;
+    }
+
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(IS_BULB, GLOP_CHARGE, POLAR_CHARGE);
     }
 
     //VoxelShapes here
-    private VoxelShape FULL_CUBE = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D);
-    private VoxelShape OPEN_BULB = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 6.0D, 16.0D);
+    private final VoxelShape FULL_CUBE = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D);
+    private final VoxelShape OPEN_BULB = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 6.0D, 16.0D);
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
@@ -85,19 +97,7 @@ public class PolarPillarBlock extends Block {
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (level.isClientSide) return InteractionResult.sidedSuccess(level.isClientSide);
-
-        Pair<BlockPos, BlockState> lastPillar = new Pair<>(pos, state);
-
-        for (int offset = 1; offset <= 8; offset++) {
-            Pair<BlockPos, BlockState> newBlockFound = new Pair<>(new BlockPos(pos.getX(), pos.getY() - offset, pos.getZ()), level.getBlockState(new BlockPos(pos.getX(), pos.getY() - offset, pos.getZ())));
-            if (newBlockFound.getB().is(this)) {
-                if (!newBlockFound.getB().getValue(IS_BULB)) lastPillar = newBlockFound;
-            } else {
-                level.setBlock(lastPillar.getA(), lastPillar.getB().setValue(POLAR_CHARGE, 1), 3);
-                level.scheduleTick(lastPillar.getA(), lastPillar.getB().getBlock(), TICK_DELAY, TickPriority.HIGH);
-                break;
-            }
-        }
+        this.activatePillar(pos, state, level);
 
         return InteractionResult.sidedSuccess(false);
     }
