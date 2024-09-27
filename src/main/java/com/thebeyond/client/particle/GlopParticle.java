@@ -13,17 +13,22 @@ public class GlopParticle extends TextureSheetParticle {
     public GlopParticle(ClientLevel level, double x, double y, double z, SpriteSet spriteSet) {
         super(level, x, y, z);
         this.setSprite(spriteSet.get(this.random.nextInt(4), 4));
-        this.lifetime = (int) (16.0 / (Math.random() * 0.8 + 0.2));
+        this.lifetime = (int) (64.0 / (Math.random() * 0.8 + 0.2));
     }
 
     @Override
     public void tick() {
         super.tick();
-        EnderglopEntity nearestGlop = this.level.getNearestEntity(EnderglopEntity.class, TargetingConditions.DEFAULT, null, this.x, this.y, this.z,
-                        new AABB(this.x+10, this.y+10, this.z+10, this.x-10, this.y-10, this.z-10));
+        EnderglopEntity nearestGlop = level.getNearestEntity(EnderglopEntity.class, TargetingConditions.forNonCombat(), null, x, y, z,
+                        new AABB(x+10, y+10, z+10, x-10, y-10, z-10));
         if (nearestGlop != null) {
             Vec3 nearestGlopPos = nearestGlop.position();
-            this.move((nearestGlopPos.x - this.x) / 20, (nearestGlopPos.y - this.y) / 20, (nearestGlopPos.z - this.z) / 20);
+            double xd = nearestGlopPos.x - x;
+            double yd = nearestGlopPos.y - y;
+            double zd = nearestGlopPos.z - z;
+
+            this.move(xd*age / lifetime, yd*age / lifetime, zd*age / lifetime);
+            if (this.getPos().distanceTo(nearestGlopPos) < nearestGlop.getSize()*0.3) this.remove();
         }
 
     }

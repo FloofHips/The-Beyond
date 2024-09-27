@@ -66,7 +66,7 @@ public class EnderglopEntity extends Mob implements Enemy {
         this.goalSelector.addGoal(2, new SlimeAttackGoal(this));
         this.goalSelector.addGoal(3, new SlimeRandomDirectionGoal(this));
         this.goalSelector.addGoal(5, new SlimeKeepOnJumpingGoal(this));
-        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal(this, Player.class, true){
+        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<Player>(this, Player.class, true){
             @Override
             public boolean canUse() {
                 return super.canUse() && !EnderglopEntity.this.isTiny();
@@ -140,7 +140,7 @@ public class EnderglopEntity extends Mob implements Enemy {
     public void jumpFromGround() {
         Vec3 vec3 = this.getDeltaMovement();
         float f = (float)this.getSize() * 0.1F;
-        this.setDeltaMovement(vec3.x, (double)(this.getJumpPower() + f), vec3.z);
+        this.setDeltaMovement(vec3.x, this.getJumpPower() + f, vec3.z);
         this.hasImpulse = true;
         CommonHooks.onLivingJump(this);
     }
@@ -196,7 +196,7 @@ public class EnderglopEntity extends Mob implements Enemy {
                     float f3 = this.random.nextFloat() * 0.5F + 0.5F;
                     float f4 = Mth.sin(f2) * f1 * f3;
                     float f5 = Mth.cos(f2) * f1 * f3;
-                    this.level().addParticle(this.getParticleType(), this.getX() + (double)f4, this.getY(), this.getZ() + (double)f5, 0.0, 0.0, 0.0);
+                    this.level().addParticle(this.getParticleType(), this.getX() + (double)f4, this.getY() - 0.1, this.getZ() + (double)f5, 0.0, 0.0, 0.0);
                 }
             }
 
