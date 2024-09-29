@@ -29,6 +29,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.control.MoveControl;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
@@ -47,6 +48,9 @@ import java.util.EnumSet;
 import java.util.Objects;
 
 public class EnderglopEntity extends Mob implements Enemy {
+
+    static final TargetingConditions ENDERGLOP_MERGE = TargetingConditions.forNonCombat().range(10.0).ignoreLineOfSight();
+
     private static final EntityDataAccessor<Integer> ID_SIZE;
     public float targetSquish;
     public float squish;
@@ -66,13 +70,17 @@ public class EnderglopEntity extends Mob implements Enemy {
         this.goalSelector.addGoal(2, new SlimeAttackGoal(this));
         this.goalSelector.addGoal(3, new SlimeRandomDirectionGoal(this));
         this.goalSelector.addGoal(5, new SlimeKeepOnJumpingGoal(this));
-        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<Player>(this, Player.class, true){
+        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, true) {
             @Override
             public boolean canUse() {
                 return super.canUse() && !EnderglopEntity.this.isTiny();
             }
         });
-        this.goalSelector.addGoal(2, new FormGoal());
+
+        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, EnderglopEntity.class, true));
+
+        //this.goalSelector.addGoal(2, new FormGoal());
+        //this.goalSelector.addGoal(2, new MergeGoal(this, 1.5));
     }
 
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
@@ -102,7 +110,11 @@ public class EnderglopEntity extends Mob implements Enemy {
 
     @Override
     public boolean canAttack(LivingEntity target) {
-        return super.canAttack(target) && !this.isTiny();
+        if (target instanceof EnderglopEntity otherSlime){
+            return this.getSize() == otherSlime.getSize() && this.canForm() && otherSlime.canForm();
+        }else {
+            return super.canAttack(target) && !this.isTiny();
+        }
     }
 
     public void addAdditionalSaveData(CompoundTag compound) {
@@ -435,55 +447,6 @@ public class EnderglopEntity extends Mob implements Enemy {
         }
     }
 
-    static class SlimeAttackGoal extends Goal {
-        private final EnderglopEntity slime;
-        private int growTiredTimer;
-
-        public SlimeAttackGoal(EnderglopEntity slime) {
-            this.slime = slime;
-            this.setFlags(EnumSet.of(Flag.LOOK));
-        }
-
-        public boolean canUse() {
-            LivingEntity livingentity = this.slime.getTarget();
-            if (livingentity == null) {
-                return false;
-            } else {
-                return !this.slime.canAttack(livingentity) ? false : this.slime.getMoveControl() instanceof EnderglopEntity.SlimeMoveControl;
-            }
-        }
-
-        public void start() {
-            this.growTiredTimer = reducedTickDelay(300);
-            super.start();
-        }
-
-        public boolean canContinueToUse() {
-            LivingEntity livingentity = this.slime.getTarget();
-            if (livingentity == null) {
-                return false;
-            } else {
-                return !this.slime.canAttack(livingentity) ? false : --this.growTiredTimer > 0;
-            }
-        }
-
-        public boolean requiresUpdateEveryTick() {
-            return true;
-        }
-
-        public void tick() {
-            LivingEntity livingentity = this.slime.getTarget();
-            if (livingentity != null) {
-                this.slime.lookAt(livingentity, 10.0F, 10.0F);
-            }
-
-            MoveControl var3 = this.slime.getMoveControl();
-            if (var3 instanceof EnderglopEntity.SlimeMoveControl slime$slimemovecontrol) {
-                slime$slimemovecontrol.setDirection(this.slime.getYRot(), this.slime.isDealsDamage());
-            }
-
-        }
-    }
 
     static class SlimeRandomDirectionGoal extends Goal {
         private final EnderglopEntity slime;
@@ -534,50 +497,63 @@ public class EnderglopEntity extends Mob implements Enemy {
         }
     }
 
-    private class FormGoal extends Goal {
+    static class SlimeAttackGoal extends Goal {
+        private final EnderglopEntity slime;
+        private int growTiredTimer;
 
-        int executionCooldown = 0;
-        EnderglopEntity otherslime;
-
-        public FormGoal() {
-            this.setFlags(EnumSet.of(Flag.MOVE));
+        public SlimeAttackGoal(EnderglopEntity slime) {
+            this.slime = slime;
+            this.setFlags(EnumSet.of(Flag.LOOK));
         }
 
-        @Override
         public boolean canUse() {
-            if (!EnderglopEntity.this.canForm()) {
+            LivingEntity livingentity = this.slime.getTarget();
+            if (livingentity == null) {
                 return false;
+            } else {
+                return !this.slime.canAttack(livingentity) ? false : this.slime.getMoveControl() instanceof EnderglopEntity.SlimeMoveControl;
             }
-            if (executionCooldown-- < 0) {
-                executionCooldown = EnderglopEntity.this.getTarget() == null ? 100 : 20;
-                EnderglopEntity closest = null;
-                for (EnderglopEntity slime : EnderglopEntity.this.level().getEntitiesOfClass(EnderglopEntity.class, EnderglopEntity.this.getBoundingBox().inflate(30, 30, 30))) {
-                    if (slime != EnderglopEntity.this && slime.canForm() && (closest == null || slime.distanceTo(EnderglopEntity.this) < closest.distanceTo(EnderglopEntity.this))) {
-                        closest = slime;
-                    }
-                }
-                otherslime = closest;
-                return otherslime != null;
-            }
-            return false;
         }
 
+        public void start() {
+            this.growTiredTimer = reducedTickDelay(300);
+            super.start();
+        }
 
-        @Override
         public boolean canContinueToUse() {
-            return otherslime != null && EnderglopEntity.this.canForm() && otherslime.canForm() && EnderglopEntity.this.distanceTo(otherslime) < 32;
+            LivingEntity livingentity = this.slime.getTarget();
+            if (livingentity == null) {
+                return false;
+            } else {
+                return !this.slime.canAttack(livingentity) ? false : --this.growTiredTimer > 0;
+            }
+        }
+
+        public boolean requiresUpdateEveryTick() {
+            return true;
         }
 
         public void tick() {
-            EnderglopEntity.this.getNavigation().moveTo(otherslime, 1);
-            if (EnderglopEntity.this.distanceTo(otherslime) <= 0.5F + (EnderglopEntity.this.getBbWidth() + otherslime.getBbWidth()) / 2D && otherslime.canForm()) {
-                int glopSize = EnderglopEntity.this.getSize();
-                EnderglopEntity.this.setSize(glopSize+1, true);
-                otherslime.remove(RemovalReason.DISCARDED);
-                EnderglopEntity.this.playSound(SoundEvents.SLIME_ATTACK);
-                otherslime = null;
-                EnderglopEntity.this.mergeCooldown = 600;
+            LivingEntity livingentity = this.slime.getTarget();
+            if (livingentity != null) {
+                this.slime.lookAt(livingentity, 10.0F, 10.0F);
             }
+
+            MoveControl var3 = this.slime.getMoveControl();
+            if (var3 instanceof EnderglopEntity.SlimeMoveControl slime$slimemovecontrol) {
+                slime$slimemovecontrol.setDirection(this.slime.getYRot(), this.slime.isDealsDamage());
+            }
+
+            if (this.slime.getTarget() instanceof EnderglopEntity otherSlime){
+                if (this.slime.distanceTo(otherSlime) <= 0.5F + (this.slime.getBbWidth() + otherSlime.getBbWidth()) / 2D && otherSlime.canForm()) {
+                    int glopSize = this.slime.getSize();
+                    this.slime.setSize(glopSize+1, true);
+                    otherSlime.remove(RemovalReason.DISCARDED);
+                    this.slime.playSound(SoundEvents.SLIME_ATTACK);
+                    this.slime.mergeCooldown = 600;
+                }
+            }
+
         }
     }
 }
