@@ -13,12 +13,16 @@ import static com.thebeyond.TheBeyond.MODID;
 public class BeyondTabs {
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
 
-    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> EXAMPLE_TAB = CREATIVE_MODE_TABS.register("example_tab", () -> CreativeModeTab.builder()
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> THE_BEYOND = CREATIVE_MODE_TABS.register("the_beyond", () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.the_beyond"))
             .withTabsBefore(CreativeModeTabs.COMBAT)
             .icon(() -> BeyondBlocks.POLAR_PILLAR.asItem().getDefaultInstance())
-            .displayItems((parameters, output) -> BeyondItems.CREATIVE_TAB_ITEMS.forEach((item) -> output.accept(item.get())))
-            .build());
+            .displayItems((parameters, output) -> {
+                BeyondItems.ITEMS.getEntries().forEach((i) -> {
+                            output.accept(i.get().asItem());
+                        }
+                );
+            }).build());
 
     public static void addCreative(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS)

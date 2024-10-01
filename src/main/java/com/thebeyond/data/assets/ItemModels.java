@@ -2,11 +2,13 @@ package com.thebeyond.data.assets;
 
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondItems;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.SpawnEggItem;
 import net.neoforged.neoforge.client.model.generators.ItemModelProvider;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 
@@ -29,9 +31,12 @@ public class ItemModels extends ItemModelProvider {
         items.remove(BeyondBlocks.POLAR_PILLAR.asItem());
 
         takeAll(items, i -> i instanceof BlockItem).forEach(item -> blockBasedModel(item, ""));
+        takeAll(items, i -> i instanceof SpawnEggItem).forEach(this::spawnEggGeneratedModel);
 
         items.forEach(item -> itemGeneratedModel(item, resourceItem(itemName(item))));
-
+    }
+    public void spawnEggGeneratedModel(Item item) {
+        withExistingParent(itemName(item), "item/template_spawn_egg");
     }
 
     public void itemGeneratedModel(Item item, ResourceLocation texture) {
