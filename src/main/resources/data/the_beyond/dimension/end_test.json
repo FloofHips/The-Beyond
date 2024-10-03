@@ -4,8 +4,7 @@
     "type": "the_beyond:beyond_end",
     "settings": "minecraft:end",
     "biome_source": {
-      "type": "minecraft:fixed",
-      "biome": "minecraft:end_midlands"
+      "type": "minecraft:the_end"
     }
   }
 }

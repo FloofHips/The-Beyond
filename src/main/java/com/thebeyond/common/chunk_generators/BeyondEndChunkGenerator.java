@@ -35,7 +35,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     private final PerlinSimplexNoise globalHOffsetNoise;
     private final PerlinSimplexNoise globalVOffsetNoise;
     private final PerlinSimplexNoise globalCOffsetNoise;
-    private final double worldHeight = 256;
+    private final double worldHeight = 160;
 
     public BeyondEndChunkGenerator(BiomeSource biomeSource, Holder<NoiseGeneratorSettings> settings) {
         super(biomeSource, settings);
@@ -62,7 +62,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             int startX = chunkPos.getMinBlockX();
             int startZ = chunkPos.getMinBlockZ();
             int sizeX = 16;
-            int sizeY = 256;
+            int sizeY = 160;
             int sizeZ = 16;
 
             // Octave stuff, don't touch this. PLEASE!
@@ -83,7 +83,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                         int globalZ = startZ + z;
 
                         //min = 0.005, max = 0.015
-                        horizontalBaseScale = globalHorizontalScaleOffset(0.005, 0.015,globalX * 0.00001,globalZ * 0.00001);
+                        horizontalBaseScale = globalHorizontalScaleOffset(0.005, 0.015,globalX * 0.000001,globalZ * 0.000001);
                         verticalBaseScale = globalVerticalScaleOffset(0.005, 0.015,globalX * 0.00001,globalZ * 0.00001);
                         cycleHeight = globalCycleOffset(10, 100, globalX * 0.0001,globalZ * 0.0001);
                         threshold = globalThresholdOffset(0.01, 0.6, globalX * 0.0002,globalZ * 0.0002);
