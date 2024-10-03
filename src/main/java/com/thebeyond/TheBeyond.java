@@ -27,6 +27,7 @@ public class TheBeyond {
         BeyondTabs.CREATIVE_MODE_TABS.register(modEventBus);
         BeyondEntityTypes.ENTITY_TYPES.register(modEventBus);
         BeyondParticleTypes.PARTICLE_TYPES.register(modEventBus);
+        BeyondChunkGenerators.CHUNK_GENS.register(modEventBus);
 
         /**
          * Register ourselves for server and other game events we are interested in.
