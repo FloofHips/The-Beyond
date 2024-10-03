@@ -3,6 +3,7 @@ package com.thebeyond.common.blocks;
 import com.mojang.serialization.MapCodec;
 import com.thebeyond.common.entity.EnderglopEntity;
 import com.thebeyond.common.registry.BeyondEntityTypes;
+import com.thebeyond.util.IMagneticReceiver;
 import com.thebeyond.util.RandomUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -23,9 +24,10 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.ticks.TickPriority;
 import oshi.util.tuples.Pair;
 
+import javax.annotation.Nullable;
 import java.util.function.ToIntFunction;
 
-public class PolarPillarBlock extends Block {
+public class PolarPillarBlock extends Block implements IMagneticReceiver {
     public static final MapCodec<PolarPillarBlock> CODEC = simpleCodec(PolarPillarBlock::new);
 
     private final int TICK_DELAY = 2;
@@ -65,9 +67,17 @@ public class PolarPillarBlock extends Block {
     private final VoxelShape FULL_CUBE = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D);
     private final VoxelShape OPEN_BULB = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 6.0D, 16.0D);
 
-    public Pair<BlockPos, BlockState> activatePillar(BlockPos pos, BlockState state, Level level) {
-        Pair<BlockPos, BlockState> lastPillar = new Pair<>(pos, state);
+    public void activatePillar(BlockPos pos, BlockState state, Level level) {
+        for (int offset = 1; offset <= 8; offset++) {
+            Pair<BlockPos, BlockState> newBlockFound = new Pair<>(new BlockPos(pos.getX(), pos.getY() + offset, pos.getZ()), level.getBlockState(new BlockPos(pos.getX(), pos.getY() - offset, pos.getZ())));
+            if (newBlockFound.getB().is(this)) {
+                if (newBlockFound.getB().getValue(IS_BULB)) {
+                    if (newBlockFound.getB().getValue(GLOP_CHARGE) != 4) return;
+                } else return;
+            } else break;
+        }
 
+        Pair<BlockPos, BlockState> lastPillar = new Pair<>(pos, state);
         for (int offset = 1; offset <= 8; offset++) {
             Pair<BlockPos, BlockState> newBlockFound = new Pair<>(new BlockPos(pos.getX(), pos.getY() - offset, pos.getZ()), level.getBlockState(new BlockPos(pos.getX(), pos.getY() - offset, pos.getZ())));
             if (newBlockFound.getB().is(this)) {
@@ -78,8 +88,6 @@ public class PolarPillarBlock extends Block {
                 break;
             }
         }
-
-        return lastPillar;
     }
 
     @Override
@@ -91,6 +99,12 @@ public class PolarPillarBlock extends Block {
     @Override
     protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return super.getCollisionShape(state, level, pos, context);
+    }
+
+    @Override
+    public void receiveSignal(BlockPos pos, BlockState state, Level level, @Nullable BlockState senderState) {
+        if (state.getValue(POLAR_CHARGE) > 0) return;
+        this.activatePillar(pos, state, level);
     }
 
     @Override
@@ -142,7 +156,6 @@ public class PolarPillarBlock extends Block {
             }
         }
     }
-
 
     @Override
     protected boolean isRandomlyTicking(BlockState state) {

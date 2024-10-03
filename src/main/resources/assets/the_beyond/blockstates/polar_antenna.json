@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "stability=none": {
+      "model": "the_beyond:block/attracta_expanse/polar_antenna/antenna_none"
+    },
+    "stability=low": {
+      "model": "the_beyond:block/attracta_expanse/polar_antenna/antenna_low"
+    },
+    "stability=medium": {
+      "model": "the_beyond:block/attracta_expanse/polar_antenna/antenna_medium"
+    },
+    "stability=high": {
+      "model": "the_beyond:block/attracta_expanse/polar_antenna/antenna_high"
+    },
+    "stability=seeking": {
+      "model": "the_beyond:block/attracta_expanse/polar_antenna/antenna_seeking"
+    }
+  }
+}
