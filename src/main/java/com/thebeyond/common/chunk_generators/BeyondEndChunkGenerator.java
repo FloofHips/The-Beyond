@@ -6,19 +6,20 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
-import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
-import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
-import net.minecraft.world.level.levelgen.RandomState;
+import net.minecraft.world.level.levelgen.*;
 import net.minecraft.world.level.levelgen.blending.Blender;
 import net.minecraft.world.level.levelgen.synth.PerlinSimplexNoise;
 import net.minecraft.world.level.levelgen.synth.SimplexNoise;
 
+import java.text.DecimalFormat;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
@@ -75,7 +76,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             double verticalBaseScale;
             double threshold;
             double cycleHeight;
-
             for (int x = 0; x < sizeX; x++) {
                 for (int z = 0; z < sizeZ; z++) {
                     for (int y = 0; y < sizeY; y++) {
@@ -83,10 +83,10 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                         int globalZ = startZ + z;
 
                         //min = 0.005, max = 0.015
-                        horizontalBaseScale = globalHorizontalScaleOffset(0.005, 0.015,globalX * 0.000001,globalZ * 0.000001);
-                        verticalBaseScale = globalVerticalScaleOffset(0.005, 0.015,globalX * 0.00001,globalZ * 0.00001);
-                        cycleHeight = globalCycleOffset(10, 100, globalX * 0.0001,globalZ * 0.0001);
-                        threshold = globalThresholdOffset(0.01, 0.6, globalX * 0.0002,globalZ * 0.0002);
+                        horizontalBaseScale = globalNoiseOffset(0.005, 0.015,globalX * 0.000001,globalZ * 0.000001, globalHOffsetNoise);
+                        verticalBaseScale = globalNoiseOffset(0.005, 0.015,globalX * 0.00001,globalZ * 0.00001, globalVOffsetNoise);
+                        cycleHeight = globalNoiseOffset(10, 100, globalX * 0.0001,globalZ * 0.0001, globalCOffsetNoise);
+                        threshold = globalNoiseOffset(0.01, 0.6, globalX * 0.0002,globalZ * 0.0002, globalCOffsetNoise);
 
                         double noiseValue = 0.0;
                         double amplitude = 1.0;
@@ -117,46 +117,8 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                         double finalValue = edgeGradient(blockPos.getY(), worldHeight, noiseValue);
                         if (finalValue > threshold) {
                             chunk.setBlockState(blockPos, Blocks.END_STONE.defaultBlockState(), false);
-//                            if (horizontalBaseScale <= 0.005) {
-//                                chunk.setBlockState(blockPos, Blocks.BLACK_STAINED_GLASS.defaultBlockState(), false);
-//                            } else if (horizontalBaseScale > 0.005 && horizontalBaseScale <= 0.0075) {
-//                                chunk.setBlockState(blockPos, Blocks.GRAY_STAINED_GLASS.defaultBlockState(), false);
-//                            } else if (horizontalBaseScale > 0.0075 && horizontalBaseScale <= 0.01) {
-//                                chunk.setBlockState(blockPos, Blocks.LIGHT_GRAY_STAINED_GLASS.defaultBlockState(), false);
-//                            } else if (horizontalBaseScale > 0.01 && horizontalBaseScale <= 0.0125) {
-//                                chunk.setBlockState(blockPos, Blocks.WHITE_STAINED_GLASS.defaultBlockState(), false);
-//                            } else if (horizontalBaseScale > 0.0125 && horizontalBaseScale <= 0.015) {
-//                                chunk.setBlockState(blockPos, Blocks.YELLOW_STAINED_GLASS.defaultBlockState(), false);
-//                            }
                         }
-
                     }
-//                    int yLevelNoise1 = 0;
-//                    int yLevelNoise2 = 10;
-//                    int yLevelNoise3 = 20;
-//                    double scale = 0.001;
-//                    double thresholdx = 0.2;
-//
-//                    // Calculate noise for the first layer
-//                    double noiseValue1 = globalHOffsetNoise.getValue((startX + x) * scale, (startZ + z) * scale, false);
-//                    BlockPos blockPos1 = new BlockPos(startX + x, yLevelNoise1, startZ + z);
-//                    if (noiseValue1 > thresholdx) {
-//                        chunk.setBlockState(blockPos1, Blocks.BLUE_STAINED_GLASS.defaultBlockState(), false);
-//                    }
-//
-//                    // Calculate noise for the second layer
-//                    double noiseValue2 = globalVOffsetNoise.getValue((startX + x) * scale, (startZ + z) * scale, false);
-//                    BlockPos blockPos2 = new BlockPos(startX + x, yLevelNoise2, startZ + z);
-//                    if (noiseValue2 > thresholdx) {
-//                        chunk.setBlockState(blockPos2, Blocks.GREEN_STAINED_GLASS.defaultBlockState(), false);
-//                    }
-//
-//                    // Calculate noise for the third layer
-//                    double noiseValue3 = globalCOffsetNoise.getValue((startX + x) * scale, (startZ + z) * scale, false);
-//                    BlockPos blockPos3 = new BlockPos(startX + x, yLevelNoise3, startZ + z);
-//                    if (noiseValue3 > thresholdx) {
-//                        chunk.setBlockState(blockPos3, Blocks.RED_STAINED_GLASS.defaultBlockState(), false);
-//                    }
                 }
             }
 
@@ -189,23 +151,12 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         return gradientBottom * gradientTop * noiseValue;
     }
 
-    private double globalHorizontalScaleOffset(double min, double max, double x, double z) {
-        double noiseValue = globalHOffsetNoise.getValue(x, z, false);
+    private double globalNoiseOffset(double min, double max, double x, double z, PerlinSimplexNoise noise) {
+        double noiseValue = noise.getValue(x, z, false);
         return min + (max - min) * ((noiseValue + 1) / 2);
     }
-
-    private double globalVerticalScaleOffset(double min, double max, double x, double z) {
-        double noiseValue = globalVOffsetNoise.getValue(x, z, true);
-        return min + (max - min) * ((noiseValue + 1) / 2);
-    }
-
-    private double globalCycleOffset(double min, double max, double x, double z) {
-        double noiseValue = globalCOffsetNoise.getValue(x, z, false);
-        return (min + (max - min) * ((noiseValue + 1) / 2));
-    }
-
-    private double globalThresholdOffset(double min, double max, double x, double z) {
-        double noiseValue = globalCOffsetNoise.getValue(x, z, false);
-        return min + (max - min) * ((noiseValue + 1) / 2);
+    public void addDebugScreenInfo(List<String> info, RandomState random, BlockPos pos) {
+        DecimalFormat decimalformat = new DecimalFormat("0.000");
+        //info.add("TerrainNoise T: " + decimalformat.format(simplexNoise.getValue(pos.getX(), pos.getY(), pos.getZ())) + " HS: " + decimalformat.format(horizontalBaseScale) + " VS: " + decimalformat.format(verticalBaseScale) + " Threshold: " + decimalformat.format(threshold) + " CH: " + decimalformat.format(cycleHeight));
     }
 }
