@@ -3,6 +3,7 @@ package com.thebeyond.data;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.data.assets.BlockStates;
 import com.thebeyond.data.assets.ItemModels;
+import com.thebeyond.data.assets.Lang;
 import com.thebeyond.data.tags.BlockTags;
 import com.thebeyond.data.tags.DamageTypeTags;
 import com.thebeyond.data.tags.EntityTypeTags;
@@ -55,5 +56,6 @@ public class Generators {
         BlockStates blockStates = new BlockStates(output, helper);
         generator.addProvider(event.includeClient(), blockStates);
         generator.addProvider(event.includeClient(), new ItemModels(output, blockStates.models().existingFileHelper));
+        generator.addProvider(event.includeClient(), new Lang(output));
     }
 }

@@ -38,7 +38,8 @@ public class BeyondBlocks {
                     .randomTicks()
                     .forceSolidOff()
                     .noCollission()
-                    .noOcclusion())
+                    .noOcclusion()
+                    .offsetType(BlockBehaviour.OffsetType.XZ))
     );
 
     @SuppressWarnings("unchecked")

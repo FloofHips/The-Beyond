@@ -29,6 +29,7 @@ public class ItemModels extends ItemModelProvider {
                 .collect(Collectors.toSet());
 
         items.remove(BeyondBlocks.POLAR_PILLAR.asItem());
+        items.remove(BeyondBlocks.POLAR_ANTENNA.asItem());
 
         takeAll(items, i -> i instanceof BlockItem).forEach(item -> blockBasedModel(item, ""));
         takeAll(items, i -> i instanceof SpawnEggItem).forEach(this::spawnEggGeneratedModel);
