@@ -3,12 +3,13 @@ package com.thebeyond.common.blocks;
 import com.mojang.serialization.MapCodec;
 import com.thebeyond.common.blocks.blockstates.StabilityProperty;
 import com.thebeyond.util.IMagneticReceiver;
-import net.minecraft.core.BlockBox;
+import com.thebeyond.util.RandomUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
@@ -19,16 +20,20 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
-import net.minecraft.world.level.block.state.properties.IntegerProperty;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.ToIntFunction;
 
 public class PolarAntennaBlock extends Block implements IMagneticReceiver {
     public static final MapCodec<PolarAntennaBlock> CODEC = simpleCodec(PolarAntennaBlock::new);
 
+    private static final float STOP_CHANCE = 0.1f;
+
     public static final BooleanProperty COOLDOWN;
-    public static final IntegerProperty RANGE;
     public static final EnumProperty<StabilityProperty> STABILITY;
 
     public MapCodec<PolarAntennaBlock> codec() {
@@ -53,14 +58,13 @@ public class PolarAntennaBlock extends Block implements IMagneticReceiver {
 
         registerDefaultState(this.stateDefinition.any()
                 .setValue(COOLDOWN, false)
-                .setValue(RANGE, 0)
                 .setValue(STABILITY, StabilityProperty.NONE)
         );
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(COOLDOWN, RANGE, STABILITY);
+        builder.add(COOLDOWN, STABILITY);
     }
 
     @Override
@@ -78,44 +82,27 @@ public class PolarAntennaBlock extends Block implements IMagneticReceiver {
     @Override
     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
         if (level.isClientSide) return;
-        if (state.getValue(COOLDOWN)) return;
+        if (state.getValue(COOLDOWN) || !(entity instanceof Player)) return;
 
         StabilityProperty currentStability = state.getValue(STABILITY);
         StabilityProperty[] stabilityList = StabilityProperty.values();
 
         if (currentStability.ordinal() + 1 < stabilityList.length) {
             StabilityProperty nextStability = stabilityList[currentStability.ordinal() + 1];
-            BlockState newState = nextStability == StabilityProperty.SEEKING ?
-                    state.setValue(COOLDOWN, true).setValue(STABILITY, nextStability).setValue(RANGE, 15) :
-                    state.setValue(COOLDOWN, true).setValue(STABILITY, nextStability);
 
-            level.scheduleTick(pos, this, switch (nextStability) {case NONE, LOW, MEDIUM, HIGH -> 20; case SEEKING -> 3;});
-            level.setBlock(pos, newState, 3);
+            level.scheduleTick(pos, this, switch (nextStability) {case NONE, LOW, MEDIUM, HIGH -> 10; case SEEKING -> 3;});
+            level.setBlock(pos, state.setValue(COOLDOWN, true).setValue(STABILITY, nextStability), 3);
         }
     }
 
     @Override
     public void receiveSignal(BlockPos pos, BlockState state, Level level, @Nullable BlockState senderState) {
-        if (senderState == null) return;
-
-        int newRange = senderState.getValue(RANGE) - 1;
-        StabilityProperty nextStability = switch (newRange) {
-            case 1, 2, 3 -> StabilityProperty.LOW;
-            case 4, 5, 6, 7 -> StabilityProperty.MEDIUM;
-            case 8, 9, 10, 11 -> StabilityProperty.HIGH;
-            case 12, 13, 14, 15 -> StabilityProperty.SEEKING;
-            default -> StabilityProperty.NONE;
-        };
-
-        level.scheduleTick(pos, this, 2);
-        level.setBlock(pos, state.setValue(COOLDOWN, true).setValue(STABILITY, nextStability).setValue(RANGE, newRange), 3);
+        level.setBlock(pos, state.setValue(COOLDOWN, true).setValue(STABILITY, StabilityProperty.SEEKING), 3);
     }
 
     @Override
     protected boolean isRandomlyTicking(BlockState state) {
-        return !state.getValue(COOLDOWN) &&
-                state.getValue(RANGE) == 0 &&
-                state.getValue(STABILITY) != StabilityProperty.NONE;
+        return !state.getValue(COOLDOWN) && state.getValue(STABILITY) != StabilityProperty.NONE;
     }
 
     @Override
@@ -126,43 +113,41 @@ public class PolarAntennaBlock extends Block implements IMagneticReceiver {
 
     @Override
     protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        if (state.getValue(RANGE) > 0) {
-            BlockBox searchBox = new BlockBox(
-                    new BlockPos(pos.getX()-1, pos.getY()-1, pos.getZ()-1),
-                    new BlockPos(pos.getX()+1, pos.getY()+1, pos.getZ()+1)
-                    );
+        if (state.getValue(STABILITY) == StabilityProperty.SEEKING) {
+            ArrayList<BlockPos> affectedList = new ArrayList<>();
 
-            searchBox.forEach((searchPos) -> {
-                if (level.getBlockState(searchPos).getBlock() instanceof IMagneticReceiver && searchPos != pos) {
-                    if (level.getBlockState(searchPos).is(this)) {
-                        if (!level.getBlockState(searchPos).getValue(COOLDOWN))
-                            ((IMagneticReceiver) level.getBlockState(searchPos).getBlock()).receiveSignal(searchPos, level.getBlockState(searchPos), level, state);
+            List<Direction> horizontalDirections = new ArrayList<>(Arrays.asList(Direction.Plane.HORIZONTAL.stream().toArray(Direction[]::new)));
+            Collections.shuffle(horizontalDirections);
+
+            int numDirections = RandomUtils.nextInt(0, 2);
+            List<Direction> chosenDirections = horizontalDirections.subList(0, numDirections);
+
+            for (Direction horizontal : chosenDirections) {
+                affectedList.add(pos.relative(horizontal));
+                affectedList.add(pos.relative(horizontal).above());
+                affectedList.add(pos.relative(horizontal).below());
+            }
+
+            if (RandomUtils.nextFloat() <= STOP_CHANCE) return;
+
+            affectedList.forEach((affectedPos) -> {
+                if (level.getBlockState(affectedPos).getBlock() instanceof IMagneticReceiver) {
+                    level.scheduleTick(affectedPos, level.getBlockState(affectedPos).getBlock(), 5);
+                    if (level.getBlockState(affectedPos).is(this)) {
+                        if (level.getBlockState(affectedPos).getValue(STABILITY) == StabilityProperty.NONE)
+                            ((IMagneticReceiver) level.getBlockState(affectedPos).getBlock()).receiveSignal(affectedPos, level.getBlockState(affectedPos), level, null);
                     } else {
-                        ((IMagneticReceiver) level.getBlockState(searchPos).getBlock()).receiveSignal(searchPos, level.getBlockState(searchPos), level, state);
+                        ((IMagneticReceiver) level.getBlockState(affectedPos).getBlock()).receiveSignal(affectedPos, level.getBlockState(affectedPos), level, null);
                     }
                 }
             });
-
-            level.scheduleTick(pos, this, 6 - state.getValue(STABILITY).ordinal());
-            int newRange = state.getValue(RANGE) - 1;
-            if (newRange >= 0) {
-                StabilityProperty nextStability = switch (newRange) {
-                    case 1, 2, 3 -> StabilityProperty.LOW;
-                    case 4, 5, 6, 7 -> StabilityProperty.MEDIUM;
-                    case 8, 9, 10, 11 -> StabilityProperty.HIGH;
-                    case 12, 13, 14, 15 -> StabilityProperty.SEEKING;
-                    default -> StabilityProperty.NONE;
-                };
-                level.setBlock(pos, state.setValue(RANGE, newRange).setValue(STABILITY, nextStability), 3);
-            }
         }
 
-        if (state.getValue(COOLDOWN) && state.getValue(RANGE) == 0) level.setBlock(pos, state.setValue(COOLDOWN, false), 3);
+        if (state.getValue(COOLDOWN)) level.setBlock(pos, state.setValue(COOLDOWN, false), 3);
     }
 
     static {
         COOLDOWN = BlockStateProperties.DISARMED;
-        RANGE = IntegerProperty.create("range", 0, 15);
         STABILITY = EnumProperty.create("stability", StabilityProperty.class);
     }
 }

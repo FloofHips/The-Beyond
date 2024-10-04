@@ -8,9 +8,7 @@ import com.thebeyond.util.RandomUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -18,7 +16,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
-import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.ticks.TickPriority;
@@ -68,18 +65,11 @@ public class PolarPillarBlock extends Block implements IMagneticReceiver {
     private final VoxelShape OPEN_BULB = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 6.0D, 16.0D);
 
     public void activatePillar(BlockPos pos, BlockState state, Level level) {
-        for (int offset = 1; offset <= 8; offset++) {
-            Pair<BlockPos, BlockState> newBlockFound = new Pair<>(new BlockPos(pos.getX(), pos.getY() + offset, pos.getZ()), level.getBlockState(new BlockPos(pos.getX(), pos.getY() - offset, pos.getZ())));
-            if (newBlockFound.getB().is(this)) {
-                if (newBlockFound.getB().getValue(IS_BULB)) {
-                    if (newBlockFound.getB().getValue(GLOP_CHARGE) != 4) return;
-                } else return;
-            } else break;
-        }
-
         Pair<BlockPos, BlockState> lastPillar = new Pair<>(pos, state);
+
         for (int offset = 1; offset <= 8; offset++) {
             Pair<BlockPos, BlockState> newBlockFound = new Pair<>(new BlockPos(pos.getX(), pos.getY() - offset, pos.getZ()), level.getBlockState(new BlockPos(pos.getX(), pos.getY() - offset, pos.getZ())));
+
             if (newBlockFound.getB().is(this)) {
                 if (!newBlockFound.getB().getValue(IS_BULB)) lastPillar = newBlockFound;
             } else {
@@ -105,15 +95,6 @@ public class PolarPillarBlock extends Block implements IMagneticReceiver {
     public void receiveSignal(BlockPos pos, BlockState state, Level level, @Nullable BlockState senderState) {
         if (state.getValue(POLAR_CHARGE) > 0) return;
         this.activatePillar(pos, state, level);
-    }
-
-    @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        if (level.isClientSide) return InteractionResult.sidedSuccess(level.isClientSide);
-
-        this.activatePillar(pos, state, level);
-
-        return InteractionResult.sidedSuccess(false);
     }
 
     @Override
