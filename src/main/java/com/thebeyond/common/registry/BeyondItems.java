@@ -1,6 +1,7 @@
 package com.thebeyond.common.registry;
 
 import com.google.common.collect.Sets;
+import com.thebeyond.common.item.MagnetItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.SpawnEggItem;
 import net.neoforged.fml.ModList;
@@ -15,8 +16,12 @@ import static com.thebeyond.TheBeyond.MODID;
 public class BeyondItems {
 
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
-
     public static LinkedHashSet<DeferredItem<Item>> CREATIVE_TAB_ITEMS = Sets.newLinkedHashSet();
+
+    public static final DeferredItem<Item> MAGNET = registerItem("magnet", () -> new MagnetItem(new Item.Properties(), 8));
+
+    public static final DeferredItem<SpawnEggItem> ENDERGLOP_SPAWN_EGG  = ITEMS.register("enderglop_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENDERGLOP.get(),0x7127f8, 0xc126ff,new Item.Properties()));
+
 
     @SuppressWarnings("unchecked")
     public static <T extends Item> DeferredItem<T> registerItem(final String name, final Supplier<? extends Item> item) {
@@ -24,8 +29,6 @@ public class BeyondItems {
         CREATIVE_TAB_ITEMS.add(toReturn);
         return (DeferredItem<T>) toReturn;
     }
-
-    public static final DeferredItem<SpawnEggItem> ENDERGLOP_SPAWN_EGG  = ITEMS.register("enderglop_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENDERGLOP.get(),0x7127f8, 0xc126ff,new Item.Properties()));
 
     @SuppressWarnings("unchecked")
     public static <T extends Item> DeferredItem<T> registerIntegrationItem(final String name, final Supplier<? extends Item> item, String modId) {
