@@ -32,6 +32,7 @@ public class PolarAntennaBlock extends Block implements IMagneticReceiver {
     public static final MapCodec<PolarAntennaBlock> CODEC = simpleCodec(PolarAntennaBlock::new);
 
     private static final float STOP_CHANCE = 0.1f;
+    private static final int DELAY = 3;
 
     public static final BooleanProperty COOLDOWN;
     public static final EnumProperty<StabilityProperty> STABILITY;
@@ -90,13 +91,14 @@ public class PolarAntennaBlock extends Block implements IMagneticReceiver {
         if (currentStability.ordinal() + 1 < stabilityList.length) {
             StabilityProperty nextStability = stabilityList[currentStability.ordinal() + 1];
 
-            level.scheduleTick(pos, this, switch (nextStability) {case NONE, LOW, MEDIUM, HIGH -> 10; case SEEKING -> 3;});
+            level.scheduleTick(pos, this, switch (nextStability) {case NONE, LOW, MEDIUM, HIGH -> DELAY*3; case SEEKING -> DELAY;});
             level.setBlock(pos, state.setValue(COOLDOWN, true).setValue(STABILITY, nextStability), 3);
         }
     }
 
     @Override
     public void receiveSignal(BlockPos pos, BlockState state, Level level, @Nullable BlockState senderState) {
+        level.scheduleTick(pos, this, DELAY);
         level.setBlock(pos, state.setValue(COOLDOWN, true).setValue(STABILITY, StabilityProperty.SEEKING), 3);
     }
 
@@ -132,7 +134,7 @@ public class PolarAntennaBlock extends Block implements IMagneticReceiver {
 
             affectedList.forEach((affectedPos) -> {
                 if (level.getBlockState(affectedPos).getBlock() instanceof IMagneticReceiver) {
-                    level.scheduleTick(affectedPos, level.getBlockState(affectedPos).getBlock(), 5);
+                    level.scheduleTick(affectedPos, level.getBlockState(affectedPos).getBlock(), DELAY);
                     if (level.getBlockState(affectedPos).is(this)) {
                         if (level.getBlockState(affectedPos).getValue(STABILITY) == StabilityProperty.NONE)
                             ((IMagneticReceiver) level.getBlockState(affectedPos).getBlock()).receiveSignal(affectedPos, level.getBlockState(affectedPos), level, null);
