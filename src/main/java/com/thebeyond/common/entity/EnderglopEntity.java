@@ -2,6 +2,7 @@ package com.thebeyond.common.entity;
 
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -28,8 +29,8 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.control.MoveControl;
 import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
-import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
@@ -49,11 +50,13 @@ import java.util.Objects;
 
 public class EnderglopEntity extends Mob implements Enemy {
 
-    static final TargetingConditions ENDERGLOP_MERGE = TargetingConditions.forNonCombat().range(10.0).ignoreLineOfSight();
+    private static final EntityDataAccessor<Integer> ID_SIZE = SynchedEntityData.defineId(EnderglopEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> CHARGING_TICKS = SynchedEntityData.defineId(EnderglopEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> IS_CHARGING = SynchedEntityData.defineId(EnderglopEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> IS_ARMORED = SynchedEntityData.defineId(EnderglopEntity.class, EntityDataSerializers.BOOLEAN);
 
-    private static final EntityDataAccessor<Integer> ID_SIZE;
     public float targetSquish;
-    public float squish;
+    public float squish = 0;
     public float oSquish;
     private boolean wasOnGround;
 
@@ -70,22 +73,23 @@ public class EnderglopEntity extends Mob implements Enemy {
         this.goalSelector.addGoal(2, new SlimeAttackGoal(this));
         this.goalSelector.addGoal(3, new SlimeRandomDirectionGoal(this));
         this.goalSelector.addGoal(5, new SlimeKeepOnJumpingGoal(this));
-        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, true) {
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true) {
             @Override
             public boolean canUse() {
-                return super.canUse() && !EnderglopEntity.this.isTiny();
+                return super.canUse() && !EnderglopEntity.this.isTiny() && !EnderglopEntity.this.getIsCharging();
             }
         });
 
         this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, EnderglopEntity.class, true));
-
-        //this.goalSelector.addGoal(2, new FormGoal());
-        //this.goalSelector.addGoal(2, new MergeGoal(this, 1.5));
     }
 
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(ID_SIZE, 1);
+        builder.define(IS_ARMORED, false);
+
+        builder.define(CHARGING_TICKS, 0);
+        builder.define(IS_CHARGING, false);
     }
 
     @VisibleForTesting
@@ -121,13 +125,40 @@ public class EnderglopEntity extends Mob implements Enemy {
         super.addAdditionalSaveData(compound);
         compound.putInt("Size", this.getSize() - 1);
         compound.putBoolean("wasOnGround", this.wasOnGround);
+        compound.putBoolean("isCharged", this.getIsArmored());
     }
 
     public void readAdditionalSaveData(CompoundTag compound) {
         this.setSize(compound.getInt("Size") + 1, false);
         super.readAdditionalSaveData(compound);
         this.wasOnGround = compound.getBoolean("wasOnGround");
+        this.setIsArmored(compound.getBoolean("isCharged"));
     }
+
+    public boolean getIsArmored(){
+        return this.entityData.get(IS_ARMORED);
+    }
+
+    public void setIsArmored(boolean armored){
+        this.entityData.set(IS_ARMORED, armored);
+    }
+
+    public int getChargingTicks(){
+        return this.entityData.get(CHARGING_TICKS);
+    }
+
+    public void setChargingTicks(int ticks){
+        this.entityData.set(CHARGING_TICKS, ticks);
+    }
+
+    public boolean getIsCharging(){
+        return this.entityData.get(IS_CHARGING);
+    }
+
+    public void setIsCharging(boolean charging){
+        this.entityData.set(IS_CHARGING, charging);
+    }
+
 
     public boolean isTiny() {
         return this.getSize() <= 1;
@@ -199,28 +230,80 @@ public class EnderglopEntity extends Mob implements Enemy {
             mergeCooldown--;
         }
 
-        if (this.onGround() && !this.wasOnGround) {
-            float f = this.getDimensions(this.getPose()).width() * 2.0F;
-            float f1 = f / 2.0F;
-            if (!this.spawnCustomParticles()) {
-                for(int i = 0; (float)i < f * 16.0F; ++i) {
-                    float f2 = this.random.nextFloat() * 6.2831855F;
-                    float f3 = this.random.nextFloat() * 0.5F + 0.5F;
-                    float f4 = Mth.sin(f2) * f1 * f3;
-                    float f5 = Mth.cos(f2) * f1 * f3;
-                    this.level().addParticle(this.getParticleType(), this.getX() + (double)f4, this.getY() - 0.1, this.getZ() + (double)f5, 0.0, 0.0, 0.0);
-                }
-            }
 
-            this.playSound(this.getSquishSound(), this.getSoundVolume(), ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) / 0.8F);
-            this.targetSquish = -0.5F;
-        } else if (!this.onGround() && this.wasOnGround) {
-            this.targetSquish = 1.0F;
+        //charging stuff
+        if (this.getSize()==3 && this.random.nextInt(100)==0 && !this.getIsArmored() && this.onGround() && !this.isInWater() && !this.getIsCharging()){
+            this.setIsCharging(true);
+            this.setChargingTicks(40);
+            this.goalSelector.getAvailableGoals().forEach(WrappedGoal::stop);
+        }
+
+        if (this.onGround() && this.getIsCharging() && this.getChargingTicks() > 0){
+            this.goalSelector.getAvailableGoals().forEach(WrappedGoal::stop);
+            int pastChargeTicks = this.getChargingTicks();
+            this.setChargingTicks(pastChargeTicks-1);
+        }
+
+        if (this.getIsCharging() && this.getChargingTicks()==0){
+            this.setIsCharging(false);
+            this.armorUp();
+            this.goalSelector.getAvailableGoals().forEach(WrappedGoal::start);
+        }
+
+        //squish
+        if (this.getIsCharging()){
+
+            this.targetSquish = -0.75F;
+
+        }else {
+            if (this.onGround() && !this.wasOnGround) {
+                float f = this.getDimensions(this.getPose()).width() * 2.0F;
+                float f1 = f / 2.0F;
+                if (!this.spawnCustomParticles()) {
+                    for(int i = 0; (float)i < f * 16.0F; ++i) {
+                        float f2 = this.random.nextFloat() * 6.2831855F;
+                        float f3 = this.random.nextFloat() * 0.5F + 0.5F;
+                        float f4 = Mth.sin(f2) * f1 * f3;
+                        float f5 = Mth.cos(f2) * f1 * f3;
+                        this.level().addParticle(this.getParticleType(), this.getX() + (double)f4, this.getY() - 0.1, this.getZ() + (double)f5, 0.0, 0.0, 0.0);
+                    }
+                }
+
+                this.playSound(this.getSquishSound(), this.getSoundVolume(), ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) / 0.8F);
+                this.targetSquish = -0.5F;
+            } else if (!this.onGround() && this.wasOnGround) {
+                this.targetSquish = 1.0F;
+            }
         }
 
         this.wasOnGround = this.onGround();
         this.decreaseSquish();
     }
+
+    public void armorUp(){
+        this.setIsArmored(true);
+        this.playSound(SoundEvents.ARMOR_EQUIP_NETHERITE.value(), 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+    }
+
+    @Override
+    public void aiStep() {
+        if (this.level().isClientSide && this.getIsCharging()) {
+            for (int i = 0; i < 2; i++) {
+                this.level()
+                        .addParticle(
+                                ParticleTypes.PORTAL,
+                                this.getRandomX(0.5),
+                                this.getRandomY() - 0.25,
+                                this.getRandomZ(0.5),
+                                (this.random.nextDouble() - 0.5) * 2.0,
+                                -this.random.nextDouble(),
+                                (this.random.nextDouble() - 0.5) * 2.0
+                        );
+            }
+        }
+        super.aiStep();
+    }
+
     public void refreshDimensions() {
         double d0 = this.getX();
         double d1 = this.getY();
@@ -249,7 +332,7 @@ public class EnderglopEntity extends Mob implements Enemy {
             boolean flag = this.isNoAi();
             float f = this.getDimensions(this.getPose()).width();
             float f1 = f / 2.0F;
-            int j = i / 2;
+            int j = i - 1;
             int k = 2;
             ArrayList<Mob> children = new ArrayList();
 
@@ -335,13 +418,13 @@ public class EnderglopEntity extends Mob implements Enemy {
     @Nullable
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, @Nullable SpawnGroupData spawnGroupData) {
         RandomSource randomsource = level.getRandom();
-        int i = randomsource.nextInt(3);
-        if (i < 2 && randomsource.nextFloat() < 0.5F * difficulty.getSpecialMultiplier()) {
-            ++i;
-        }
-
-        int j = 1 << i;
-        this.setSize(j, true);
+        int i = randomsource.nextInt(3) + 1;
+//        if (i < 2 && randomsource.nextFloat() < 0.5F * difficulty.getSpecialMultiplier()) {
+//            ++i;
+//        }
+//
+//        int j = 1 << i;
+        this.setSize(i, true);
         return super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData);
     }
 
@@ -356,10 +439,6 @@ public class EnderglopEntity extends Mob implements Enemy {
 
     protected boolean spawnCustomParticles() {
         return false;
-    }
-
-    static {
-        ID_SIZE = SynchedEntityData.defineId(EnderglopEntity.class, EntityDataSerializers.INT);
     }
 
     static class SlimeMoveControl extends MoveControl {
@@ -459,7 +538,11 @@ public class EnderglopEntity extends Mob implements Enemy {
         }
 
         public boolean canUse() {
-            return this.slime.getTarget() == null && (this.slime.onGround() || this.slime.isInWater() || this.slime.isInLava() || this.slime.hasEffect(MobEffects.LEVITATION)) && this.slime.getMoveControl() instanceof EnderglopEntity.SlimeMoveControl;
+            if (this.slime.getIsCharging()){
+                return false;
+            }else {
+                return this.slime.getTarget() == null && (this.slime.onGround() || this.slime.isInWater() || this.slime.isInLava() || this.slime.hasEffect(MobEffects.LEVITATION)) && this.slime.getMoveControl() instanceof EnderglopEntity.SlimeMoveControl;
+            }
         }
 
         public void tick() {
@@ -485,7 +568,7 @@ public class EnderglopEntity extends Mob implements Enemy {
         }
 
         public boolean canUse() {
-            return !this.slime.isPassenger();
+            return !this.slime.isPassenger() && !this.slime.getIsCharging();
         }
 
         public void tick() {
@@ -508,7 +591,7 @@ public class EnderglopEntity extends Mob implements Enemy {
 
         public boolean canUse() {
             LivingEntity livingentity = this.slime.getTarget();
-            if (livingentity == null) {
+            if (livingentity == null || this.slime.getIsCharging()) {
                 return false;
             } else {
                 return !this.slime.canAttack(livingentity) ? false : this.slime.getMoveControl() instanceof EnderglopEntity.SlimeMoveControl;

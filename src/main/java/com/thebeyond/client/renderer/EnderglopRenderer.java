@@ -43,19 +43,22 @@ public class EnderglopRenderer extends MobRenderer<EnderglopEntity, EnderdropMod
     }
 
     public ResourceLocation getTextureLocation(EnderglopEntity pEntity){
-        return pEntity.isTiny() ? ENDERDROP_TEXTURE : PURPLESLIME_LOCATION;
-        //return pEntity.isCharged() ? PURPLESLIME_ARMOR_LOCATION : PURPLESLIME_LOCATION;
+        return pEntity.isTiny() ? ENDERDROP_TEXTURE : pEntity.getIsArmored() ? PURPLESLIME_ARMOR_LOCATION : PURPLESLIME_LOCATION;
     }
 
     protected void scale(EnderglopEntity livingEntity, PoseStack poseStack, float partialTickTime) {
-        float f = 0.999F;
         poseStack.scale(0.999F, 0.999F, 0.999F);
         poseStack.translate(0.0F, 0.001F, 0.0F);
         float f1 = (float)livingEntity.getSize();
         float f2 = Mth.lerp(partialTickTime, livingEntity.oSquish, livingEntity.squish) / (f1 * 0.5F + 1.0F);
         float f3 = 1.0F / (f2 + 1.0F);
-        float f4 = livingEntity.isTiny() ? 0.8F : 0.35F;
+        float f4 = switch (livingEntity.getSize()) {
+            case 1 -> 0.8F;
+            case 2 -> 0.35F;
+            default -> 0.45F;
+        };
         poseStack.scale(f3 * f1 * f4, 1.0F / f3 * f1 * f4, f3 * f1 * f4);
+
     }
 
 //    @Nullable
