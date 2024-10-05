@@ -48,6 +48,8 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Objects;
 
+//armor up TODO: custom particles, de-armoring up, changing up sounds when armored? adding conditions depending on the surrounding blocks
+//general TODO: add magnetism
 public class EnderglopEntity extends Mob implements Enemy {
 
     private static final EntityDataAccessor<Integer> ID_SIZE = SynchedEntityData.defineId(EnderglopEntity.class, EntityDataSerializers.INT);
@@ -114,7 +116,10 @@ public class EnderglopEntity extends Mob implements Enemy {
 
     @Override
     public boolean canAttack(LivingEntity target) {
-        if (target instanceof EnderglopEntity otherSlime){
+
+        if (this.getIsCharging()){
+            return false;
+        }else if (target instanceof EnderglopEntity otherSlime){
             return this.getSize() == otherSlime.getSize() && this.canForm() && otherSlime.canForm();
         }else {
             return super.canAttack(target) && !this.isTiny();
@@ -230,24 +235,27 @@ public class EnderglopEntity extends Mob implements Enemy {
             mergeCooldown--;
         }
 
-
         //charging stuff
         if (this.getSize()==3 && this.random.nextInt(100)==0 && !this.getIsArmored() && this.onGround() && !this.isInWater() && !this.getIsCharging()){
             this.setIsCharging(true);
             this.setChargingTicks(40);
-            this.goalSelector.getAvailableGoals().forEach(WrappedGoal::stop);
         }
 
         if (this.onGround() && this.getIsCharging() && this.getChargingTicks() > 0){
             this.goalSelector.getAvailableGoals().forEach(WrappedGoal::stop);
             int pastChargeTicks = this.getChargingTicks();
             this.setChargingTicks(pastChargeTicks-1);
+            this.setTarget(null);
         }
 
         if (this.getIsCharging() && this.getChargingTicks()==0){
             this.setIsCharging(false);
             this.armorUp();
             this.goalSelector.getAvailableGoals().forEach(WrappedGoal::start);
+        }
+
+        if (this.getIsCharging() && !this.onGround()){
+            this.setDeltaMovement(0, -5, 0);
         }
 
         //squish
@@ -281,8 +289,8 @@ public class EnderglopEntity extends Mob implements Enemy {
     }
 
     public void armorUp(){
-        this.setIsArmored(true);
         this.playSound(SoundEvents.ARMOR_EQUIP_NETHERITE.value(), 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+        this.setIsArmored(true);
     }
 
     @Override
@@ -454,46 +462,58 @@ public class EnderglopEntity extends Mob implements Enemy {
         }
 
         public void setDirection(float yRot, boolean aggressive) {
-            this.yRot = yRot;
-            this.isAggressive = aggressive;
+            if (!this.slime.getIsCharging()){
+                this.yRot = yRot;
+                this.isAggressive = aggressive;
+            }
         }
 
         public void setWantedMovement(double speed) {
-            this.speedModifier = speed;
-            this.operation = Operation.MOVE_TO;
+            if (!this.slime.getIsCharging()){
+                this.speedModifier = speed;
+                this.operation = Operation.MOVE_TO;
+            }
         }
 
         public void tick() {
-            this.mob.setYRot(this.rotlerp(this.mob.getYRot(), this.yRot, 90.0F));
-            this.mob.yHeadRot = this.mob.getYRot();
-            this.mob.yBodyRot = this.mob.getYRot();
-            if (this.operation != Operation.MOVE_TO) {
-                this.mob.setZza(0.0F);
-            } else {
-                this.operation = Operation.WAIT;
-                if (this.mob.onGround()) {
-                    this.mob.setSpeed((float)(this.speedModifier * this.mob.getAttributeValue(Attributes.MOVEMENT_SPEED)));
-                    if (this.jumpDelay-- <= 0) {
-                        this.jumpDelay = this.slime.getJumpDelay();
-                        if (this.isAggressive) {
-                            this.jumpDelay /= 3;
-                        }
+                this.mob.setYRot(this.rotlerp(this.mob.getYRot(), this.yRot, 90.0F));
+                this.mob.yHeadRot = this.mob.getYRot();
+                this.mob.yBodyRot = this.mob.getYRot();
 
-                        this.slime.getJumpControl().jump();
-                        if (this.slime.doPlayJumpSound()) {
-                            this.slime.playSound(this.slime.getJumpSound(), this.slime.getSoundVolume(), this.slime.getSoundPitch());
-                        }
+                if (this.slime.getIsCharging()){
+                    this.slime.xxa = 0.0F;
+                    this.slime.zza = 0.0F;
+                    this.mob.setSpeed(0.0F);
+                }else{
+                    if (this.operation != Operation.MOVE_TO) {
+                        this.mob.setZza(0.0F);
                     } else {
-                        this.slime.xxa = 0.0F;
-                        this.slime.zza = 0.0F;
-                        this.mob.setSpeed(0.0F);
+                        this.operation = Operation.WAIT;
+                        if (this.mob.onGround()) {
+                            this.mob.setSpeed((float)(this.speedModifier * this.mob.getAttributeValue(Attributes.MOVEMENT_SPEED)));
+                            if (this.jumpDelay-- <= 0) {
+                                this.jumpDelay = this.slime.getJumpDelay();
+                                if (this.isAggressive) {
+                                    this.jumpDelay /= 3;
+                                }
+
+                                this.slime.getJumpControl().jump();
+                                if (this.slime.doPlayJumpSound()) {
+                                    this.slime.playSound(this.slime.getJumpSound(), this.slime.getSoundVolume(), this.slime.getSoundPitch());
+                                }
+                            } else {
+                                this.slime.xxa = 0.0F;
+                                this.slime.zza = 0.0F;
+                                this.mob.setSpeed(0.0F);
+                            }
+                        } else {
+                            this.mob.setSpeed((float)(this.speedModifier * this.mob.getAttributeValue(Attributes.MOVEMENT_SPEED)));
+                        }
                     }
-                } else {
-                    this.mob.setSpeed((float)(this.speedModifier * this.mob.getAttributeValue(Attributes.MOVEMENT_SPEED)));
                 }
-            }
 
         }
+
     }
 
     static class SlimeFloatGoal extends Goal {
@@ -605,7 +625,7 @@ public class EnderglopEntity extends Mob implements Enemy {
 
         public boolean canContinueToUse() {
             LivingEntity livingentity = this.slime.getTarget();
-            if (livingentity == null) {
+            if (livingentity == null || this.slime.getIsCharging()) {
                 return false;
             } else {
                 return !this.slime.canAttack(livingentity) ? false : --this.growTiredTimer > 0;
