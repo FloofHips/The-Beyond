@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "the_beyond:block/plated_end_stone_top",
+    "bottom": "minecraft:block/end_stone",
+    "side": "the_beyond:block/plated_end_stone_side"
+  }
+} 

@@ -1,11 +1,14 @@
 package com.thebeyond.common.registry;
 
 import com.google.common.collect.Sets;
+import com.thebeyond.common.blocks.MagnolillyBlock;
 import com.thebeyond.common.blocks.PolarAntennaBlock;
 import com.thebeyond.common.blocks.PolarPillarBlock;
+import net.minecraft.client.resources.model.Material;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.neoforged.fml.ModList;
@@ -24,13 +27,13 @@ public class BeyondBlocks {
 
     public static LinkedHashSet<DeferredHolder<Item, BlockItem>> CREATIVE_TAB_ITEMS = Sets.newLinkedHashSet();
 
+    //Attracta Expanse
     public static final DeferredBlock<PolarPillarBlock> POLAR_PILLAR = registerBlock("polar_pillar",
             () -> new PolarPillarBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.DEEPSLATE)
                     .lightLevel(PolarPillarBlock.STATE_TO_LUMINANCE)
                     .randomTicks())
     );
-
     public static final DeferredBlock<PolarAntennaBlock> POLAR_ANTENNA = registerBlock("polar_antenna",
             () -> new PolarAntennaBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.DEEPSLATE)
@@ -41,7 +44,21 @@ public class BeyondBlocks {
                     .noOcclusion()
                     .offsetType(BlockBehaviour.OffsetType.XZ))
     );
-
+    public static final DeferredBlock<Block> PLATE_BLOCK = registerBlock("plate_block",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.DEEPSLATE)
+                    .sound(SoundType.LANTERN))
+    );
+    public static final DeferredBlock<Block> PLATED_END_STONE = registerBlock("plated_end_stone",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.DEEPSLATE)
+                    .sound(SoundType.ANCIENT_DEBRIS))
+    );
+    public static final DeferredBlock<MagnolillyBlock> MAGNOLILLY = registerBlock("magnolilly",
+            () -> new MagnolillyBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.DEEPSLATE)
+                    .sound(SoundType.ANCIENT_DEBRIS))
+    );
     @SuppressWarnings("unchecked")
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<? extends Block> block) {
         DeferredBlock<Block> toReturn = BLOCKS.register(name, block);
