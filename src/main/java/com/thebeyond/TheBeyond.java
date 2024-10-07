@@ -1,6 +1,7 @@
 package com.thebeyond;
 
 import com.thebeyond.common.registry.*;
+import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -47,5 +48,4 @@ public class TheBeyond {
     private void commonSetup(final FMLCommonSetupEvent event) {
         // Some common setup code
     }
-
 }

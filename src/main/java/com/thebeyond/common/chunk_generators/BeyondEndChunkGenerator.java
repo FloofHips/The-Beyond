@@ -36,7 +36,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     private final PerlinSimplexNoise globalHOffsetNoise;
     private final PerlinSimplexNoise globalVOffsetNoise;
     private final PerlinSimplexNoise globalCOffsetNoise;
-    private final double worldHeight = 160;
+    private final double worldHeight = 192;
 
     public BeyondEndChunkGenerator(BiomeSource biomeSource, Holder<NoiseGeneratorSettings> settings) {
         super(biomeSource, settings);
@@ -63,8 +63,9 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             int startX = chunkPos.getMinBlockX();
             int startZ = chunkPos.getMinBlockZ();
             int sizeX = 16;
-            int sizeY = 160;
+            int sizeY = 160;  // Original height before shifting
             int sizeZ = 16;
+            int terrainYOffset = 32;  // Raise terrain by 32 blocks
 
             // Octave stuff, don't touch this. PLEASE!
             int numOctaves = 4;
@@ -76,17 +77,31 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             double verticalBaseScale;
             double threshold;
             double cycleHeight;
+
             for (int x = 0; x < sizeX; x++) {
                 for (int z = 0; z < sizeZ; z++) {
-                    for (int y = 0; y < sizeY; y++) {
-                        int globalX = startX + x;
-                        int globalZ = startZ + z;
+                    int globalX = startX + x;
+                    int globalZ = startZ + z;
+
+                    // 2D noise for y=0 layer with noteblocks
+                        double noteBlockNoise = simplexNoise.getValue(globalX * 0.1, globalZ * 0.1);  // Generate 2D noise
+
+                        // Layer at y=0
+                        if (noteBlockNoise > 0.0) {
+                            chunk.setBlockState(new BlockPos(globalX, 0, globalZ), Blocks.JUKEBOX.defaultBlockState(), false);
+                            chunk.setBlockState(new BlockPos(globalX, 1, globalZ), Blocks.JUKEBOX.defaultBlockState(), false);
+
+                        }
+
+                    // Continue generating terrain noise for other Y levels, starting from y=32
+                    for (int y = 1; y < sizeY; y++) {  // Skip y=0 and y=1 since they're handled separately
+                        int shiftedY = y + terrainYOffset;  // Shift terrain by 32 blocks upwards
 
                         //min = 0.005, max = 0.015
-                        horizontalBaseScale = globalNoiseOffset(0.005, 0.015,globalX * 0.000001,globalZ * 0.000001, globalHOffsetNoise);
-                        verticalBaseScale = globalNoiseOffset(0.005, 0.015,globalX * 0.00001,globalZ * 0.00001, globalVOffsetNoise);
-                        cycleHeight = globalNoiseOffset(10, 100, globalX * 0.0001,globalZ * 0.0001, globalCOffsetNoise);
-                        threshold = globalNoiseOffset(0.01, 0.6, globalX * 0.0002,globalZ * 0.0002, globalCOffsetNoise);
+                        horizontalBaseScale = globalNoiseOffset(0.005, 0.015, globalX * 0.000001, globalZ * 0.000001, globalHOffsetNoise);
+                        verticalBaseScale = globalNoiseOffset(0.005, 0.015, globalX * 0.00001, globalZ * 0.00001, globalVOffsetNoise);
+                        cycleHeight = globalNoiseOffset(10, 100, globalX * 0.0001, globalZ * 0.0001, globalCOffsetNoise);
+                        threshold = globalNoiseOffset(0.01, 0.6, globalX * 0.0002, globalZ * 0.0002, globalCOffsetNoise);
 
                         double noiseValue = 0.0;
                         double amplitude = 1.0;
@@ -97,7 +112,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                         for (int octave = 0; octave < numOctaves; octave++) {
                             double hScale = horizontalBaseScale * frequency;
                             double vScale = verticalBaseScale * frequency;
-                            double octaveNoise = simplexNoise.getValue(globalX * hScale, y * vScale, globalZ * hScale);
+                            double octaveNoise = simplexNoise.getValue(globalX * hScale, shiftedY * vScale, globalZ * hScale);
 
                             noiseValue += octaveNoise * amplitude;
                             maxAmplitude += amplitude;
@@ -110,10 +125,10 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                         noiseValue /= maxAmplitude;
 
                         // Apply sine wave gaps
-                        double densityModifier = cyclicDensity(y, cycleHeight);
+                        double densityModifier = cyclicDensity(shiftedY, cycleHeight);
                         noiseValue *= densityModifier;
 
-                        BlockPos blockPos = new BlockPos(globalX, y, globalZ);
+                        BlockPos blockPos = new BlockPos(globalX, shiftedY, globalZ);
                         double finalValue = edgeGradient(blockPos.getY(), worldHeight, noiseValue);
                         if (finalValue > threshold) {
                             chunk.setBlockState(blockPos, Blocks.END_STONE.defaultBlockState(), false);
@@ -125,6 +140,8 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             return chunk;
         });
     }
+
+
     private double cyclicDensity(int y, double cycleHeight) {
         double normalizedY = (y % cycleHeight) / cycleHeight;
         if (normalizedY < 0.8) {
@@ -138,14 +155,17 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         double gradientBottom = 1.0;
         double gradientTop = 1.0;
 
-        // Bottom up gradient density.. deleter thing... from 0 to 32
-        if (y <= 32) {
-            gradientBottom = y / 32.0;
+        // Adjust the bottom gradient to start at y=32 and go up to y=64
+        if (y <= 64) {  // Adjust the gradient range to be between 32 and 64
+            gradientBottom = (y - 32) / 32.0;  // Normalize the value to a range of 0 to 1 from y=32 to y=64
+            if (y < 32) {
+                gradientBottom = 0.0;  // Below y=32, the gradient should be 0
+            }
         }
 
         // Same thing from the top
         if (y >= (worldHeight - 64)) {
-            gradientTop = (worldHeight - y) / 64;
+            gradientTop = (worldHeight - y) / 64.0;
         }
 
         return gradientBottom * gradientTop * noiseValue;
