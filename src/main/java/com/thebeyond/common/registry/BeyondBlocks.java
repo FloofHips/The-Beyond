@@ -3,6 +3,7 @@ package com.thebeyond.common.registry;
 import com.google.common.collect.Sets;
 import com.thebeyond.common.blocks.MagnolillyBlock;
 import com.thebeyond.common.blocks.PolarAntennaBlock;
+import com.thebeyond.common.blocks.PolarBulbBlock;
 import com.thebeyond.common.blocks.PolarPillarBlock;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.world.item.BlockItem;
@@ -32,6 +33,12 @@ public class BeyondBlocks {
             () -> new PolarPillarBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.DEEPSLATE)
                     .lightLevel(PolarPillarBlock.STATE_TO_LUMINANCE)
+                    .randomTicks())
+    );
+    public static final DeferredBlock<PolarBulbBlock> POLAR_BULB = registerBlock("polar_bulb",
+            () -> new PolarBulbBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.DEEPSLATE)
+                    .lightLevel(PolarBulbBlock.STATE_TO_LUMINANCE)
                     .randomTicks())
     );
     public static final DeferredBlock<PolarAntennaBlock> POLAR_ANTENNA = registerBlock("polar_antenna",

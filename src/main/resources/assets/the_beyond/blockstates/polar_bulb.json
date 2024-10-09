@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "glop_charge=0": {
+      "model": "the_beyond:block/attracta_expanse/polar_pillar/bulb_0"
+    },
+    "glop_charge=1": {
+      "model": "the_beyond:block/attracta_expanse/polar_pillar/bulb_1"
+    },
+    "glop_charge=2": {
+      "model": "the_beyond:block/attracta_expanse/polar_pillar/bulb_2"
+    },
+    "glop_charge=3": {
+      "model": "the_beyond:block/attracta_expanse/polar_pillar/bulb_3"
+    },
+    "glop_charge=4": {
+      "model": "the_beyond:block/attracta_expanse/polar_pillar/bulb_4"
+    }
+  }
+}
