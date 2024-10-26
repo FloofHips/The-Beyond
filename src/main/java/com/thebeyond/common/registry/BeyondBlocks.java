@@ -68,7 +68,7 @@ public class BeyondBlocks {
                     .offsetType(BlockBehaviour.OffsetType.XZ))
 
     );
-    public static final DeferredBlock<GellidVoidBlock> GELLID_VOID = registerBlock("gellid_void",
+    public static final DeferredBlock<GellidVoidBlock> GELLID_VOID = registerBlockWithoutItem("gellid_void",
             () -> new GellidVoidBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_PURPLE)
                     .forceSolidOff()
@@ -76,11 +76,23 @@ public class BeyondBlocks {
                     .noOcclusion())
     );
 
+    @SuppressWarnings("unchecked")
+    private static <T extends Block> DeferredBlock<T> registerBlockWithoutItem(String name, Supplier<? extends Block> block) {
+        DeferredBlock<Block> toReturn = BLOCKS.register(name, block);
+        return (DeferredBlock<T>) toReturn;
+    }
 
     @SuppressWarnings("unchecked")
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<? extends Block> block) {
         DeferredBlock<Block> toReturn = BLOCKS.register(name, block);
         CREATIVE_TAB_ITEMS.add(registerBlockItem(name, toReturn));
+        return (DeferredBlock<T>) toReturn;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Block> DeferredBlock<T> registerIntegrationBlockWithoutItem(String name, Supplier<? extends Block> block, String modId) {
+        if (!ModList.get().isLoaded(modId)) return null;
+        DeferredBlock<Block> toReturn = BLOCKS.register(name, block);
         return (DeferredBlock<T>) toReturn;
     }
 
