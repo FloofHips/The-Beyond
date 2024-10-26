@@ -1,10 +1,7 @@
 package com.thebeyond.common.registry;
 
 import com.google.common.collect.Sets;
-import com.thebeyond.common.blocks.MagnolillyBlock;
-import com.thebeyond.common.blocks.PolarAntennaBlock;
-import com.thebeyond.common.blocks.PolarBulbBlock;
-import com.thebeyond.common.blocks.PolarPillarBlock;
+import com.thebeyond.common.blocks.*;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -64,8 +61,22 @@ public class BeyondBlocks {
     public static final DeferredBlock<MagnolillyBlock> MAGNOLILLY = registerBlock("magnolilly",
             () -> new MagnolillyBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.DEEPSLATE)
-                    .sound(SoundType.ANCIENT_DEBRIS))
+                    .sound(SoundType.ANCIENT_DEBRIS)
+                    .forceSolidOff()
+                    .noCollission()
+                    .noOcclusion()
+                    .offsetType(BlockBehaviour.OffsetType.XZ))
+
     );
+    public static final DeferredBlock<GellidVoidBlock> GELLID_VOID = registerBlock("gellid_void",
+            () -> new GellidVoidBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_PURPLE)
+                    .forceSolidOff()
+                    .noCollission()
+                    .noOcclusion())
+    );
+
+
     @SuppressWarnings("unchecked")
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<? extends Block> block) {
         DeferredBlock<Block> toReturn = BLOCKS.register(name, block);
