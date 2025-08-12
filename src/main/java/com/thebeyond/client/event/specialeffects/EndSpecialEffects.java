@@ -53,7 +53,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         float rain = level.getRainLevel(partialTicks);
         float thunder = level.getThunderLevel(partialTicks);
 
-        float position = Mth.clamp((float) (Minecraft.getInstance().player.position().y + 132 / 387), 0, 1);
+        float position = Mth.clamp((float) ((Minecraft.getInstance().player.position().y + 192) / 300), 0, 1);
 
         if (thunder > 0) {
             float time = (level.getGameTime() + partialTicks) * 0.1f;

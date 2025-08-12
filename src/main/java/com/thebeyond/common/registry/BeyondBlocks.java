@@ -5,7 +5,7 @@ import com.thebeyond.common.blocks.AuroraciteBlock;
 import com.thebeyond.common.blocks.MagnolillyBlock;
 import com.thebeyond.common.blocks.PolarAntennaBlock;
 import com.thebeyond.common.blocks.PolarPillarBlock;
-import net.minecraft.client.resources.model.Material;
+import com.thebeyond.common.blocks.*;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -41,6 +41,12 @@ public class BeyondBlocks {
                     .lightLevel(PolarPillarBlock.STATE_TO_LUMINANCE)
                     .randomTicks())
     );
+    public static final DeferredBlock<PolarBulbBlock> POLAR_BULB = registerBlock("polar_bulb",
+            () -> new PolarBulbBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.DEEPSLATE)
+                    .lightLevel(PolarBulbBlock.STATE_TO_LUMINANCE)
+                    .randomTicks())
+    );
     public static final DeferredBlock<PolarAntennaBlock> POLAR_ANTENNA = registerBlock("polar_antenna",
             () -> new PolarAntennaBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.DEEPSLATE)
@@ -64,12 +70,38 @@ public class BeyondBlocks {
     public static final DeferredBlock<MagnolillyBlock> MAGNOLILLY = registerBlock("magnolilly",
             () -> new MagnolillyBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.DEEPSLATE)
-                    .sound(SoundType.ANCIENT_DEBRIS))
+                    .sound(SoundType.ANCIENT_DEBRIS)
+                    .forceSolidOff()
+                    .noCollission()
+                    .noOcclusion()
+                    .offsetType(BlockBehaviour.OffsetType.XZ))
+
     );
+    public static final DeferredBlock<GellidVoidBlock> GELLID_VOID = registerBlockWithoutItem("gellid_void",
+            () -> new GellidVoidBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_PURPLE)
+                    .forceSolidOff()
+                    .noCollission()
+                    .noOcclusion())
+    );
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Block> DeferredBlock<T> registerBlockWithoutItem(String name, Supplier<? extends Block> block) {
+        DeferredBlock<Block> toReturn = BLOCKS.register(name, block);
+        return (DeferredBlock<T>) toReturn;
+    }
+
     @SuppressWarnings("unchecked")
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<? extends Block> block) {
         DeferredBlock<Block> toReturn = BLOCKS.register(name, block);
         CREATIVE_TAB_ITEMS.add(registerBlockItem(name, toReturn));
+        return (DeferredBlock<T>) toReturn;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Block> DeferredBlock<T> registerIntegrationBlockWithoutItem(String name, Supplier<? extends Block> block, String modId) {
+        if (!ModList.get().isLoaded(modId)) return null;
+        DeferredBlock<Block> toReturn = BLOCKS.register(name, block);
         return (DeferredBlock<T>) toReturn;
     }
 

@@ -23,9 +23,20 @@ public class GlopParticle extends TextureSheetParticle {
 
     public void tick() {
         super.tick();
+        EnderglopEntity nearestGlop = level.getNearestEntity(EnderglopEntity.class, TargetingConditions.forNonCombat(), null, x, y, z,
+                new AABB(x+10, y+10, z+10, x-10, y-10, z-10));
+        if (nearestGlop != null) {
+            Vec3 nearestGlopPos = nearestGlop.position();
+            double xd = nearestGlopPos.x - x;
+            double yd = nearestGlopPos.y - y;
+            double zd = nearestGlopPos.z - z;
+            this.move(xd*age / lifetime, yd*age / lifetime, zd*age / lifetime);
+
+            if (this.getPos().distanceTo(nearestGlopPos) < nearestGlop.getSize()*0.3) this.remove();
+        }
     }
     @Override
     public ParticleRenderType getRenderType() {
-        return ParticleRenderType.PARTICLE_SHEET_OPAQUE;
+        return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
     }
 }

@@ -89,8 +89,8 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
                         // Layer at y=0
                         if (auroraNoise > 0.0) {
-                            chunk.setBlockState(new BlockPos(globalX, 0, globalZ), BeyondBlocks.AURORACITE.get().defaultBlockState(), false);
-                            chunk.setBlockState(new BlockPos(globalX, 1, globalZ), BeyondBlocks.AURORACITE.get().defaultBlockState(), false);
+                            chunk.setBlockState(new BlockPos(globalX, 20, globalZ), BeyondBlocks.AURORACITE.get().defaultBlockState(), false);
+                            chunk.setBlockState(new BlockPos(globalX, 21, globalZ), BeyondBlocks.AURORACITE.get().defaultBlockState(), false);
 
                         }
 
