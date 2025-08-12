@@ -31,7 +31,7 @@ import java.util.function.ToIntFunction;
 public class PolarAntennaBlock extends Block implements IMagneticReceiver {
     public static final MapCodec<PolarAntennaBlock> CODEC = simpleCodec(PolarAntennaBlock::new);
 
-    private static final float STOP_CHANCE = 0.1f;
+    private static final float STOP_CHANCE = 0.125f;
     private static final int DELAY = 3;
 
     public static final BooleanProperty COOLDOWN;

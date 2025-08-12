@@ -1,35 +1,19 @@
 {
   "variants": {
-    "is_bulb=false,polar_charge=0": {
+    "polar_charge=0": {
       "model": "the_beyond:block/attracta_expanse/polar_pillar/pillar_0"
     },
-    "is_bulb=false,polar_charge=1": {
+    "polar_charge=1": {
       "model": "the_beyond:block/attracta_expanse/polar_pillar/pillar_1"
     },
-    "is_bulb=false,polar_charge=2": {
+    "polar_charge=2": {
       "model": "the_beyond:block/attracta_expanse/polar_pillar/pillar_2"
     },
-    "is_bulb=false,polar_charge=3": {
+    "polar_charge=3": {
       "model": "the_beyond:block/attracta_expanse/polar_pillar/pillar_3"
     },
-    "is_bulb=false,polar_charge=4": {
+    "polar_charge=4": {
       "model": "the_beyond:block/attracta_expanse/polar_pillar/pillar_4"
-    },
-
-    "is_bulb=true,glop_charge=0": {
-      "model": "the_beyond:block/attracta_expanse/polar_pillar/bulb_0"
-    },
-    "is_bulb=true,glop_charge=1": {
-      "model": "the_beyond:block/attracta_expanse/polar_pillar/bulb_1"
-    },
-    "is_bulb=true,glop_charge=2": {
-      "model": "the_beyond:block/attracta_expanse/polar_pillar/bulb_2"
-    },
-    "is_bulb=true,glop_charge=3": {
-      "model": "the_beyond:block/attracta_expanse/polar_pillar/bulb_3"
-    },
-    "is_bulb=true,glop_charge=4": {
-      "model": "the_beyond:block/attracta_expanse/polar_pillar/bulb_4"
     }
   }
 }
