@@ -46,6 +46,6 @@ public class TheBeyond {
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
-        // Some common setup code
+
     }
 }

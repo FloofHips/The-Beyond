@@ -1,0 +1,37 @@
+{
+	"credit": "Made with Blockbench",
+	"ambientocclusion": false,
+	"textures": {
+		"1": "the_beyond:block/auroracite_outer",
+		"particle": "the_beyond:block/auroracite_outer",
+		"texture": "the_beyond:block/auroracite"
+	},
+	"elements": [
+		{
+			"from": [0, 0, 0],
+			"to": [16, 16, 16],
+			"shade": false,
+			"faces": {
+				"north": {"uv": [0, 0, 16, 16], "texture": "#texture","cullface": "north", "tintindex": 0 },
+				"east": {"uv": [0, 0, 16, 16], "texture": "#texture","cullface": "east", "tintindex": 0 },
+				"south": {"uv": [0, 0, 16, 16], "texture": "#texture","cullface": "south", "tintindex": 0 },
+				"west": {"uv": [0, 0, 16, 16], "texture": "#texture","cullface": "west", "tintindex": 0 },
+				"up": {"uv": [0, 0, 16, 16], "texture": "#texture","cullface": "up", "tintindex": 0 },
+				"down": {"uv": [0, 0, 16, 16], "texture": "#texture","cullface": "down", "tintindex": 0 }
+			}
+		},
+		{
+			"from": [-2, -2, 18],
+			"to": [18, 18, -2],
+			"shade": false,
+			"faces": {
+				"north": {"uv": [0, 0, 16, 16], "texture": "#1","cullface": "south"},
+				"east": {"uv": [0, 0, 16, 16], "texture": "#1","cullface": "east"},
+				"south": {"uv": [0, 0, 16, 16], "texture": "#1","cullface": "north"},
+				"west": {"uv": [0, 0, 16, 16], "texture": "#1","cullface": "west"},
+				"up": {"uv": [0, 0, 16, 16], "texture": "#1","cullface": "up"},
+				"down": {"uv": [0, 0, 16, 16], "texture": "#1","cullface": "down"}
+			}
+		}
+	]
+}

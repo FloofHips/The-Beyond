@@ -1,5 +1,5 @@
 {
-  "type": "minecraft:the_end",
+  "type": "the_beyond:the_end",
   "generator": {
     "type": "the_beyond:beyond_end",
     "settings": "minecraft:end",

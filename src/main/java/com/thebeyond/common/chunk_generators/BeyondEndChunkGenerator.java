@@ -2,6 +2,7 @@ package com.thebeyond.common.chunk_generators;
 
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.thebeyond.common.registry.BeyondBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.util.RandomSource;
@@ -84,12 +85,12 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                     int globalZ = startZ + z;
 
                     // 2D noise for y=0 layer with noteblocks
-                        double noteBlockNoise = simplexNoise.getValue(globalX * 0.1, globalZ * 0.1);  // Generate 2D noise
+                        double auroraNoise = simplexNoise.getValue(globalX * 0.1, globalZ * 0.1);  // Generate 2D noise
 
                         // Layer at y=0
-                        if (noteBlockNoise > 0.0) {
-                            chunk.setBlockState(new BlockPos(globalX, 0, globalZ), Blocks.JUKEBOX.defaultBlockState(), false);
-                            chunk.setBlockState(new BlockPos(globalX, 1, globalZ), Blocks.JUKEBOX.defaultBlockState(), false);
+                        if (auroraNoise > 0.0) {
+                            chunk.setBlockState(new BlockPos(globalX, 0, globalZ), BeyondBlocks.AURORACITE.get().defaultBlockState(), false);
+                            chunk.setBlockState(new BlockPos(globalX, 1, globalZ), BeyondBlocks.AURORACITE.get().defaultBlockState(), false);
 
                         }
 

@@ -1,6 +1,7 @@
 package com.thebeyond.common.registry;
 
 import com.google.common.collect.Sets;
+import com.thebeyond.common.blocks.AuroraciteBlock;
 import com.thebeyond.common.blocks.MagnolillyBlock;
 import com.thebeyond.common.blocks.PolarAntennaBlock;
 import com.thebeyond.common.blocks.PolarPillarBlock;
@@ -27,6 +28,12 @@ public class BeyondBlocks {
 
     public static LinkedHashSet<DeferredHolder<Item, BlockItem>> CREATIVE_TAB_ITEMS = Sets.newLinkedHashSet();
 
+    //Path
+    public static final DeferredBlock<Block> AURORACITE = registerBlock("auroracite",
+            () -> new AuroraciteBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_BLUE)
+                    .sound(SoundType.SHROOMLIGHT))
+    );
     //Attracta Expanse
     public static final DeferredBlock<PolarPillarBlock> POLAR_PILLAR = registerBlock("polar_pillar",
             () -> new PolarPillarBlock(BlockBehaviour.Properties.of()
