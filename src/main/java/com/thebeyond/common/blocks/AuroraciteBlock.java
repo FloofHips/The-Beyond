@@ -14,6 +14,9 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class AuroraciteBlock extends Block {
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
@@ -29,22 +32,19 @@ public class AuroraciteBlock extends Block {
     }
 
     @Override
-    protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        super.tick(state, level, pos, random);
-        level.setBlockAndUpdate(pos, state.setValue(POWERED, false));
+    public void stepOn(Level level, BlockPos pos, BlockState state, Entity entity) {
+
+        if (level instanceof ServerLevel serverLevel && !state.getValue(POWERED) && entity.getKnownMovement().length() > 0.1F) {
+            level.setBlockAndUpdate(pos, state.setValue(POWERED, true));
+            level.scheduleTick(pos, this, 20);
+            serverLevel.sendParticles(BeyondParticleTypes.AURORACITE_STEP.get(), pos.getX() + 0.5, pos.getY() + 1.01, pos.getZ() + 0.5, 1, 0, 0.1, 0, 0);
+        }
+        super.stepOn(level, pos, state, entity);
     }
 
     @Override
-    public void stepOn(Level level, BlockPos pos, BlockState state, Entity entity) {
-        if(entity.getDeltaMovement().length() < 0.1f) return;
-
-        if (!state.getValue(POWERED)) {
-            level.setBlockAndUpdate(pos, state.setValue(POWERED, true));
-            level.addParticle(BeyondParticleTypes.AURORACITE_STEP.get(), pos.getX() + 0.5, pos.getY() + 1.01, pos.getZ() + 0.5, 0, 0.1,0);
-            level.scheduleTick(pos, this, 20);
-        }
-
-        super.stepOn(level, pos, state, entity);
+    protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        level.setBlockAndUpdate(pos, state.setValue(POWERED, false));
     }
 
     @Override
