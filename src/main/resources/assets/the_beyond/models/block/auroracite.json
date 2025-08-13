@@ -1,9 +1,9 @@
 {
-	"credit": "Made with Blockbench",
+	"parent": "minecraft:block/block",
 	"ambientocclusion": false,
 	"textures": {
 		"1": "the_beyond:block/auroracite_outer",
-		"particle": "the_beyond:block/auroracite_outer",
+		"particle": "the_beyond:block/auroracite_particle",
 		"texture": "the_beyond:block/auroracite"
 	},
 	"elements": [
@@ -33,5 +33,12 @@
 				"down": {"uv": [0, 0, 16, 16], "texture": "#1","cullface": "down"}
 			}
 		}
-	]
+	],
+	"display": {
+		"gui": {
+			"rotation": [ 30, 225, 0 ],
+			"translation": [ 0, 0, 0],
+			"scale":[ 0.5, 0.5, 0.5 ]
+		}
+	}
 }
