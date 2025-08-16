@@ -1,0 +1,90 @@
+{
+  "multipart": [
+    {
+      "apply": [
+        {
+          "model": "the_beyond:block/void_flame_floor0"
+        },
+        {
+          "model": "the_beyond:block/void_flame_floor1"
+        }
+      ]
+    },
+    {
+      "apply": [
+        {
+          "model": "the_beyond:block/void_flame_side0"
+        },
+        {
+          "model": "the_beyond:block/void_flame_side1"
+        },
+        {
+          "model": "the_beyond:block/void_flame_side_alt0"
+        },
+        {
+          "model": "the_beyond:block/void_flame_side_alt1"
+        }
+      ]
+    },
+    {
+      "apply": [
+        {
+          "model": "the_beyond:block/void_flame_side0",
+          "y": 90
+        },
+        {
+          "model": "the_beyond:block/void_flame_side1",
+          "y": 90
+        },
+        {
+          "model": "the_beyond:block/void_flame_side_alt0",
+          "y": 90
+        },
+        {
+          "model": "the_beyond:block/void_flame_side_alt1",
+          "y": 90
+        }
+      ]
+    },
+    {
+      "apply": [
+        {
+          "model": "the_beyond:block/void_flame_side0",
+          "y": 180
+        },
+        {
+          "model": "the_beyond:block/void_flame_side1",
+          "y": 180
+        },
+        {
+          "model": "the_beyond:block/void_flame_side_alt0",
+          "y": 180
+        },
+        {
+          "model": "the_beyond:block/void_flame_side_alt1",
+          "y": 180
+        }
+      ]
+    },
+    {
+      "apply": [
+        {
+          "model": "the_beyond:block/void_flame_side0",
+          "y": 270
+        },
+        {
+          "model": "the_beyond:block/void_flame_side1",
+          "y": 270
+        },
+        {
+          "model": "the_beyond:block/void_flame_side_alt0",
+          "y": 270
+        },
+        {
+          "model": "the_beyond:block/void_flame_side_alt1",
+          "y": 270
+        }
+      ]
+    }
+  ]
+}

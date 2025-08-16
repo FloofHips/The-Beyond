@@ -1,0 +1,25 @@
+{
+  "variants": {
+    "up=true,height=tip": {
+      "model": "the_beyond:block/void_crystal_tip"
+    },
+    "up=true,height=core": {
+      "model": "the_beyond:block/void_crystal_core"
+    },
+    "up=true,height=base": {
+      "model": "the_beyond:block/void_crystal_base"
+    },
+    "up=false,height=tip": {
+      "model": "the_beyond:block/void_crystal_tip",
+      "x": 180
+    },
+    "up=false,height=core": {
+      "model": "the_beyond:block/void_crystal_core",
+      "x": 180
+    },
+    "up=false,height=base": {
+      "model": "the_beyond:block/void_crystal_base",
+      "x": 180
+    }
+  }
+}

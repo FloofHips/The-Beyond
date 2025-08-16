@@ -9,6 +9,8 @@ import com.thebeyond.common.blocks.*;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.FireBlock;
+import net.minecraft.world.level.block.SoulFireBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
@@ -28,6 +30,22 @@ public class BeyondBlocks {
 
     public static LinkedHashSet<DeferredHolder<Item, BlockItem>> CREATIVE_TAB_ITEMS = Sets.newLinkedHashSet();
 
+    //Generic
+    public static final DeferredBlock<Block> VOID_FLAME = registerBlock("void_flame",
+            () -> new VoidFlameBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_PURPLE)
+                    .sound(SoundType.SHROOMLIGHT))
+
+    );
+    public static final DeferredBlock<Block> VOID_CRYSTAL = registerBlock("void_crystal",
+            () -> new VoidCrystalBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_PURPLE)
+                    .sound(SoundType.SHROOMLIGHT)
+                    .noOcclusion()
+                    .offsetType(BlockBehaviour.OffsetType.XZ)
+                    .dynamicShape())
+
+    );
     //Path
     public static final DeferredBlock<Block> AURORACITE = registerBlock("auroracite",
             () -> new AuroraciteBlock(BlockBehaviour.Properties.of()

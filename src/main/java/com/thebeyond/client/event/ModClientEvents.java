@@ -14,6 +14,7 @@ import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondEntityTypes;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.util.ColorUtils;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.resources.ResourceLocation;
@@ -23,10 +24,12 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.*;
+import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
+import net.neoforged.neoforge.event.entity.living.LivingGetProjectileEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
 @SuppressWarnings("unused")
-@EventBusSubscriber(modid = TheBeyond.MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@EventBusSubscriber(modid = TheBeyond.MODID, value = Dist.CLIENT)
 public class ModClientEvents {
 
     @SubscribeEvent
@@ -71,4 +74,20 @@ public class ModClientEvents {
     public static void dimensionSpecialEffects(RegisterDimensionSpecialEffectsEvent event){
         event.register(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"), new EndSpecialEffects());
     }
+
+    @SubscribeEvent
+    public static void onRenderFog(ViewportEvent.RenderFog event){
+        event.setCanceled(true);
+        event.setFogShape(FogShape.SPHERE);
+        event.setFarPlaneDistance((float) Minecraft.getInstance().cameraEntity.position().y + 30);
+        event.setNearPlaneDistance(15);
+    }
+
+    @SubscribeEvent
+    public static void fogColor(ViewportEvent.ComputeFogColor event){
+        event.setRed(0);
+        event.setGreen(0);
+        event.setBlue(0);
+    }
+
 }
