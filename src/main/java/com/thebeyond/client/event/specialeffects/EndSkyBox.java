@@ -1,5 +1,6 @@
 package com.thebeyond.client.event.specialeffects;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Axis;
@@ -8,19 +9,23 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.DimensionSpecialEffects;
+import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.material.FogType;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
-public class EndSpecialEffects extends DimensionSpecialEffects {
+public class EndSkyBox {
+    EndSkyBox(){
+
+    }
     private static final int SKY_GRADIENT_LAYERS = 16;
     private static final float SKY_RADIUS = 100.0F;
 
@@ -31,79 +36,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
 
     private static final ResourceLocation SHOOTING_STAR_LOCATION1 = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/environment/shooting_star1.png");
     private static final ResourceLocation SHOOTING_STAR_LOCATION2 = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/environment/shooting_star2.png");
-
-
-    public EndSpecialEffects() {
-        super(Float.NaN, false, SkyType.NORMAL, false, false);
-    }
-
-    @Override
-    public Vec3 getBrightnessDependentFogColor(Vec3 biomeFogColor, float daylight) {
-        Level level = Minecraft.getInstance().level;
-        if (level == null) return biomeFogColor;
-
-        if (level.isThundering()) {
-            return biomeFogColor.subtract(0,1 * level.thunderLevel,0);
-        } else if (level.isRaining()) {
-            return biomeFogColor.subtract(0,0.3 * level.rainLevel,0);
-        }
-        return biomeFogColor;
-    }
-
-    @Nullable
-    @Override
-    public float[] getSunriseColor(float timeOfDay, float partialTicks) {
-        return super.getSunriseColor(6000, partialTicks);
-    }
-
-    @Override
-    public boolean isFoggyAt(int i, int i1) {
-        return false;
-    }
-
-    @Override
-    public boolean tickRain(ClientLevel level, int ticks, Camera camera) {
-        return true;
-    }
-
-    @Override
-    public void adjustLightmapColors(ClientLevel level, float partialTicks, float skyDarken,
-                                     float blockLightRedFlicker, float skyLight,
-                                     int pixelX, int pixelY, Vector3f colors) {
-
-        float rain = level.getRainLevel(partialTicks);
-        float thunder = level.getThunderLevel(partialTicks);
-
-        float position = Mth.clamp((float) (((Minecraft.getInstance().player.position().y) - 100) / 100), 0, 1);
-
-        if (thunder > 0) {
-            float time = (level.getGameTime() + partialTicks) * 0.01f;
-
-            float red = Mth.clamp(Mth.sin(time) * 0.7f + 0.7f, 0f, 1f);
-            float green = Mth.clamp(Mth.sin(time + Mth.TWO_PI/3f) * 0.3f + 0.2f, 0f, 0f);
-            float blue = Mth.clamp(Mth.sin(time + Mth.TWO_PI*2f/3f) * 0.8f + 0.5f, 0f, 1f);
-
-            //if( Minecraft.getInstance().player.position().y > 100 )
-                colors.set(
-                        Mth.lerp(thunder, colors.x(), Mth.lerp(position, colors.x(),colors.x() + red)),
-                        Mth.lerp(thunder, colors.y(), Mth.lerp(position, colors.y() * 0.7f, colors.y())),
-                        Mth.lerp(thunder, colors.z(), Mth.lerp(position, colors.z(),colors.z() + blue))
-                );
-        } else if (rain > 0) {
-            colors.set(
-                    Mth.lerp(rain, colors.x(), colors.x()),
-                    Mth.lerp(rain, colors.y(), colors.y() * 0.7f),
-                    Mth.lerp(rain, colors.z(), colors.z())
-            );
-        } else {
-            colors.set(
-                    Mth.lerp(rain, colors.x(), colors.x() * 1.7f),
-                    Mth.lerp(rain, colors.y(), colors.y() * 0.5f),
-                    Mth.lerp(rain, colors.z(), colors.z() * 1.7f)
-            );
-        }
-    }
-
+    // ClientLevel level, int ticks, float partialTick, Matrix4f modelViewMatrix, Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog
     public boolean renderSky(ClientLevel level, int ticks, float partialTick, Matrix4f modelViewMatrix, Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
         if (isFoggy) {
             return false;
@@ -122,7 +55,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         Tesselator tesselator = Tesselator.getInstance();
 
         drawTopSkyGradient(poseStack, tesselator, level);
-        //drawBottomSkyGradient(poseStack, tesselator, level);
+        drawBottomSkyGradient(poseStack, tesselator, level);
         //drawNadir(poseStack);
 
         this.renderShootingStars(level, poseStack, tesselator, 95, 1f,    100);
@@ -145,7 +78,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         return true;
     }
 
-    private void drawTopSkyGradient(PoseStack poseStack, Tesselator tesselator, ClientLevel level) {
+    private static void drawTopSkyGradient(PoseStack poseStack, Tesselator tesselator, ClientLevel level) {
         RenderSystem.disableCull();
         Matrix4f matrix = poseStack.last().pose();
 
@@ -159,8 +92,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         Vec3 rgbfogColor = new Vec3(r,g,b);
 
         //float gamma = Minecraft.getInstance().options.gamma().get().floatValue();
-        //Vec3 skyColorVector = this.getBrightnessDependentFogColor(rgbfogColor,0);//.multiply(gamma, gamma, gamma);
-        Vector4f skyColorVector = TS_COLOR;
+        Vec3 skyColorVector = level.effects().getBrightnessDependentFogColor(rgbfogColor,0);//.multiply(gamma, gamma, gamma);
 
         //float fogRed = RenderSystem.getShaderFogColor()[0];
         //float fogGreen = RenderSystem.getShaderFogColor()[1];
@@ -178,19 +110,19 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
             float angle = (float)i * ((float)Math.PI * 2F) / 6F;
             float x = (float)Math.sin(angle) * radius;
             float z = (float)Math.cos(angle) * radius;
-            bufferbuilder.addVertex(matrix, x, -50, z)
-                    .setColor((float) skyColorVector.x(), (float) skyColorVector.y(), (float) skyColorVector.z(), 0.0f);
+            bufferbuilder.addVertex(matrix, x, -10, z)
+                    .setColor((float) skyColorVector.x(), (float) skyColorVector.y(), (float) skyColorVector.z(), 1.0f);
         }
 
-        bufferbuilder.addVertex(matrix, 0, -50, radius)
-                .setColor((float) skyColorVector.x(), (float) skyColorVector.y(), (float) skyColorVector.z(), 0.0f);
+        bufferbuilder.addVertex(matrix, 0, -10, radius)
+                .setColor((float) skyColorVector.x(), (float) skyColorVector.y(), (float) skyColorVector.z(), 1.0f);
 
         BufferUploader.drawWithShader(bufferbuilder.buildOrThrow());
 
         RenderSystem.enableCull();
     }
 
-    private void drawBottomSkyGradient(PoseStack poseStack, Tesselator tesselator, ClientLevel level) {
+    private static void drawBottomSkyGradient(PoseStack poseStack, Tesselator tesselator, ClientLevel level) {
         RenderSystem.disableCull();
         Matrix4f matrix = poseStack.last().pose();
 
@@ -203,8 +135,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         float b = (fogColor & 0xFF) / 255.0f;
         Vec3 rgbfogColor = new Vec3(r,g,b);
         //float gamma = Minecraft.getInstance().options.gamma().get().floatValue();
-        //Vec3 skyColorVector = level.effects().getBrightnessDependentFogColor(rgbfogColor,0);//.multiply(gamma, gamma, gamma);
-        Vector4f skyColorVector = TS_COLOR;
+        Vec3 skyColorVector = level.effects().getBrightnessDependentFogColor(rgbfogColor,0);//.multiply(gamma, gamma, gamma);
 
         float radius = SKY_RADIUS;
         Vector4f color = TS_COLOR;
@@ -231,7 +162,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         RenderSystem.enableCull();
     }
 
-    private void drawNadir(PoseStack poseStack) {
+    private static void drawNadir(PoseStack poseStack) {
         RenderSystem.disableCull();
         Tesselator tesselator = Tesselator.getInstance();
         Matrix4f matrix = poseStack.last().pose();
@@ -344,7 +275,5 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
     //    BufferUploader.drawWithShader(bufferBuilder.end());
     //    poseStack.popPose();
     //}
-
-
-
 }
+

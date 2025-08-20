@@ -14,10 +14,14 @@ import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondEntityTypes;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.util.ColorUtils;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColors;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.entity.EntityRenderers;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -84,10 +88,30 @@ public class ModClientEvents {
     }
 
     @SubscribeEvent
-    public static void fogColor(ViewportEvent.ComputeFogColor event){
-        event.setRed(0);
-        event.setGreen(0);
-        event.setBlue(0);
+    public static void fogColor(ViewportEvent.ComputeFogColor event) {
+        //Minecraft minecraft = Minecraft.getInstance();
+        //ClientLevel level = minecraft.level;
+        //if (level == null) return;
+//
+        //Camera camera = minecraft.gameRenderer.getMainCamera();
+        //BlockPos cameraPos = BlockPos.containing(camera.getPosition());
+        //Biome biome = level.getBiome(cameraPos).value();
+        float gamma = Minecraft.getInstance().options.gamma().get().floatValue();
+//
+        //int fogColor = biome.getFogColor();
+        //float r = ((fogColor >> 16) & 0xFF) / 255.0f;
+        //float g = ((fogColor >> 8) & 0xFF) / 255.0f;
+        //float b = (fogColor & 0xFF) / 255.0f;
+//
+        //Vec3 rgbfogColor = new Vec3(r, g, b);
+        //Vec3 skyColorVector = level.effects().getBrightnessDependentFogColor(rgbfogColor, 0);
+//
+        //event.setRed((float) skyColorVector.x * gamma);
+        //event.setGreen((float) skyColorVector.y * gamma);
+        //event.setBlue((float) skyColorVector.z * gamma);
+        //event.setRed(event.getRed() / gamma);
+        //event.setGreen(event.getGreen() / gamma);
+        //event.setBlue(event.getBlue() / gamma);
     }
 
 }
