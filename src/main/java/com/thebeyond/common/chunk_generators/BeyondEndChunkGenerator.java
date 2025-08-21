@@ -39,6 +39,12 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     private final PerlinSimplexNoise globalCOffsetNoise;
     private final double worldHeight = 192;
 
+    // Constants for deterministic access
+    private static final int NUM_OCTAVES = 4;
+    private static final double LACUNARITY = 2.0;
+    private static final double PERSISTENCE = 0.5;
+    private static final int TERRAIN_Y_OFFSET = 32;
+
     public BeyondEndChunkGenerator(BiomeSource biomeSource, Holder<NoiseGeneratorSettings> settings) {
         super(biomeSource, settings);
         this.settings = settings;
@@ -57,82 +63,89 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         return CODEC;
     }
 
+    public double getHorizontalBaseScale(int globalX, int globalZ) {
+        return globalNoiseOffset(0.005, 0.015, globalX * 0.000001, globalZ * 0.000001, globalHOffsetNoise);
+    }
+
+    public double getVerticalBaseScale(int globalX, int globalZ) {
+        return globalNoiseOffset(0.005, 0.015, globalX * 0.00001, globalZ * 0.00001, globalVOffsetNoise);
+    }
+
+    public double getCycleHeight(int globalX, int globalZ) {
+        return globalNoiseOffset(10, 100, globalX * 0.0001, globalZ * 0.0001, globalCOffsetNoise);
+    }
+
+    public double getThreshold(int globalX, int globalZ) {
+        return globalNoiseOffset(0.01, 0.6, globalX * 0.0002, globalZ * 0.0002, globalCOffsetNoise);
+    }
+
+    public double getTerrainDensity(int globalX, int globalY, int globalZ) {
+        double horizontalBaseScale = getHorizontalBaseScale(globalX, globalZ);
+        double verticalBaseScale = getVerticalBaseScale(globalX, globalZ);
+        double cycleHeight = getCycleHeight(globalX, globalZ);
+
+        int shiftedY = globalY + TERRAIN_Y_OFFSET;
+
+        double noiseValue = 0.0;
+        double amplitude = 1.0;
+        double frequency = 1.0;
+        double maxAmplitude = 0.0;
+
+
+        for (int octave = 0; octave < NUM_OCTAVES; octave++) {
+            double hScale = horizontalBaseScale * frequency;
+            double vScale = verticalBaseScale * frequency;
+
+            //double octaveOffset = 10000000.0 * 10000000.0 * 10000000.0 * 10000000.0 * octave;
+            double sampleX = globalX * hScale;
+            double sampleY = shiftedY * vScale;
+            double sampleZ = globalZ * hScale;
+
+            double octaveNoise = simplexNoise.getValue(sampleX, sampleY, sampleZ);
+
+            noiseValue += octaveNoise * amplitude;
+            maxAmplitude += amplitude;
+
+            amplitude *= PERSISTENCE;
+            frequency *= LACUNARITY;
+        }
+
+        noiseValue /= maxAmplitude;
+        double densityModifier = cyclicDensity(shiftedY, cycleHeight);
+        noiseValue *= densityModifier;
+
+        return edgeGradient(shiftedY, worldHeight, noiseValue);
+    }
+
+    public boolean isSolidTerrain(int globalX, int globalY, int globalZ) {
+        double threshold = getThreshold(globalX, globalZ);
+        double density = getTerrainDensity(globalX, globalY, globalZ);
+        return density > threshold;
+    }
+
     @Override
     public CompletableFuture<ChunkAccess> fillFromNoise(Blender blender, RandomState randomState, StructureManager structureManager, ChunkAccess chunk) {
         return CompletableFuture.supplyAsync(() -> {
             ChunkPos chunkPos = chunk.getPos();
             int startX = chunkPos.getMinBlockX();
             int startZ = chunkPos.getMinBlockZ();
-            int sizeX = 16;
-            int sizeY = 160;  // Original height before shifting
-            int sizeZ = 16;
-            int terrainYOffset = 32;  // Raise terrain by 32 blocks
 
-            // Octave stuff, don't touch this. PLEASE!
-            int numOctaves = 4;
-            double lacunarity = 2.0;
-            double persistence = 0.5;
-
-            // Dynamic stuff
-            double horizontalBaseScale;
-            double verticalBaseScale;
-            double threshold;
-            double cycleHeight;
-
-            for (int x = 0; x < sizeX; x++) {
-                for (int z = 0; z < sizeZ; z++) {
+            for (int x = 0; x < 16; x++) {
+                for (int z = 0; z < 16; z++) {
                     int globalX = startX + x;
                     int globalZ = startZ + z;
 
-                    // 2D noise for y=0 layer with noteblocks
-                        double auroraNoise = simplexNoise.getValue(globalX * 0.1, globalZ * 0.1);  // Generate 2D noise
+                    double auroraNoise = simplexNoise.getValue(globalX * 0.1, globalZ * 0.1);
+                    if (auroraNoise > 0.0) {
+                        chunk.setBlockState(new BlockPos(globalX, 20, globalZ), BeyondBlocks.AURORACITE.get().defaultBlockState(), false);
+                        chunk.setBlockState(new BlockPos(globalX, 21, globalZ), BeyondBlocks.AURORACITE.get().defaultBlockState(), false);
+                    }
 
-                        // Layer at y=0
-                        if (auroraNoise > 0.0) {
-                            chunk.setBlockState(new BlockPos(globalX, 20, globalZ), BeyondBlocks.AURORACITE.get().defaultBlockState(), false);
-                            chunk.setBlockState(new BlockPos(globalX, 21, globalZ), BeyondBlocks.AURORACITE.get().defaultBlockState(), false);
+                    for (int y = 1; y < 160; y++) {
+                        int shiftedY = y + TERRAIN_Y_OFFSET;
 
-                        }
-
-                    // Continue generating terrain noise for other Y levels, starting from y=32
-                    for (int y = 1; y < sizeY; y++) {  // Skip y=0 and y=1 since they're handled separately
-                        int shiftedY = y + terrainYOffset;  // Shift terrain by 32 blocks upwards
-
-                        //min = 0.005, max = 0.015
-                        horizontalBaseScale = globalNoiseOffset(0.005, 0.015, globalX * 0.000001, globalZ * 0.000001, globalHOffsetNoise);
-                        verticalBaseScale = globalNoiseOffset(0.005, 0.015, globalX * 0.00001, globalZ * 0.00001, globalVOffsetNoise);
-                        cycleHeight = globalNoiseOffset(10, 100, globalX * 0.0001, globalZ * 0.0001, globalCOffsetNoise);
-                        threshold = globalNoiseOffset(0.01, 0.6, globalX * 0.0002, globalZ * 0.0002, globalCOffsetNoise);
-
-                        double noiseValue = 0.0;
-                        double amplitude = 1.0;
-                        double frequency = 1.0;
-                        double maxAmplitude = 0.0;
-
-                        // Create basic noise stuff
-                        for (int octave = 0; octave < numOctaves; octave++) {
-                            double hScale = horizontalBaseScale * frequency;
-                            double vScale = verticalBaseScale * frequency;
-                            double octaveNoise = simplexNoise.getValue(globalX * hScale, shiftedY * vScale, globalZ * hScale);
-
-                            noiseValue += octaveNoise * amplitude;
-                            maxAmplitude += amplitude;
-
-                            amplitude *= persistence;
-                            frequency *= lacunarity;
-                        }
-
-                        // Normalize
-                        noiseValue /= maxAmplitude;
-
-                        // Apply sine wave gaps
-                        double densityModifier = cyclicDensity(shiftedY, cycleHeight);
-                        noiseValue *= densityModifier;
-
-                        BlockPos blockPos = new BlockPos(globalX, shiftedY, globalZ);
-                        double finalValue = edgeGradient(blockPos.getY(), worldHeight, noiseValue);
-                        if (finalValue > threshold) {
-                            chunk.setBlockState(blockPos, Blocks.END_STONE.defaultBlockState(), false);
+                        if (isSolidTerrain(globalX, y, globalZ)) {
+                            chunk.setBlockState(new BlockPos(globalX, shiftedY, globalZ), Blocks.DIRT.defaultBlockState(), false);
                         }
                     }
                 }
@@ -142,13 +155,12 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         });
     }
 
-
     private double cyclicDensity(int y, double cycleHeight) {
         double normalizedY = (y % cycleHeight) / cycleHeight;
         if (normalizedY < 0.8) {
-            return Math.sin((normalizedY / 0.8) * (Math.PI / 2)); // Rising part
+            return Math.sin((normalizedY / 0.8) * (Math.PI / 2));
         } else {
-            return 1 - (normalizedY - 0.8) / 0.2; // Falling part
+            return 1 - (normalizedY - 0.8) / 0.2;
         }
     }
 
@@ -156,15 +168,13 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         double gradientBottom = 1.0;
         double gradientTop = 1.0;
 
-        // Adjust the bottom gradient to start at y=32 and go up to y=64
-        if (y <= 64) {  // Adjust the gradient range to be between 32 and 64
-            gradientBottom = (y - 32) / 32.0;  // Normalize the value to a range of 0 to 1 from y=32 to y=64
+        if (y <= 64) {
+            gradientBottom = (y - 32) / 32.0;
             if (y < 32) {
-                gradientBottom = 0.0;  // Below y=32, the gradient should be 0
+                gradientBottom = 0.0;
             }
         }
 
-        // Same thing from the top
         if (y >= (worldHeight - 64)) {
             gradientTop = (worldHeight - y) / 64.0;
         }
@@ -176,8 +186,22 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         double noiseValue = noise.getValue(x, z, false);
         return min + (max - min) * ((noiseValue + 1) / 2);
     }
+
     public void addDebugScreenInfo(List<String> info, RandomState random, BlockPos pos) {
         DecimalFormat decimalformat = new DecimalFormat("0.000");
-        //info.add("TerrainNoise T: " + decimalformat.format(simplexNoise.getValue(pos.getX(), pos.getY(), pos.getZ())) + " HS: " + decimalformat.format(horizontalBaseScale) + " VS: " + decimalformat.format(verticalBaseScale) + " Threshold: " + decimalformat.format(threshold) + " CH: " + decimalformat.format(cycleHeight));
+        int globalX = pos.getX();
+        int globalZ = pos.getZ();
+
+        double horizontalBaseScale = getHorizontalBaseScale(globalX, globalZ);
+        double verticalBaseScale = getVerticalBaseScale(globalX, globalZ);
+        double threshold = getThreshold(globalX, globalZ);
+        double cycleHeight = getCycleHeight(globalX, globalZ);
+        double terrainNoise = getTerrainDensity(globalX, pos.getY(), globalZ);
+
+        info.add("TerrainNoise T: " + decimalformat.format(terrainNoise) +
+                " HS: " + decimalformat.format(horizontalBaseScale) +
+                " VS: " + decimalformat.format(verticalBaseScale) +
+                " Threshold: " + decimalformat.format(threshold) +
+                " CH: " + decimalformat.format(cycleHeight));
     }
 }

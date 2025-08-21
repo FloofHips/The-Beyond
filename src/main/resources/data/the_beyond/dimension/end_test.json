@@ -2,9 +2,10 @@
   "type": "the_beyond:the_end",
   "generator": {
     "type": "the_beyond:beyond_end",
-    "settings": "minecraft:end",
+    "settings": "minecraft:nether",
     "biome_source": {
-      "type": "minecraft:the_end"
+      "type": "minecraft:multi_noise",
+      "preset": "minecraft:nether"
     }
   }
 }
