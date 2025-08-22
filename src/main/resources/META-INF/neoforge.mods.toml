@@ -2,6 +2,11 @@ modLoader="javafml"
 loaderVersion="[4,)"
 license="MIT"
 
+[[mixins]]
+config = "the_beyond.mixins.json"
+[[mixins]]
+config = "the_beyond.client.mixins.json"
+
 [[mods]]
 modId="the_beyond"
 version="0.1.0"

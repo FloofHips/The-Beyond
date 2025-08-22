@@ -127,6 +127,7 @@ dependencies {
     //compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:19.18.3.204"
     // We add the full version to localRuntime, not runtimeOnly, so that we do not publish a dependency on it
     // localRuntime "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
+    annotationProcessor "org.spongepowered:mixin:0.8.5:processor"
 
     //TODO ACTIVATE THIS WHEN NEOFORGE DROPS
     //compileOnly "dev.engine_room.flywheel:flywheel-forge-api-1.20.1:1.0.0-beta-113"
@@ -187,6 +188,10 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+    options.compilerArgs += [
+            "-AoutRefMap=${mod_id}.refmap.json",
+            "-AdefaultObfuscationEnv=official"
+    ]
 }
 
 // IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.

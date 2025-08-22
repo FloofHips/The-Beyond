@@ -9,8 +9,6 @@ import com.thebeyond.common.blocks.*;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.FireBlock;
-import net.minecraft.world.level.block.SoulFireBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
@@ -73,17 +71,18 @@ public class BeyondBlocks {
                     .forceSolidOff()
                     .noCollission()
                     .noOcclusion()
+                    .sound(BeyondSoundTypes.POLAR_ANTENNA)
                     .offsetType(BlockBehaviour.OffsetType.XZ))
     );
     public static final DeferredBlock<Block> PLATE_BLOCK = registerBlock("plate_block",
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.DEEPSLATE)
-                    .sound(SoundType.LANTERN))
+                    .sound(BeyondSoundTypes.PLATE_BLOCK))
     );
     public static final DeferredBlock<Block> PLATED_END_STONE = registerBlock("plated_end_stone",
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.DEEPSLATE)
-                    .sound(SoundType.ANCIENT_DEBRIS))
+                    .sound(BeyondSoundTypes.PLATED_END_STONE_BLOCK))
     );
     public static final DeferredBlock<MagnolillyBlock> MAGNOLILLY = registerBlock("magnolilly",
             () -> new MagnolillyBlock(BlockBehaviour.Properties.of()
