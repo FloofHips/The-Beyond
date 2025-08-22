@@ -1,0 +1,16 @@
+{
+    "animation": { "frametime": 15,
+    "interpolate": true},
+    "ctm":{
+        "ctm_version": 1,
+        "type":"CTM",
+        "textures":[
+            "the_beyond:block/gellid_void_ctm"
+        ],
+        "extra": {
+            "connect_to": [
+                { "block": "the_beyond:gellid_void" }
+            ]
+        }
+    }
+}

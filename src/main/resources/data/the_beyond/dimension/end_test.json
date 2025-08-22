@@ -2,10 +2,23 @@
   "type": "the_beyond:the_end",
   "generator": {
     "type": "the_beyond:beyond_end",
-    "settings": "minecraft:nether",
+    "settings": "the_beyond:the_end",
     "biome_source": {
       "type": "minecraft:multi_noise",
-      "preset": "minecraft:nether"
+      "biomes": [
+        {
+          "biome": "the_beyond:attracta_expanse",
+          "parameters": {
+            "temperature": [-1, 1],
+            "humidity": [-1, -0.2],
+            "continentalness": [-1, 0],
+            "erosion": [-1, 1],
+            "weirdness": [-1, 1],
+            "depth": [-1.4, 1],
+            "offset": 0.49
+          }
+        }
+      ]
     }
   }
 }

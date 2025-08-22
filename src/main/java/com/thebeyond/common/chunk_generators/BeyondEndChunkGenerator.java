@@ -3,6 +3,7 @@ package com.thebeyond.common.chunk_generators;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.thebeyond.common.registry.BeyondBlocks;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.util.RandomSource;
@@ -145,7 +146,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                         int shiftedY = y + TERRAIN_Y_OFFSET;
 
                         if (isSolidTerrain(globalX, y, globalZ)) {
-                            chunk.setBlockState(new BlockPos(globalX, shiftedY, globalZ), Blocks.DIRT.defaultBlockState(), false);
+                            chunk.setBlockState(new BlockPos(globalX, shiftedY, globalZ), Blocks.END_STONE.defaultBlockState(), false);
                         }
                     }
                 }

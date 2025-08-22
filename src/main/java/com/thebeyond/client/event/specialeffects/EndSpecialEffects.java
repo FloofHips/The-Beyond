@@ -93,10 +93,10 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
 
         if (level.isThundering()) {
             //return new Vec3(biomeFogColor.x, Mth.clamp(biomeFogColor.y - level.thunderLevel,0,1), biomeFogColor.z);
-            return biomeFogColor.subtract(0,1 * level.thunderLevel,0);
+            return biomeFogColor.subtract(0,1 * level.getThunderLevel(0),0);
         } else if (level.isRaining()) {
             //return new Vec3(biomeFogColor.x, Mth.clamp(biomeFogColor.y - (0.3 *level.rainLevel),0,1), biomeFogColor.z);
-            return biomeFogColor.subtract(0,0.3 * level.rainLevel,0);
+            return biomeFogColor.subtract(0,0.3 * level.getRainLevel(0),0);
         }
         return biomeFogColor;
     }
@@ -128,7 +128,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         float position = Mth.clamp((float) (((Minecraft.getInstance().player.position().y) - 100) / 100), 0, 1);
 
         if (thunder > 0) {
-            float time = (level.getGameTime() + partialTicks) * 0.01f;
+            float time = (level.getGameTime() + partialTicks) * 0.05f;
 
             float red = Mth.clamp(Mth.sin(time) * 0.7f + 0.7f, 0f, 1f);
             float blue = Mth.clamp(Mth.sin(time + Mth.TWO_PI*2f/3f) * 0.8f + 0.5f, 0f, 1f);
@@ -136,29 +136,24 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
             float strength = skyLight * 2;
 
             colors.set(
-                    Mth.lerp(thunder, colors.x(), Mth.lerp(position, colors.x(),Mth.clamp(colors.x() + 2 * red * strength, 0, 1))),
-                    Mth.lerp(thunder, colors.y(), Mth.lerp(position, colors.y() * 0.7f, colors.y())),
-                    Mth.lerp(thunder, colors.z(), Mth.lerp(position, colors.z(),Mth.clamp(colors.z() + 2 * blue * strength, 0, 1)))
+                    Mth.lerp(thunder, colors.x(), Mth.lerp(position, colors.x() + skyLight,Mth.clamp(colors.x() + 2 * red * strength, 0, 1))),
+                    Mth.lerp(thunder, colors.y() * 0.7f, Mth.lerp(position, colors.y() * 0.7f, colors.y())),
+                    Mth.lerp(thunder, colors.z(), Mth.lerp(position, colors.z() + skyLight,Mth.clamp(colors.z() + 2 * blue * strength, 0, 1)))
                 );
             return;
         } if (rain > 0) {
             colors.set(
                     colors.x(),
-                    Mth.lerp(rain, colors.y(), colors.y() * 0.7f),
+                    Mth.lerp(rain, Mth.clamp(colors.y() * 1.1f, 0, 1), colors.y() * 0.7f),
                     colors.z()
             );
             return;
         }
-            colors.set(
-                    colors.x() * 0.9f,
-                    Mth.clamp(colors.y() * 1.1f, 0, 1),
-                    colors.z() * 0.9f
-            );
-        //colors.set(
-        //        colors.x() * colors.x(),
-        //        colors.y() * colors.y() - 1,
-        //        colors.z() * colors.z() - 0.4
-        //);
+        colors.set(
+                colors.x() * 0.9f,
+                Mth.clamp(colors.y() * 1.1f, 0, 1),
+                colors.z() * 0.9f
+        );
     }
 
     public Vec3 getBiomeColor(ClientLevel level) {
@@ -333,6 +328,8 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         RenderSystem.disableCull();
         Matrix4f matrix = poseStack.last().pose();
 
+        float offset = (float) Minecraft.getInstance().cameraEntity.position().y;
+        float offsetReal = 40 - ((Mth.clamp(offset, 20, 60)) - 20);
         Vector4f skyColorVector = TS_COLOR;
 
         float radius = SKY_RADIUS;
@@ -346,11 +343,11 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
             float angle = (float)i * ((float)Math.PI * 2F) / 6F;
             float x = (float)Math.sin(angle) * radius;
             float z = (float)Math.cos(angle) * radius;
-            bufferbuilder.addVertex(matrix, x, -50, z)
+            bufferbuilder.addVertex(matrix, x, -50 + offsetReal, z)
                     .setColor((float) skyColorVector.x(), (float) skyColorVector.y(), (float) skyColorVector.z(), 0.0f);
         }
 
-        bufferbuilder.addVertex(matrix, 0, -50, radius)
+        bufferbuilder.addVertex(matrix, 0, -50 + offsetReal, radius)
                 .setColor((float) skyColorVector.x(), (float) skyColorVector.y(), (float) skyColorVector.z(), 0.0f);
 
         BufferUploader.drawWithShader(bufferbuilder.buildOrThrow());

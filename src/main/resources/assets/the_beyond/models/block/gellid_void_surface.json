@@ -1,0 +1,57 @@
+{
+	"parent": "block/block",
+	"textures": {
+		"texture": "the_beyond:block/gellid_void_surface",
+		"ends": "the_beyond:block/gellid_void"
+	},
+	"elements": [
+		{
+			"from": [0, 13.998, 0],
+			"to": [16, 14, 16],
+			"faces": {
+				"up": {"uv": [0, 0, 16, 16], "texture": "#ends", "cullface": "up"},
+				"down": {"uv": [0, 16, 16, 0], "texture": "#ends", "cullface": "up"}
+			}
+		},
+		{
+			"from": [0, 0, 0],
+			"to": [16, 0.002, 16],
+			"faces": {
+				"up": {"uv": [0, 16, 16, 0], "texture": "#ends", "cullface": "down"},
+				"down": {"uv": [0, 0, 16, 16], "texture": "#ends", "cullface": "down"}
+			}
+		},
+		{
+			"from": [0, 0, 0],
+			"to": [16, 14, 0.002],
+			"faces": {
+				"north": {"uv": [0, 2, 16, 16], "texture": "#texture"},
+				"south": {"uv": [16, 2, 0, 16], "texture": "#texture"}
+			}
+		},
+		{
+			"from": [0, 0, 15.998],
+			"to": [16, 14, 16],
+			"faces": {
+				"north": {"uv": [16, 2, 0, 16], "texture": "#texture"},
+				"south": {"uv": [0, 2, 16, 16], "texture": "#texture"}
+			}
+		},
+		{
+			"from": [0, 0, 0],
+			"to": [0.002, 14, 16],
+			"faces": {
+				"east": {"uv": [16, 2, 0, 16], "texture": "#texture"},
+				"west": {"uv": [0, 2, 16, 16], "texture": "#texture"}
+			}
+		},
+		{
+			"from": [15.998, 0, 0],
+			"to": [16, 14, 16],
+			"faces": {
+				"east": {"uv": [0, 2, 16, 16], "texture": "#texture"},
+				"west": {"uv": [16, 2, 0, 16], "texture": "#texture"}
+			}
+		}
+	]
+}

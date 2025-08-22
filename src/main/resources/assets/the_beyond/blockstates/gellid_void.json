@@ -1,0 +1,10 @@
+{
+    "variants": {
+        "is_opened=false": {
+            "model": "the_beyond:block/gellid_void"
+        },
+        "is_opened=true": {
+            "model": "the_beyond:block/gellid_void_surface"
+        }
+    }
+}

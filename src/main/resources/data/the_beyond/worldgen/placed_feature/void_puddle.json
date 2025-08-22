@@ -1,0 +1,12 @@
+{
+    "feature": "the_beyond:void_puddle",
+    "placement": [
+        {
+            "type": "minecraft:count_on_every_layer",
+            "count": 1
+        },
+        {
+            "type": "minecraft:biome"
+        }
+    ]
+}
