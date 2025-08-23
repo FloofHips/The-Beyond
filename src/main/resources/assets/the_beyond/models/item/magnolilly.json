@@ -1,3 +1,6 @@
 {
-  "parent": "the_beyond:block/attracta_expanse/magnolilly"
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "the_beyond:block/magnolilly"
+  }
 }

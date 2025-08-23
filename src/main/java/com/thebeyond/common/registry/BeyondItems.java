@@ -18,7 +18,7 @@ public class BeyondItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
     public static LinkedHashSet<DeferredItem<Item>> CREATIVE_TAB_ITEMS = Sets.newLinkedHashSet();
 
-    public static final DeferredItem<Item> MAGNET = registerItem("magnet", () -> new MagnetItem(new Item.Properties(), 8));
+    public static final DeferredItem<Item> MAGNET = registerItem("magnet", () -> new MagnetItem(new Item.Properties().stacksTo(1), 8));
 
     public static final DeferredItem<SpawnEggItem> ENDERGLOP_SPAWN_EGG  = ITEMS.register("enderglop_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENDERGLOP.get(),0x7127f8, 0xc126ff,new Item.Properties()));
 
