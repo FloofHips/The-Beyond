@@ -121,7 +121,7 @@ public class PolarAntennaBlock extends Block implements IMagneticReceiver {
             List<Direction> horizontalDirections = new ArrayList<>(Arrays.asList(Direction.Plane.HORIZONTAL.stream().toArray(Direction[]::new)));
             Collections.shuffle(horizontalDirections);
 
-            int numDirections = RandomUtils.nextInt(0, 2);
+            int numDirections = RandomUtils.nextInt(2, 3);
             List<Direction> chosenDirections = horizontalDirections.subList(0, numDirections);
 
             for (Direction horizontal : chosenDirections) {
