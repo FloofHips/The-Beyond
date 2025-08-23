@@ -1,0 +1,135 @@
+{
+  "block.end_stone.break": {
+    "sounds": [
+      "the_beyond:block/end_stone/heavy1",
+      "the_beyond:block/end_stone/heavy2",
+      "the_beyond:block/end_stone/heavy3",
+      "the_beyond:block/end_stone/heavy4"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.end_stone.fall": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.end_stone.break",
+        "type": "event"
+      }
+    ]
+  },
+  "block.end_stone.hit": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.end_stone.step",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.end_stone.place": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.end_stone.break",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.end_stone.step": {
+    "sounds": [
+      "the_beyond:block/end_stone/light1",
+      "the_beyond:block/end_stone/light2",
+      "the_beyond:block/end_stone/light3",
+      "the_beyond:block/end_stone/light4",
+      "the_beyond:block/end_stone/light5"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.plate_block.break": {
+    "sounds": [
+      "the_beyond:block/plate_block/heavy1",
+      "the_beyond:block/plate_block/heavy2",
+      "the_beyond:block/plate_block/heavy3",
+      "the_beyond:block/plate_block/heavy4"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.plate_block.fall": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.plate_block.break",
+        "type": "event"
+      }
+    ]
+  },
+  "block.plate_block.hit": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.plate_block.step",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.plate_block.place": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.plate_block.break",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.plate_block.step": {
+    "sounds": [
+      "the_beyond:block/plate_block/light1",
+      "the_beyond:block/plate_block/light2",
+      "the_beyond:block/plate_block/light3",
+      "the_beyond:block/plate_block/light4"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.plated_end_stone.break": {
+    "sounds": [
+      "the_beyond:block/plated_end_stone/heavy1",
+      "the_beyond:block/plated_end_stone/heavy2",
+      "the_beyond:block/plated_end_stone/heavy3",
+      "the_beyond:block/plated_end_stone/heavy4"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.plated_end_stone.fall": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.plated_end_stone.break",
+        "type": "event"
+      }
+    ]
+  },
+  "block.plated_end_stone.hit": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.plated_end_stone.step",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.plated_end_stone.place": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.plated_end_stone.break",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.plated_end_stone.step": {
+    "sounds": [
+      "the_beyond:block/plated_end_stone/light1",
+      "the_beyond:block/plated_end_stone/light2",
+      "the_beyond:block/plated_end_stone/light3",
+      "the_beyond:block/plated_end_stone/light4"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  }
+}

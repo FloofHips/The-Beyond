@@ -199,12 +199,12 @@ public class ModClientEvents {
 
                     BlockState pickaxeStack = Blocks.CHAIN.defaultBlockState();
 
-                    itemRenderer.renderSingleBlock(
-                            pickaxeStack, poseStack,
-                            bufferSource,
-                            15728880,
-                            OverlayTexture.NO_OVERLAY
-                    );
+                    //itemRenderer.renderSingleBlock(
+                    //        pickaxeStack, poseStack,
+                    //        bufferSource,
+                    //        15728880,
+                    //        OverlayTexture.NO_OVERLAY
+                    //);
 
                     poseStack.popPose();
                 }
