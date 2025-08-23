@@ -37,6 +37,7 @@ public class VoidCrystalBlock extends Block {
     public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
         Direction direction = state.getValue(UP) ? Direction.UP : Direction.DOWN;
         BlockPos supportingPos = pos.relative(direction.getOpposite());
+        if (direction == Direction.UP && level.getBlockState(supportingPos).getBlock() instanceof GellidVoidBlock) return true;
         return canSupportCenter(level, supportingPos, direction);
     }
 

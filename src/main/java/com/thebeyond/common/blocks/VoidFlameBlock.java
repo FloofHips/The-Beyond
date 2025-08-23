@@ -38,6 +38,8 @@ public class VoidFlameBlock extends BaseFireBlock {
     }
 
     protected boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
+
+        if (level.getBlockState(pos.below()).getBlock() instanceof GellidVoidBlock) return true;
         return canSurviveOnBlock(level.getBlockState(pos.below()));
     }
 

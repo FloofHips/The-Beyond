@@ -7,15 +7,63 @@
       "type": "minecraft:multi_noise",
       "biomes": [
         {
+          "biome": "the_beyond:end_barrens",
+          "parameters": {
+            "continentalness": 0,
+            "depth": 0,
+            "erosion": 0,
+            "humidity": 0,
+            "offset": 0,
+            "temperature": 0,
+            "weirdness": 0
+          }
+        },
+        {
+          "biome": "the_beyond:end_midlands",
+          "parameters": {
+            "continentalness": 0,
+            "depth": 0,
+            "erosion": 0,
+            "humidity": -0.5,
+            "offset": 0,
+            "temperature": 0,
+            "weirdness": 0
+          }
+        },
+        {
+          "biome": "the_beyond:end_highlands",
+          "parameters": {
+            "continentalness": 0,
+            "depth": 0,
+            "erosion": 0,
+            "humidity": 0,
+            "offset": 0,
+            "temperature": 0.4,
+            "weirdness": 0
+          }
+        },
+        {
+          "biome": "the_beyond:small_end_islands",
+          "parameters": {
+            "continentalness": 0,
+            "depth": 0,
+            "erosion": 0,
+            "humidity": 0.5,
+            "offset": 0.375,
+            "temperature": 0,
+            "weirdness": 0
+          }
+        },
+        {
           "biome": "the_beyond:attracta_expanse",
           "parameters": {
-            "temperature": [-1, 1],
-            "humidity": [-1, -0.2],
-            "continentalness": [-1, 0],
-            "erosion": [-1, 1],
-            "weirdness": [-1, 1],
-            "depth": [-1.4, 1],
-            "offset": 0.49
+            "continentalness": 0,
+            "depth": 0,
+            "erosion": 0,
+            "humidity": 0,
+            "offset": 0.175,
+            "temperature": -0.5,
+            "weirdness": 0
           }
         }
       ]
