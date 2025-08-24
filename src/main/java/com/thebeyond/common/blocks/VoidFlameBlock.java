@@ -1,6 +1,7 @@
 package com.thebeyond.common.blocks;
 
 import com.mojang.serialization.MapCodec;
+import com.thebeyond.common.fluids.GellidVoidBlock;
 import com.thebeyond.common.registry.BeyondBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

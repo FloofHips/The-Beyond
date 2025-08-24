@@ -4,7 +4,7 @@
     "Name": "minecraft:end_stone"
   },
   "default_fluid": {
-    "Name": "the_beyond:gellid_void"
+    "Name": "the_beyond:gellid_void_block"
   },
   "disable_mob_generation": false,
   "legacy_random_source": true,

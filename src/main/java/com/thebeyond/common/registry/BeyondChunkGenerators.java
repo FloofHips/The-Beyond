@@ -2,7 +2,7 @@ package com.thebeyond.common.registry;
 
 import com.mojang.serialization.MapCodec;
 import com.thebeyond.TheBeyond;
-import com.thebeyond.common.chunk_generators.BeyondEndChunkGenerator;
+import com.thebeyond.common.worldgen.BeyondEndChunkGenerator;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.neoforged.neoforge.registries.DeferredHolder;

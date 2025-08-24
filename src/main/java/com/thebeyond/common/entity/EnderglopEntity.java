@@ -82,7 +82,7 @@ public class EnderglopEntity extends Mob implements Enemy {
             }
         });
 
-        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, EnderglopEntity.class, true));
+        this.targetSelector.addGoal(0, new NearestAttackableTargetGoal<>(this, EnderglopEntity.class, true));
     }
 
     protected void defineSynchedData(SynchedEntityData.Builder builder) {

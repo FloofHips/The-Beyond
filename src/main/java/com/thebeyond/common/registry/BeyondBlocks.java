@@ -6,6 +6,7 @@ import com.thebeyond.common.blocks.MagnolillyBlock;
 import com.thebeyond.common.blocks.PolarAntennaBlock;
 import com.thebeyond.common.blocks.PolarPillarBlock;
 import com.thebeyond.common.blocks.*;
+import com.thebeyond.common.fluids.GellidVoidBlock;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -43,6 +44,13 @@ public class BeyondBlocks {
                     .offsetType(BlockBehaviour.OffsetType.XZ)
                     .dynamicShape())
 
+    );
+    public static final DeferredBlock<GellidVoidBlock> GELLID_VOID = registerBlockWithoutItem("gellid_void_block",
+            () -> new GellidVoidBlock(BeyondFluids.GELLID_VOID_FLOWING.get(), BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_PURPLE)
+                    .forceSolidOff()
+                    .noCollission()
+                    .noOcclusion())
     );
     //Path
     public static final DeferredBlock<Block> AURORACITE = registerBlock("auroracite",
@@ -93,13 +101,6 @@ public class BeyondBlocks {
                     .noOcclusion()
                     .offsetType(BlockBehaviour.OffsetType.XZ))
 
-    );
-    public static final DeferredBlock<GellidVoidBlock> GELLID_VOID = registerBlockWithoutItem("gellid_void",
-            () -> new GellidVoidBlock(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.COLOR_PURPLE)
-                    .forceSolidOff()
-                    .noCollission()
-                    .noOcclusion())
     );
 
     @SuppressWarnings("unchecked")

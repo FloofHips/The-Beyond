@@ -30,6 +30,8 @@ public class TheBeyond {
         BeyondParticleTypes.PARTICLE_TYPES.register(modEventBus);
         BeyondChunkGenerators.CHUNK_GENS.register(modEventBus);
         BeyondSoundEvents.SOUND_EVENTS.register(modEventBus);
+        BeyondFluids.FLUID_TYPES.register(modEventBus);
+        BeyondFluids.FLUIDS.register(modEventBus);
 
         /**
          * Register ourselves for server and other game events we are interested in.

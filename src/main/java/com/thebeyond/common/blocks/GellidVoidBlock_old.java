@@ -3,18 +3,14 @@ package com.thebeyond.common.blocks;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.util.Mth;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
@@ -31,12 +27,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-public class GellidVoidBlock extends Block implements BucketPickup {
-    public static final MapCodec<GellidVoidBlock> CODEC = simpleCodec(GellidVoidBlock::new);
+public class GellidVoidBlock_old extends Block implements BucketPickup {
+    public static final MapCodec<GellidVoidBlock_old> CODEC = simpleCodec(GellidVoidBlock_old::new);
 
     public static final BooleanProperty IS_OPENED;
 
-    public GellidVoidBlock(Properties properties) {
+    public GellidVoidBlock_old(Properties properties) {
         super(properties);
 
         registerDefaultState(this.stateDefinition.any()

@@ -1,6 +1,7 @@
 package com.thebeyond.client.event;
 
 import com.mojang.blaze3d.shaders.FogShape;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -15,6 +16,7 @@ import com.thebeyond.client.particle.GlopParticle;
 import com.thebeyond.client.renderer.EnderglopRenderer;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondEntityTypes;
+import com.thebeyond.common.registry.BeyondFluids;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.util.ColorUtils;
 import net.minecraft.client.Camera;
@@ -22,6 +24,8 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.FogRenderer;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
@@ -37,12 +41,14 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.PinkPetalsBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
@@ -50,9 +56,12 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.*;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
 import net.neoforged.neoforge.event.entity.living.LivingGetProjectileEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import org.joml.Vector3f;
 
 @SuppressWarnings("unused")
 @EventBusSubscriber(modid = TheBeyond.MODID, value = Dist.CLIENT)
@@ -61,6 +70,9 @@ public class ModClientEvents {
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event){
         EntityRenderers.register(BeyondEntityTypes.ENDERGLOP.get(), EnderglopRenderer::new);
+
+        ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID.get(), RenderType.translucent());
+        ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID_FLOWING.get(), RenderType.translucent());
     }
 
     @SubscribeEvent
@@ -135,6 +147,64 @@ public class ModClientEvents {
         //event.setGreen(event.getGreen() / gamma);
         //event.setBlue(event.getBlue() / gamma);
     }
+
+    @SubscribeEvent
+    public static void registerClientExtensions(RegisterClientExtensionsEvent event) {
+        event.registerFluidType(new IClientFluidTypeExtensions() {
+            private static final ResourceLocation STILL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void_still"),
+                    FLOW = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void_still"),
+                    OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void_still"),
+                    VIEW_OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/block/gellid_void_still.png");
+
+            @Override
+            public ResourceLocation getStillTexture() {
+                return STILL;
+            }
+
+            @Override
+            public ResourceLocation getFlowingTexture() {
+                return FLOW;
+            }
+
+            @Override
+            public ResourceLocation getOverlayTexture() {
+                return OVERLAY;
+            }
+
+            @Override
+            public ResourceLocation getRenderOverlayTexture(Minecraft mc) {
+                return VIEW_OVERLAY;
+            }
+
+            @Override
+            public Vector3f modifyFogColor(Camera camera, float partialTick, ClientLevel level, int renderDistance, float darkenWorldAmount, Vector3f fluidFogColor) {
+                int color = -5566465;
+                return new Vector3f((color >> 16 & 0xFF) / 255F, (color >> 8 & 0xFF) / 255F, (color & 0xFF) / 255F);
+            }
+
+            @Override
+            public void modifyFogRender(Camera camera, FogRenderer.FogMode mode, float renderDistance, float partialTick, float nearDistance, float farDistance, FogShape shape) {
+                nearDistance = -8F;
+                farDistance = 24F;
+
+                if (farDistance > renderDistance) {
+                    farDistance = renderDistance;
+                    shape = FogShape.SPHERE;
+                }
+
+                RenderSystem.setShaderFogStart(nearDistance);
+                RenderSystem.setShaderFogEnd(farDistance);
+                RenderSystem.setShaderFogShape(shape);
+            }
+
+            //@Override
+            //public boolean renderFluid(FluidState fluidState, BlockAndTintGetter getter, BlockPos pos, VertexConsumer vertexConsumer, BlockState blockState) {
+            //    new AcidRenderer().tesselate(getter, pos, vertexConsumer, blockState, fluidState);
+            //    return true;
+            //}
+        }, BeyondFluids.GELLID_VOID_TYPE.get());
+    }
+
 
     @SubscribeEvent
     public static void renderLast(RenderLevelStageEvent event) {

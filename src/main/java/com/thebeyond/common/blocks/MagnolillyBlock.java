@@ -6,7 +6,10 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.IceBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
@@ -26,6 +29,10 @@ public class MagnolillyBlock extends Block {
         return pFacing == Direction.DOWN && !this.canSurvive(pState, pLevel, pCurrentPos) ? Blocks.AIR.defaultBlockState() : super.updateShape(pState, pFacing, pFacingState, pLevel, pCurrentPos, pFacingPos);
     }
 
+    protected boolean mayPlaceOn(BlockState state, BlockGetter level, BlockPos pos) {
+        FluidState fluidstate = level.getFluidState(pos);
+        return (fluidstate.getType() == Fluids.WATER;
+    }
 //    public boolean canSurvive(BlockState pState, LevelReader pLevel, BlockPos pPos) {
 //        if (pLevel.getBlockState(pPos.below()).getBlock() instanceof PseudoFluidBlock)
 //            return true;

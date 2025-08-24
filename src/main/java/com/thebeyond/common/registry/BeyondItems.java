@@ -2,7 +2,9 @@ package com.thebeyond.common.registry;
 
 import com.google.common.collect.Sets;
 import com.thebeyond.common.item.MagnetItem;
+import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SpawnEggItem;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -19,6 +21,8 @@ public class BeyondItems {
     public static LinkedHashSet<DeferredItem<Item>> CREATIVE_TAB_ITEMS = Sets.newLinkedHashSet();
 
     public static final DeferredItem<Item> MAGNET = registerItem("magnet", () -> new MagnetItem(new Item.Properties().stacksTo(1), 8));
+    public static final DeferredItem<Item> MAGNET = registerItem("magnet", () -> new MagnetItem(new Item.Properties(), 8));
+    public static final DeferredItem<Item> GELLID_VOID_BUCKET = registerItem("gellid_void_bucket", () -> new BucketItem(BeyondFluids.GELLID_VOID.get(), new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
 
     public static final DeferredItem<SpawnEggItem> ENDERGLOP_SPAWN_EGG  = ITEMS.register("enderglop_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENDERGLOP.get(),0x7127f8, 0xc126ff,new Item.Properties()));
 
