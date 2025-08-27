@@ -1,0 +1,23 @@
+{
+"animation": {
+    "frametime": 7
+  },
+  "ctm": {
+    "ctm_version": 1,
+    "type": "ctm",
+    "layer": "CUTOUT",
+    "textures": ["the_beyond:block/gellid_void_caustics_ctm"],
+    "extra": {
+      "connect_inside" : true,
+      "light": {
+        "block": 15,
+        "sky": 15
+      },
+      "connect_to": [
+        { "block": "the_beyond:gellid_void" },
+        { "block": "the_beyond:gellid_void_block" },
+        { "block": "the_beyond:gellid_void_flowing" }
+      ]
+    }
+  }
+}

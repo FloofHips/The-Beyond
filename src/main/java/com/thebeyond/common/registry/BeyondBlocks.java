@@ -50,13 +50,21 @@ public class BeyondBlocks {
                     .mapColor(MapColor.COLOR_PURPLE)
                     .forceSolidOff()
                     .noCollission()
-                    .noOcclusion())
+                    .noOcclusion()
+                    .replaceable())
     );
     //Path
     public static final DeferredBlock<Block> AURORACITE = registerBlock("auroracite",
             () -> new AuroraciteBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_LIGHT_BLUE)
-                    .sound(SoundType.SHROOMLIGHT))
+                    .sound(SoundType.AMETHYST))
+    );
+    public static final DeferredBlock<Block> AURORACITE_STARS = registerBlock("auroracite_stars",
+            () -> new AuroraciteStarsBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.TERRACOTTA_WHITE)
+                    .sound(SoundType.SMALL_AMETHYST_BUD)
+                    .noOcclusion()
+                    .noCollission())
     );
     //Attracta Expanse
     public static final DeferredBlock<PolarPillarBlock> POLAR_PILLAR = registerBlock("polar_pillar",

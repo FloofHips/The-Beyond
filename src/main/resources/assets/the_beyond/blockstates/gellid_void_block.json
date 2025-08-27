@@ -1,0 +1,10 @@
+{
+    "variants": {
+        "level=0": {
+            "model": "the_beyond:block/gellid_void_caustics"
+        },
+        "level=8": {
+            "model": "the_beyond:block/gellid_void_caustics_falling"
+        }
+    }
+}

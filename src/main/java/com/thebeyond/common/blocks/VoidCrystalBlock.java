@@ -7,6 +7,7 @@ import com.thebeyond.common.fluids.GellidVoidBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
@@ -18,6 +19,9 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 import javax.annotation.Nullable;
 
@@ -35,9 +39,23 @@ public class VoidCrystalBlock extends Block {
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(new Property[]{UP, HEIGHT});
     }
+
+    @Override
+    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        Vec3 vec3 = state.getOffset(level, pos);
+
+        if(state.getValue(HEIGHT) == PillarHeightProperty.TIP) {
+            if(state.getValue(UP))
+                return TIP_SHAPE.move(vec3.x, 0.0, vec3.z);
+            return TIP_SHAPE_DOWN.move(vec3.x, 0.0, vec3.z);
+        }
+        return CORE_SHAPE.move(vec3.x, 0.0, vec3.z);
+    }
+
     public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
         Direction direction = state.getValue(UP) ? Direction.UP : Direction.DOWN;
         BlockPos supportingPos = pos.relative(direction.getOpposite());
+        if (level.getBlockState(supportingPos).getBlock() instanceof VoidCrystalBlock) return true;
         if (direction == Direction.UP && level.getBlockState(supportingPos).getBlock() instanceof GellidVoidBlock) return true;
         return canSupportCenter(level, supportingPos, direction);
     }
@@ -93,13 +111,16 @@ public class VoidCrystalBlock extends Block {
         return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
     }
 
+    private static final VoxelShape TIP_SHAPE;
+    private static final VoxelShape TIP_SHAPE_DOWN;
+    private static final VoxelShape CORE_SHAPE;
+
     static {
         UP = BlockStateProperties.UP;
         HEIGHT = EnumProperty.create("height", PillarHeightProperty.class);
 
-//        TIP_SHAPE_UP = Block.box(5.0, 0.0, 5.0, 11.0, 11.0, 11.0);
-//        TIP_SHAPE_DOWN = Block.box(5.0, 5.0, 5.0, 11.0, 16.0, 11.0);
-//        CORE_SHAPE = Block.box(3.0, 0.0, 3.0, 13.0, 16.0, 13.0);
-//        BASE_SHAPE = Block.box(2.0, 0.0, 2.0, 14.0, 16.0, 14.0);
+        TIP_SHAPE = Block.box(3.0, 0.0, 3.0, 13.0, 9.0, 13.0);
+        TIP_SHAPE_DOWN = Block.box(3.0, 3.0, 3.0, 13.0, 16.0, 13.0);
+        CORE_SHAPE = Block.box(3.0, 0.0, 3.0, 13.0, 16.0, 13.0);
     }
 }

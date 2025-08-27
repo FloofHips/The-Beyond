@@ -37,6 +37,7 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -48,6 +49,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.PinkPetalsBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.synth.PerlinSimplexNoise;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -63,16 +65,21 @@ import net.neoforged.neoforge.event.entity.living.LivingGetProjectileEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import org.joml.Vector3f;
 
+import java.awt.image.renderable.RenderContext;
+import java.util.Collections;
+
 @SuppressWarnings("unused")
 @EventBusSubscriber(modid = TheBeyond.MODID, value = Dist.CLIENT)
 public class ModClientEvents {
 
+    static RandomSource random = RandomSource.create(254572);
+    public static PerlinSimplexNoise gellidVoidNoise = new PerlinSimplexNoise(random, Collections.singletonList(1));
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event){
         EntityRenderers.register(BeyondEntityTypes.ENDERGLOP.get(), EnderglopRenderer::new);
 
-        ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID.get(), RenderType.translucent());
-        ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID_FLOWING.get(), RenderType.translucent());
+        ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID.get(), RenderType.cutoutMipped());
+        ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID_FLOWING.get(), RenderType.cutoutMipped());
     }
 
     @SubscribeEvent
@@ -94,6 +101,7 @@ public class ModClientEvents {
     @SubscribeEvent
     public static void colorSetupBlock(RegisterColorHandlersEvent.Block event) {
         BlockColors colors = event.getBlockColors();
+
         colors.register((state, reader, pos, tintIndex) -> {
             if (pos != null) {
                 Vec3 Blue_0 = new Vec3(30, 147, 155);
@@ -151,30 +159,59 @@ public class ModClientEvents {
     @SubscribeEvent
     public static void registerClientExtensions(RegisterClientExtensionsEvent event) {
         event.registerFluidType(new IClientFluidTypeExtensions() {
-            private static final ResourceLocation STILL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void_still"),
-                    FLOW = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void_still"),
-                    OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void_still"),
-                    VIEW_OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/block/gellid_void_still.png");
+            private static final ResourceLocation STILL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void"),
+                    STILL_2 = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/plate_block"),
+                    FLOW = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/auroracite"),
+                    OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/auroracite"),
+                    VIEW_OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/block/auroracite.png");
 
             @Override
             public ResourceLocation getStillTexture() {
                 return STILL;
             }
-
+//
             @Override
             public ResourceLocation getFlowingTexture() {
                 return FLOW;
             }
-
+//
             @Override
             public ResourceLocation getOverlayTexture() {
                 return OVERLAY;
+            }
+            @Override
+            public ResourceLocation getStillTexture(FluidState state, BlockAndTintGetter getter, BlockPos pos) {
+                int offset = (getVoidWaveOffset(pos.getX(), pos.getY(), pos.getZ())) % 39;
+
+                //System.out.println(offset);
+                return ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_" + Mth.abs(offset));
+            }
+
+            @Override
+            public ResourceLocation getFlowingTexture(FluidState state, BlockAndTintGetter getter, BlockPos pos) {
+                int offset = (getVoidWaveOffset(pos.getX(), pos.getY(), pos.getZ())) % 39;
+                //System.out.println(offset);
+                return ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_flowing_" + Mth.abs(offset));
+            }
+
+            public int getVoidWaveOffset(int x, int y, int z){
+                double noiseX = x * 0.05;
+                double noiseZ = z * 0.05;
+
+                double noiseValue = gellidVoidNoise.getValue(noiseX, noiseZ, true);
+
+                int noiseOffset = (int) (((noiseValue + 1.0) * 0.5) * 39);
+
+                int totalOffset = (noiseOffset + Mth.abs(y)) % 40;
+
+                return Mth.clamp(totalOffset, 0, 39);
             }
 
             @Override
             public ResourceLocation getRenderOverlayTexture(Minecraft mc) {
                 return VIEW_OVERLAY;
             }
+
 
             @Override
             public Vector3f modifyFogColor(Camera camera, float partialTick, ClientLevel level, int renderDistance, float darkenWorldAmount, Vector3f fluidFogColor) {
@@ -184,8 +221,8 @@ public class ModClientEvents {
 
             @Override
             public void modifyFogRender(Camera camera, FogRenderer.FogMode mode, float renderDistance, float partialTick, float nearDistance, float farDistance, FogShape shape) {
-                nearDistance = -8F;
-                farDistance = 24F;
+                nearDistance = -20F;
+                farDistance = 2f;
 
                 if (farDistance > renderDistance) {
                     farDistance = renderDistance;
@@ -199,7 +236,7 @@ public class ModClientEvents {
 
             //@Override
             //public boolean renderFluid(FluidState fluidState, BlockAndTintGetter getter, BlockPos pos, VertexConsumer vertexConsumer, BlockState blockState) {
-            //    new AcidRenderer().tesselate(getter, pos, vertexConsumer, blockState, fluidState);
+            //    new WaveFluidRenderer().tesselate(getter, pos, vertexConsumer, blockState, fluidState);
             //    return true;
             //}
         }, BeyondFluids.GELLID_VOID_TYPE.get());

@@ -1,0 +1,21 @@
+{
+	"format_version": "1.21.6",
+	"credit": "Made with Blockbench",
+	"ambientocclusion": false,
+	"render_type": "minecraft:cutout",
+	"textures": {
+		"particle": "the_beyond:block/auroracite_stars",
+		"texture": "the_beyond:block/auroracite_stars"
+	},
+	"elements": [
+		{
+			"from": [8, 0.25, 8],
+			"to": [16, 0.25, 16],
+			"rotation": {"angle": 0, "axis": "y", "origin": [8, 0, 8]},
+			"faces": {
+				"up": {"uv": [8, 8, 16, 16], "texture": "#texture"},
+				"down": {"uv": [8, 16, 16, 8], "texture": "#texture"}
+			}
+		}
+	]
+}

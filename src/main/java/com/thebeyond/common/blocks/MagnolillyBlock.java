@@ -29,13 +29,13 @@ public class MagnolillyBlock extends Block {
         return pFacing == Direction.DOWN && !this.canSurvive(pState, pLevel, pCurrentPos) ? Blocks.AIR.defaultBlockState() : super.updateShape(pState, pFacing, pFacingState, pLevel, pCurrentPos, pFacingPos);
     }
 
-    protected boolean mayPlaceOn(BlockState state, BlockGetter level, BlockPos pos) {
-        FluidState fluidstate = level.getFluidState(pos);
-        return (fluidstate.getType() == Fluids.WATER;
-    }
-//    public boolean canSurvive(BlockState pState, LevelReader pLevel, BlockPos pPos) {
-//        if (pLevel.getBlockState(pPos.below()).getBlock() instanceof PseudoFluidBlock)
-//            return true;
-//        else return false;
-//    }
+    //protected boolean mayPlaceOn(BlockState state, BlockGetter level, BlockPos pos) {
+    //    FluidState fluidstate = level.getFluidState(pos);
+    //    return (fluidstate.getType() == Fluids.WATER);
+    //}
+    //public boolean canSurvive(BlockState pState, LevelReader pLevel, BlockPos pPos) {
+    //    if (pLevel.getBlockState(pPos.below()).getBlock() instanceof PseudoFluidBlock)
+    //        return true;
+    //    else return false;
+    //}
 }
