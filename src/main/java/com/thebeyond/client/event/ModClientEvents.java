@@ -122,11 +122,13 @@ public class ModClientEvents {
     }
 
     @SubscribeEvent
-    public static void onRenderFog(ViewportEvent.RenderFog event){
-        event.setCanceled(true);
-        event.setFogShape(FogShape.SPHERE);
-        event.setFarPlaneDistance((float) Minecraft.getInstance().cameraEntity.position().y + 30);
-        event.setNearPlaneDistance(15);
+    public static void onRenderFog(ViewportEvent.RenderFog event) {
+        if (event.getCamera().getEntity().level().dimensionType().effectsLocation().equals(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"))) {
+            event.setCanceled(true);
+            event.setFogShape(FogShape.SPHERE);
+            event.setFarPlaneDistance((float) Minecraft.getInstance().cameraEntity.position().y + 30);
+            event.setNearPlaneDistance(15);
+        }
     }
 
     @SubscribeEvent
