@@ -1,72 +1,14 @@
 {
   "type": "the_beyond:the_end",
   "generator": {
-    "type": "the_beyond:beyond_end",
+    "type": "the_beyond:the_end",
     "settings": "the_beyond:the_end",
     "biome_source": {
-      "type": "minecraft:multi_noise",
-      "biomes": [
-        {
-          "biome": "the_beyond:end_barrens",
-          "parameters": {
-            "continentalness": 0,
-            "depth": 0,
-            "erosion": 0,
-            "humidity": 0,
-            "offset": 0,
-            "temperature": 0,
-            "weirdness": 0
-          }
-        },
-        {
-          "biome": "the_beyond:end_midlands",
-          "parameters": {
-            "continentalness": 0,
-            "depth": 0,
-            "erosion": 0,
-            "humidity": -0.5,
-            "offset": 0,
-            "temperature": 0,
-            "weirdness": 0
-          }
-        },
-        {
-          "biome": "the_beyond:end_highlands",
-          "parameters": {
-            "continentalness": 0,
-            "depth": 0,
-            "erosion": 0,
-            "humidity": 0,
-            "offset": 0,
-            "temperature": 0.4,
-            "weirdness": 0
-          }
-        },
-        {
-          "biome": "the_beyond:small_end_islands",
-          "parameters": {
-            "continentalness": 0,
-            "depth": 0,
-            "erosion": 0,
-            "humidity": 0.5,
-            "offset": 0.375,
-            "temperature": 0,
-            "weirdness": 0
-          }
-        },
-        {
-          "biome": "the_beyond:attracta_expanse",
-          "parameters": {
-            "continentalness": 0,
-            "depth": 0,
-            "erosion": 0,
-            "humidity": 0,
-            "offset": 0.175,
-            "temperature": -0.5,
-            "weirdness": 0
-          }
-        }
-      ]
+      "type": "the_beyond:the_end",
+      "end_biomes": "#the_beyond:end_biomes",
+      "void_biomes": "#the_beyond:void_biomes",
+      "center_biome": "the_beyond:the_end",
+      "bottom_biome": "the_beyond:the_paths"
     }
   }
 }

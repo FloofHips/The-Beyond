@@ -29,6 +29,7 @@ public class TheBeyond {
         BeyondEntityTypes.ENTITY_TYPES.register(modEventBus);
         BeyondParticleTypes.PARTICLE_TYPES.register(modEventBus);
         BeyondChunkGenerators.CHUNK_GENS.register(modEventBus);
+        BeyondChunkGenerators.BIOME_SOURCES.register(modEventBus);
         BeyondSoundEvents.SOUND_EVENTS.register(modEventBus);
         BeyondFluids.FLUID_TYPES.register(modEventBus);
         BeyondFluids.FLUIDS.register(modEventBus);
