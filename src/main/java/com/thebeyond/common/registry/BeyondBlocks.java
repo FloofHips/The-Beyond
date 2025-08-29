@@ -36,7 +36,7 @@ public class BeyondBlocks {
                     .sound(SoundType.SHROOMLIGHT))
 
     );
-    public static final DeferredBlock<Block> VOID_CRYSTAL = registerBlock("void_crystal",
+    public static final DeferredBlock<Block> VOID_CRYSTAL = registerBlockWithoutItem("void_crystal",
             () -> new VoidCrystalBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_PURPLE)
                     .sound(SoundType.SHROOMLIGHT)
@@ -100,7 +100,7 @@ public class BeyondBlocks {
                     .mapColor(MapColor.DEEPSLATE)
                     .sound(BeyondSoundTypes.PLATED_END_STONE_BLOCK))
     );
-    public static final DeferredBlock<MagnolillyBlock> MAGNOLILLY = registerBlock("magnolilly",
+    public static final DeferredBlock<MagnolillyBlock> MAGNOLILLY = registerBlockWithoutItem("magnolilly",
             () -> new MagnolillyBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.DEEPSLATE)
                     .sound(SoundType.ANCIENT_DEBRIS)

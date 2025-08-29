@@ -62,12 +62,16 @@ public class VoidCrystalBlock extends Block {
 
     @Nullable
     public BlockState getStateForPlacement(BlockPlaceContext context) {
+        Level level = context.getLevel();
         Direction clickedFace = context.getClickedFace();
+        BlockPos pos = context.getClickedPos();
 
-        boolean pointingUp = clickedFace != Direction.DOWN;
+        if (context.getLevel().getBlockState(pos.below()).getBlock() instanceof VoidCrystalBlock || context.getLevel().getBlockState(pos.below()).getBlock() instanceof GellidVoidBlock || canSupportCenter(level, pos.below(), Direction.UP) && clickedFace != Direction.DOWN) {
+            return this.defaultBlockState().setValue(UP, true).setValue(HEIGHT, PillarHeightProperty.TIP);
+        }
 
         return this.defaultBlockState()
-                .setValue(UP, pointingUp)
+                .setValue(UP, false)
                 .setValue(HEIGHT, PillarHeightProperty.TIP);
 
     }

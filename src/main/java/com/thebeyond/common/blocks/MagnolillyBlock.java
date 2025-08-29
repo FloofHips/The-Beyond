@@ -1,17 +1,22 @@
 package com.thebeyond.common.blocks;
 
+import com.thebeyond.common.registry.BeyondBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.FarmBlock;
 import net.minecraft.world.level.block.IceBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.neoforged.neoforge.common.util.TriState;
 
 public class MagnolillyBlock extends Block {
     public MagnolillyBlock(Properties properties) {
@@ -25,17 +30,18 @@ public class MagnolillyBlock extends Block {
         return SHAPE;
     }
 
-    public BlockState updateShape(BlockState pState, Direction pFacing, BlockState pFacingState, LevelAccessor pLevel, BlockPos pCurrentPos, BlockPos pFacingPos) {
-        return pFacing == Direction.DOWN && !this.canSurvive(pState, pLevel, pCurrentPos) ? Blocks.AIR.defaultBlockState() : super.updateShape(pState, pFacing, pFacingState, pLevel, pCurrentPos, pFacingPos);
+    protected boolean mayPlaceOn(BlockState state, BlockGetter level, BlockPos pos) {
+        return state.is(BeyondBlocks.GELLID_VOID);
     }
 
-    //protected boolean mayPlaceOn(BlockState state, BlockGetter level, BlockPos pos) {
-    //    FluidState fluidstate = level.getFluidState(pos);
-    //    return (fluidstate.getType() == Fluids.WATER);
-    //}
-    //public boolean canSurvive(BlockState pState, LevelReader pLevel, BlockPos pPos) {
-    //    if (pLevel.getBlockState(pPos.below()).getBlock() instanceof PseudoFluidBlock)
-    //        return true;
-    //    else return false;
-    //}
+    protected BlockState updateShape(BlockState state, Direction facing, BlockState facingState, LevelAccessor level, BlockPos currentPos, BlockPos facingPos) {
+        return !state.canSurvive(level, currentPos) ? Blocks.AIR.defaultBlockState() : super.updateShape(state, facing, facingState, level, currentPos, facingPos);
+    }
+
+    protected boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
+        BlockPos blockpos = pos.below();
+        BlockState belowBlockState = level.getBlockState(blockpos);
+        TriState soilDecision = belowBlockState.canSustainPlant(level, blockpos, Direction.UP, state);
+        return !soilDecision.isDefault() ? soilDecision.isTrue() : this.mayPlaceOn(belowBlockState, level, blockpos);
+    }
 }
