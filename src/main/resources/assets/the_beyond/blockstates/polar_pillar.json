@@ -1,19 +1,19 @@
 {
   "variants": {
     "polar_charge=0": {
-      "model": "the_beyond:block/attracta_expanse/polar_pillar/pillar_0"
+      "model": "the_beyond:block/pillar_0"
     },
     "polar_charge=1": {
-      "model": "the_beyond:block/attracta_expanse/polar_pillar/pillar_1"
+      "model": "the_beyond:block/pillar_1"
     },
     "polar_charge=2": {
-      "model": "the_beyond:block/attracta_expanse/polar_pillar/pillar_2"
+      "model": "the_beyond:block/pillar_2"
     },
     "polar_charge=3": {
-      "model": "the_beyond:block/attracta_expanse/polar_pillar/pillar_3"
+      "model": "the_beyond:block/pillar_3"
     },
     "polar_charge=4": {
-      "model": "the_beyond:block/attracta_expanse/polar_pillar/pillar_4"
+      "model": "the_beyond:block/pillar_4"
     }
   }
 }

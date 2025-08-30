@@ -1,0 +1,8 @@
+{
+    "feature": "the_beyond:reaching_zymote",
+  "placement": [
+    {
+      "type": "minecraft:in_square"
+    }
+  ]
+}

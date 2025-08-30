@@ -1,7 +1,21 @@
 {
+  "block.the_beyond.auroracite": "Auroracite",
+  "block.the_beyond.creeping_zymote": "Creeping Zymote",
+  "block.the_beyond.gellid_void_block": "Air",
+  "block.the_beyond.magnolilly": "Magnolilly",
+  "block.the_beyond.peeping_obiroot": "Peeping Obiroot",
+  "block.the_beyond.plate_block": "Plate Block",
+  "block.the_beyond.plated_end_stone": "Plated End Stone",
   "block.the_beyond.polar_antenna": "Polar Antenna",
+  "block.the_beyond.polar_bulb": "Polar Bulb",
   "block.the_beyond.polar_pillar": "Polar Pillar",
+  "block.the_beyond.reaching_zymote": "Reaching Zymote",
+  "block.the_beyond.stardust": "Stardust",
+  "block.the_beyond.void_crystal": "Void Crystal",
+  "block.the_beyond.void_flame": "Void Flame",
+  "block.the_beyond.zymote": "Zymote",
   "item.the_beyond.enderglop_spawn_egg": "Enderglop Spawn Egg",
+  "item.the_beyond.gellid_void_bucket": "Gellid Void Bucket",
   "item.the_beyond.magnet": "Magnet",
   "itemGroup.the_beyond": "The Beyond"
 }

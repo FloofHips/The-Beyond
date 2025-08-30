@@ -9,7 +9,8 @@
         "the_beyond:end_highlands",
         "the_beyond:end_midlands",
         "the_beyond:end_barrens",
-        "the_beyond:attracta_expanse"
+        "the_beyond:attracta_expanse",
+        "the_beyond:peer_lands"
       ],
       "void_biomes": [
         "the_beyond:the_void",

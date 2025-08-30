@@ -30,6 +30,19 @@ public class ItemModels extends ItemModelProvider {
 
         items.remove(BeyondBlocks.POLAR_PILLAR.asItem());
         items.remove(BeyondBlocks.POLAR_ANTENNA.asItem());
+        items.remove(BeyondBlocks.POLAR_BULB.asItem());
+        items.remove(BeyondBlocks.MAGNOLILLY.asItem());
+
+        items.remove(BeyondBlocks.VOID_CRYSTAL.asItem());
+        items.remove(BeyondBlocks.VOID_FLAME.asItem());
+        items.remove(BeyondBlocks.STARDUST.asItem());
+        items.remove(BeyondBlocks.CREEPING_ZYMOTE.asItem());
+        items.remove(BeyondBlocks.REACHING_ZYMOTE.asItem());
+
+        itemGeneratedModel(BeyondBlocks.VOID_CRYSTAL.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/void_crystal"));
+        itemGeneratedModel(BeyondBlocks.VOID_FLAME.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/void_flame"));
+        itemGeneratedModel(BeyondBlocks.CREEPING_ZYMOTE.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/creeping_zymote"));
+        itemGeneratedModel(BeyondBlocks.REACHING_ZYMOTE.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/reaching_zymote"));
 
         takeAll(items, i -> i instanceof BlockItem).forEach(item -> blockBasedModel(item, ""));
         takeAll(items, i -> i instanceof SpawnEggItem).forEach(this::spawnEggGeneratedModel);

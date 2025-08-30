@@ -1,0 +1,74 @@
+{
+  "feature": "the_beyond:creeping_zymote",
+  "placement": [
+    {
+      "type": "minecraft:count_on_every_layer",
+      "count": 256
+    },
+    {
+      "type": "minecraft:biome"
+    },
+    {
+      "type": "minecraft:environment_scan",
+      "direction_of_search": "down",
+      "max_steps": 1,
+      "target_condition": {
+        "type": "minecraft:matching_blocks",
+        "offset": [
+          0,
+          -1,
+          0
+        ],
+        "blocks": [
+          "minecraft:end_stone"
+        ]
+      }
+    },
+    {
+      "type": "minecraft:environment_scan",
+      "direction_of_search": "down",
+      "max_steps": 1,
+      "target_condition": {
+        "type": "minecraft:any_of",
+        "predicates": [
+          {
+            "type": "minecraft:matching_blocks",
+            "offset": [
+              -1,
+              -1,
+              0
+            ],
+            "blocks": "the_beyond:zymote"
+          },
+          {
+            "type": "minecraft:matching_blocks",
+            "offset": [
+              0,
+              -1,
+              -1
+            ],
+            "blocks": "the_beyond:zymote"
+          },
+          {
+            "type": "minecraft:matching_blocks",
+            "offset": [
+              1,
+              -1,
+              0
+            ],
+            "blocks": "the_beyond:zymote"
+          },
+          {
+            "type": "minecraft:matching_blocks",
+            "offset": [
+              1,
+              -1,
+              0
+            ],
+            "blocks": "the_beyond:zymote"
+          }
+        ]
+      }
+    }
+  ]
+}

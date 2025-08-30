@@ -1,8 +1,0 @@
-{
-  "parent": "minecraft:block/cube_bottom_top",
-  "textures": {
-    "bottom": "the_beyond:block/polar_pillar/pillar_bottom",
-    "side": "the_beyond:block/polar_pillar/pillar_2",
-    "top": "the_beyond:block/polar_pillar/pillar_top"
-  }
-}

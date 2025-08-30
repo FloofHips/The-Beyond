@@ -1,7 +1,7 @@
 {
   "variants": {
     "": {
-      "model": "the_beyond:block/attracta_expanse/plate_block"
+      "model": "the_beyond:block/plate_block"
     }
   }
 } 

@@ -2,7 +2,7 @@
   "carvers": {},
   "downfall": 0.5,
   "effects": {
-    "fog_color": 2561580,
+    "fog_color": 1578563,
     "mood_sound": {
       "block_search_extent": 8,
       "offset": 2,
@@ -18,22 +18,16 @@
     [],
     [],
     [
-       "the_beyond:void_puddle"
-    ],
-    [
-      "minecraft:end_gateway_return"
-    ],
-    [],
-    [
       "the_beyond:zymote"
     ],
     [
       "the_beyond:creeping_zymote"
     ],
     [],
-    [
-      "minecraft:chorus_plant"
-    ]
+    [],
+    [],
+    [],
+    []
   ],
   "has_precipitation": false,
   "spawn_costs": {},

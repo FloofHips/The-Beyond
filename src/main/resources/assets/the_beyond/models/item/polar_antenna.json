@@ -1,6 +1,6 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "the_beyond:block/polar_antenna/antenna_none"
+    "layer0": "the_beyond:block/antenna_none"
   }
 }

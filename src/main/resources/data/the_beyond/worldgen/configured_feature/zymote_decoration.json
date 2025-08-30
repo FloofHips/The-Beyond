@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:simple_block",
+  "config": {
+    "to_place": {
+      "type": "minecraft:weighted_state_provider",
+      "entries": [
+        {
+          "data": {
+            "Name": "the_beyond:reaching_zymote"
+          },
+          "weight": 10
+        },
+        {
+          "weight": 20,
+          "data": {
+            "Name": "the_beyond:creeping_zymote"
+          }
+        }
+      ]
+    }
+  }
+}

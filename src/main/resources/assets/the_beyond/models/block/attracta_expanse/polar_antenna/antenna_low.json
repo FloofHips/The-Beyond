@@ -1,7 +1,0 @@
-{
-    "parent": "minecraft:block/cross",
-    "render_type": "minecraft:cutout",
-    "textures": {
-        "cross": "the_beyond:block/polar_antenna/antenna_low"
-    }
-}

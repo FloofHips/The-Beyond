@@ -1,0 +1,11 @@
+{
+  "ctm": {
+    "ctm_version": 1,
+    "type": "pattern",
+    "layer": "SOLID",
+    "extra": {
+            "width": 4,
+            "height": 4
+    }
+  }
+}

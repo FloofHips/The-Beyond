@@ -10,9 +10,12 @@ import com.thebeyond.common.fluids.GellidVoidBlock;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.GlowLichenBlock;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.TallGrassBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.material.PushReaction;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -111,6 +114,36 @@ public class BeyondBlocks {
 
     );
 
+    //PeerLands
+    public static final DeferredBlock<ParanoiaBlock> PEEPING_OBIROOT = registerBlock("peeping_obiroot",
+            () -> new ParanoiaBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .sound(SoundType.NETHER_WOOD))
+    );
+    public static final DeferredBlock<Block> ZYMOTE = registerBlock("zymote",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                    .sound(SoundType.NYLIUM))
+    );
+    public static final DeferredBlock<Block> REACHING_ZYMOTE = registerBlock("reaching_zymote",
+            () -> new FloorGrowthBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                    .replaceable()
+                    .noCollission()
+                    .instabreak()
+                    .sound(SoundType.CHERRY_SAPLING)
+                    .offsetType(BlockBehaviour.OffsetType.XZ)
+                    .pushReaction(PushReaction.DESTROY))
+    );
+    public static final DeferredBlock<Block> CREEPING_ZYMOTE = registerBlock("creeping_zymote",
+            () -> new GlowLichenBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                    .replaceable()
+                    .noCollission()
+                    .instabreak()
+                    .sound(SoundType.CHERRY_SAPLING)
+                    .pushReaction(PushReaction.DESTROY))
+    );
     @SuppressWarnings("unchecked")
     private static <T extends Block> DeferredBlock<T> registerBlockWithoutItem(String name, Supplier<? extends Block> block) {
         DeferredBlock<Block> toReturn = BLOCKS.register(name, block);

@@ -1,0 +1,17 @@
+{
+    "render_type": "minecraft:cutout",
+    "ambientocclusion": false,
+    "textures": {
+        "particle": "the_beyond:block/creeping_zymote",
+        "creeping_zymote": "the_beyond:block/creeping_zymote"
+    },
+    "elements": [
+        {   "from": [ 0, 0, 0.1 ],
+            "to": [ 16, 16, 0.1 ],
+            "faces": {
+                "north": { "uv": [ 0, 0, 16, 16 ], "texture": "#creeping_zymote" },
+                "south": { "uv": [ 0, 0, 16, 16 ], "texture": "#creeping_zymote" }
+            }
+        }
+    ]
+}
