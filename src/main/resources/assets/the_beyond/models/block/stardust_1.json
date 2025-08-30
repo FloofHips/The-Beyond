@@ -2,7 +2,7 @@
   "render_type": "minecraft:cutout",
   "ambientocclusion": false,
   "textures": {
-    "texture": "the_beyond:block/auroracite_stars",
+    "texture": "the_beyond:block/stardust",
     "particle": "#texture"
   },
   "elements": [

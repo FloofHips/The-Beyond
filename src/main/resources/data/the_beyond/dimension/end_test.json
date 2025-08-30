@@ -5,8 +5,16 @@
     "settings": "the_beyond:the_end",
     "biome_source": {
       "type": "the_beyond:the_end",
-      "end_biomes": "#the_beyond:end_biomes",
-      "void_biomes": "#the_beyond:void_biomes",
+      "end_biomes": [
+        "the_beyond:end_highlands",
+        "the_beyond:end_midlands",
+        "the_beyond:end_barrens",
+        "the_beyond:attracta_expanse"
+      ],
+      "void_biomes": [
+        "the_beyond:the_void",
+        "the_beyond:small_end_islands"
+      ],
       "center_biome": "the_beyond:the_end",
       "bottom_biome": "the_beyond:the_paths"
     }

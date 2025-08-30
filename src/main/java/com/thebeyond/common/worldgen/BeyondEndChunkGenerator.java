@@ -52,11 +52,11 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         super(biomeSource, settings);
 
         this.settings = settings;
-        RandomSource random1 = RandomSource.create(545424);
-        RandomSource random2 = RandomSource.create(254525);
-        RandomSource random3 = RandomSource.create(542244);
-        RandomSource random4 = RandomSource.create(254572);
-        this.simplexNoise = new SimplexNoise(random1);
+        RandomSource random1 = RandomSource.create();
+        RandomSource random2 = RandomSource.create();
+        RandomSource random3 = RandomSource.create();
+        RandomSource random4 = RandomSource.create();
+        simplexNoise = new SimplexNoise(random1);
         globalHOffsetNoise = new PerlinSimplexNoise(random2, Collections.singletonList(1));
         globalVOffsetNoise = new PerlinSimplexNoise(random3, Collections.singletonList(1));
         globalCOffsetNoise = new PerlinSimplexNoise(random4, Collections.singletonList(1));

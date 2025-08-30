@@ -35,6 +35,7 @@ public class BeyondEndBiomeSource extends BiomeSource {
 
     public BeyondEndBiomeSource(HolderSet<Biome> endBiomes, HolderSet<Biome> voidBiomes,
                                 Holder<Biome> centerBiome, Holder<Biome> bottomBiome) {
+        super();
         this.endBiomes = endBiomes;
         this.voidBiomes = voidBiomes;
         this.centerBiome = centerBiome;
@@ -61,7 +62,7 @@ public class BeyondEndBiomeSource extends BiomeSource {
     @Override
     public Holder<Biome> getNoiseBiome(int x, int y, int z, Climate.Sampler sampler) {
         if (allBiomes.isEmpty()) {
-            throw new IllegalStateException("No biomes configured in BeyondEndBiomeSource");
+            //throw new IllegalStateException("No biomes configured in BeyondEndBiomeSource");
         }
 
         int blockX = QuartPos.toBlock(x);
@@ -70,23 +71,24 @@ public class BeyondEndBiomeSource extends BiomeSource {
         int sectionX = SectionPos.blockToSectionCoord(blockX);
         int sectionZ = SectionPos.blockToSectionCoord(blockZ);
 
-        if ((long) sectionX * (long) sectionX + (long) sectionZ * (long) sectionZ <= 4096L)
+        if ((long) sectionX * (long) sectionX + (long) sectionZ * (long) sectionZ <= 256)
             return centerBiome;
 
-        if(blockY < 40)
+        if(blockY < 20)
             return bottomBiome;
 
-        int biomeX = blockX / 64;
-        int biomeZ = blockZ / 64;
+        int biomeX = blockX / 32;
+        int biomeZ = blockZ / 32;
 
         double horizontalScale = BeyondEndChunkGenerator.getHorizontalBaseScale(biomeX, biomeZ);
+        double threshold = BeyondEndChunkGenerator.getThreshold(biomeX, biomeZ);
 
         double biomeNoise = BeyondEndChunkGenerator.simplexNoise.getValue(
                 biomeX * horizontalScale * 0.2,
                 biomeZ * horizontalScale * 0.2
         );
 
-        long seed = (long) (biomeNoise * 1000000) + biomeX * 31L + biomeZ * 961L;
+        long seed = (long) (biomeNoise * threshold * 1000000) + biomeX * 31L + biomeZ * 961L;
         int solid_index = (int) (Math.abs(seed) % endBiomes.size());
         int void_index = (int) (Math.abs(seed) % voidBiomes.size());
 

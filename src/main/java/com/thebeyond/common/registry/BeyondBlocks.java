@@ -59,8 +59,8 @@ public class BeyondBlocks {
                     .mapColor(MapColor.COLOR_LIGHT_BLUE)
                     .sound(SoundType.AMETHYST))
     );
-    public static final DeferredBlock<Block> AURORACITE_STARS = registerBlock("auroracite_stars",
-            () -> new AuroraciteStarsBlock(BlockBehaviour.Properties.of()
+    public static final DeferredBlock<Block> STARDUST = registerBlock("stardust",
+            () -> new StardustBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.TERRACOTTA_WHITE)
                     .sound(SoundType.SMALL_AMETHYST_BUD)
                     .noOcclusion()
