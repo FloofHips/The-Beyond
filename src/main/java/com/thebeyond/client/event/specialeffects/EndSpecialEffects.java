@@ -92,10 +92,8 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         if (level == null) return biomeFogColor;
 
         if (level.isThundering()) {
-            //return new Vec3(biomeFogColor.x, Mth.clamp(biomeFogColor.y - level.thunderLevel,0,1), biomeFogColor.z);
             return biomeFogColor.subtract(0,1 * level.getThunderLevel(0),0);
         } else if (level.isRaining()) {
-            //return new Vec3(biomeFogColor.x, Mth.clamp(biomeFogColor.y - (0.3 *level.rainLevel),0,1), biomeFogColor.z);
             return biomeFogColor.subtract(0,0.3 * level.getRainLevel(0),0);
         }
         return biomeFogColor;
@@ -135,11 +133,18 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
 
             float strength = skyLight * 2;
 
-            colors.set(
-                    Mth.lerp(thunder, colors.x(), Mth.lerp(position, colors.x() + skyLight,Mth.clamp(colors.x() + 2 * red * strength, 0, 1))),
-                    Mth.lerp(thunder, colors.y() * 0.7f, Mth.lerp(position, colors.y() * 0.7f, colors.y())),
-                    Mth.lerp(thunder, colors.z(), Mth.lerp(position, colors.z() + skyLight,Mth.clamp(colors.z() + 2 * blue * strength, 0, 1)))
-                );
+            if (level.isRaining())
+                colors.set(
+                        Mth.lerp(thunder, colors.x(), Mth.lerp(position, colors.x() + skyLight,Mth.clamp(colors.x() + 2 * red * strength, 0, 1))),
+                        Mth.lerp(thunder, Mth.lerp(rain, Mth.clamp(colors.y() * 1.1f, 0, 1), colors.y() * 0.7f), Mth.lerp(position, colors.y() * 0.7f, colors.y())),
+                        Mth.lerp(thunder, colors.z(), Mth.lerp(position, colors.z() + skyLight,Mth.clamp(colors.z() + 2 * blue * strength, 0, 1)))
+                    );
+            else
+                colors.set(
+                    Mth.lerp(thunder, colors.x() * 0.9f, Mth.lerp(position, colors.x() + skyLight,Mth.clamp(colors.x() + 2 * red * strength, 0, 1))),
+                    Mth.lerp(thunder, Mth.clamp(colors.y() * 1.1f, 0, 1), Mth.lerp(position, colors.y() * 0.7f, colors.y())),
+                    Mth.lerp(thunder, colors.z() * 0.9f, Mth.lerp(position, colors.z() + skyLight,Mth.clamp(colors.z() + 2 * blue * strength, 0, 1)))
+            );
             return;
         } if (rain > 0) {
             colors.set(

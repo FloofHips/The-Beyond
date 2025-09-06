@@ -1,7 +1,7 @@
-package com.thebeyond.common.blocks;
+package com.thebeyond.common.block;
 
 import com.mojang.serialization.MapCodec;
-import com.thebeyond.common.blocks.blockstates.StabilityProperty;
+import com.thebeyond.common.block.blockstates.StabilityProperty;
 import com.thebeyond.util.IMagneticReceiver;
 import com.thebeyond.util.RandomUtils;
 import net.minecraft.core.BlockPos;

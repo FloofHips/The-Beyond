@@ -1,0 +1,23 @@
+{
+	"parent": "minecraft:block/block",
+	"texture_size": [32, 32],
+	"textures": {
+		"0": "the_beyond:block/enadrake_hut_mid",
+		"particle": "the_beyond:block/enadrake_hut_mid"
+	},
+	"elements": [
+		{
+			"from": [2, 0, 2],
+			"to": [14, 16, 14],
+			"rotation": {"angle": 0, "axis": "y", "origin": [2, 0, 2]},
+			"faces": {
+				"north": {"uv": [1, 8, 7, 16], "texture": "#0"},
+				"east": {"uv": [9, 8, 15, 16], "texture": "#0"},
+				"south": {"uv": [9, 8, 15, 16], "texture": "#0"},
+				"west": {"uv": [9, 8, 15, 16], "texture": "#0"},
+				"up": {"uv": [9, 1, 15, 7], "texture": "#0", "cullface": "up"},
+				"down": {"uv": [9, 1, 15, 7], "texture": "#0", "cullface": "down"}
+			}
+		}
+	]
+}

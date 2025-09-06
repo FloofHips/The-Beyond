@@ -1,3 +1,6 @@
 {
-  "parent": "the_beyond:block/reaching_zymote"
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "the_beyond:block/reaching_zymote"
+  }
 }

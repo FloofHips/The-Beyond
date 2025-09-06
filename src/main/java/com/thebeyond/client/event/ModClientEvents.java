@@ -128,11 +128,14 @@ public class ModClientEvents {
             event.setFogShape(FogShape.SPHERE);
             event.setFarPlaneDistance((float) Minecraft.getInstance().cameraEntity.position().y + 30);
             event.setNearPlaneDistance(15);
-        }
+       }
     }
 
     @SubscribeEvent
     public static void fogColor(ViewportEvent.ComputeFogColor event) {
+        //event.setRed(0);
+        //event.setGreen(1);
+        //event.setBlue(1);
         //Minecraft minecraft = Minecraft.getInstance();
         //ClientLevel level = minecraft.level;
         //if (level == null) return;
@@ -259,7 +262,12 @@ public class ModClientEvents {
             return;
         }
 
-        PoseStack poseStack = event.getPoseStack();
+        if (event.getCamera().getEntity().level().dimensionType().effectsLocation().equals(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"))) {
+            if(!event.getCamera().getEntity().level().isRaining())
+                return;
+        }
+
+            PoseStack poseStack = event.getPoseStack();
         Vec3 camPos = event.getCamera().getPosition();
         Frustum frustum = event.getFrustum();
 
@@ -275,7 +283,7 @@ public class ModClientEvents {
         for (int x = -renderDistance; x <= renderDistance; x++) {
             for (int z = -renderDistance; z <= renderDistance; z++) {
                 ChunkPos chunkPos = new ChunkPos(playerChunk.x + x, playerChunk.z + z);
-                //if(chunkPos.x%2==0) break;
+                if(chunkPos.x%2==0) break;
 
                 BlockPos centerPos = new BlockPos(
                         chunkPos.getMiddleBlockX(),
@@ -304,16 +312,18 @@ public class ModClientEvents {
                     poseStack.mulPose(Axis.XP.rotationDegrees(-90f));
 
                     poseStack.translate(0, -0.5f, -0.5f);
-                    BlockRenderDispatcher itemRenderer = Minecraft.getInstance().getBlockRenderer();
+                    ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
 
-                    BlockState pickaxeStack = Blocks.CHAIN.defaultBlockState();
+                    ItemStack pickaxeStack = Items.RED_STAINED_GLASS_PANE.getDefaultInstance();
 
-                    //itemRenderer.renderSingleBlock(
-                    //        pickaxeStack, poseStack,
-                    //        bufferSource,
-                    //        15728880,
-                    //        OverlayTexture.NO_OVERLAY
-                    //);
+                    itemRenderer.renderStatic(
+                            pickaxeStack,
+                            ItemDisplayContext.GUI,
+                            15728880,
+                            OverlayTexture.NO_OVERLAY,
+                            poseStack,
+                            bufferSource, level, 1
+                    );
 
                     poseStack.popPose();
                 }

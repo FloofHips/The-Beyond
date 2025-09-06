@@ -1,23 +1,13 @@
 package com.thebeyond.common.registry;
 
 import com.thebeyond.TheBeyond;
-import com.thebeyond.common.blocks.VoidFlameBlock;
-import com.thebeyond.common.fluids.GellidVoidBlock;
-import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
-import com.thebeyond.common.fluids.GellidVoid;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.block.state.BlockBehaviour;
+import com.thebeyond.common.fluid.GellidVoid;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.MapColor;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 import net.neoforged.neoforge.fluids.FluidType;
 import net.neoforged.neoforge.registries.*;
-
-import java.util.function.Supplier;
 
 public class BeyondFluids {
     public static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(BuiltInRegistries.FLUID, TheBeyond.MODID);

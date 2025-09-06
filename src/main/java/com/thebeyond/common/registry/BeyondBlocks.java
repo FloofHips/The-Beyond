@@ -1,18 +1,13 @@
 package com.thebeyond.common.registry;
 
 import com.google.common.collect.Sets;
-import com.thebeyond.common.blocks.AuroraciteBlock;
-import com.thebeyond.common.blocks.MagnolillyBlock;
-import com.thebeyond.common.blocks.PolarAntennaBlock;
-import com.thebeyond.common.blocks.PolarPillarBlock;
-import com.thebeyond.common.blocks.*;
-import com.thebeyond.common.fluids.GellidVoidBlock;
+import com.thebeyond.common.block.*;
+import com.thebeyond.common.fluid.GellidVoidBlock;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.GlowLichenBlock;
 import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.block.TallGrassBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
@@ -70,19 +65,19 @@ public class BeyondBlocks {
                     .noCollission())
     );
     //Attracta Expanse
-    public static final DeferredBlock<PolarPillarBlock> POLAR_PILLAR = registerBlock("polar_pillar",
+    public static final DeferredBlock<Block> POLAR_PILLAR = registerBlock("polar_pillar",
             () -> new PolarPillarBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.DEEPSLATE)
                     .lightLevel(PolarPillarBlock.STATE_TO_LUMINANCE)
                     .randomTicks())
     );
-    public static final DeferredBlock<PolarBulbBlock> POLAR_BULB = registerBlock("polar_bulb",
+    public static final DeferredBlock<Block> POLAR_BULB = registerBlock("polar_bulb",
             () -> new PolarBulbBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.DEEPSLATE)
                     .lightLevel(PolarBulbBlock.STATE_TO_LUMINANCE)
                     .randomTicks())
     );
-    public static final DeferredBlock<PolarAntennaBlock> POLAR_ANTENNA = registerBlock("polar_antenna",
+    public static final DeferredBlock<Block> POLAR_ANTENNA = registerBlock("polar_antenna",
             () -> new PolarAntennaBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.DEEPSLATE)
                     .lightLevel(PolarAntennaBlock.STATE_TO_LUMINANCE)
@@ -103,7 +98,7 @@ public class BeyondBlocks {
                     .mapColor(MapColor.DEEPSLATE)
                     .sound(BeyondSoundTypes.PLATED_END_STONE_BLOCK))
     );
-    public static final DeferredBlock<MagnolillyBlock> MAGNOLILLY = registerBlockWithoutItem("magnolilly",
+    public static final DeferredBlock<Block> MAGNOLILLY = registerBlockWithoutItem("magnolilly",
             () -> new MagnolillyBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.DEEPSLATE)
                     .sound(SoundType.ANCIENT_DEBRIS)
@@ -115,7 +110,12 @@ public class BeyondBlocks {
     );
 
     //PeerLands
-    public static final DeferredBlock<ParanoiaBlock> PEEPING_OBIROOT = registerBlock("peeping_obiroot",
+    public static final DeferredBlock<Block> OBIROOT = registerBlock("obiroot",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .sound(SoundType.NETHER_WOOD))
+    );
+    public static final DeferredBlock<Block> PEEPING_OBIROOT = registerBlock("peeping_obiroot",
             () -> new ParanoiaBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_GRAY)
                     .sound(SoundType.NETHER_WOOD))
@@ -124,6 +124,11 @@ public class BeyondBlocks {
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_LIGHT_GRAY)
                     .sound(SoundType.NYLIUM))
+    );
+    public static final DeferredBlock<Block> ENADRAKE_HUT = registerBlock("enadrake_hut",
+            () -> new EnadrakeHutBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_YELLOW)
+                    .sound(BeyondSoundTypes.END_STONE))
     );
     public static final DeferredBlock<Block> REACHING_ZYMOTE = registerBlock("reaching_zymote",
             () -> new FloorGrowthBlock(BlockBehaviour.Properties.of()

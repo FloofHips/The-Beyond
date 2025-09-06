@@ -1,9 +1,8 @@
-package com.thebeyond.common.blocks;
+package com.thebeyond.common.block;
 
 import com.mojang.serialization.MapCodec;
-import com.thebeyond.common.blocks.blockstates.PillarHeightProperty;
-import com.thebeyond.common.blocks.blockstates.StabilityProperty;
-import com.thebeyond.common.fluids.GellidVoidBlock;
+import com.thebeyond.common.block.blockstates.PillarHeightProperty;
+import com.thebeyond.common.fluid.GellidVoidBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;

@@ -1,4 +1,4 @@
-package com.thebeyond.common.blocks.blockstates;
+package com.thebeyond.common.block.blockstates;
 
 import net.minecraft.util.StringRepresentable;
 
@@ -9,8 +9,8 @@ public enum PillarHeightProperty implements StringRepresentable {
 
     private final String name;
 
-    PillarHeightProperty(String imbalance) {
-        this.name = imbalance;
+    PillarHeightProperty(String name) {
+        this.name = name;
     }
 
     @Override

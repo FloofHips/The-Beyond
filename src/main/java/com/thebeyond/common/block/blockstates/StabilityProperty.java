@@ -1,4 +1,4 @@
-package com.thebeyond.common.blocks.blockstates;
+package com.thebeyond.common.block.blockstates;
 
 import net.minecraft.util.StringRepresentable;
 

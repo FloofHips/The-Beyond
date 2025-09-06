@@ -1,0 +1,64 @@
+{
+  "variants": {
+    "facing=east,height=base": {
+      "model": "the_beyond:block/enadrake_hut_base",
+      "y": 90
+    },
+    "facing=east,height=core": {
+      "model": "the_beyond:block/enadrake_hut_mid",
+      "y": 90
+    },
+    "facing=east,height=tip": {
+      "model": "the_beyond:block/enadrake_hut",
+      "y": 90
+    },
+    "facing=east,height=top": {
+      "model": "the_beyond:block/enadrake_hut_top",
+      "y": 90
+    },
+    "facing=north,height=base": {
+      "model": "the_beyond:block/enadrake_hut_base"
+    },
+    "facing=north,height=core": {
+      "model": "the_beyond:block/enadrake_hut_mid"
+    },
+    "facing=north,height=tip": {
+      "model": "the_beyond:block/enadrake_hut"
+    },
+    "facing=north,height=top": {
+      "model": "the_beyond:block/enadrake_hut_top"
+    },
+    "facing=south,height=base": {
+      "model": "the_beyond:block/enadrake_hut_base",
+      "y": 180
+    },
+    "facing=south,height=core": {
+      "model": "the_beyond:block/enadrake_hut_mid",
+      "y": 180
+    },
+    "facing=south,height=tip": {
+      "model": "the_beyond:block/enadrake_hut",
+      "y": 180
+    },
+    "facing=south,height=top": {
+      "model": "the_beyond:block/enadrake_hut_top",
+      "y": 180
+    },
+    "facing=west,height=base": {
+      "model": "the_beyond:block/enadrake_hut_base",
+      "y": 270
+    },
+    "facing=west,height=core": {
+      "model": "the_beyond:block/enadrake_hut_mid",
+      "y": 270
+    },
+    "facing=west,height=tip": {
+      "model": "the_beyond:block/enadrake_hut",
+      "y": 270
+    },
+    "facing=west,height=top": {
+      "model": "the_beyond:block/enadrake_hut_top",
+      "y": 270
+    }
+  }
+}

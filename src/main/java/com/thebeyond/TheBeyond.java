@@ -33,6 +33,7 @@ public class TheBeyond {
         BeyondSoundEvents.SOUND_EVENTS.register(modEventBus);
         BeyondFluids.FLUID_TYPES.register(modEventBus);
         BeyondFluids.FLUIDS.register(modEventBus);
+        BeyondFeatures.FEATURES.register(modEventBus);
 
         /**
          * Register ourselves for server and other game events we are interested in.

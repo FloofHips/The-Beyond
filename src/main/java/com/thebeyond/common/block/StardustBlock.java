@@ -1,4 +1,4 @@
-package com.thebeyond.common.blocks;
+package com.thebeyond.common.block;
 
 import com.thebeyond.common.registry.BeyondBlocks;
 import net.minecraft.core.BlockPos;

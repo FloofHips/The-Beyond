@@ -1,20 +1,13 @@
-package com.thebeyond.common.blocks;
+package com.thebeyond.common.block;
 
-import com.thebeyond.TheBeyond;
 import com.thebeyond.common.registry.BeyondBlocks;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.DoublePlantBlock;
-import net.minecraft.world.level.block.FarmBlock;
 import net.minecraft.world.level.block.TallGrassBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.common.util.TriState;
 
 public class FloorGrowthBlock extends TallGrassBlock {
     public FloorGrowthBlock(Properties properties) {
