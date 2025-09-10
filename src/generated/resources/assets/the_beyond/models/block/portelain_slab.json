@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab",
+  "textures": {
+    "bottom": "the_beyond:block/portelain",
+    "side": "the_beyond:block/portelain",
+    "top": "the_beyond:block/portelain"
+  }
+}

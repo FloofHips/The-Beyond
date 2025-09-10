@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "the_beyond:block/portelain_mosaic",
+      "y": 270
+    },
+    "facing=north": {
+      "model": "the_beyond:block/portelain_mosaic",
+      "y": 180
+    },
+    "facing=south": {
+      "model": "the_beyond:block/portelain_mosaic"
+    },
+    "facing=west": {
+      "model": "the_beyond:block/portelain_mosaic",
+      "y": 90
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "the_beyond:block/portelain_slab"
+    },
+    "type=double": {
+      "model": "the_beyond:block/portelain"
+    },
+    "type=top": {
+      "model": "the_beyond:block/portelain_slab_top"
+    }
+  }
+}

@@ -38,11 +38,13 @@ public class ItemModels extends ItemModelProvider {
         items.remove(BeyondBlocks.STARDUST.asItem());
         items.remove(BeyondBlocks.CREEPING_ZYMOTE.asItem());
         items.remove(BeyondBlocks.REACHING_ZYMOTE.asItem());
+        items.remove(BeyondBlocks.PORTELAIN_DOOR.asItem());
 
         itemGeneratedModel(BeyondBlocks.VOID_CRYSTAL.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/void_crystal"));
         itemGeneratedModel(BeyondBlocks.VOID_FLAME.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/void_flame"));
         itemGeneratedModel(BeyondBlocks.CREEPING_ZYMOTE.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/creeping_zymote"));
         itemGeneratedModel(BeyondBlocks.REACHING_ZYMOTE.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/reaching_zymote"));
+        itemGeneratedModel(BeyondBlocks.PORTELAIN_DOOR.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/portelain_door"));
 
         takeAll(items, i -> i instanceof BlockItem).forEach(item -> blockBasedModel(item, ""));
         takeAll(items, i -> i instanceof SpawnEggItem).forEach(this::spawnEggGeneratedModel);

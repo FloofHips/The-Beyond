@@ -1,0 +1,8 @@
+{
+"ctm": {
+    "ctm_version": 1,
+    "type": "ctm",
+    "layer": "SOLID",
+    "textures": ["the_beyond:block/portelain_tiles_ctm"]
+  }
+}

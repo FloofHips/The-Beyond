@@ -7,6 +7,7 @@ import net.minecraft.client.model.HierarchicalModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
+import net.minecraft.util.Mth;
 
 
 public class EnderdropModel<T extends EnderglopEntity> extends HierarchicalModel<T> {

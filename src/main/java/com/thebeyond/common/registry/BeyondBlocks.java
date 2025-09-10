@@ -5,9 +5,7 @@ import com.thebeyond.common.block.*;
 import com.thebeyond.common.fluid.GellidVoidBlock;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.GlowLichenBlock;
-import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
@@ -51,6 +49,33 @@ public class BeyondBlocks {
                     .noOcclusion()
                     .replaceable())
     );
+    public static final DeferredBlock<Block> ENGRAVED_END_STONE = registerBlock("engraved_end_stone", () -> new Block(BlockBehaviour.Properties.of()
+            .mapColor(MapColor.WOOL)
+            .requiresCorrectToolForDrops()
+            .strength(1.5F, 6.0F)
+            .sound(BeyondSoundTypes.END_STONE))
+    );
+    public static final DeferredBlock<Block> PORTELAIN = registerBlock("portelain", () -> new Block(BlockBehaviour.Properties.of()
+            .mapColor(MapColor.WOOL)
+            .requiresCorrectToolForDrops()
+            .strength(1.5F, 6.0F)
+            .sound(SoundType.NETHER_BRICKS))
+    );
+    public static final DeferredBlock<Block> PORTELAIN_PILLAR = registerBlock("portelain_pillar", () -> new RotatedPillarBlock(
+            BlockBehaviour.Properties.ofFullCopy(PORTELAIN.get()).sound(SoundType.NETHER_BRICKS)));
+    public static final DeferredBlock<Block> PORTELAIN_TILES = registerBlock("portelain_tiles", () -> new Block(
+            BlockBehaviour.Properties.ofFullCopy(PORTELAIN.get()).sound(SoundType.NETHER_BRICKS)));
+    public static final DeferredBlock<Block> PORTELAIN_MOSAIC = registerBlock("portelain_mosaic", () -> new GlazedTerracottaBlock(
+            BlockBehaviour.Properties.ofFullCopy(PORTELAIN.get()).sound(SoundType.NETHER_BRICKS)));
+    public static final DeferredBlock<Block> PORTELAIN_DOOR = registerBlock("portelain_door", () -> new DoorBlock(
+            BeyondBlockSetTypes.PORTELAIN,
+            BlockBehaviour.Properties.ofFullCopy(PORTELAIN.get()).noOcclusion().pushReaction(PushReaction.DESTROY)));
+    public static final DeferredBlock<Block> PORTELAIN_STAIRS = registerBlock("portelain_stairs", () -> new StairBlock(
+            PORTELAIN.get().defaultBlockState(),
+            BlockBehaviour.Properties.ofFullCopy(PORTELAIN.get()).sound(SoundType.NETHER_BRICKS)));
+    public static final DeferredBlock<Block> PORTELAIN_SLAB = registerBlock("portelain_slab", () -> new SlabBlock(
+            BlockBehaviour.Properties.ofFullCopy(PORTELAIN.get()).sound(SoundType.NETHER_BRICKS)));
+
     //Path
     public static final DeferredBlock<Block> AURORACITE = registerBlock("auroracite",
             () -> new AuroraciteBlock(BlockBehaviour.Properties.of()
@@ -120,15 +145,15 @@ public class BeyondBlocks {
                     .mapColor(MapColor.COLOR_GRAY)
                     .sound(SoundType.NETHER_WOOD))
     );
-    public static final DeferredBlock<Block> ZYMOTE = registerBlock("zymote",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.COLOR_LIGHT_GRAY)
-                    .sound(SoundType.NYLIUM))
-    );
     public static final DeferredBlock<Block> ENADRAKE_HUT = registerBlock("enadrake_hut",
             () -> new EnadrakeHutBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_YELLOW)
                     .sound(BeyondSoundTypes.END_STONE))
+    );
+    public static final DeferredBlock<Block> ZYMOTE = registerBlock("zymote",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                    .sound(SoundType.NYLIUM))
     );
     public static final DeferredBlock<Block> REACHING_ZYMOTE = registerBlock("reaching_zymote",
             () -> new FloorGrowthBlock(BlockBehaviour.Properties.of()
@@ -176,8 +201,12 @@ public class BeyondBlocks {
         CREATIVE_TAB_ITEMS.add(registerIntegrationBlockItem(name, toReturn));
         return (DeferredBlock<T>) toReturn;
     }
-
-    private static DeferredHolder<Item, BlockItem> registerBlockItem(String name, Supplier<? extends Block> block) {
+//    private static <T extends Block> DeferredBlock<Block> registerSpecial(String name, Supplier<? extends T> supp) {
+//        DeferredBlock<Block> toReturn = BLOCKS.register(name, supp);
+//        CREATIVE_TAB_ITEMS.add(registerBlockItem(name, toReturn));
+//        return toReturn;
+//    }
+        private static DeferredHolder<Item, BlockItem> registerBlockItem(String name, Supplier<? extends Block> block) {
         return BeyondItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties()));
     }
 
