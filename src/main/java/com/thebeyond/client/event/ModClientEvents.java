@@ -114,6 +114,19 @@ public class ModClientEvents {
             }
             return 0xFFFFFF;
         }, BeyondBlocks.AURORACITE.get());
+
+        colors.register((state, reader, pos, tintIndex) -> {
+            if (pos != null) {
+                Vec3 B = new Vec3(202, 222, 234);
+                Vec3 PR = new Vec3(168, 200, 207);
+                Vec3 P = new Vec3(255, 227, 248);
+                Vec3 G = new Vec3(202, 234, 221);
+                Vec3 Y = new Vec3(239, 250, 218);
+
+                return ColorUtils.getNoiseColor(pos, B, PR, P, G, Y);
+            }
+            return 0xFFFFFF;
+        }, BeyondBlocks.PEARL.get(), BeyondBlocks.PEARL_BRICKS.get());
     }
 
     @SubscribeEvent

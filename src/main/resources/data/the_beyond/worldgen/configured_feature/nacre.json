@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:delta_feature",
+  "config": {
+    "contents": {
+      "Name": "the_beyond:nacre"
+    },
+    "rim": {
+      "Name": "the_beyond:plate_block"
+    },
+    "rim_size": {
+      "type": "minecraft:uniform",
+      "max_inclusive": 2,
+      "min_inclusive": 1
+    },
+    "size": {
+      "type": "minecraft:uniform",
+      "max_inclusive": 15,
+      "min_inclusive": 5
+    }
+  }
+}

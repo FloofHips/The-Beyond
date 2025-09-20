@@ -174,6 +174,33 @@ public class BeyondBlocks {
                     .sound(SoundType.CHERRY_SAPLING)
                     .pushReaction(PushReaction.DESTROY))
     );
+
+    // Pearlescent Plains
+    public static final DeferredBlock<Block> NACRE = registerBlock("nacre",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                    .sound(SoundType.GRAVEL))
+    );
+    public static final DeferredBlock<Block> PEARL = registerBlock("pearl",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.TERRACOTTA_WHITE)
+                    .sound(SoundType.AMETHYST))
+    );
+    public static final DeferredBlock<Block> PEARL_BRICKS = registerBlock("pearl_bricks",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.TERRACOTTA_WHITE)
+                    .sound(SoundType.AMETHYST))
+    );
+    public static final DeferredBlock<Block> COBBLED_PEARL = registerBlock("cobbled_pearl",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.TERRACOTTA_WHITE)
+                    .sound(SoundType.AMETHYST))
+    );
+    public static final DeferredBlock<Block> COBBLED_PEARL_BRICKS = registerBlock("cobbled_pearl_bricks",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.TERRACOTTA_WHITE)
+                    .sound(SoundType.AMETHYST))
+    );
     @SuppressWarnings("unchecked")
     private static <T extends Block> DeferredBlock<T> registerBlockWithoutItem(String name, Supplier<? extends Block> block) {
         DeferredBlock<Block> toReturn = BLOCKS.register(name, block);

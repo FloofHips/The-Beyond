@@ -27,9 +27,13 @@ public class BlockStates extends BlockStateProvider {
         Set<DeferredBlock<Block>> blocks = new HashSet(BeyondBlocks.BLOCKS.getEntries());
 
         basicBlock(BeyondBlocks.OBIROOT);
+        basicBlock(BeyondBlocks.NACRE);
         basicBlock(BeyondBlocks.PORTELAIN);
         basicBlock(BeyondBlocks.PORTELAIN_TILES);
         basicBlock(BeyondBlocks.ENGRAVED_END_STONE);
+        basicBlock(BeyondBlocks.COBBLED_PEARL);
+        basicBlock(BeyondBlocks.COBBLED_PEARL_BRICKS);
+
         //customBlock(BeyondBlocks.PORTELAIN_MOSAIC);
         doorBlockWithRenderType((DoorBlock) BeyondBlocks.PORTELAIN_DOOR.get(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/portelain_door_bottom"), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/portelain_door_top"), "minecraft:cutout");
 
