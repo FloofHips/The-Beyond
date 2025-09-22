@@ -1,0 +1,264 @@
+{
+  "type": "minecraft:random_patch",
+  "config": {
+    "tries": 10,
+    "xz_spread": 3,
+    "y_spread": 2,
+    "feature": {
+      "feature": {
+        "config": {
+          "features": [
+            {
+              "feature": {
+                "type": "minecraft:block_column",
+                "config": {
+                  "allowed_placement": {
+                    "type": "minecraft:matching_blocks",
+                    "blocks": "minecraft:air"
+                  },
+                  "direction": "up",
+                  "layers": [
+                    {
+                      "height": {
+                        "type": "minecraft:constant",
+                        "value": 1
+                      },
+                      "provider": {
+                        "type": "minecraft:weighted_state_provider",
+                        "entries": [
+                          {
+                            "weight": 1,
+                            "data": {
+                              "Name": "the_beyond:enadrake_hut",
+                              "Properties": {
+                                "facing": "north",
+                                "height": "base"
+                              }
+                            }
+                          },
+                          {
+                            "weight": 1,
+                            "data": {
+                              "Name": "the_beyond:enadrake_hut",
+                              "Properties": {
+                                "facing": "south",
+                                "height": "base"
+                              }
+                            }
+                          },
+                          {
+                            "weight": 1,
+                            "data": {
+                              "Name": "the_beyond:enadrake_hut",
+                              "Properties": {
+                                "facing": "east",
+                                "height": "base"
+                              }
+                            }
+                          },
+                          {
+                            "weight": 1,
+                            "data": {
+                              "Name": "the_beyond:enadrake_hut",
+                              "Properties": {
+                                "facing": "west",
+                                "height": "base"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "height": {
+                        "type": "minecraft:biased_to_bottom",
+                        "min_inclusive": 0,
+                        "max_inclusive": 2
+                      },
+                      "provider": {
+                        "type": "minecraft:weighted_state_provider",
+                        "entries": [
+                          {
+                            "weight": 1,
+                            "data": {
+                              "Name": "the_beyond:enadrake_hut",
+                              "Properties": {
+                                "facing": "north",
+                                "height": "core"
+                              }
+                            }
+                          },
+                          {
+                            "weight": 1,
+                            "data": {
+                              "Name": "the_beyond:enadrake_hut",
+                              "Properties": {
+                                "facing": "south",
+                                "height": "core"
+                              }
+                            }
+                          },
+                          {
+                            "weight": 1,
+                            "data": {
+                              "Name": "the_beyond:enadrake_hut",
+                              "Properties": {
+                                "facing": "east",
+                                "height": "core"
+                              }
+                            }
+                          },
+                          {
+                            "weight": 1,
+                            "data": {
+                              "Name": "the_beyond:enadrake_hut",
+                              "Properties": {
+                                "facing": "west",
+                                "height": "core"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "height": {
+                        "type": "minecraft:constant",
+                        "value": 1
+                      },
+                      "provider": {
+                        "type": "minecraft:weighted_state_provider",
+                        "entries": [
+                          {
+                            "weight": 1,
+                            "data": {
+                              "Name": "the_beyond:enadrake_hut",
+                              "Properties": {
+                                "facing": "north",
+                                "height": "top"
+                              }
+                            }
+                          },
+                          {
+                            "weight": 1,
+                            "data": {
+                              "Name": "the_beyond:enadrake_hut",
+                              "Properties": {
+                                "facing": "south",
+                                "height": "top"
+                              }
+                            }
+                          },
+                          {
+                            "weight": 1,
+                            "data": {
+                              "Name": "the_beyond:enadrake_hut",
+                              "Properties": {
+                                "facing": "east",
+                                "height": "top"
+                              }
+                            }
+                          },
+                          {
+                            "weight": 1,
+                            "data": {
+                              "Name": "the_beyond:enadrake_hut",
+                              "Properties": {
+                                "facing": "west",
+                                "height": "top"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "prioritize_tip": false
+                }
+              },
+              "placement": []
+            },
+            {
+              "feature": {
+                "config": {
+                  "to_place": {
+                    "type": "minecraft:weighted_state_provider",
+                    "entries": [
+                      {
+                        "weight": 1,
+                        "data": {
+                          "Name": "the_beyond:enadrake_hut",
+                          "Properties": {
+                            "facing": "north"
+                          }
+                        }
+                      },
+                      {
+                        "weight": 1,
+                        "data": {
+                          "Name": "the_beyond:enadrake_hut",
+                          "Properties": {
+                            "facing": "south"
+                          }
+                        }
+                      },
+                      {
+                        "weight": 1,
+                        "data": {
+                          "Name": "the_beyond:enadrake_hut",
+                          "Properties": {
+                            "facing": "east"
+                          }
+                        }
+                      },
+                      {
+                        "weight": 1,
+                        "data": {
+                          "Name": "the_beyond:enadrake_hut",
+                          "Properties": {
+                            "facing": "west"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                "type": "minecraft:simple_block"
+              },
+              "placement": []
+            }
+          ]
+        },
+        "type": "minecraft:simple_random_selector"
+      },
+      "placement": [
+        {
+          "type": "minecraft:block_predicate_filter",
+          "predicate": {
+            "type": "minecraft:all_of",
+            "predicates": [
+              {
+                "type": "minecraft:matching_blocks",
+                "blocks": "#minecraft:air"
+              }
+            ]
+          }
+        },
+        {
+          "type": "minecraft:environment_scan",
+          "direction_of_search": "down",
+          "max_steps": 10,
+          "target_condition": {
+            "type": "minecraft:has_sturdy_face",
+            "offset": [
+              0,
+              -1,
+              0
+            ],
+            "direction": "up"
+          }
+        }
+      ]
+    }
+  }
+}

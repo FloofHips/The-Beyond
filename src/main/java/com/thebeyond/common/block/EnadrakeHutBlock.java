@@ -91,7 +91,7 @@ public class EnadrakeHutBlock extends HorizontalDirectionalBlock {
 
     static {
         HEIGHT = EnumProperty.create("height", HutHeightProperty.class);
-        TIP_SHAPE = Block.box(3.0, 0.0, 3.0, 13.0, 9.0, 13.0);
-        CORE_SHAPE = Block.box(3.0, 0.0, 3.0, 13.0, 16.0, 13.0);
+        TIP_SHAPE = Block.box(1.0, 0.0, 1.0, 15.0, 9.0, 15.0);
+        CORE_SHAPE = Block.box(1.0, 0.0, 1.0, 15.0, 16.0, 15.0);
     }
 }

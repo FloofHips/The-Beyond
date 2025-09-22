@@ -14,10 +14,7 @@ import com.thebeyond.client.model.EnderglopModel;
 import com.thebeyond.client.particle.AuroraciteStepParticle;
 import com.thebeyond.client.particle.GlopParticle;
 import com.thebeyond.client.renderer.EnderglopRenderer;
-import com.thebeyond.common.registry.BeyondBlocks;
-import com.thebeyond.common.registry.BeyondEntityTypes;
-import com.thebeyond.common.registry.BeyondFluids;
-import com.thebeyond.common.registry.BeyondParticleTypes;
+import com.thebeyond.common.registry.*;
 import com.thebeyond.util.ColorUtils;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
@@ -38,6 +35,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -58,8 +56,12 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.*;
+import net.neoforged.neoforge.client.event.sound.PlaySoundEvent;
+import net.neoforged.neoforge.client.event.sound.PlaySoundSourceEvent;
+import net.neoforged.neoforge.client.event.sound.SoundEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
+import net.neoforged.neoforge.event.PlayLevelSoundEvent;
 import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
 import net.neoforged.neoforge.event.entity.living.LivingGetProjectileEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
@@ -142,6 +144,14 @@ public class ModClientEvents {
             event.setFarPlaneDistance((float) Minecraft.getInstance().cameraEntity.position().y + 30);
             event.setNearPlaneDistance(15);
        }
+    }
+
+    @SubscribeEvent
+    public static void onSoundEvent(PlaySoundEvent event) {
+        if(Minecraft.getInstance().player != null && Minecraft.getInstance().player.hasEffect(BeyondEffects.DEAFENED)) {
+            Minecraft.getInstance().getMusicManager().stopPlaying();
+            event.setSound(null);
+        }
     }
 
     @SubscribeEvent

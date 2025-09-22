@@ -52,11 +52,16 @@ public class VoidCrystalBlock extends Block {
     }
 
     public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
-        Direction direction = state.getValue(UP) ? Direction.UP : Direction.DOWN;
-        BlockPos supportingPos = pos.relative(direction.getOpposite());
-        if (level.getBlockState(supportingPos).getBlock() instanceof VoidCrystalBlock) return true;
-        if (direction == Direction.UP && level.getBlockState(supportingPos).getBlock() instanceof GellidVoidBlock) return true;
-        return canSupportCenter(level, supportingPos, direction);
+
+        if (state.getValue(UP)) return !level.getBlockState(pos.below()).isAir();
+        if (!state.getValue(UP)) return !level.getBlockState(pos.above()).isAir();
+
+        return false;
+        //Direction direction = state.getValue(UP) ? Direction.UP : Direction.DOWN;
+        //BlockPos supportingPos = pos.relative(direction.getOpposite());
+        //if (level.getBlockState(supportingPos).getBlock() instanceof VoidCrystalBlock) return true;
+        //if (direction == Direction.UP && level.getBlockState(supportingPos).getBlock() instanceof GellidVoidBlock) return true;
+        //return canSupportCenter(level, supportingPos, direction);
     }
 
     @Nullable
@@ -65,7 +70,7 @@ public class VoidCrystalBlock extends Block {
         Direction clickedFace = context.getClickedFace();
         BlockPos pos = context.getClickedPos();
 
-        if (context.getLevel().getBlockState(pos.below()).getBlock() instanceof VoidCrystalBlock || context.getLevel().getBlockState(pos.below()).getBlock() instanceof GellidVoidBlock || canSupportCenter(level, pos.below(), Direction.UP) && clickedFace != Direction.DOWN) {
+        if ((context.getLevel().getBlockState(pos.below()).getBlock() instanceof VoidCrystalBlock || context.getLevel().getBlockState(pos.below()).getBlock() instanceof GellidVoidBlock || canSupportCenter(level, pos.below(), Direction.UP)) && clickedFace != Direction.DOWN) {
             return this.defaultBlockState().setValue(UP, true).setValue(HEIGHT, PillarHeightProperty.TIP);
         }
 

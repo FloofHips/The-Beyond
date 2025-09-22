@@ -23,7 +23,10 @@
     [
       "minecraft:end_gateway_return"
     ],
-    [],
+    [
+      "the_beyond:void_flame",
+      "the_beyond:void_crystal"
+    ],
     [
       "the_beyond:zymote"
     ],

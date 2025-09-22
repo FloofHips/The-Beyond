@@ -34,6 +34,7 @@ public class TheBeyond {
         BeyondFluids.FLUID_TYPES.register(modEventBus);
         BeyondFluids.FLUIDS.register(modEventBus);
         BeyondFeatures.FEATURES.register(modEventBus);
+        BeyondEffects.MOB_EFFECTS.register(modEventBus);
 
         /**
          * Register ourselves for server and other game events we are interested in.

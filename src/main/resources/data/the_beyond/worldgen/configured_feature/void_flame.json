@@ -2,7 +2,7 @@
     "type": "minecraft:random_patch",
     "config": {
         "tries": 10,
-        "xz_spread": 4,
+        "xz_spread": 5,
         "y_spread": 2,
         "feature": {
             "feature": {
@@ -11,7 +11,7 @@
                     "to_place": {
                         "type": "minecraft:simple_state_provider",
                         "state": {
-                            "Name": "the_beyond:magnolilly"
+                            "Name": "the_beyond:void_flame"
                         }
                     }
                 }

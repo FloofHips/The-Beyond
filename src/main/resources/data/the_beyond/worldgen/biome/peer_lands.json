@@ -23,7 +23,9 @@
     [
         "the_beyond:obiroot"
     ],
-    [],
+    [
+	"the_beyond:enadrake_hut_patch"
+    ],
     [
 	"the_beyond:creeping_zymote"
     ],

@@ -20,7 +20,10 @@
     [
        "the_beyond:void_puddle"
     ],
-    [],
+    [
+      "the_beyond:void_flame",
+      "the_beyond:void_crystal"
+    ],
     [],
     [],
     [],

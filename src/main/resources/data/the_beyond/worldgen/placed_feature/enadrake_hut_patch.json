@@ -1,9 +1,9 @@
 {
-  "feature": "the_beyond:obiroot",
+  "feature": "the_beyond:enadrake_hut_patch",
   "placement": [
     {
       "type": "minecraft:count_on_every_layer",
-      "count": 10
+      "count": 1
     },
     {
       "type": "minecraft:biome"

@@ -54,7 +54,9 @@
       "the_beyond:void_puddle"
     ],
     [
-      "the_beyond:magnetic_pillar"
+      "the_beyond:magnetic_pillar",
+      "the_beyond:void_flame",
+      "the_beyond:void_crystal"
     ],
     [
       "the_beyond:magnolilly"

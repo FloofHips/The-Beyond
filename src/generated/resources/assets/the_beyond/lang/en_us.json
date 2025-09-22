@@ -29,6 +29,8 @@
   "block.the_beyond.void_crystal": "Void Crystal",
   "block.the_beyond.void_flame": "Void Flame",
   "block.the_beyond.zymote": "Zymote",
+  "effect.the_beyond.deafened": "Deafened",
+  "effect.the_beyond.unstable": "Unstable",
   "item.the_beyond.enderglop_spawn_egg": "Enderglop Spawn Egg",
   "item.the_beyond.gellid_void_bucket": "Gellid Void Bucket",
   "item.the_beyond.magnet": "Magnet",
