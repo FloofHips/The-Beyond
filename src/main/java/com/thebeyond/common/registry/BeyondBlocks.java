@@ -174,6 +174,12 @@ public class BeyondBlocks {
                     .sound(SoundType.CHERRY_SAPLING)
                     .pushReaction(PushReaction.DESTROY))
     );
+    public static final DeferredBlock<Block> ENATIOUS_TOTEM_SEED = registerBlock("enatious_totem_seed",
+            () -> new EnatiousTotemSeed(Block.Properties.of()
+                    .mapColor(MapColor.COLOR_PURPLE)
+                    .sound(SoundType.METAL)
+                    .lightLevel(state -> 7)
+                    .requiresCorrectToolForDrops()));
 
     // Pearlescent Plains
     public static final DeferredBlock<Block> NACRE = registerBlock("nacre",

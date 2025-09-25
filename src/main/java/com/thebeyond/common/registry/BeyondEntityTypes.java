@@ -1,6 +1,7 @@
 package com.thebeyond.common.registry;
 
 import com.thebeyond.TheBeyond;
+import com.thebeyond.common.entity.EnadrakeEntity;
 import com.thebeyond.common.entity.EnderglopEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
@@ -19,6 +20,11 @@ public class BeyondEntityTypes {
             () -> EntityType.Builder.of(EnderglopEntity::new, MobCategory.MONSTER)
                     .sized(0.5F, 0.5F)
                     .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "enderglop").toString()));
+    public static final DeferredHolder<EntityType<?>, EntityType<EnadrakeEntity>> ENADRAKE =
+            ENTITY_TYPES.register("enadrake",
+                    () -> EntityType.Builder.of(EnadrakeEntity::new, MobCategory.MISC)
+                            .sized(0.6F, 0.9F)
+                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "enadrake").toString()));
 
     public static void register(EventBus eventBus) {
         ENTITY_TYPES.register(eventBus);

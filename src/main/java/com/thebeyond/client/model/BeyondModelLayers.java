@@ -10,4 +10,7 @@ public class BeyondModelLayers {
 
     public static final ModelLayerLocation ENDERGLOP_LAYER =
             new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "enderglop_layer"), "main");
+
+    public static final ModelLayerLocation ENADRAKE =
+            new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "enadrake"), "main");
 }

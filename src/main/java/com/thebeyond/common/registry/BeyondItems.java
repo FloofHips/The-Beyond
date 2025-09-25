@@ -24,6 +24,7 @@ public class BeyondItems {
     public static final DeferredItem<Item> GELLID_VOID_BUCKET = registerItem("gellid_void_bucket", () -> new BucketItem(BeyondFluids.GELLID_VOID.get(), new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
 
     public static final DeferredItem<SpawnEggItem> ENDERGLOP_SPAWN_EGG  = ITEMS.register("enderglop_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENDERGLOP.get(),0x7127f8, 0xc126ff,new Item.Properties()));
+    public static final DeferredItem<SpawnEggItem> ENADRAKE_SPAWN_EGG  = ITEMS.register("enadrake_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENADRAKE.get(),-13213601, -297995,new Item.Properties()));
 
 
     @SuppressWarnings("unchecked")

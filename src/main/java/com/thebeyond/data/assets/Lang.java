@@ -54,7 +54,6 @@ public class Lang extends LanguageProvider {
         return result.toString().trim();
     }
     public String getEffectName(String id) {
-        System.out.println(id);
         String[] words = id.toString().split("\\.")[2].split("_");
 
         StringBuilder result = new StringBuilder();
