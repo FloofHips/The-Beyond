@@ -59,7 +59,7 @@ public class EnadrakeModel <T extends EnadrakeEntity> extends EntityModel<Enadra
         this.head.yRot = v3 * 0.017453292F;
 
         this.body.y = Mth.cos(v / 2f) * 1.4F * v1;
-        this.head.y = - 8 + Mth.cos(v + Mth.PI) * 2F * v1;
+        this.head.y = - 8 + Mth.cos(v + Mth.PI) * 4F * v1;
 
     }
 

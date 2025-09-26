@@ -223,7 +223,7 @@ public class EnderglopEntity extends Mob implements Enemy {
     }
 
     private boolean canForm() {
-        return this.isAlive() && mergeCooldown <= 0 && this.getSize() < 3;
+        return this.isAlive() && mergeCooldown <= 0 && this.getSize() < 4;
     }
 
     public void tick() {
@@ -236,7 +236,7 @@ public class EnderglopEntity extends Mob implements Enemy {
         }
 
         //charging stuff
-        if (this.getSize()==3 && this.random.nextInt(100)==0 && !this.getIsArmored() && this.onGround() && !this.isInWater() && !this.getIsCharging()){
+        if (this.getSize()==4 && this.random.nextInt(100)==0 && !this.getIsArmored() && this.onGround() && !this.isInWater() && !this.getIsCharging()){
             this.setIsCharging(true);
             this.setChargingTicks(40);
         }

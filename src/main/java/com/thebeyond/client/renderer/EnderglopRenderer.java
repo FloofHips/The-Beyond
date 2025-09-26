@@ -1,49 +1,51 @@
 package com.thebeyond.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.model.BeyondModelLayers;
+import com.thebeyond.client.model.EnadrakeModel;
 import com.thebeyond.client.model.EnderdropModel;
 import com.thebeyond.client.model.EnderglopModel;
 import com.thebeyond.common.entity.EnderglopEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.Nullable;
+import org.joml.Quaterniond;
 
 @OnlyIn(Dist.CLIENT)
 public class EnderglopRenderer extends MobRenderer<EnderglopEntity, EnderdropModel<EnderglopEntity>> {
 
-    private static final ResourceLocation ENDERDROP_TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enderglop/enderdrop.png");
-    private static final ResourceLocation PURPLESLIME_LOCATION = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enderglop/enderglop_naked.png");
-    private static final ResourceLocation PURPLESLIME_ARMOR_LOCATION = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enderglop/enderglop_armored.png");
+    private static final ResourceLocation ENDERGLOP = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enderglop.png");
+    private static final ResourceLocation ENDERGLOP_ARMORED = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enderglop_armored.png");
 
-    private final EnderglopModel<EnderglopEntity> enderglopModel;
-    private final EnderdropModel<EnderglopEntity> enderdropModel;
 
     public EnderglopRenderer(EntityRendererProvider.Context pContext){
         super(pContext,new EnderdropModel<>(pContext.bakeLayer(BeyondModelLayers.ENDERDROP_LAYER)),0.25F);
-        this.enderglopModel = new EnderglopModel<>(pContext.bakeLayer(BeyondModelLayers.ENDERGLOP_LAYER));
-        this.enderdropModel = new EnderdropModel<>(pContext.bakeLayer(BeyondModelLayers.ENDERDROP_LAYER));
     }
 
+    @Nullable
     @Override
-    public void render(EnderglopEntity entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
-
-        if (entity.isTiny()){
-            this.model = enderdropModel;
-        }else {
-            this.model = enderglopModel;
+    protected RenderType getRenderType(EnderglopEntity livingEntity, boolean bodyVisible, boolean translucent, boolean glowing) {
+        ResourceLocation resourcelocation = this.getTextureLocation(livingEntity);
+        if (translucent) {
+            return RenderType.itemEntityTranslucentCull(resourcelocation);
+        } else if (bodyVisible) {
+            return RenderType.entityTranslucent(resourcelocation);
+        } else {
+            return glowing ? RenderType.outline(resourcelocation) : null;
         }
-
-        super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
     }
 
     public ResourceLocation getTextureLocation(EnderglopEntity pEntity){
-        return pEntity.isTiny() ? ENDERDROP_TEXTURE : pEntity.getIsArmored() ? PURPLESLIME_ARMOR_LOCATION : PURPLESLIME_LOCATION;
+        return pEntity.getIsArmored() ? ENDERGLOP_ARMORED : ENDERGLOP;
     }
 
     protected void scale(EnderglopEntity livingEntity, PoseStack poseStack, float partialTickTime) {
@@ -51,19 +53,9 @@ public class EnderglopRenderer extends MobRenderer<EnderglopEntity, EnderdropMod
         poseStack.translate(0.0F, 0.001F, 0.0F);
         float f1 = (float)livingEntity.getSize();
         float f2 = Mth.lerp(partialTickTime, livingEntity.oSquish, livingEntity.squish) / (f1 * 0.5F + 1.0F);
+
         float f3 = 1.0F / (f2 + 1.0F);
-        float f4 = switch (livingEntity.getSize()) {
-            case 1 -> 0.8F;
-            case 2 -> 0.35F;
-            default -> 0.45F;
-        };
-        poseStack.scale(f3 * f1 * f4, 1.0F / f3 * f1 * f4, f3 * f1 * f4);
+        poseStack.scale(f3 * f1, 1.0F / f3 * f1, f3 * f1);
 
     }
-
-//    @Nullable
-//    @Override
-//    protected RenderType getRenderType(EnderglopEntity pEntity, boolean bodyVisible, boolean translucent, boolean glowing) {
-//        return RenderType.crumbling(pEntity.isTiny() ? ENDERDROP_TEXTURE : PURPLESLIME_LOCATION);
-//    }
 }

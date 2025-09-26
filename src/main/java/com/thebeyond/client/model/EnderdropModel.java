@@ -22,14 +22,24 @@ public class EnderdropModel<T extends EnderglopEntity> extends HierarchicalModel
 		MeshDefinition meshdefinition = new MeshDefinition();
 		PartDefinition partdefinition = meshdefinition.getRoot();
 
-		PartDefinition body = partdefinition.addOrReplaceChild("body", CubeListBuilder.create().texOffs(0, 0).addBox(-5.5F, -10.0F, -5.5F, 11.0F, 10.0F, 11.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 24.0F, 0.0F));
+		PartDefinition body = partdefinition.addOrReplaceChild("body", CubeListBuilder.create().texOffs(0, 16).addBox(-4.0F, -4.4F, -2.0F, 8.0F, 8.0F, 8.0F, new CubeDeformation(0.0F))
+				.texOffs(2, 8).addBox(-4.0F, -1.4F, -3.0F, 8.0F, 2.0F, 4.0F, new CubeDeformation(0.0F))
+				.texOffs(6, 0).addBox(-2.0F, -2.4F, 0.0F, 4.0F, 4.0F, 4.0F, new CubeDeformation(0.0F))
+				.texOffs(0, 0).addBox(-3.0F, -0.4F, -1.0F, 2.0F, 2.0F, 1.0F, new CubeDeformation(0.0F))
+				.texOffs(0, 3).addBox(1.0F, -0.4F, -1.0F, 2.0F, 2.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 20.4F, -2.0F));
 
-		return LayerDefinition.create(meshdefinition, 44, 21);
+		return LayerDefinition.create(meshdefinition, 64, 32);
 	}
 
 	@Override
 	public void setupAnim(T entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-
+		if(entity.getIsCharging()){
+			body.yRot = Mth.cos(ageInTicks*3) * 0.06f;
+		}
+		if(entity.getIsArmored()){
+			body.yRot = entity.squish * Mth.cos(ageInTicks);
+		}
+		body.xRot = entity.squish;
 	}
 
 	@Override

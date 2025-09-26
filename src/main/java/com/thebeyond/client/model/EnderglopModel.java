@@ -7,6 +7,7 @@ import com.thebeyond.common.entity.EnderglopEntity;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
+import net.minecraft.client.renderer.RenderType;
 
 public class EnderglopModel<T extends EnderglopEntity> extends EnderdropModel<T> {
 
@@ -21,8 +22,15 @@ public class EnderglopModel<T extends EnderglopEntity> extends EnderdropModel<T>
 		MeshDefinition meshdefinition = new MeshDefinition();
 		PartDefinition partdefinition = meshdefinition.getRoot();
 
-		PartDefinition body = partdefinition.addOrReplaceChild("body", CubeListBuilder.create().texOffs(0, 45).addBox(-11.5F, -22.0F, -8.0F, 23.0F, 22.0F, 23.0F, new CubeDeformation(1.0F)).texOffs(0, 0).addBox(-11.5F, -22.0F, -8.0F, 23.0F, 22.0F, 23.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 24.0F, 0.0F));
+		PartDefinition body = partdefinition.addOrReplaceChild("body", CubeListBuilder.create().texOffs(0, 16).addBox(-4.0F, -4.4F, -2.0F, 8.0F, 8.0F, 8.0F, new CubeDeformation(0.0F))
+				.texOffs(2, 8).addBox(-4.0F, -1.4F, -3.0F, 8.0F, 2.0F, 4.0F, new CubeDeformation(0.0F))
+				.texOffs(6, 0).addBox(-2.0F, -2.4F, 0.0F, 4.0F, 4.0F, 4.0F, new CubeDeformation(0.0F))
+				.texOffs(0, 0).addBox(-3.0F, -0.4F, -1.0F, 2.0F, 2.0F, 1.0F, new CubeDeformation(0.0F))
+				.texOffs(0, 3).addBox(1.0F, -0.4F, -1.0F, 2.0F, 2.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 20.4F, -2.0F));
 
-		return LayerDefinition.create(meshdefinition, 128, 128);
+		PartDefinition bone = body.addOrReplaceChild("bone", CubeListBuilder.create().texOffs(32, 16).addBox(-7.0F, -8.0F, -1.0F, 8.0F, 8.0F, 8.0F, new CubeDeformation(0.2F))
+				.texOffs(32, 8).addBox(-7.0F, -5.0F, -2.0F, 8.0F, 2.0F, 4.0F, new CubeDeformation(0.3F)), PartPose.offset(3.0F, 3.6F, -1.0F));
+
+		return LayerDefinition.create(meshdefinition, 64, 32);
 	}
 }
