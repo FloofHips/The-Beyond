@@ -28,7 +28,7 @@ public class EnderglopRenderer extends MobRenderer<EnderglopEntity, EnderdropMod
 
 
     public EnderglopRenderer(EntityRendererProvider.Context pContext){
-        super(pContext,new EnderdropModel<>(pContext.bakeLayer(BeyondModelLayers.ENDERDROP_LAYER)),0.25F);
+        super(pContext,new EnderdropModel<>(pContext.bakeLayer(BeyondModelLayers.ENDERGLOP_LAYER)),0.25F);
     }
 
     @Nullable

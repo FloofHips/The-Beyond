@@ -13,4 +13,6 @@ public class BeyondModelLayers {
 
     public static final ModelLayerLocation ENADRAKE =
             new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "enadrake"), "main");
+    public static final ModelLayerLocation ENATIOUS_TOTEM =
+            new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "enatious_totem"), "main");
 }

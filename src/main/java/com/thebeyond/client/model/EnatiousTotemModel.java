@@ -1,13 +1,18 @@
 package com.thebeyond.client.model;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.thebeyond.common.entity.EnadrakeEntity;
+import com.thebeyond.common.entity.EnatiousTotemEntity;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.HierarchicalModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 
-public class EnatiousTotemModel<T extends Entity> extends HierarchicalModel {
+public class EnatiousTotemModel <T extends EnatiousTotemEntity> extends EntityModel<EnatiousTotemEntity> {
     private final ModelPart root;
     private final ModelPart bone3;
     private final ModelPart bone2;
@@ -39,12 +44,23 @@ public class EnatiousTotemModel<T extends Entity> extends HierarchicalModel {
     }
 
     @Override
-    public ModelPart root() {
-        return root;
+    public void setupAnim(EnatiousTotemEntity enatiousTotemEntity, float v, float v1, float v2, float v3, float v4) {
+        this.bone.yRot = v3 * 0.001453292F;
+        this.bone2.yRot = v3 * 0.005453292F / 3;
+        if ((int)v2 % 4 != 0) {
+            return;
+        }
+
+        this.bone.xRot = v4 * 0.017453292F;
+        this.bone2.xRot = v4 * 0.017453292F / 3;
+        this.bone2.y = - 24 + Mth.cos(v2 / 4f) * 0.2F;
+        this.bone2.xScale = 0.9999f;
+        this.bone2.zScale = 0.9999f;
+        this.bone3.y = - (24 + 16) + Mth.cos((v2 / 5f) + Mth.PI + 5) * 0.2F;
     }
 
     @Override
-    public void setupAnim(Entity entity, float v, float v1, float v2, float v3, float v4) {
-
+    public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int i, int i1, int i2) {
+        root.render(poseStack, vertexConsumer, i, i1, i2);
     }
 }

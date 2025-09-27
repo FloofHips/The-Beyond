@@ -7,14 +7,12 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.event.specialeffects.EndSpecialEffects;
-import com.thebeyond.client.model.EnadrakeModel;
-import com.thebeyond.client.model.EnderdropModel;
-import com.thebeyond.client.model.BeyondModelLayers;
+import com.thebeyond.client.model.*;
 
-import com.thebeyond.client.model.EnderglopModel;
 import com.thebeyond.client.particle.AuroraciteStepParticle;
 import com.thebeyond.client.particle.GlopParticle;
 import com.thebeyond.client.renderer.EnadrakeRenderer;
+import com.thebeyond.client.renderer.EnatiousTotemRenderer;
 import com.thebeyond.client.renderer.EnderglopRenderer;
 import com.thebeyond.common.registry.*;
 import com.thebeyond.util.ColorUtils;
@@ -83,6 +81,7 @@ public class ModClientEvents {
     public static void onClientSetup(FMLClientSetupEvent event){
         EntityRenderers.register(BeyondEntityTypes.ENDERGLOP.get(), EnderglopRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.ENADRAKE.get(), EnadrakeRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.ENATIOUS_TOTEM.get(), EnatiousTotemRenderer::new);
 
         ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID.get(), RenderType.cutoutMipped());
         ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID_FLOWING.get(), RenderType.cutoutMipped());
@@ -93,6 +92,7 @@ public class ModClientEvents {
         event.registerLayerDefinition(BeyondModelLayers.ENDERDROP_LAYER, EnderdropModel::createBodyLayer);
         event.registerLayerDefinition(BeyondModelLayers.ENDERGLOP_LAYER, EnderglopModel::createBodyLayer);
         event.registerLayerDefinition(BeyondModelLayers.ENADRAKE, EnadrakeModel::createBodyLayer);
+        event.registerLayerDefinition(BeyondModelLayers.ENATIOUS_TOTEM, EnatiousTotemModel::createBodyLayer);
     }
 
     @SubscribeEvent
