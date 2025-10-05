@@ -25,7 +25,7 @@ public class EnatiousTotemRenderer extends MobRenderer<EnatiousTotemEntity, Enat
     @Override
     public void render(EnatiousTotemEntity entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         boolean flag = entity.hurtTime > 0;
-        super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
+        super.render(entity, entityYaw, 0, poseStack, buffer, packedLight);
         poseStack.pushPose();
         poseStack.mulPose(Axis.YN.rotationDegrees(entity.yBodyRot));
         poseStack.translate(entity.blockPosition().getX() - entity.getX(),3,entity.blockPosition().getZ() - entity.getZ());

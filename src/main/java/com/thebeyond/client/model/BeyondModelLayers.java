@@ -7,12 +7,14 @@ import net.minecraft.resources.ResourceLocation;
 public class BeyondModelLayers {
     public static final ModelLayerLocation ENDERDROP_LAYER =
             new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "enderdrop_layer"), "main");
-
     public static final ModelLayerLocation ENDERGLOP_LAYER =
             new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "enderglop_layer"), "main");
-
     public static final ModelLayerLocation ENADRAKE =
             new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "enadrake"), "main");
     public static final ModelLayerLocation ENATIOUS_TOTEM =
             new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "enatious_totem"), "main");
+    public static final ModelLayerLocation KNOCKBACK_SEED =
+            new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "knockback_seed"), "main");
+    public static final ModelLayerLocation POISON_SEED =
+            new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "poison_seed"), "main");
 }

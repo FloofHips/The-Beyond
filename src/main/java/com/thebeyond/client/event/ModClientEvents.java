@@ -11,9 +11,8 @@ import com.thebeyond.client.model.*;
 
 import com.thebeyond.client.particle.AuroraciteStepParticle;
 import com.thebeyond.client.particle.GlopParticle;
-import com.thebeyond.client.renderer.EnadrakeRenderer;
-import com.thebeyond.client.renderer.EnatiousTotemRenderer;
-import com.thebeyond.client.renderer.EnderglopRenderer;
+import com.thebeyond.client.renderer.*;
+import com.thebeyond.common.entity.KnockbackSeedEntity;
 import com.thebeyond.common.registry.*;
 import com.thebeyond.util.ColorUtils;
 import net.minecraft.client.Camera;
@@ -69,6 +68,7 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import org.joml.Vector3f;
 
 import java.awt.image.renderable.RenderContext;
+import java.io.IOException;
 import java.util.Collections;
 
 @SuppressWarnings("unused")
@@ -82,6 +82,8 @@ public class ModClientEvents {
         EntityRenderers.register(BeyondEntityTypes.ENDERGLOP.get(), EnderglopRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.ENADRAKE.get(), EnadrakeRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.ENATIOUS_TOTEM.get(), EnatiousTotemRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.KNOCKBACK_SEED.get(), KnockBackSeedRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.POISON_SEED.get(), PoisonSeedRenderer::new);
 
         ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID.get(), RenderType.cutoutMipped());
         ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID_FLOWING.get(), RenderType.cutoutMipped());
@@ -93,6 +95,8 @@ public class ModClientEvents {
         event.registerLayerDefinition(BeyondModelLayers.ENDERGLOP_LAYER, EnderglopModel::createBodyLayer);
         event.registerLayerDefinition(BeyondModelLayers.ENADRAKE, EnadrakeModel::createBodyLayer);
         event.registerLayerDefinition(BeyondModelLayers.ENATIOUS_TOTEM, EnatiousTotemModel::createBodyLayer);
+        event.registerLayerDefinition(BeyondModelLayers.KNOCKBACK_SEED, KnockBackSeedModel::createBodyLayer);
+        event.registerLayerDefinition(BeyondModelLayers.POISON_SEED, PoisonSeedModel::createBodyLayer);
     }
 
     @SubscribeEvent
@@ -100,6 +104,7 @@ public class ModClientEvents {
         event.registerSpriteSet(BeyondParticleTypes.GLOP.get(), sprites
                 -> (simpleParticleType, clientLevel, d, e, f, g, h, i)
                 -> new GlopParticle(clientLevel, d, e, f, sprites));
+
         event.registerSpriteSet(BeyondParticleTypes.AURORACITE_STEP.get(), sprites
                 -> (simpleParticleType, clientLevel, d, e, f, g, h, i)
                 -> new AuroraciteStepParticle(clientLevel, d, e, f, sprites));

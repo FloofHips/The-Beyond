@@ -26,8 +26,8 @@ public class EnatiousTotemEntity extends Mob implements RangedAttackMob, Enemy {
     }
 
     protected void registerGoals() {
-        this.goalSelector.addGoal(1, new RandomLookAroundGoal(this));
-        this.goalSelector.addGoal(0, new LookAtPlayerGoal(this, Player.class, 3f));
+        this.goalSelector.addGoal(2, new RandomLookAroundGoal(this));
+        this.goalSelector.addGoal(0, new LookAtPlayerGoal(this, Player.class, 10f));
         this.goalSelector.addGoal(3, new RangedAttackGoal(this, 1.25, 40, 20.0F));
 
         this.targetSelector.addGoal(0, new NearestAttackableTargetGoal<>(this, Player.class, true));
@@ -58,12 +58,19 @@ public class EnatiousTotemEntity extends Mob implements RangedAttackMob, Enemy {
     }
 
     private void shoot(LivingEntity target) {
+        this.lookAt(target, 10,10);
         //top
-        this.level().addFreshEntity(new ShulkerBullet(this.level(), this, target, Direction.fromYRot(this.getYHeadRot()).getAxis()));
+        KnockbackSeedEntity knockback = new KnockbackSeedEntity(this.level(), this.position().add(0,2.5,0), this);
+        if(this.level().addFreshEntity(knockback)){
+            knockback.setDeltaMovement(this.getLookAngle().add(0.1,0.2,0.1));
+        }
         //mid
-        this.level().addFreshEntity(new ShulkerBullet(this.level(), this, target, Direction.fromYRot(this.getYRot()).getAxis()));
+        PoisonSeedEntity poison = new PoisonSeedEntity(this.level(), this.position().add(0,1.5,0), this, target);
+        if(this.level().addFreshEntity(poison)){
+            poison.setDeltaMovement((target.position().x - poison.position().x)/20, 0.5, (target.position().z - poison.position().z)/20);
+        }
         //bottom
-        this.level().addFreshEntity(new ShulkerBullet(this.level(), this, target, Direction.fromYRot(this.getYRot()).getAxis()));
+        //this.level().addFreshEntity(new ShulkerBullet(this.level(), this, target, Direction.fromYRot(this.getYRot()).getAxis()));
 
         this.playSound(SoundEvents.SHULKER_SHOOT, 2.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
     }

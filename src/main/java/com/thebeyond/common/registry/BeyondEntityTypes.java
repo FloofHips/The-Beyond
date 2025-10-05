@@ -1,11 +1,10 @@
 package com.thebeyond.common.registry;
 
 import com.thebeyond.TheBeyond;
-import com.thebeyond.common.entity.EnadrakeEntity;
-import com.thebeyond.common.entity.EnatiousTotemEntity;
-import com.thebeyond.common.entity.EnderglopEntity;
+import com.thebeyond.common.entity.*;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.neoforged.bus.EventBus;
@@ -31,7 +30,18 @@ public class BeyondEntityTypes {
                     () -> EntityType.Builder.of(EnatiousTotemEntity::new, MobCategory.MISC)
                             .sized(1.5F, 3F)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "enatious_totem").toString()));
-
+    public static final DeferredHolder<EntityType<?>, EntityType<KnockbackSeedEntity>> KNOCKBACK_SEED =
+            ENTITY_TYPES.register("knockback_seed",
+                    () -> EntityType.Builder.<KnockbackSeedEntity>of(KnockbackSeedEntity::new, MobCategory.MISC)
+                            .sized(0.6F, 0.6F)
+                            .clientTrackingRange(4)
+                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "knockback_seed").toString()));
+    public static final DeferredHolder<EntityType<?>, EntityType<PoisonSeedEntity>> POISON_SEED =
+            ENTITY_TYPES.register("poison_seed",
+                    () -> EntityType.Builder.<PoisonSeedEntity>of(PoisonSeedEntity::new, MobCategory.MISC)
+                            .sized(0.6F, 0.6F)
+                            .clientTrackingRange(4)
+                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "poison_seed").toString()));
     public static void register(EventBus eventBus) {
         ENTITY_TYPES.register(eventBus);
     }

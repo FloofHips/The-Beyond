@@ -51,8 +51,8 @@ public class EnatiousTotemModel <T extends EnatiousTotemEntity> extends EntityMo
             return;
         }
 
-        this.bone.xRot = v4 * 0.017453292F;
-        this.bone2.xRot = v4 * 0.017453292F / 3;
+        //this.bone.xRot = v4 * 0.017453292F;
+        //this.bone2.xRot = v4 * 0.017453292F / 3;
         this.bone2.y = - 24 + Mth.cos(v2 / 4f) * 0.2F;
         this.bone2.xScale = 0.9999f;
         this.bone2.zScale = 0.9999f;
