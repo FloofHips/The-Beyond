@@ -42,6 +42,12 @@ public class BeyondEntityTypes {
                             .sized(0.6F, 0.6F)
                             .clientTrackingRange(4)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "poison_seed").toString()));
+    public static final DeferredHolder<EntityType<?>, EntityType<UnstableSeedEntity>> UNSTABLE_SEED =
+            ENTITY_TYPES.register("unstable_seed",
+                    () -> EntityType.Builder.<UnstableSeedEntity>of(UnstableSeedEntity::new, MobCategory.MISC)
+                            .sized(0.6F, 0.6F)
+                            .clientTrackingRange(4)
+                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "unstable_seed").toString()));
     public static void register(EventBus eventBus) {
         ENTITY_TYPES.register(eventBus);
     }

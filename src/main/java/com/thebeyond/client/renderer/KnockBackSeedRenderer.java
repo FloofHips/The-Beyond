@@ -40,7 +40,7 @@ public class KnockBackSeedRenderer extends EntityRenderer<KnockbackSeedEntity> {
 
         VertexConsumer vertexconsumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(TEXTURE));
         this.model.setupAnim(entity, 0.0F, 0.0F, f, 0.0F, 0.0F);
-        this.model.renderToBuffer(poseStack, vertexconsumer, packedLight, (i / 5 % 2 == 0 && i != 80) ? OverlayTexture.pack(OverlayTexture.u(1.0F), 10) : OverlayTexture.NO_OVERLAY);
+        this.model.renderToBuffer(poseStack, vertexconsumer, packedLight, (i / 5 % 2 == 0 && i != 40) ? OverlayTexture.pack(OverlayTexture.u(1.0F), 10) : OverlayTexture.NO_OVERLAY);
     }
 
     @Override

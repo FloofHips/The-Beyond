@@ -1,5 +1,6 @@
 package com.thebeyond.common.entity;
 
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.core.Direction;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.*;
@@ -58,6 +59,7 @@ public class EnatiousTotemEntity extends Mob implements RangedAttackMob, Enemy {
     }
 
     private void shoot(LivingEntity target) {
+        this.playSound(BeyondSoundEvents.END_STONE_BREAK.get(), 2.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
         this.lookAt(target, 10,10);
         //top
         KnockbackSeedEntity knockback = new KnockbackSeedEntity(this.level(), this.position().add(0,2.5,0), this);
@@ -70,8 +72,12 @@ public class EnatiousTotemEntity extends Mob implements RangedAttackMob, Enemy {
             poison.setDeltaMovement((target.position().x - poison.position().x)/20, 0.5, (target.position().z - poison.position().z)/20);
         }
         //bottom
-        //this.level().addFreshEntity(new ShulkerBullet(this.level(), this, target, Direction.fromYRot(this.getYRot()).getAxis()));
-
+        UnstableSeedEntity unstable = new UnstableSeedEntity(this.level(), this.position().add(0,0.5,0), this, target);
+        if(this.level().addFreshEntity(unstable)){
+            unstable.setDeltaMovement((target.position().x - unstable.position().x)/20, 0.5, (target.position().z - unstable.position().z)/20);
+        }
         this.playSound(SoundEvents.SHULKER_SHOOT, 2.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+        this.setDeltaMovement(0, 0.1, 0);
+
     }
 }

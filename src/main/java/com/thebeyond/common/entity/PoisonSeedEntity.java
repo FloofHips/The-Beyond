@@ -13,6 +13,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
@@ -113,26 +114,36 @@ public class PoisonSeedEntity extends Projectile {
                 }
             }
         }
-        if (this.finalTarget != null && this.getJumps() > 0 && this.tickCount % 20 == 0) {
+        if (this.finalTarget != null && this.getJumps() > 0 && this.tickCount % 10 == 0) {
             Jump(finalTarget);
         }
 
-        if (this.onGround()){
-            SpawnCloud();
-            discard();
+        HitResult hitresult = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
+        if (hitresult.getType() != HitResult.Type.MISS) {
+            this.onHit(hitresult);
         }
     }
 
-    @Override
-    protected void onHitBlock(BlockHitResult result) {
-        super.onHitBlock(result);
-        SpawnCloud();
-        discard();
+    protected boolean canHitEntity(Entity target) {
+        if (target instanceof UnstableSeedEntity || target instanceof PoisonSeedEntity) {
+            return false;
+        } else {
+            return super.canHitEntity(target);
+        }
     }
 
     @Override
     protected void onHitEntity(EntityHitResult result) {
         super.onHitEntity(result);
+        this.playSound(SoundEvents.SHROOMLIGHT_BREAK, 2.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+        SpawnCloud();
+        discard();
+    }
+
+    @Override
+    protected void onHitBlock(BlockHitResult result) {
+        super.onHitBlock(result);
+        this.playSound(SoundEvents.SHROOMLIGHT_BREAK, 2.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
         SpawnCloud();
         discard();
     }

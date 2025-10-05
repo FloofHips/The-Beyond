@@ -45,12 +45,22 @@ public class EnatiousTotemModel <T extends EnatiousTotemEntity> extends EntityMo
 
     @Override
     public void setupAnim(EnatiousTotemEntity enatiousTotemEntity, float v, float v1, float v2, float v3, float v4) {
-        this.bone.yRot = v3 * 0.001453292F;
-        this.bone2.yRot = v3 * 0.005453292F / 3;
+        this.bone3.yRot = v3 * 0.01453292F;
+        this.bone2.yRot = (v3 / 2) * 0.05453292F;
         if ((int)v2 % 4 != 0) {
             return;
         }
 
+        float flag = enatiousTotemEntity.getTarget()==null ? 5 : 10;
+
+        this.bone.x = Mth.cos(v2 / 4f) * 0.2F * flag;
+        this.bone.z = Mth.cos(v2 / 4.5f) * 0.2F * flag;
+
+        this.bone2.x = Mth.cos(v2 / 3f) * 0.2F * flag;
+        this.bone2.z = Mth.cos(v2 / 2.5f) * 0.2F * flag;
+
+        this.bone3.x = Mth.cos(v2 / 2f) * 0.2F * flag;
+        this.bone3.z = Mth.cos(v2 / 2.5f) * 0.2F * flag;
         //this.bone.xRot = v4 * 0.017453292F;
         //this.bone2.xRot = v4 * 0.017453292F / 3;
         this.bone2.y = - 24 + Mth.cos(v2 / 4f) * 0.2F;

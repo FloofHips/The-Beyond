@@ -17,4 +17,6 @@ public class BeyondModelLayers {
             new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "knockback_seed"), "main");
     public static final ModelLayerLocation POISON_SEED =
             new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "poison_seed"), "main");
+    public static final ModelLayerLocation UNSTABLE_SEED =
+            new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "unstable_seed"), "main");
 }

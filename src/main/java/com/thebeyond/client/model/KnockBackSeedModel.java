@@ -30,6 +30,7 @@ public class KnockBackSeedModel<T extends KnockbackSeedEntity> extends EntityMod
     public void setupAnim(T t, float v, float v1, float v2, float v3, float v4) {
         bb_main.xRot = (float) Math.PI;
         bb_main.y = 0.5f;
+        bb_main.xRot = (float) (t.getDeltaMovement().length() > 0.1 ? -t.getDeltaMovement().length()/2 : Math.PI);
     }
 
     @Override

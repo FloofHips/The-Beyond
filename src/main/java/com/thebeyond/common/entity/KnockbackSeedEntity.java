@@ -35,7 +35,7 @@ public class KnockbackSeedEntity extends Projectile {
         this(BeyondEntityTypes.KNOCKBACK_SEED.get(), level);
 
         this.setPos(pos.x, pos.y, pos.z);
-        this.setFuse(80);
+        this.setFuse(40);
         this.xo = pos.x;
         this.yo = pos.y;
         this.zo = pos.z;

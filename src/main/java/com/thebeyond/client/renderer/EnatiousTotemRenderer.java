@@ -29,7 +29,7 @@ public class EnatiousTotemRenderer extends MobRenderer<EnatiousTotemEntity, Enat
         poseStack.pushPose();
         poseStack.mulPose(Axis.YN.rotationDegrees(entity.yBodyRot));
         poseStack.translate(entity.blockPosition().getX() - entity.getX(),3,entity.blockPosition().getZ() - entity.getZ());
-        Minecraft.getInstance().getBlockRenderer().renderSingleBlock(BeyondBlocks.VOID_FLAME.get().defaultBlockState(), poseStack, buffer, 255, OverlayTexture.pack(0.0F, flag));
+        //Minecraft.getInstance().getBlockRenderer().renderSingleBlock(BeyondBlocks.VOID_FLAME.get().defaultBlockState(), poseStack, buffer, 255, OverlayTexture.pack(0.0F, flag));
         poseStack.popPose();
     }
 
