@@ -26,46 +26,25 @@ import net.minecraft.world.phys.Vec3;
 import javax.annotation.Nullable;
 import java.util.UUID;
 
-public class UnstableSeedEntity extends Projectile {
-    @Nullable
-    private Entity finalTarget;
-    @Nullable
-    private UUID targetId;
+public class UnstableSeedEntity extends AbstractSeedEntity {
 
     public UnstableSeedEntity(EntityType<UnstableSeedEntity> entityType, Level level) {
         super(entityType, level);
     }
     public UnstableSeedEntity(Level level, Vec3 pos, @Nullable LivingEntity owner, Entity target) {
-        this(BeyondEntityTypes.UNSTABLE_SEED.get(), level);
-
-        this.setPos(pos.x, pos.y, pos.z);
-        this.xo = pos.x;
-        this.yo = pos.y;
-        this.zo = pos.z;
-        this.setOwner(owner);
-        this.finalTarget = target;
+        super(level, pos, owner, target);
     }
 
     protected double getDefaultGravity() {
         return 0.006;
     }
 
-    public SoundSource getSoundSource() {
-        return SoundSource.HOSTILE;
-    }
-
     protected void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
-        if (this.finalTarget != null) {
-            compound.putUUID("Target", this.finalTarget.getUUID());
-        }
     }
 
     protected void readAdditionalSaveData(CompoundTag compound) {
         super.readAdditionalSaveData(compound);
-        if (compound.hasUUID("Target")) {
-            this.targetId = compound.getUUID("Target");
-        }
     }
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
@@ -76,23 +55,10 @@ public class UnstableSeedEntity extends Projectile {
         this.applyGravity();
         this.move(MoverType.SELF, this.getDeltaMovement());
 
-        if (!this.level().isClientSide) {
-            if (this.finalTarget == null && this.targetId != null) {
-                this.finalTarget = ((ServerLevel)this.level()).getEntity(this.targetId);
-                if (this.finalTarget == null) {
-                    this.targetId = null;
-                }
-            }
-        }
         if (this.finalTarget != null) {
             if (this.tickCount % 2 == 0)
                 this.playSound(SoundEvents.TRIDENT_THROW.value(), 1.0F, (this.random.nextFloat()) * 1.5F + 0.5f);
             this.setDeltaMovement((finalTarget.position().x - this.position().x)/10, this.getDeltaMovement().y, (finalTarget.position().z - this.position().z)/10);
-        }
-
-        HitResult hitresult = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
-        if (hitresult.getType() != HitResult.Type.MISS) {
-            this.onHit(hitresult);
         }
     }
 
@@ -115,16 +81,6 @@ public class UnstableSeedEntity extends Projectile {
     @Override
     protected void onHitBlock(BlockHitResult result) {
         super.onHitBlock(result);
-        this.playSound(SoundEvents.SHROOMLIGHT_BREAK, 2.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
         this.playSound(SoundEvents.LAVA_EXTINGUISH, 2.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
-        discard();
-    }
-
-    protected boolean canHitEntity(Entity target) {
-        if (target instanceof UnstableSeedEntity || target instanceof PoisonSeedEntity) {
-            return false;
-        } else {
-            return super.canHitEntity(target);
-        }
     }
 }

@@ -21,6 +21,9 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.SimpleExplosionDamageCalculator;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
@@ -28,26 +31,16 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 
-public class KnockbackSeedEntity extends Projectile {
+public class KnockbackSeedEntity extends AbstractSeedEntity {
     private static final EntityDataAccessor<Integer> DATA_FUSE_ID = SynchedEntityData.defineId(KnockbackSeedEntity.class, EntityDataSerializers.INT);
 
     public KnockbackSeedEntity(Level level, Vec3 pos, @Nullable LivingEntity owner) {
-        this(BeyondEntityTypes.KNOCKBACK_SEED.get(), level);
-
-        this.setPos(pos.x, pos.y, pos.z);
+        super(level, pos, owner, null, "");
         this.setFuse(40);
-        this.xo = pos.x;
-        this.yo = pos.y;
-        this.zo = pos.z;
-        this.setOwner(owner);
     }
 
     public KnockbackSeedEntity(EntityType<KnockbackSeedEntity> entityType, Level level) {
         super(entityType, level);
-    }
-
-    public SoundSource getSoundSource() {
-        return SoundSource.HOSTILE;
     }
 
     protected void addAdditionalSaveData(CompoundTag compound) {
@@ -70,11 +63,8 @@ public class KnockbackSeedEntity extends Projectile {
         return 0.04;
     }
     protected void explode() {
-        float f = 4.0F;
         this.level().explode(this, (DamageSource)null, new SimpleExplosionDamageCalculator(true, false, Optional.of(3F), BuiltInRegistries.BLOCK.getTag(BlockTags.BLOCKS_WIND_CHARGE_EXPLOSIONS).map(Function.identity()))
                 , this.getX(), this.getY(0.0625), this.getZ(), 2F, false, Level.ExplosionInteraction.TRIGGER, ParticleTypes.GUST_EMITTER_SMALL, ParticleTypes.GUST_EMITTER_LARGE, SoundEvents.WIND_CHARGE_BURST);
-
-        //this.level().explode(this, Explosion.getDefaultDamageSource(this.level(), this), null, this.getX(), this.getY(0.0625), this.getZ(), 0.01F, false, Level.ExplosionInteraction.TNT);
     }
     public void setFuse(int life) {
         this.entityData.set(DATA_FUSE_ID, life);
@@ -88,6 +78,7 @@ public class KnockbackSeedEntity extends Projectile {
         this.handlePortal();
         this.applyGravity();
         this.move(MoverType.SELF, this.getDeltaMovement());
+
         this.setDeltaMovement(this.getDeltaMovement().scale(0.98));
         if (this.onGround()) {
             int i = this.getFuse() - 1;
@@ -105,5 +96,15 @@ public class KnockbackSeedEntity extends Projectile {
             }
             this.setDeltaMovement(this.getDeltaMovement().multiply(0.7, -0.5, 0.7));
         }
+    }
+
+    @Override
+    protected void onHitBlock(BlockHitResult result) {
+        BlockState blockstate = this.level().getBlockState(result.getBlockPos());
+        blockstate.onProjectileHit(this.level(), blockstate, result, this);
+    }
+
+    @Override
+    protected void onHitEntity(EntityHitResult result) {
     }
 }

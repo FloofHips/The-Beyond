@@ -24,48 +24,28 @@ import javax.annotation.Nullable;
 import java.util.Iterator;
 import java.util.UUID;
 
-public class PoisonSeedEntity extends Projectile {
-    @Nullable
-    private Entity finalTarget;
-    @Nullable
-    private UUID targetId;
+public class PoisonSeedEntity extends AbstractSeedEntity {
     private static final EntityDataAccessor<Integer> DATA_JUMP_ID = SynchedEntityData.defineId(PoisonSeedEntity.class, EntityDataSerializers.INT);
 
     public PoisonSeedEntity(EntityType<PoisonSeedEntity> entityType, Level level) {
         super(entityType, level);
     }
     public PoisonSeedEntity(Level level, Vec3 pos, @Nullable LivingEntity owner, Entity target) {
-        this(BeyondEntityTypes.POISON_SEED.get(), level);
-
-        this.setPos(pos.x, pos.y, pos.z);
-        this.xo = pos.x;
-        this.yo = pos.y;
-        this.zo = pos.z;
-        this.setOwner(owner);
-        this.finalTarget = target;
+        super(level, pos, owner, target, 1);
     }
 
     protected double getDefaultGravity() {
         return 0.02;
     }
 
-    public SoundSource getSoundSource() {
-        return SoundSource.HOSTILE;
-    }
 
     protected void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
-        if (this.finalTarget != null) {
-            compound.putUUID("Target", this.finalTarget.getUUID());
-        }
         compound.putShort("jumps", (short)this.getJumps());
     }
 
     protected void readAdditionalSaveData(CompoundTag compound) {
         super.readAdditionalSaveData(compound);
-        if (compound.hasUUID("Target")) {
-            this.targetId = compound.getUUID("Target");
-        }
         this.setJumps(compound.getShort("jumps"));
     }
     @Override
@@ -106,45 +86,20 @@ public class PoisonSeedEntity extends Projectile {
         this.applyGravity();
         this.move(MoverType.SELF, this.getDeltaMovement());
 
-        if (!this.level().isClientSide) {
-            if (this.finalTarget == null && this.targetId != null) {
-                this.finalTarget = ((ServerLevel)this.level()).getEntity(this.targetId);
-                if (this.finalTarget == null) {
-                    this.targetId = null;
-                }
-            }
-        }
         if (this.finalTarget != null && this.getJumps() > 0 && this.tickCount % 10 == 0) {
             Jump(finalTarget);
-        }
-
-        HitResult hitresult = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
-        if (hitresult.getType() != HitResult.Type.MISS) {
-            this.onHit(hitresult);
-        }
-    }
-
-    protected boolean canHitEntity(Entity target) {
-        if (target instanceof UnstableSeedEntity || target instanceof PoisonSeedEntity) {
-            return false;
-        } else {
-            return super.canHitEntity(target);
         }
     }
 
     @Override
     protected void onHitEntity(EntityHitResult result) {
         super.onHitEntity(result);
-        this.playSound(SoundEvents.SHROOMLIGHT_BREAK, 2.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
         SpawnCloud();
-        discard();
     }
 
     @Override
     protected void onHitBlock(BlockHitResult result) {
         super.onHitBlock(result);
-        this.playSound(SoundEvents.SHROOMLIGHT_BREAK, 2.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
         SpawnCloud();
-        discard();
     }
 }
