@@ -2,6 +2,7 @@ package com.thebeyond.client.model;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.thebeyond.client.model.animation.EnatiousTotemAnimations;
 import com.thebeyond.common.entity.EnadrakeEntity;
 import com.thebeyond.common.entity.EnatiousTotemEntity;
 import net.minecraft.client.model.EntityModel;
@@ -12,24 +13,26 @@ import net.minecraft.client.model.geom.builders.*;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 
-public class EnatiousTotemModel <T extends EnatiousTotemEntity> extends EntityModel<EnatiousTotemEntity> {
+public class EnatiousTotemModel <T extends EnatiousTotemEntity> extends HierarchicalModel<EnatiousTotemEntity> {
+    private final ModelPart all;
     private final ModelPart root;
     private final ModelPart bone3;
     private final ModelPart bone2;
     private final ModelPart bone;
 
     public EnatiousTotemModel(ModelPart root) {
-        this.root = root.getChild("root");
-        this.bone = this.root.getChild("bone");
-        this.bone2 = this.root.getChild("bone2");
-        this.bone3 = this.root.getChild("bone3");
+        this.root = root;
+        this.all = this.root.getChild("all");
+        this.bone = this.all.getChild("bone");
+        this.bone2 = this.all.getChild("bone2");
+        this.bone3 = this.all.getChild("bone3");
     }
 
     public static LayerDefinition createBodyLayer() {
         MeshDefinition meshdefinition = new MeshDefinition();
         PartDefinition partdefinition = meshdefinition.getRoot();
 
-        PartDefinition root = partdefinition.addOrReplaceChild("root", CubeListBuilder.create(), PartPose.offset(0.0F, 24.0F, 0.0F));
+        PartDefinition root = partdefinition.addOrReplaceChild("all", CubeListBuilder.create(), PartPose.offset(0.0F, 24.0F, 0.0F));
 
         PartDefinition bone3 = root.addOrReplaceChild("bone3", CubeListBuilder.create().texOffs(0, 0).addBox(-12.0F, -8.0F, -12.0F, 24.0F, 16.0F, 24.0F, new CubeDeformation(0.0F))
                 .texOffs(96, 0).addBox(-5.0F, -5.0F, -16.0F, 10.0F, 8.0F, 4.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, -40.0F, 0.0F));
@@ -45,34 +48,52 @@ public class EnatiousTotemModel <T extends EnatiousTotemEntity> extends EntityMo
 
     @Override
     public void setupAnim(EnatiousTotemEntity enatiousTotemEntity, float v, float v1, float v2, float v3, float v4) {
+        this.root().getAllParts().forEach(ModelPart::resetPose);
+
         int max = enatiousTotemEntity.getMaxCooldown();
         float flag = enatiousTotemEntity.getCooldown() == max ? 5 : (enatiousTotemEntity.getCooldown() < max/2f ? 0 : 10);
 
-        this.bone3.yRot = v3 * 0.01453292F;
-        this.bone2.yRot = (v3 / 2) * 0.05453292F;
+        int f = (int) (v2/4) * 4;
+        int f2 = (int) (v2/2) * 2;
 
-        if ((int)v2 % 4 != 0) {
-            return;
+        if (enatiousTotemEntity.getCountdown() < 27 || enatiousTotemEntity.getCooldown() < 91 || enatiousTotemEntity.getSpawnProgress() < 30) {
+            if (enatiousTotemEntity.getCountdown() < 27)
+                this.animate(enatiousTotemEntity.shootAnimationState, EnatiousTotemAnimations.SHOOT, f2);
+
+            if (enatiousTotemEntity.getCooldown() < 91)
+                this.animate(enatiousTotemEntity.rechargeAnimationState, EnatiousTotemAnimations.RECHARGE, f2);
+
+            if (enatiousTotemEntity.getSpawnProgress() < 30) {
+                this.animate(enatiousTotemEntity.spawnAnimationState, EnatiousTotemAnimations.SPAWN, f2);
+                this.bone3.yRot += v3 * 0.01453292F;
+                this.bone2.yRot += (v3 / 2) * 0.05453292F;
+            }
         }
+        else {
+            this.bone3.yRot = v3 * 0.01453292F;
+            this.bone2.yRot = (v3 / 2) * 0.05453292F;
 
-        this.bone.x = Mth.cos(v2 / 4f) * 0.05F * flag;
-        this.bone.z = Mth.cos(v2 / 4.5f) * 0.05F * flag;
+            this.bone2.xScale = 0.95f;
+            this.bone2.zScale = 0.95f;
 
-        this.bone2.x = Mth.cos(v2 / 3f) * 0.1F * flag;
-        this.bone2.z = Mth.cos(v2 / 2.5f) * 0.1F * flag;
-
-        this.bone3.x = Mth.cos(v2 / 2f) * 0.2F * flag;
-        this.bone3.z = Mth.cos(v2 / 2.5f) * 0.2F * flag;
-        //this.bone.xRot = v4 * 0.017453292F;
-        //this.bone2.xRot = v4 * 0.017453292F / 3;
-        this.bone2.y = - 24 + Mth.cos(v2 / 4f) * 0.2F * flag;
-        this.bone2.xScale = 0.9999f;
-        this.bone2.zScale = 0.9999f;
-        this.bone3.y = - (24 + 16) + Mth.cos((v2 / 5f) + Mth.PI + 5) * 0.2F * flag;
+            this.bone2.y = - 24 + Mth.cos(f / 4.5f) * 0.15F * flag;
+            this.bone3.y = - (24 + 16) + Mth.cos((f / 5f) + Mth.PI + 5) * 0.15F * flag;
+            this.bone.x  = Mth.cos(f / 2f) * 0.05F * flag;
+            this.bone.z  = Mth.sin(f / 2f) * 0.05F * flag;
+            this.bone2.x = Mth.cos(f / 2f) * 0.1F * flag;
+            this.bone2.z = Mth.sin(f / 2f) * 0.1F * flag;
+            this.bone3.x = Mth.cos(f / 2f) * 0.2F * flag;
+            this.bone3.z = Mth.sin(f / 2f) * 0.2F * flag;
+        }
     }
 
     @Override
     public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int i, int i1, int i2) {
         root.render(poseStack, vertexConsumer, i, i1, i2);
+    }
+
+    @Override
+    public ModelPart root() {
+        return this.root;
     }
 }

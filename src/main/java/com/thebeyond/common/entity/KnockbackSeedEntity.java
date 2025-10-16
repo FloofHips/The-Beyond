@@ -1,5 +1,6 @@
 package com.thebeyond.common.entity;
 
+import com.thebeyond.common.registry.BeyondEffects;
 import com.thebeyond.common.registry.BeyondEntityTypes;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -12,6 +13,8 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageSources;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -106,5 +109,19 @@ public class KnockbackSeedEntity extends AbstractSeedEntity {
 
     @Override
     protected void onHitEntity(EntityHitResult result) {
+        Entity source = result.getEntity();
+        this.level().playLocalSound(this, SoundEvents.ANVIL_FALL, SoundSource.HOSTILE, 2, 2);
+        this.setDeltaMovement(getDeltaMovement().add(0, 0.7, 0));
+
+        if(source instanceof LivingEntity livingEntity){
+            if(livingEntity.level().isClientSide){
+                livingEntity.level().playLocalSound(livingEntity, SoundEvents.BELL_RESONATE, SoundSource.HOSTILE, 2, 2);
+            }
+            DamageSource damagesource = this.damageSources().mobProjectile(this, (LivingEntity) getOwner());
+            livingEntity.setDeltaMovement(getDeltaMovement().add(0, 0.5, 0).scale(-1));
+            livingEntity.hurt(damagesource,1);
+            livingEntity.hurtMarked = true;
+            //livingEntity.addEffect(new MobEffectInstance(BeyondEffects.DEAFENED, 200));
+        }
     }
 }

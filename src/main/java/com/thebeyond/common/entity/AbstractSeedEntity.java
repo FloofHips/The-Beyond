@@ -100,7 +100,7 @@ public abstract class AbstractSeedEntity extends Projectile {
     }
 
     protected boolean canHitEntity(Entity target) {
-        if (target instanceof UnstableSeedEntity || target instanceof PoisonSeedEntity || target instanceof KnockbackSeedEntity) {
+        if (target instanceof UnstableSeedEntity || target instanceof PoisonSeedEntity || target instanceof KnockbackSeedEntity || target instanceof EnatiousTotemEntity || target instanceof EnadrakeEntity) {
             return false;
         } else {
             return super.canHitEntity(target);
