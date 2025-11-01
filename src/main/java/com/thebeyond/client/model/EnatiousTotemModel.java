@@ -56,26 +56,29 @@ public class EnatiousTotemModel <T extends EnatiousTotemEntity> extends Hierarch
         int f = (int) (v2/4) * 4;
         int f2 = (int) (v2/2) * 2;
 
-        if (enatiousTotemEntity.getCountdown() < 27 || enatiousTotemEntity.getCooldown() < 91 || enatiousTotemEntity.getSpawnProgress() < 30) {
-            if (enatiousTotemEntity.getCountdown() < 27)
-                this.animate(enatiousTotemEntity.shootAnimationState, EnatiousTotemAnimations.SHOOT, f2);
+        boolean charging = (enatiousTotemEntity.getCountdown() < 27 && enatiousTotemEntity.getCountdown() > 0);
+        boolean cooldown = (enatiousTotemEntity.getCooldown() < 91 && enatiousTotemEntity.getCooldown() > 0);
+        boolean spawning = (enatiousTotemEntity.getSpawnProgress() < 30 && enatiousTotemEntity.getSpawnProgress() > 0);
 
-            if (enatiousTotemEntity.getCooldown() < 91)
-                this.animate(enatiousTotemEntity.rechargeAnimationState, EnatiousTotemAnimations.RECHARGE, f2);
-
-            if (enatiousTotemEntity.getSpawnProgress() < 30) {
-                this.animate(enatiousTotemEntity.spawnAnimationState, EnatiousTotemAnimations.SPAWN, f2);
-                this.bone3.yRot += v3 * 0.01453292F;
-                this.bone2.yRot += (v3 / 2) * 0.05453292F;
-            }
+        if (enatiousTotemEntity.getCountdown() < 27 && enatiousTotemEntity.getCountdown() > 0) {
+            System.out.println("shooting");
+            this.animate(enatiousTotemEntity.shootAnimationState, EnatiousTotemAnimations.SHOOT, f2);
         }
-        else {
+
+        if (enatiousTotemEntity.getCooldown() < 81 && enatiousTotemEntity.getCooldown() > 0) {
+            System.out.println("charging");
+            this.animate(enatiousTotemEntity.rechargeAnimationState, EnatiousTotemAnimations.RECHARGE, f2);
+        }
+
+        if (enatiousTotemEntity.getSpawnProgress() < 30 && enatiousTotemEntity.getSpawnProgress() > 0) {
+            this.animate(enatiousTotemEntity.spawnAnimationState, EnatiousTotemAnimations.SPAWN, f2);
+            this.bone3.yRot += v3 * 0.01453292F;
+            this.bone2.yRot += (v3 / 2) * 0.05453292F;
+        } else {
             this.bone3.yRot = v3 * 0.01453292F;
             this.bone2.yRot = (v3 / 2) * 0.05453292F;
-
             this.bone2.xScale = 0.95f;
             this.bone2.zScale = 0.95f;
-
             this.bone2.y = - 24 + Mth.cos(f / 4.5f) * 0.15F * flag;
             this.bone3.y = - (24 + 16) + Mth.cos((f / 5f) + Mth.PI + 5) * 0.15F * flag;
             this.bone.x  = Mth.cos(f / 2f) * 0.05F * flag;
