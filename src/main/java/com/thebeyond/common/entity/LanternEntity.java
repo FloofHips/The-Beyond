@@ -53,6 +53,10 @@ public class LanternEntity extends PathfinderMob {
         builder.define(SIZE, 0);
     }
 
+    public int getSize() {
+        return this.entityData.get(SIZE);
+    }
+
     @Override
     protected double getDefaultGravity() {
         return 0.0f;
@@ -79,6 +83,8 @@ public class LanternEntity extends PathfinderMob {
     protected void onInsideBlock(BlockState state) {
         if (!state.isAir())
             this.setDeltaMovement(getDeltaMovement().add(0, (this.random.nextBoolean() ? -1 : 1) * 0.1, 0));
+        if (state.is(Blocks.SOUL_FIRE))
+            this.setDeltaMovement(getViewVector(0).scale(-0.1f));
     }
 
     static class FindFireGoal extends MoveToBlockGoal {

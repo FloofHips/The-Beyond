@@ -22,7 +22,7 @@ public class BeyondModelLayers {
     public static final ModelLayerLocation LANTERN_LARGE =
             new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "lantern_large"), "main");
     public static final ModelLayerLocation LANTERN_MEDIUM =
-            new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "lantern_large"), "main");
+            new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "lantern_medium"), "main");
     public static final ModelLayerLocation LANTERN_SMALL =
             new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "lantern_small"), "main");
 }

@@ -2,7 +2,6 @@ package com.thebeyond.client.model;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.thebeyond.common.entity.EnadrakeEntity;
 import com.thebeyond.common.entity.LanternEntity;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelPart;
@@ -10,7 +9,7 @@ import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
 import net.minecraft.util.Mth;
 
-public class LargeLanternModel<T extends LanternEntity> extends EntityModel<LanternEntity> {
+public class LanternLargeModel<T extends LanternEntity> extends EntityModel<LanternEntity> {
 
     private final ModelPart root;
     private final ModelPart body;
@@ -25,9 +24,9 @@ public class LargeLanternModel<T extends LanternEntity> extends EntityModel<Lant
     private final ModelPart tf_3;
     private final ModelPart lower_fin;
     private final ModelPart lf_2;
-    private final ModelPart if_3;
+    private final ModelPart lf_3;
 
-    public LargeLanternModel(ModelPart root) {
+    public LanternLargeModel(ModelPart root) {
         this.root = root.getChild("root");
         this.body = this.root.getChild("body");
         this.right_fin = this.body.getChild("right_fin");
@@ -41,7 +40,7 @@ public class LargeLanternModel<T extends LanternEntity> extends EntityModel<Lant
         this.tf_3 = this.tf_2.getChild("tf_3");
         this.lower_fin = this.body.getChild("lower_fin");
         this.lf_2 = this.lower_fin.getChild("lf_2");
-        this.if_3 = this.lf_2.getChild("if_3");
+        this.lf_3 = this.lf_2.getChild("lf_3");
     }
 
     public static LayerDefinition createBodyLayer() {
@@ -74,7 +73,7 @@ public class LargeLanternModel<T extends LanternEntity> extends EntityModel<Lant
 
         PartDefinition lf_2 = lower_fin.addOrReplaceChild("lf_2", CubeListBuilder.create().texOffs(36, 32).addBox(0.0F, -7.0F, 0.0F, 0.0F, 13.0F, 8.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.0F, 9.0F));
 
-        PartDefinition if_3 = lf_2.addOrReplaceChild("if_3", CubeListBuilder.create().texOffs(48, 8).addBox(0.0F, -7.0F, 0.0F, 0.0F, 13.0F, 8.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.0F, 8.0F));
+        PartDefinition lf_3 = lf_2.addOrReplaceChild("lf_3", CubeListBuilder.create().texOffs(48, 8).addBox(0.0F, -7.0F, 0.0F, 0.0F, 13.0F, 8.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.0F, 8.0F));
 
         return LayerDefinition.create(meshdefinition, 64, 64);
     }
@@ -88,20 +87,20 @@ public class LargeLanternModel<T extends LanternEntity> extends EntityModel<Lant
 
         this.body.y = 5F * Mth.sin(0.01F * ageInTicks);
         top_fin.yRot = -(limbSwingAmount + 0.1f) * 0.2F * Mth.sin(0.6F * ageInTicks);
-        tf_2.yRot = (limbSwingAmount + 0.1f) * 0.3F * Mth.sin(0.9F * ageInTicks);
-        tf_3.yRot = -(limbSwingAmount + 0.1f) * 0.45F * Mth.sin(0.2F * ageInTicks);
+        tf_2.yRot = (limbSwingAmount + 0.5f) * 0.3F * Mth.sin(0.9F * ageInTicks);
+        tf_3.yRot = -(limbSwingAmount + 0.5f) * 0.45F * Mth.sin(0.2F * ageInTicks);
 
         lower_fin.yRot = -(limbSwingAmount + 0.1f) * 0.2F * Mth.sin(0.6F * ageInTicks);
-        lf_2.yRot = (limbSwingAmount + 0.1f) * 0.3F * Mth.sin(0.9F * ageInTicks);
-        if_3.yRot = -(limbSwingAmount + 0.1f) * 0.45F * Mth.sin(0.2F * ageInTicks);
+        lf_2.yRot = (limbSwingAmount + 0.5f) * 0.3F * Mth.sin(0.9F * ageInTicks);
+        lf_3.yRot = -(limbSwingAmount + 0.5f) * 0.45F * Mth.sin(0.2F * ageInTicks);
 
         left_fin.xRot = -(limbSwingAmount + 0.1f) * 0.2F * Mth.sin(0.6F * ageInTicks);
-        left_2.xRot = (limbSwingAmount + 0.1f) * 0.3F * Mth.sin(0.9F * ageInTicks);
-        left_3.xRot = -(limbSwingAmount + 0.1f) * 0.45F * Mth.sin(0.2F * ageInTicks);
+        left_2.xRot = (limbSwingAmount + 0.5f) * 0.3F * Mth.sin(0.9F * ageInTicks);
+        left_3.xRot = -(limbSwingAmount + 0.5f) * 0.45F * Mth.sin(0.2F * ageInTicks);
 
         right_fin.xRot = (limbSwingAmount + 0.1f) * 0.2F * Mth.sin(0.6F * ageInTicks);
-        right_2.xRot = -(limbSwingAmount + 0.1f) * 0.3F * Mth.sin(0.9F * ageInTicks);
-        right_3.xRot = (limbSwingAmount + 0.1f) * 0.45F * Mth.sin(0.2F * ageInTicks);
+        right_2.xRot = -(limbSwingAmount + 0.5f) * 0.3F * Mth.sin(0.9F * ageInTicks);
+        right_3.xRot = (limbSwingAmount + 0.5f) * 0.45F * Mth.sin(0.2F * ageInTicks);
     }
 
     @Override
