@@ -6,8 +6,10 @@ import com.thebeyond.TheBeyond;
 import com.thebeyond.client.model.BeyondModelLayers;
 import com.thebeyond.client.model.LanternLargeModel;
 import com.thebeyond.client.model.LanternMediumModel;
+import com.thebeyond.client.model.LanternSmallModel;
 import com.thebeyond.common.entity.LanternEntity;
 import com.thebeyond.common.registry.BeyondRenderTypes;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -23,11 +25,13 @@ import java.awt.*;
 public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeModel<LanternEntity>> {
     private static final ResourceLocation TEXTURE_LARGE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/lantern/large_lantern.png");
     private static final ResourceLocation TEXTURE_MEDIUM = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/lantern/medium_lantern.png");
-    protected LanternLargeModel large;
+    private static final ResourceLocation TEXTURE_SMALL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/lantern/small_lantern.png");
+    protected LanternSmallModel small;
     protected LanternMediumModel medium;
     public LanternRenderer(EntityRendererProvider.Context pContext) {
         super(pContext,new LanternLargeModel<>(pContext.bakeLayer(BeyondModelLayers.LANTERN_LARGE)),0F);
         this.medium = new LanternMediumModel<>(pContext.bakeLayer(BeyondModelLayers.LANTERN_MEDIUM));
+        this.small = new LanternSmallModel(pContext.bakeLayer(BeyondModelLayers.LANTERN_SMALL));
         //this.large = new LanternMediumModel<>(pContext.bakeLayer(BeyondModelLayers.LANTERN_LARGE));
     }
 
@@ -79,7 +83,8 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
         this.getModel(entity).setupAnim(entity, f5, f4, f9, f2, f6);
 
         VertexConsumer vertexConsumer = buffer.getBuffer(BeyondRenderTypes.unlitTranslucent(getTextureLocation(entity)));
-        int color = new Color(255,255,255, (int) (255*(Math.sin(entity.tickCount * 0.1F) * 0.5F + 0.5F))).getRGB();
+        float distance = Math.clamp(Minecraft.getInstance().cameraEntity.distanceTo(entity), 0, 10);
+        int color = new Color(255,255,255, (int) (255*(((10 - distance)/10f)))).getRGB();
         this.getModel(entity).renderToBuffer(
                 poseStack,
                 vertexConsumer,
@@ -92,7 +97,9 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
         this.getModel(entity).setupAnim(entity, f5, -f4, f9, f2, f6);
 
         vertexConsumer = buffer.getBuffer(BeyondRenderTypes.getEntityDepth(getTextureLocation(entity)));
-        color = new Color(255,255,255, (int) (255*((Math.sin(entity.tickCount + 6) * 0.1F) * 0.5F + 0.5F))).getRGB();
+        //color = new Color(255,255,255, (int) (255*((Math.sin(entity.tickCount + 6) * 0.1F) * 0.5F + 0.5F))).getRGB();
+        poseStack.pushPose();
+        poseStack.scale(1.2f,1.2f,1.2f);
         this.getModel(entity).renderToBuffer(
                 poseStack,
                 vertexConsumer,
@@ -100,18 +107,20 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
                 OverlayTexture.NO_OVERLAY,
                 color
         );
-
+        poseStack.popPose();
         poseStack.popPose();
     }
     @Override
     public ResourceLocation getTextureLocation(LanternEntity lantern) {
         int size = lantern.getSize();
+        if (size == 0) return TEXTURE_SMALL;
         if (size == 1) return TEXTURE_MEDIUM;
         return TEXTURE_LARGE;
     }
 
     public EntityModel<LanternEntity> getModel(LanternEntity lantern) {
         int size = lantern.getSize();
+        if (size == 0) return small;
         if (size == 1) return medium;
         return super.getModel();
     }
