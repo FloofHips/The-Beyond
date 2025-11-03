@@ -97,9 +97,10 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
         this.getModel(entity).setupAnim(entity, f5, -f4, f9, f2, f6);
 
         vertexConsumer = buffer.getBuffer(BeyondRenderTypes.getEntityDepth(getTextureLocation(entity)));
-        //color = new Color(255,255,255, (int) (255*((Math.sin(entity.tickCount + 6) * 0.1F) * 0.5F + 0.5F))).getRGB();
+
+        distance = Math.clamp(Minecraft.getInstance().cameraEntity.distanceTo(entity), 0, 20);
+        color = new Color(255,255,255, (int) (255*(((20 - distance)/20f)))).getRGB();
         poseStack.pushPose();
-        poseStack.scale(1.2f,1.2f,1.2f);
         this.getModel(entity).renderToBuffer(
                 poseStack,
                 vertexConsumer,

@@ -39,6 +39,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.ItemAbilities;
 import net.neoforged.neoforge.event.EventHooks;
+import net.neoforged.neoforge.event.entity.EntityEvent;
 import org.apache.logging.log4j.core.appender.rolling.action.IfAll;
 
 import java.util.EnumSet;
@@ -122,8 +123,33 @@ public class LanternEntity extends PathfinderMob {
     }
 
     @Override
+    public EntityDimensions getDefaultDimensions(Pose pose) {
+        EntityDimensions entitydimensions = super.getDefaultDimensions(pose);
+        switch (getSize()) {
+            case 0: return entitydimensions.scale(0.3f, 0.3f);
+            case 1: return entitydimensions.scale(0.7f, 0.5f);
+            case 2: return entitydimensions.scale(0.7f, 1.5f);
+        }
+        return entitydimensions.scale(1.0F);
+    }
+    public AABB createBoundingBox() {
+        switch (getSize()) {
+            case 0: return new AABB(getX() - 0.15, getY() - 0.15, getZ() - 0.15, getX() + 0.15, getY() + 0.15, getZ() + 0.15);
+            case 1: return new AABB(getX() - 0.6, getY() - 0.25, getZ() - 0.6, getX() + 0.6, getY() + 0.25, getZ() + 0.6);
+            case 2: return new AABB(getX() - 0.7, getY() - 0.8, getZ() - 0.7, getX() + 0.7, getY() + 0.8, getZ() + 0.7);
+        }
+        return new AABB(getX() - 0.7, getY() - 0.8, getZ() - 0.7, getX() + 0.7, getY() + 0.8, getZ() + 0.7);
+    }
+
+    @Override
     public void tick() {
         super.tick();
+
+        if (tickCount == 10) {
+            getDefaultDimensions(Pose.STANDING);refreshDimensions();
+        }
+
+
         if (tickCount % 100 == 0)
             checkInsideBlocks();
 

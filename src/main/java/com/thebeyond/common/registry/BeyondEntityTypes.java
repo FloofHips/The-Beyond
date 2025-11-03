@@ -17,7 +17,7 @@ public class BeyondEntityTypes {
     public static final DeferredHolder<EntityType<?>, EntityType<LanternEntity>> LANTERN =
             ENTITY_TYPES.register("lantern",
                     () -> EntityType.Builder.of(LanternEntity::new, MobCategory.AMBIENT)
-                            .sized(1F, 0.8F)
+                            .sized(1F, 1F)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "lantern").toString()));
     public static final DeferredHolder<EntityType<?>, EntityType<EnderglopEntity>> ENDERGLOP =
             ENTITY_TYPES.register("enderglop",
