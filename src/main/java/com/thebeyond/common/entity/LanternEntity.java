@@ -149,12 +149,11 @@ public class LanternEntity extends PathfinderMob {
             getDefaultDimensions(Pose.STANDING);refreshDimensions();
         }
 
-
         if (tickCount % 100 == 0)
             checkInsideBlocks();
 
         if ((tickCount + random.nextInt(20)) % 20 == 0)
-            level().addParticle(ParticleTypes.SOUL_FIRE_FLAME, this.getX(), this.getY(), this.getZ(), 0, 0.01, 0);
+            level().addParticle(ParticleTypes.SOUL_FIRE_FLAME, this.getX(), this.getY() + this.getBbHeight()/2, this.getZ(), 0, 0.01, 0);
 
         if (getTarget() != null && getTarget() instanceof LanternEntity && getSize() < 2) {
             this.getNavigation().moveTo(getTarget(), 0.7);
