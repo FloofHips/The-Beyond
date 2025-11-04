@@ -82,9 +82,14 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
         this.getModel(entity).prepareMobModel(entity, f5, f4, partialTicks);
         this.getModel(entity).setupAnim(entity, f5, f4, f9, f2, f6);
 
-        VertexConsumer vertexConsumer = buffer.getBuffer(BeyondRenderTypes.unlitTranslucent(getTextureLocation(entity)));
+        //VertexConsumer vertexConsumer = buffer.getBuffer(BeyondRenderTypes.unlitTranslucent(getTextureLocation(entity)));
         float distance = Math.clamp(Minecraft.getInstance().cameraEntity.distanceTo(entity), 0, 10);
-        int color = new Color(255,255,255, (int) (255*(((10 - distance)/10f)))).getRGB();
+        VertexConsumer vertexConsumer = buffer.getBuffer(BeyondRenderTypes.unlitTranslucent(getTextureLocation(entity)));
+        //float distance = 0;
+
+        int transMax = 10;
+
+        int color = new Color(255,255,255, (int) (255*(((transMax - distance)/(float) transMax)))).getRGB();
         this.getModel(entity).renderToBuffer(
                 poseStack,
                 vertexConsumer,
@@ -93,14 +98,28 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
                 color
         );
 
-        this.getModel(entity).prepareMobModel(entity, f5, -f4, partialTicks);
-        this.getModel(entity).setupAnim(entity, f5, -f4, f9, f2, f6);
+        this.getModel(entity).prepareMobModel(entity, f5, f4+0.1f, partialTicks);
+        this.getModel(entity).setupAnim(entity, f5, f4+0.1f, f9, f2, f6);
 
         vertexConsumer = buffer.getBuffer(BeyondRenderTypes.getEntityDepth(getTextureLocation(entity)));
 
-        distance = Math.clamp(Minecraft.getInstance().cameraEntity.distanceTo(entity), 0, 20);
-        color = new Color(255,255,255, (int) (255*(((20 - distance)/20f)))).getRGB();
+        int crumbFarthest = 15;
+        int crumbHalf = 10;
+
+        distance = Math.clamp(Minecraft.getInstance().cameraEntity.distanceTo(entity), 0, crumbFarthest);
+
+
+        if (distance < crumbHalf) {
+            distance = -1 + (crumbHalf + distance)/(float)crumbHalf;
+            distance*=distance;
+        }
+        if (distance >= crumbHalf) {
+            distance = (crumbFarthest - distance)/(float)(crumbFarthest-crumbHalf);
+        }
+        color = new Color(255,255,255, (int) (255*(distance))).getRGB();
         poseStack.pushPose();
+        poseStack.scale(0.95f, 0.95f, 0.95f);
+        poseStack.translate(0,0.07,0);
         this.getModel(entity).renderToBuffer(
                 poseStack,
                 vertexConsumer,

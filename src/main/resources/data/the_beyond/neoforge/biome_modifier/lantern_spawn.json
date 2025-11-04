@@ -1,0 +1,10 @@
+{
+  "type": "neoforge:add_spawns",
+  "biomes": "#the_beyond:end_biomes",
+  "spawners": {
+    "type": "the_beyond:lantern",
+    "maxCount": 20,
+    "minCount": 5,
+    "weight": 10
+  }
+}

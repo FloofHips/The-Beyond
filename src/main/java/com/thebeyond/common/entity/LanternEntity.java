@@ -8,8 +8,10 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.*;
@@ -32,6 +34,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
@@ -68,11 +71,13 @@ public class LanternEntity extends PathfinderMob {
         this.goalSelector.addGoal(4, new WaterAvoidingRandomFlyingGoal(this, 1));
         this.goalSelector.addGoal(2, new LookAtPlayerGoal(this, Player.class, 10f));
         this.goalSelector.addGoal(1, new FindFireGoal(this));
-        this.goalSelector.addGoal(0, new LanternAvoidEntityGoal(this, Player.class, 8, 3, 3f));
-
-        this.goalSelector.addGoal(0, new LanternTemptGoal(this, 1.5f, (item) -> {
-            return item.is(ItemTags.OCELOT_FOOD);
-        } , true));
+        this.goalSelector.addGoal(0, new LanternAvoidEntityGoal(this, Player.class, 8, 1, 1));
+        this.goalSelector.addGoal(4, new TemptGoal(this, 1.2, (p_336182_) -> {
+            return p_336182_.is(Items.SOUL_TORCH);
+        }, false));
+        //this.goalSelector.addGoal(0, new LanternTemptGoal(this, 1.5f, (item) -> {
+        //    return item.is(ItemTags.OCELOT_FOOD);
+        //} , true));
 
         this.targetSelector.addGoal(0, new NearestAttackableTargetGoal<>(this, Player.class, true));
         this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, LanternEntity.class, true,
@@ -163,25 +168,33 @@ public class LanternEntity extends PathfinderMob {
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);
         if (!level().isClientSide) {
-            this.spawnAtLocation(new ItemStack(Items.ARMADILLO_SCUTE));
-            this.gameEvent(GameEvent.ENTITY_INTERACT);
-            this.playSound(SoundEvents.ARMADILLO_BRUSH);
-            itemstack.hurtAndBreak(16, player, getSlotForHand(hand));
-            this.playSound(SoundEvents.FOX_TELEPORT);
-            ((ServerLevel) this.level()).sendParticles(ParticleTypes.DUST_PLUME, this.getX(), getY(),getZ(), 5 * (getSize()+1), 0.4*(getSize()+1),0.4*(getSize()+1),0.4*(getSize()+1),0.01);
+            if (itemstack.is(Items.SOUL_TORCH)) {
+                this.setTrusting(true);
+                itemstack.shrink(1);
+                player.addItem(new ItemStack(Items.TORCH));
+                this.playSound(SoundEvents.DOLPHIN_EAT);
+                return InteractionResult.SUCCESS;
+            }
 
-            this.discard();
+            if (isTrusting()) {
+                if (itemstack.is(Items.BRUSH)) {
+                    this.spawnAtLocation(new ItemStack(Items.ARMADILLO_SCUTE));
+                    this.gameEvent(GameEvent.ENTITY_INTERACT);
+                    this.playSound(SoundEvents.ARMADILLO_BRUSH);
+                    itemstack.hurtAndBreak(16, player, getSlotForHand(hand));
+                    this.playSound(SoundEvents.FOX_TELEPORT);
+                    ((ServerLevel) this.level()).sendParticles(ParticleTypes.DUST_PLUME, this.getX(), getY(),getZ(), 5 * (getSize()+1), 0.4*(getSize()+1),0.4*(getSize()+1),0.4*(getSize()+1),0.01);
+
+                    this.discard();
+                    return InteractionResult.SUCCESS;
+                }
+                return InteractionResult.CONSUME;
+            } else {
+                Flee(player);
+                return InteractionResult.SUCCESS;
+            }
         }
-
-        if (itemstack.canPerformAction(ItemAbilities.BRUSH_BRUSH)) {
-            return InteractionResult.SUCCESS;
-        } else {
-            return super.mobInteract(player, hand);
-        }
-    }
-
-    public boolean brushOff() {
-        return true;
+        return super.mobInteract(player, hand);
     }
 
     @Override
@@ -192,9 +205,22 @@ public class LanternEntity extends PathfinderMob {
     @Override
     protected void onInsideBlock(BlockState state) {
         if (!state.isAir())
-            this.setDeltaMovement(getDeltaMovement().add(0, 0.01, 0));
+            this.setDeltaMovement(getDeltaMovement().add(0, 0.05, 0));
         if (state.is(Blocks.SOUL_FIRE))
             this.setDeltaMovement(getViewVector(0).scale(-0.01f));
+    }
+
+    private void Flee(Entity entity) {
+        if (entity == null) return;
+        Vec3 awayVector = this.position().subtract(entity.position()).normalize();
+        if (this.level() instanceof ServerLevel level)
+            ((ServerLevel) this.level()).sendParticles(ParticleTypes.DUST_PLUME, this.getX(), this.getY(),this.getZ(), 5 * (this.getSize()+1), 0.4*(this.getSize()+1),0.4*(this.getSize()+1),0.4*(this.getSize()+1),0.01);
+        this.lookControl.setLookAt(awayVector);
+        this.setDeltaMovement(awayVector);
+    }
+
+    public static boolean checkMonsterSpawnRules(EntityType<LanternEntity> lanternEntityEntityType, ServerLevelAccessor serverLevelAccessor, MobSpawnType mobSpawnType, BlockPos blockPos, RandomSource randomSource) {
+        return serverLevelAccessor.getBlockState(blockPos.below()).isAir() && serverLevelAccessor.getBlockState(blockPos.above()).isAir() && serverLevelAccessor.getBlockState(blockPos).isAir();
     }
 
     static class LanternTemptGoal extends TemptGoal {
@@ -263,7 +289,7 @@ public class LanternEntity extends PathfinderMob {
         @Override
         public void start() {
             this.panicTime = 60;
-            updateFleePath();
+            this.lantern.Flee(this.toAvoid);
         }
 
         @Override
@@ -284,22 +310,13 @@ public class LanternEntity extends PathfinderMob {
                 this.panicTime--;
 
                 if (this.lantern.tickCount % 10 == 0) {
-                    updateFleePath();
+                    this.lantern.Flee(this.toAvoid);
                 }
 
                 if (this.lantern.getRandom().nextInt(20) == 0) {
                     addPanicMovement();
                 }
             }
-        }
-
-        private void updateFleePath() {
-            if (this.toAvoid == null) return;
-            Vec3 awayVector = this.lantern.position().subtract(this.toAvoid.position()).normalize();
-            if (lantern.level() instanceof ServerLevel level)
-                ((ServerLevel) lantern.level()).sendParticles(ParticleTypes.DUST_PLUME, lantern.getX(), lantern.getY(),lantern.getZ(), 5 * (lantern.getSize()+1), 0.4*(lantern.getSize()+1),0.4*(lantern.getSize()+1),0.4*(lantern.getSize()+1),0.01);
-            this.lantern.lookControl.setLookAt(awayVector);
-            this.lantern.setDeltaMovement(awayVector);
         }
 
         private void addPanicMovement() {
@@ -319,7 +336,7 @@ public class LanternEntity extends PathfinderMob {
         private int stareTick = 0;
 
         public FindFireGoal(LanternEntity lantern) {
-            super(lantern, 0.699999988079071, 16);
+            super(lantern, 1, 16);
             this.lantern = lantern;
         }
 

@@ -79,13 +79,13 @@ public class LanternMediumModel<T extends LanternEntity> extends EntityModel<Lan
 
     @Override
     public void setupAnim(LanternEntity lantern, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-        //this.root.z = -16;
+        this.root.z = -3;
         this.body.xRot = headPitch * 0.017453292F;
         this.body.yRot = netHeadYaw * 0.017453292F;
         if (lantern.getDeltaMovement().horizontalDistanceSqr() > 1.0E-7)
             this.body.xRot += -0.05F - 0.05F * Mth.cos(ageInTicks * 0.3F);
 
-        this.body.y = 3F * Mth.sin(0.05F * ageInTicks);
+        this.body.y = - 4 - (5F * Mth.sin(0.05F * ageInTicks));
 
         top_fin.xRot = -(limbSwingAmount + 0.1f) * 0.2F * Mth.sin(0.6F * ageInTicks);
         tf_2.xRot = (limbSwingAmount + 0.5f) * 0.3F * Mth.sin(0.9F * ageInTicks);

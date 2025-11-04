@@ -56,7 +56,7 @@ public class LanternSmallModel<T extends LanternEntity> extends EntityModel<Lant
 
     @Override
     public void setupAnim(LanternEntity lantern, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-        //this.root.z = -10;
+        this.root.z = -3;
         this.body.xRot = headPitch * 0.017453292F;
         this.body.yRot = netHeadYaw * 0.017453292F;
         if (lantern.getDeltaMovement().horizontalDistanceSqr() > 1.0E-7)

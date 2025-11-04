@@ -16,7 +16,7 @@ public class BeyondEntityTypes {
             DeferredRegister.create(Registries.ENTITY_TYPE, TheBeyond.MODID);
     public static final DeferredHolder<EntityType<?>, EntityType<LanternEntity>> LANTERN =
             ENTITY_TYPES.register("lantern",
-                    () -> EntityType.Builder.of(LanternEntity::new, MobCategory.AMBIENT)
+                    () -> EntityType.Builder.of(LanternEntity::new, MobCategory.CREATURE)
                             .sized(1F, 1F)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "lantern").toString()));
     public static final DeferredHolder<EntityType<?>, EntityType<EnderglopEntity>> ENDERGLOP =
@@ -26,7 +26,7 @@ public class BeyondEntityTypes {
                     .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "enderglop").toString()));
     public static final DeferredHolder<EntityType<?>, EntityType<EnadrakeEntity>> ENADRAKE =
             ENTITY_TYPES.register("enadrake",
-                    () -> EntityType.Builder.of(EnadrakeEntity::new, MobCategory.MISC)
+                    () -> EntityType.Builder.of(EnadrakeEntity::new, MobCategory.CREATURE)
                             .sized(0.6F, 0.9F)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "enadrake").toString()));
     public static final DeferredHolder<EntityType<?>, EntityType<EnatiousTotemEntity>> ENATIOUS_TOTEM =
