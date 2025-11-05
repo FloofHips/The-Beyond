@@ -95,23 +95,23 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
         int shiftedY = globalY + TERRAIN_Y_OFFSET;
 
+        double warpX = globalX + simplexNoise.getValue(globalX * 0.01, globalZ * 0.01) * 10;
+        double warpZ = globalZ + simplexNoise.getValue(globalX * 0.01 + 1000, globalZ * 0.01 + 1000) * 10;
+
         double noiseValue = 0.0;
         double amplitude = 1.0;
         double frequency = 1.0;
         double maxAmplitude = 0.0;
 
-
         for (int octave = 0; octave < NUM_OCTAVES; octave++) {
             double hScale = horizontalBaseScale * frequency;
             double vScale = verticalBaseScale * frequency;
 
-            //double octaveOffset = 10000000.0 * 10000000.0 * 10000000.0 * 10000000.0 * octave;
-            double sampleX = globalX * hScale;
+            double sampleX = warpX * hScale;
             double sampleY = shiftedY * vScale;
-            double sampleZ = globalZ * hScale;
+            double sampleZ = warpZ * hScale;
 
             double octaveNoise = simplexNoise.getValue(sampleX, sampleY, sampleZ);
-
             noiseValue += octaveNoise * amplitude;
             maxAmplitude += amplitude;
 
@@ -164,6 +164,22 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         });
     }
 
+    private void generateMainIsland() {
+
+    }
+
+    private void generateFarlands() {
+
+    }
+
+    private void generateAuroracite() {
+
+    }
+
+    private void generateEndTerrain() {
+
+    }
+
     private static double cyclicDensity(int y, double cycleHeight) {
         double normalizedY = (y % cycleHeight) / cycleHeight;
         if (normalizedY < 0.8) {
@@ -195,8 +211,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         double noiseValue = noise.getValue(x, z, false);
         return min + (max - min) * ((noiseValue + 1) / 2);
     }
-
-
 
     public void addDebugScreenInfo(List<String> info, RandomState random, BlockPos pos) {
         DecimalFormat decimalformat = new DecimalFormat("0.000");

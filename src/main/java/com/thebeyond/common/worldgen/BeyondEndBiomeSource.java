@@ -77,8 +77,8 @@ public class BeyondEndBiomeSource extends BiomeSource {
         if(blockY < 20)
             return bottomBiome;
 
-        int biomeX = blockX / 32;
-        int biomeZ = blockZ / 32;
+        int biomeX = blockX / 64;
+        int biomeZ = blockZ / 64;
 
         double horizontalScale = BeyondEndChunkGenerator.getHorizontalBaseScale(biomeX, biomeZ);
         double threshold = BeyondEndChunkGenerator.getThreshold(biomeX, biomeZ);
