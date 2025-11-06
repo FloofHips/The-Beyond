@@ -86,21 +86,21 @@ public class LanternLargeModel<T extends LanternEntity> extends EntityModel<Lant
             this.body.xRot += -0.05F - 0.05F * Mth.cos(ageInTicks * 0.3F);
 
         this.body.y = - 13 - (5F * Mth.sin(0.01F * ageInTicks));
-        top_fin.yRot = -(limbSwingAmount + 0.1f) * 0.2F * Mth.sin(0.6F * ageInTicks);
-        tf_2.yRot = (limbSwingAmount + 0.5f) * 0.3F * Mth.sin(0.9F * ageInTicks);
-        tf_3.yRot = -(limbSwingAmount + 0.5f) * 0.45F * Mth.sin(0.2F * ageInTicks);
+        top_fin.yRot = -(limbSwingAmount + 0.1f) * 0.2F * Mth.sin(0.3F * ageInTicks);
+        tf_2.yRot = (limbSwingAmount + 0.5f) * 0.3F * Mth.sin(0.5F * ageInTicks);
+        tf_3.yRot = -(limbSwingAmount + 0.5f) * 0.45F * Mth.sin(0.1F * ageInTicks);
 
-        lower_fin.yRot = -(limbSwingAmount + 0.1f) * 0.2F * Mth.sin(0.6F * ageInTicks);
-        lf_2.yRot = (limbSwingAmount + 0.5f) * 0.3F * Mth.sin(0.9F * ageInTicks);
-        lf_3.yRot = -(limbSwingAmount + 0.5f) * 0.45F * Mth.sin(0.2F * ageInTicks);
+        lower_fin.yRot = -(limbSwingAmount + 0.1f) * 0.2F * Mth.sin(0.3F * ageInTicks);
+        lf_2.yRot = (limbSwingAmount + 0.5f) * 0.3F * Mth.sin(0.5F * ageInTicks);
+        lf_3.yRot = -(limbSwingAmount + 0.5f) * 0.45F * Mth.sin(0.1F * ageInTicks);
 
-        left_fin.xRot = -(limbSwingAmount + 0.1f) * 0.2F * Mth.sin(0.6F * ageInTicks);
-        left_2.xRot = (limbSwingAmount + 0.5f) * 0.3F * Mth.sin(0.9F * ageInTicks);
-        left_3.xRot = -(limbSwingAmount + 0.5f) * 0.45F * Mth.sin(0.2F * ageInTicks);
+        left_fin.xRot = -(limbSwingAmount + 0.1f) * 0.2F * Mth.sin(0.3F * ageInTicks);
+        left_2.xRot = (limbSwingAmount + 0.5f) * 0.3F * Mth.sin(0.5F * ageInTicks);
+        left_3.xRot = -(limbSwingAmount + 0.5f) * 0.45F * Mth.sin(0.1F * ageInTicks);
 
-        right_fin.xRot = (limbSwingAmount + 0.1f) * 0.2F * Mth.sin(0.6F * ageInTicks);
-        right_2.xRot = -(limbSwingAmount + 0.5f) * 0.3F * Mth.sin(0.9F * ageInTicks);
-        right_3.xRot = (limbSwingAmount + 0.5f) * 0.45F * Mth.sin(0.2F * ageInTicks);
+        right_fin.xRot = (limbSwingAmount + 0.1f) * 0.2F * Mth.sin(0.3F * ageInTicks);
+        right_2.xRot = -(limbSwingAmount + 0.5f) * 0.3F * Mth.sin(0.5F * ageInTicks);
+        right_3.xRot = (limbSwingAmount + 0.5f) * 0.45F * Mth.sin(0.1F * ageInTicks);
     }
 
     @Override

@@ -19,6 +19,8 @@ public class BeyondModelLayers {
             new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "poison_seed"), "main");
     public static final ModelLayerLocation UNSTABLE_SEED =
             new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "unstable_seed"), "main");
+    public static final ModelLayerLocation LANTERN_LEVIATHAN =
+            new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "lantern_leviathan"), "main");
     public static final ModelLayerLocation LANTERN_LARGE =
             new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "lantern_large"), "main");
     public static final ModelLayerLocation LANTERN_MEDIUM =

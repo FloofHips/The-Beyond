@@ -8,27 +8,19 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.tags.FluidTags;
-import net.minecraft.tags.ItemTags;
-import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.control.BodyRotationControl;
 import net.minecraft.world.entity.ai.control.FlyingMoveControl;
-import net.minecraft.world.entity.ai.control.LookControl;
+import net.minecraft.world.entity.ai.control.SmoothSwimmingLookControl;
 import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
-import net.minecraft.world.entity.ai.util.DefaultRandomPos;
-import net.minecraft.world.entity.ai.util.GoalUtils;
-import net.minecraft.world.entity.ai.util.RandomPos;
-import net.minecraft.world.entity.animal.Ocelot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -40,22 +32,19 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.common.ItemAbilities;
-import net.neoforged.neoforge.event.EventHooks;
-import net.neoforged.neoforge.event.entity.EntityEvent;
-import org.apache.logging.log4j.core.appender.rolling.action.IfAll;
 
 import java.util.EnumSet;
-import java.util.Objects;
 import java.util.function.Predicate;
 
 public class LanternEntity extends PathfinderMob {
     private static final EntityDataAccessor<Integer> SIZE = SynchedEntityData.defineId(LanternEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> TRUSTING = SynchedEntityData.defineId(LanternEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> FLYING = SynchedEntityData.defineId(LanternEntity.class, EntityDataSerializers.BOOLEAN);
     public LanternEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
         this.noPhysics = true;
         this.moveControl = new FlyingMoveControl(this, 20, false);
+        this.lookControl = new SmoothSwimmingLookControl(this, 10);
     }
 
     @Override
@@ -67,11 +56,43 @@ public class LanternEntity extends PathfinderMob {
         return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 20.0).add(Attributes.FLYING_SPEED, 0.6).add(Attributes.MOVEMENT_SPEED, 0.5).add(Attributes.ATTACK_DAMAGE, 2.0).add(Attributes.FOLLOW_RANGE, 48.0);
     }
     protected void registerGoals() {
-        this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
-        this.goalSelector.addGoal(4, new WaterAvoidingRandomFlyingGoal(this, 1));
-        this.goalSelector.addGoal(2, new LookAtPlayerGoal(this, Player.class, 10f));
-        this.goalSelector.addGoal(1, new FindFireGoal(this));
-        this.goalSelector.addGoal(0, new LanternAvoidEntityGoal(this, Player.class, 8, 1, 1));
+        this.goalSelector.addGoal(0, new LanternMigrateGoal(this));
+        this.goalSelector.addGoal(5, new RandomLookAroundGoal(this) {
+            @Override
+            public boolean canUse() {
+                if (isFlying()) return false;
+                return super.canUse();
+            }
+        });
+        this.goalSelector.addGoal(4, new WaterAvoidingRandomFlyingGoal(this, 1){
+            @Override
+            public boolean canUse() {
+                if (isFlying()) return false;
+                return super.canUse();
+            }
+        });
+
+        this.goalSelector.addGoal(2, new LookAtPlayerGoal(this, Player.class, 10f){
+            @Override
+            public boolean canUse() {
+                if (isFlying()) return false;
+                return super.canUse();
+            }
+        });
+        this.goalSelector.addGoal(1, new FindFireGoal(this){
+            @Override
+            public boolean canUse() {
+                if (isFlying()) return false;
+                return super.canUse();
+            }
+        });
+        this.goalSelector.addGoal(0, new LanternAvoidEntityGoal(this, Player.class, 8, 1, 1){
+            @Override
+            public boolean canUse() {
+                if (isFlying()) return false;
+                return super.canUse();
+            }
+        });
         this.goalSelector.addGoal(4, new TemptGoal(this, 1.2, (p_336182_) -> {
             return p_336182_.is(Items.SOUL_TORCH);
         }, false));
@@ -98,13 +119,20 @@ public class LanternEntity extends PathfinderMob {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(TRUSTING, false);
-        builder.define(SIZE, this.random.nextInt(3));
+        builder.define(FLYING, false);
+        builder.define(SIZE, level().isThundering() ? 3 : this.random.nextInt(3));
     }
     public boolean isTrusting() {
         return this.entityData.get(TRUSTING);
     }
     private void setTrusting(boolean trust) {
         this.entityData.set(TRUSTING, trust);
+    }
+    public boolean isFlying() {
+        return this.entityData.get(FLYING);
+    }
+    private void setFlying(boolean flying) {
+        this.entityData.set(FLYING, flying);
     }
     public int getSize() {
         return this.entityData.get(SIZE);
@@ -134,6 +162,7 @@ public class LanternEntity extends PathfinderMob {
             case 0: return entitydimensions.scale(0.3f, 0.3f);
             case 1: return entitydimensions.scale(0.7f, 0.5f);
             case 2: return entitydimensions.scale(0.7f, 1.5f);
+            case 3: return entitydimensions.scale(2f, 2f);
         }
         return entitydimensions.scale(1.0F);
     }
@@ -150,17 +179,39 @@ public class LanternEntity extends PathfinderMob {
     public void tick() {
         super.tick();
 
-        if (tickCount == 10) {
-            getDefaultDimensions(Pose.STANDING);refreshDimensions();
+        if (isFlying()) {
+
+            navigation.moveTo(this.getX(), 175f, this.getZ()-10, 0.7);
+
+            //getLookControl().setLookAt(this.getX(), this.getY(), -500000);
+            //Vec3 north = new Vec3(0, 0, -1);
+//
+            //if (getY() < 180) {
+            //    setDeltaMovement(north.scale(0.05).add((random.nextFloat()-0.5f)*0.2f, 0.2, (random.nextFloat())*0.1f));
+            //    return;
+            //}
+            //setDeltaMovement(north.scale(0.1 * random.nextInt(1,5)).add((random.nextFloat()-0.5f)*0.15f, (random.nextFloat()-0.5f)*0.1f, (random.nextFloat()-0.5f)*0.25f));
+//
         }
 
-        if (tickCount % 100 == 0)
+
+        if (!isFlying() && level().isThundering())
+            setFlying(true);
+
+        if (tickCount == 10) {
+            getDefaultDimensions(Pose.STANDING);
+            refreshDimensions();
+        }
+
+        if (tickCount % 100 == 0) {
             checkInsideBlocks();
+        }
 
-        if ((tickCount + random.nextInt(20)) % 20 == 0)
+        if ((tickCount + random.nextInt(20)) % 20 == 0) {
             level().addParticle(ParticleTypes.SOUL_FIRE_FLAME, this.getX(), this.getY() + this.getBbHeight()/2, this.getZ(), 0, 0.01, 0);
+        }
 
-        if (getTarget() != null && getTarget() instanceof LanternEntity && getSize() < 2) {
+        if (!isFlying() && getTarget() != null && getTarget() instanceof LanternEntity && getSize() < 2) {
             this.getNavigation().moveTo(getTarget(), 0.7);
         }
     }
@@ -233,6 +284,42 @@ public class LanternEntity extends PathfinderMob {
 
         protected boolean canScare() {
             return super.canScare() && !this.lantern.isTrusting();
+        }
+    }
+
+    static class LanternMigrateGoal extends Goal {
+        private final LanternEntity lantern;
+
+        LanternMigrateGoal(LanternEntity lantern) {
+            this.lantern = lantern;
+        }
+
+        @Override
+        public boolean canUse() {
+            return lantern.level().isThundering();
+        }
+
+        @Override
+        public boolean isInterruptable() {
+            return false;
+        }
+
+        @Override
+        public void start() {
+            super.start();
+            lantern.setFlying(true);
+            lantern.setDeltaMovement(new Vec3(0, 0, -1).scale(0.05).add(lantern.random.nextFloat()-0.5f, 0.5, lantern.random.nextFloat()-0.5f));
+        }
+
+        @Override
+        public void stop() {
+            super.stop();
+            lantern.setFlying(false);
+        }
+
+        @Override
+        public void tick() {
+            super.tick();
         }
     }
 
@@ -338,20 +425,6 @@ public class LanternEntity extends PathfinderMob {
         public FindFireGoal(LanternEntity lantern) {
             super(lantern, 1, 16);
             this.lantern = lantern;
-        }
-
-        public boolean canUse() {
-            //if (this.stareTick > 0) return false;
-            //if (this.nextStartTick <= 0) {
-            //    if (!EventHooks.canEntityGrief(this.lantern.level(), this.lantern)) {
-            //        return false;
-            //    }
-//
-            //    this.canRaid = false;
-            //    this.wantsToRaid = this.rabbit.wantsMoreFood();
-            //}
-
-            return super.canUse();
         }
 
         public boolean canContinueToUse() {
