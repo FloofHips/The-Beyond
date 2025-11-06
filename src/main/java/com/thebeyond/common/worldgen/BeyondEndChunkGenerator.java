@@ -8,6 +8,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.StructureManager;
@@ -41,6 +42,8 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     public static PerlinSimplexNoise globalHOffsetNoise;
     public static PerlinSimplexNoise globalVOffsetNoise;
     public static PerlinSimplexNoise globalCOffsetNoise;
+    private double islandRadius = 75.0;
+    private double buffer = 700.0;
     private static final double worldHeight = 192;
 
     private static final int NUM_OCTAVES = 4;
@@ -84,8 +87,25 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         return globalNoiseOffset(10, 100, globalX * 0.0001, globalZ * 0.0001, globalCOffsetNoise);
     }
 
-    public static double getThreshold(int globalX, int globalZ) {
-        return globalNoiseOffset(0.01, 0.6, globalX * 0.0002, globalZ * 0.0002, globalCOffsetNoise);
+    public static double getThreshold(int globalX, int globalZ, float distanceFromOrigin) {
+        double baseThreshold = globalNoiseOffset(0.01, 0.6, globalX * 0.0002, globalZ * 0.0002, globalCOffsetNoise);
+
+        float innerTaperEnd = 100f;
+        float outerTaperStart = 700f;
+        float outerTaperEnd = 750f;
+
+        if (distanceFromOrigin > innerTaperEnd && distanceFromOrigin < outerTaperStart) {
+            return 1.0;
+        }
+        else if (distanceFromOrigin >= outerTaperStart && distanceFromOrigin <= outerTaperEnd) {
+            float progress = (distanceFromOrigin - outerTaperStart) / (outerTaperEnd - outerTaperStart);
+            double taperValue = 0.59 * (1.0 - progress);
+
+            return baseThreshold + taperValue;
+        }
+        else {
+            return baseThreshold;
+        }
     }
 
     public static double getTerrainDensity(int globalX, int globalY, int globalZ) {
@@ -126,8 +146,8 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         return edgeGradient(shiftedY, worldHeight, noiseValue);
     }
 
-    public static boolean isSolidTerrain(int globalX, int globalY, int globalZ) {
-        double threshold = getThreshold(globalX, globalZ);
+    public static boolean isSolidTerrain(int globalX, int globalY, int globalZ, float distanceFromOrigin) {
+        double threshold = getThreshold(globalX, globalZ, distanceFromOrigin);
         double density = getTerrainDensity(globalX, globalY, globalZ);
         return density > threshold;
     }
@@ -144,18 +164,16 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                     int globalX = startX + x;
                     int globalZ = startZ + z;
 
-                    double auroraNoise = simplexNoise.getValue(globalX * 0.1, globalZ * 0.1);
-                    if (auroraNoise > 0.0) {
-                        chunk.setBlockState(new BlockPos(globalX, 0, globalZ), BeyondBlocks.AURORACITE.get().defaultBlockState(), false);
-                        chunk.setBlockState(new BlockPos(globalX, 1, globalZ), BeyondBlocks.AURORACITE.get().defaultBlockState(), false);
+                    generateAuroracite(chunk, globalX, globalZ);
+
+                    float distanceFromOrigin = (float) Math.sqrt(globalX * globalX + globalZ * globalZ);
+
+                    if (distanceFromOrigin <= islandRadius + 50) {
+                        generateMainIsland(chunk, globalX, globalZ, distanceFromOrigin, islandRadius);
                     }
 
-                    for (int y = 1; y < 160; y++) {
-                        int shiftedY = y + TERRAIN_Y_OFFSET;
-
-                        if (isSolidTerrain(globalX, y, globalZ)) {
-                            chunk.setBlockState(new BlockPos(globalX, y, globalZ), Blocks.END_STONE.defaultBlockState(), false);
-                        }
+                    else if (distanceFromOrigin >= 650) {
+                      generateEndTerrain(chunk, globalX, globalZ, distanceFromOrigin);
                     }
                 }
             }
@@ -164,20 +182,48 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         });
     }
 
-    private void generateMainIsland() {
+    private void generateMainIsland(ChunkAccess chunk, int globalX, int globalZ, double distance, double islandRadius) {
+        islandRadius += 50;
+        int height = 40;
+        float threshold = 1;
+
+        for (int y = 0; y <= 40; y++) {
+            double noiseValue = simplexNoise.getValue(globalX * 0.03, y * 0.1, globalZ * 0.03);
+            double noiseOctave = simplexNoise.getValue(globalX * 0.1, y * 0.1, globalZ * 0.1);
+
+            double finalNoise = noiseValue + noiseOctave * 0.2f;
+
+            if (y > 37) {
+                threshold = 1 - ((y - 37) / 3f);
+            }
+            else {
+                threshold = y / 35f;
+            }
+
+            if (globalX * globalX + y * y + globalZ * globalZ <= islandRadius * islandRadius * (0.5 + 0.5 * finalNoise) * threshold) {
+                chunk.setBlockState(new BlockPos(globalX, y + 20 , globalZ), Blocks.END_STONE.defaultBlockState(), false);
+            }
+        }
+    }
+
+    private void generateFarlands(ChunkAccess chunk, int globalX, int globalZ) {
 
     }
 
-    private void generateFarlands() {
-
+    private void generateAuroracite(ChunkAccess chunk, int globalX, int globalZ) {
+        double auroraNoise = simplexNoise.getValue(globalX * 0.1, globalZ * 0.1);
+        if (auroraNoise > 0.0) {
+            chunk.setBlockState(new BlockPos(globalX, 0, globalZ), BeyondBlocks.AURORACITE.get().defaultBlockState(), false);
+            chunk.setBlockState(new BlockPos(globalX, 1, globalZ), BeyondBlocks.AURORACITE.get().defaultBlockState(), false);
+        }
     }
 
-    private void generateAuroracite() {
-
-    }
-
-    private void generateEndTerrain() {
-
+    private void generateEndTerrain(ChunkAccess chunk, int globalX, int globalZ, float distanceFromOrigin) {
+        for (int y = 1; y < 160; y++) {
+            if (isSolidTerrain(globalX, y, globalZ, distanceFromOrigin)) {
+                chunk.setBlockState(new BlockPos(globalX, y, globalZ), Blocks.END_STONE.defaultBlockState(), false);
+            }
+        }
     }
 
     private static double cyclicDensity(int y, double cycleHeight) {
@@ -217,9 +263,10 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         int globalX = pos.getX();
         int globalZ = pos.getZ();
 
+        float distanceFromOrigin = (float) Math.sqrt(globalX * globalX + globalZ * globalZ);
         double horizontalBaseScale = getHorizontalBaseScale(pos.getX(), pos.getZ());
         double verticalBaseScale = getVerticalBaseScale(pos.getX(), pos.getZ());
-        double threshold = getThreshold(pos.getX(), pos.getZ());
+        double threshold = getThreshold(pos.getX(), pos.getZ(), distanceFromOrigin);
         double cycleHeight = getCycleHeight(pos.getX(), pos.getZ());
         double terrainNoise = getTerrainDensity(pos.getX(), pos.getY(), pos.getZ());
 

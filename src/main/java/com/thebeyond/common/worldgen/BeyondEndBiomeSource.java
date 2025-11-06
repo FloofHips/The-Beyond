@@ -80,8 +80,10 @@ public class BeyondEndBiomeSource extends BiomeSource {
         int biomeX = blockX / 64;
         int biomeZ = blockZ / 64;
 
+        float distanceFromOrigin = (float) Math.sqrt(blockX * blockX + biomeZ * biomeZ);
+
         double horizontalScale = BeyondEndChunkGenerator.getHorizontalBaseScale(biomeX, biomeZ);
-        double threshold = BeyondEndChunkGenerator.getThreshold(biomeX, biomeZ);
+        double threshold = BeyondEndChunkGenerator.getThreshold(biomeX, biomeZ, distanceFromOrigin);
 
         double biomeNoise = BeyondEndChunkGenerator.simplexNoise.getValue(
                 biomeX * horizontalScale * 0.2,
