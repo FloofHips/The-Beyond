@@ -80,25 +80,31 @@ public class LanternLeviathanModel<T extends LanternEntity> extends EntityModel<
     @Override
     public void setupAnim(LanternEntity lantern, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
         this.root.z = 16;
-        this.root.y = 32;
+
         this.bone.xRot = headPitch * 0.017453292F;
         this.bone.yRot = netHeadYaw * 0.017453292F;
         if (lantern.getDeltaMovement().horizontalDistanceSqr() > 1.0E-7)
             this.bone.xRot += -0.05F - 0.05F * Mth.cos(ageInTicks * 0.3F);
 
-        this.bone.y = - 13 - (5F * Mth.sin(0.01F * ageInTicks));
+        this.root.y = Mth.sin(ageInTicks * 0.18f) + 16;
 
-        tail.xRot = -(limbSwingAmount + 0.1f) * 0.2F * Mth.sin(0.1F * ageInTicks);
-        t2.xRot = (limbSwingAmount + 0.5f) * 0.3F * Mth.sin(0.2F * ageInTicks);
-        t3.xRot = -(limbSwingAmount + 0.5f) * 0.45F * Mth.sin(0.1F * ageInTicks);
+        this.root.xRot = 0.25f * 0.1F * Mth.cos(ageInTicks * 0.09f);
+        this.root.yRot = 0.25f * 0.3F * Mth.cos((ageInTicks - 0.25f) * 0.05f);
+        this.root.zRot = 0.25f * 0.3F * Mth.sin(ageInTicks * 0.05f);
 
-        left_fin.xRot = -(limbSwingAmount + 0.1f) * 0.2F * Mth.sin(0.1F * ageInTicks);
-        lf2.xRot = (limbSwingAmount + 0.5f) * 0.3F * Mth.sin(0.2F * ageInTicks);
-        lf3.xRot = -(limbSwingAmount + 0.5f) * 0.45F * Mth.sin(0.1F * ageInTicks);
+        tail.yRot = (float) ((Math.sin((ageInTicks - 0.5f) * 0.09f) * 0.025 * 0.5));
 
-        right_fin.xRot = (limbSwingAmount + 0.1f) * 0.2F * Mth.sin(0.1F * ageInTicks);
-        rf2.xRot = -(limbSwingAmount + 0.5f) * 0.3F * Mth.sin(0.2F * ageInTicks);
-        rf3.xRot = (limbSwingAmount + 0.5f) * 0.45F * Mth.sin(0.1F * ageInTicks);
+        tail.xRot = (float) ((Math.sin((ageInTicks) * 0.09f) * 0.1));
+        t2.xRot = (float) ((Math.sin((ageInTicks - 10f) * 0.09f) * 0.2));
+        t3.xRot = (float) ((Math.sin((ageInTicks - 20f) * 0.09f) * 0.3));
+
+        left_fin.xRot = (float) ((Math.sin((ageInTicks) * 0.09f) * 0.20));
+        lf2.xRot = (float) ((Math.sin((ageInTicks - 10f) * 0.09f) * 0.25));
+        lf3.xRot = (float) ((Math.sin((ageInTicks - 20f) * 0.09f) * 0.3));
+
+        right_fin.xRot = left_fin.xRot;
+        rf2.xRot = lf2.xRot;
+        rf3.xRot = lf3.xRot;
     }
 
     @Override

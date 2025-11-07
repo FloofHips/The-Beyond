@@ -62,15 +62,20 @@ public class LanternSmallModel<T extends LanternEntity> extends EntityModel<Lant
         if (lantern.getDeltaMovement().horizontalDistanceSqr() > 1.0E-7)
             this.body.xRot += -0.05F - 0.05F * Mth.cos(ageInTicks * 0.3F);
 
-        this.body.y = 2F * Mth.sin(0.09F * ageInTicks);
+        this.root.y = 0.5F * Mth.sin(ageInTicks * 0.18f) + 8;
 
-        top_fin.xRot = -(limbSwingAmount + 0.1f) * 0.2F * Mth.sin(0.6F * ageInTicks);
-        tf_2.xRot = (limbSwingAmount + 0.5f) * 0.3F * Mth.sin(0.9F * ageInTicks);
-        tf_3.xRot = -(limbSwingAmount + 0.5f) * 0.45F * Mth.sin(0.2F * ageInTicks);
+        this.root.xRot = 0.5f * 0.3F * Mth.cos(ageInTicks * 0.18f);
+        this.root.yRot = 0.5f * 0.5F * Mth.cos((ageInTicks - 0.25f) * 0.09f);
+        this.root.zRot = 0.5f * 0.5F * Mth.sin(ageInTicks * 0.09f);
 
-        bot_fin.xRot = (limbSwingAmount + 0.1f) * 0.2F * Mth.sin(0.7F * ageInTicks);
-        bf_2.xRot = -(limbSwingAmount + 0.5f) * 0.3F * Mth.sin(0.8F * ageInTicks);
-        bf_3.xRot = (limbSwingAmount + 0.5f) * 0.45F * Mth.sin(0.3F * ageInTicks);
+        top_fin.xRot = (float) ((Math.sin((ageInTicks) * 0.18f) * 0.1));
+        tf_2.xRot = (float) ((Math.sin((ageInTicks - 5f) * 0.18f) * 0.15 * 0.5));
+        tf_3.xRot = (float) ((Math.sin((ageInTicks - 10f) * 0.18f) * 0.1));
+
+        bot_fin.xRot = (float) ((Math.sin((ageInTicks - 2.5f) * 0.18f) * 0.1));
+        bot_fin.yRot = (float) ((Math.cos((ageInTicks - 5f) * 0.09f) * 0.05));
+        bf_2.xRot = (float) ((Math.sin((ageInTicks - 7.5f) * 0.18f) * 0.15 * 0.5));
+        bf_3.xRot = (float) ((Math.sin((ageInTicks - 12.5f) * 0.18f) * 0.1));
     }
 
     @Override
