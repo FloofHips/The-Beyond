@@ -58,20 +58,20 @@ public class EndSkyBox {
         drawBottomSkyGradient(poseStack, tesselator, level);
         //drawNadir(poseStack);
 
-        this.renderShootingStars(level, poseStack, tesselator, 95, 1f,    100);
-        this.renderShootingStars(level, poseStack, tesselator, 95, -.7f,  95);
-        this.renderShootingStars(level, poseStack, tesselator, 95, 1.2f,  95);
-        this.renderShootingStars(level, poseStack, tesselator, 95, -3.5f, 90);
-        this.renderShootingStars(level, poseStack, tesselator, 95, .5f,   90);
-        this.renderShootingStars(level, poseStack, tesselator, 95, -.5f,  90);
-        this.renderShootingStars(level, poseStack, tesselator, 95, .7f,   90);
-        this.renderShootingStars(level, poseStack, tesselator, 95, -1.0f, 90);
-        this.renderShootingStars(level, poseStack, tesselator, 95, 1.2f,  90);
-        this.renderShootingStars(level, poseStack, tesselator, 95, -.4f,  90);
-        this.renderShootingStars(level, poseStack, tesselator, 95, .6f,   95);
-        this.renderShootingStars(level, poseStack, tesselator, 95, -.4f,  95);
-        this.renderShootingStars(level, poseStack, tesselator, 95, .4f,   100);
-        this.renderShootingStars(level, poseStack, tesselator, 95, -.3f,  100);
+        //this.renderShootingStars(level, poseStack, tesselator, 95, 1f,    100);
+        //this.renderShootingStars(level, poseStack, tesselator, 95, -.7f,  95);
+        //this.renderShootingStars(level, poseStack, tesselator, 95, 1.2f,  95);
+        //this.renderShootingStars(level, poseStack, tesselator, 95, -3.5f, 90);
+        //this.renderShootingStars(level, poseStack, tesselator, 95, .5f,   90);
+        //this.renderShootingStars(level, poseStack, tesselator, 95, -.5f,  90);
+        //this.renderShootingStars(level, poseStack, tesselator, 95, .7f,   90);
+        //this.renderShootingStars(level, poseStack, tesselator, 95, -1.0f, 90);
+        //this.renderShootingStars(level, poseStack, tesselator, 95, 1.2f,  90);
+        //this.renderShootingStars(level, poseStack, tesselator, 95, -.4f,  90);
+        //this.renderShootingStars(level, poseStack, tesselator, 95, .6f,   95);
+        //this.renderShootingStars(level, poseStack, tesselator, 95, -.4f,  95);
+        //this.renderShootingStars(level, poseStack, tesselator, 95, .4f,   100);
+        //this.renderShootingStars(level, poseStack, tesselator, 95, -.3f,  100);
 
         RenderSystem.depthMask(true);
         RenderSystem.disableBlend();

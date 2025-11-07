@@ -15,6 +15,7 @@ import com.thebeyond.client.renderer.*;
 import com.thebeyond.common.entity.LanternEntity;
 import com.thebeyond.common.registry.*;
 import com.thebeyond.util.ColorUtils;
+import com.thebeyond.util.RenderUtils;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColors;
@@ -24,6 +25,7 @@ import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -52,12 +54,15 @@ import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsE
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import org.joml.Vector3f;
 
+import java.nio.Buffer;
 import java.util.Collections;
 
 @SuppressWarnings("unused")
 @EventBusSubscriber(modid = TheBeyond.MODID, value = Dist.CLIENT)
 public class ModClientEvents {
     public static ShaderInstance ENTITY_DEPTH_SHADER;
+    public static final ResourceLocation CLOUD_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/cloud");
+    public static final ResourceLocation CLOUD_2_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/cloud_2");
     static RandomSource random = RandomSource.create(254572);
     public static PerlinSimplexNoise gellidVoidNoise = new PerlinSimplexNoise(random, Collections.singletonList(1));
     @SubscribeEvent
@@ -73,7 +78,11 @@ public class ModClientEvents {
         ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID.get(), RenderType.cutoutMipped());
         ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID_FLOWING.get(), RenderType.cutoutMipped());
     }
-
+    @SubscribeEvent
+    public static void onAdditional(ModelEvent.RegisterAdditional event) {
+        event.register(ModelResourceLocation.standalone(CLOUD_MODEL));
+        event.register(ModelResourceLocation.standalone(CLOUD_2_MODEL));
+    }
     @SubscribeEvent
     public static void registerLayer(EntityRenderersEvent.RegisterLayerDefinitions event){
         event.registerLayerDefinition(BeyondModelLayers.ENDERDROP_LAYER, EnderdropModel::createBodyLayer);
@@ -297,12 +306,51 @@ public class ModClientEvents {
         }, BeyondFluids.GELLID_VOID_TYPE.get());
     }
 
+    public static void renderClouds(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
+            return;
+        }
+
+        Minecraft mc = Minecraft.getInstance();
+        Player player = mc.player;
+        Level level = player.level();
+
+        //if (event.getCamera().getEntity().level().dimensionType().effectsLocation().equals(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"))) {
+        //    if(!event.getCamera().getEntity().level().isRaining())
+        //        return;
+        //}
+
+        PoseStack poseStack = event.getPoseStack();
+        Vec3 camPos = event.getCamera().getPosition();
+        Frustum frustum = event.getFrustum();
+
+        poseStack.pushPose();
+        //poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
+
+        MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
+        //int renderDistance = mc.options.getEffectiveRenderDistance();
+        //ChunkPos playerChunk = player.chunkPosition();
+
+        //int yLevel = 192;
+
+        poseStack.pushPose();
+        //poseStack.translate(0.5F - 0.5F * thickness, 1.9F, 0.5F);
+        poseStack.scale(10, 10, 10);
+        float time = level.getGameTime();
+
+        poseStack.popPose();
+
+        bufferSource.endBatch();
+        poseStack.popPose();
+    }
 
     @SubscribeEvent
     public static void renderLast(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
             return;
         }
+
+        if (!event.getCamera().getEntity().level().dimensionType().effectsLocation().equals(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"))) return;
 
         Minecraft mc = Minecraft.getInstance();
         Player player = mc.player;
@@ -312,22 +360,45 @@ public class ModClientEvents {
             return;
         }
 
-        if (event.getCamera().getEntity().level().dimensionType().effectsLocation().equals(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"))) {
-            if(!event.getCamera().getEntity().level().isRaining())
-                return;
-        }
-
-            PoseStack poseStack = event.getPoseStack();
+        PoseStack poseStack = event.getPoseStack();
         Vec3 camPos = event.getCamera().getPosition();
-        Frustum frustum = event.getFrustum();
 
         poseStack.pushPose();
         poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
 
         MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
+
+
+        float time = level.getGameTime();
+
+        renderClouds(poseStack, 122, 50, time/50f, CLOUD_MODEL, bufferSource);
+        renderClouds(poseStack, 112, 90,time/80f, CLOUD_2_MODEL, bufferSource);
+        renderClouds(poseStack, 102, 200,time/200f, CLOUD_2_MODEL, bufferSource);
+
+        renderAurora(poseStack, time, bufferSource, event, mc, player, level);
+
+        bufferSource.endBatch();
+        poseStack.popPose();
+    }
+
+    public static void renderClouds(PoseStack poseStack, float translate, float scale, float time, ResourceLocation model, MultiBufferSource.BufferSource buffer) {
+        poseStack.pushPose();
+        poseStack.translate(0.5, 0.5, 0.5);
+        poseStack.mulPose(Axis.YP.rotation(time));
+        poseStack.translate(0, translate, 0);
+        poseStack.scale(scale, scale/2f, scale);
+        poseStack.mulPose(Axis.XP.rotation((float) -Math.PI/2f));
+        poseStack.translate(-0.5, -0.5, -0.5);
+        RenderUtils.renderModel(model, poseStack, buffer, 255, OverlayTexture.NO_OVERLAY);
+        poseStack.popPose();
+    }
+
+    public static void renderAurora(PoseStack poseStack, float time, MultiBufferSource.BufferSource buffer, RenderLevelStageEvent event, Minecraft mc, Player player, Level level) {
+        if (!event.getCamera().getEntity().level().isRaining()) return;
+
+        Frustum frustum = event.getFrustum();
         int renderDistance = mc.options.getEffectiveRenderDistance();
         ChunkPos playerChunk = player.chunkPosition();
-
         int yLevel = 192;
 
         for (int x = -renderDistance; x <= renderDistance; x++) {
@@ -352,7 +423,6 @@ public class ModClientEvents {
                     poseStack.pushPose();
 
                     poseStack.translate(centerPos.getX(), centerPos.getY(), centerPos.getZ());
-                    float time = level.getGameTime();
                     float wiggle = Mth.sin((time + (chunkPos.z)*20)/10) / 2;
                     float wiggle2 = Mth.sin((time + (chunkPos.z)*10)/20);
 
@@ -372,15 +442,12 @@ public class ModClientEvents {
                             15728880,
                             OverlayTexture.NO_OVERLAY,
                             poseStack,
-                            bufferSource, level, 1
+                            buffer, level, 1
                     );
 
                     poseStack.popPose();
                 }
             }
         }
-
-        bufferSource.endBatch();
-        poseStack.popPose();
     }
 }
