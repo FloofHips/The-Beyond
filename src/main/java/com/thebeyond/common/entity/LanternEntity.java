@@ -181,17 +181,7 @@ public class LanternEntity extends PathfinderMob {
 
         if (isFlying()) {
 
-            navigation.moveTo(this.getX(), 175f, this.getZ()-10, 0.7);
-
-            //getLookControl().setLookAt(this.getX(), this.getY(), -500000);
-            //Vec3 north = new Vec3(0, 0, -1);
-//
-            //if (getY() < 180) {
-            //    setDeltaMovement(north.scale(0.05).add((random.nextFloat()-0.5f)*0.2f, 0.2, (random.nextFloat())*0.1f));
-            //    return;
-            //}
-            //setDeltaMovement(north.scale(0.1 * random.nextInt(1,5)).add((random.nextFloat()-0.5f)*0.15f, (random.nextFloat()-0.5f)*0.1f, (random.nextFloat()-0.5f)*0.25f));
-//
+            navigation.moveTo(this.getX(), 197f, this.getZ()-10, 0.7);
         }
 
 
