@@ -91,7 +91,8 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
 
         int transMax = 10;
         int alpha = Math.max((int) (255*(((transMax - distance)/(float) transMax))), 255 * (int) entity.level().getThunderLevel(partialTicks));
-        int color = new Color(255,alpha,255, alpha).getRGB();
+        int finalAlpha = Math.max(alpha, entity.getAlpha());
+        int color = new Color(255, finalAlpha,255, finalAlpha).getRGB();
 
         this.getModel(entity).renderToBuffer(
                 poseStack,

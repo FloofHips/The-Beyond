@@ -27,4 +27,8 @@ public class BeyondModelLayers {
             new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "lantern_medium"), "main");
     public static final ModelLayerLocation LANTERN_SMALL =
             new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "lantern_small"), "main");
+    public static final ModelLayerLocation ABYSSAL_NOMAD =
+            new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "abyssal_nomad"), "main");
+    public static final ModelLayerLocation ABYSSAL_NOMAD_GLOW =
+            new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "abyssal_nomad"), "glow");
 }

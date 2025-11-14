@@ -19,7 +19,7 @@ public class BeyondRenderTypes extends RenderType {
     static RenderStateShard.ShaderStateShard shaderState = new RenderStateShard.ShaderStateShard(BeyondShaders::getRenderTypeDepthOverlay);
     public static RenderType unlitTranslucent(ResourceLocation textureLocation) {
         RenderType.CompositeState renderState = CompositeState.builder().setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_UNLIT_SHADER).setTextureState(new RenderStateShard.TextureStateShard(textureLocation, false, false)).setTransparencyState(RenderType.TRANSLUCENT_TRANSPARENCY).setCullState(RenderType.CULL).setLightmapState(RenderType.LIGHTMAP).setOverlayState(RenderType.OVERLAY).createCompositeState(true);
-        return RenderType.create("neoforge_entity_unlit_translucent", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, true, false, renderState);
+        return RenderType.create("entity_unlit_translucent", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, true, false, renderState);
     }
     public static final Function<ResourceLocation, RenderType> ENTITY_DEPTH = Util.memoize((location) -> {
         CompositeState compositeState = CompositeState.builder()

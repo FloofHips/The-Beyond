@@ -7,6 +7,8 @@ import com.thebeyond.util.RandomUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -92,13 +94,14 @@ public class PolarAntennaBlock extends Block implements IMagneticReceiver {
             StabilityProperty nextStability = stabilityList[currentStability.ordinal() + 1];
 
             level.scheduleTick(pos, this, switch (nextStability) {case NONE, LOW, MEDIUM, HIGH -> DELAY*3; case SEEKING -> DELAY;});
-            level.setBlock(pos, state.setValue(COOLDOWN, true).setValue(STABILITY, nextStability), 3);
+            level.setBlock(pos, state.setValue(COOLDOWN, true).setValue(STABILITY, StabilityProperty.SEEKING), 3);
         }
     }
 
     @Override
     public void receiveSignal(BlockPos pos, BlockState state, Level level, @Nullable BlockState senderState) {
         level.scheduleTick(pos, this, DELAY);
+        level.playSound(null, pos, SoundEvents.BREEZE_CHARGE, SoundSource.BLOCKS, 1, level.random.nextFloat()*2);
         level.setBlock(pos, state.setValue(COOLDOWN, true).setValue(STABILITY, StabilityProperty.SEEKING), 3);
     }
 
@@ -110,6 +113,7 @@ public class PolarAntennaBlock extends Block implements IMagneticReceiver {
     @Override
     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         StabilityProperty nextStability = StabilityProperty.values()[state.getValue(STABILITY).ordinal() - 1];
+        level.playSound(null, pos, SoundEvents.SWEET_BERRY_BUSH_PICK_BERRIES, SoundSource.BLOCKS, 1, level.random.nextFloat()*2);
         level.setBlock(pos, state.setValue(STABILITY, nextStability), 3);
     }
 

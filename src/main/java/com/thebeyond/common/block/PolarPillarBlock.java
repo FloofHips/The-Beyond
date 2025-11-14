@@ -4,6 +4,8 @@ import com.mojang.serialization.MapCodec;
 import com.thebeyond.util.IMagneticReceiver;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -60,6 +62,7 @@ public class PolarPillarBlock extends Block implements IMagneticReceiver {
             if (newBlockFound.getB().getBlock() instanceof PolarPillarBlock || newBlockFound.getB().getBlock() instanceof PolarBulbBlock) {
                 if (!(newBlockFound.getB().getBlock() instanceof PolarBulbBlock)) lastPillar = newBlockFound;
             } else {
+                level.playSound(null, pos, SoundEvents.BREEZE_CHARGE, SoundSource.BLOCKS, 1, level.random.nextFloat()*2);
                 level.setBlock(lastPillar.getA(), lastPillar.getB().setValue(POLAR_CHARGE, 1), 3);
                 level.scheduleTick(lastPillar.getA(), lastPillar.getB().getBlock(), TICK_DELAY, TickPriority.HIGH);
                 break;

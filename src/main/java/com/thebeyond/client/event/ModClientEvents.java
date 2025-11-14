@@ -18,6 +18,7 @@ import com.thebeyond.util.RenderUtils;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColors;
+import net.minecraft.client.model.geom.builders.CubeDeformation;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.culling.Frustum;
@@ -60,6 +61,7 @@ import java.util.Collections;
 @EventBusSubscriber(modid = TheBeyond.MODID, value = Dist.CLIENT)
 public class ModClientEvents {
     public static ShaderInstance ENTITY_DEPTH_SHADER;
+    private static final ResourceLocation AURORA_TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/environment/aurora.png");
     public static final ResourceLocation CLOUD_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/cloud");
     public static final ResourceLocation CLOUD_2_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/cloud_2");
     public static final ResourceLocation AURORA_0_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/aurora_0");
@@ -78,6 +80,7 @@ public class ModClientEvents {
         EntityRenderers.register(BeyondEntityTypes.POISON_SEED.get(), PoisonSeedRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.UNSTABLE_SEED.get(), UnstableSeedRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.LANTERN.get(), LanternRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.ABYSSAL_NOMAD.get(), AbyssalNomadRenderer::new);
 
         ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID.get(), RenderType.cutoutMipped());
         ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID_FLOWING.get(), RenderType.cutoutMipped());
@@ -105,6 +108,8 @@ public class ModClientEvents {
         event.registerLayerDefinition(BeyondModelLayers.LANTERN_LARGE, LanternLargeModel::createBodyLayer);
         event.registerLayerDefinition(BeyondModelLayers.LANTERN_MEDIUM, LanternMediumModel::createBodyLayer);
         event.registerLayerDefinition(BeyondModelLayers.LANTERN_SMALL, LanternSmallModel::createBodyLayer);
+        event.registerLayerDefinition(BeyondModelLayers.ABYSSAL_NOMAD, () -> AbyssalNomadModel.createBodyLayer(CubeDeformation.NONE));
+        event.registerLayerDefinition(BeyondModelLayers.ABYSSAL_NOMAD_GLOW, () -> AbyssalNomadModel.createBodyLayer(new CubeDeformation(-0.1f)));
     }
 
     @SubscribeEvent
@@ -386,6 +391,11 @@ public class ModClientEvents {
             renderClouds(poseStack, 102, 200,time/200f, CLOUD_2_MODEL, bufferSource);
         }
 
+        //if (mc.level != null && mc.player != null && level instanceof ClientLevel clientLevel) {
+        //    //AuroraBorealisRenderer.renderAurora(poseStack, 0, time, bufferSource, event, mc, player, level);
+        //    AuroraBorealisRenderer.renderAurora(poseStack, event.getProjectionMatrix(), event.getPartialTick().getGameTimeDeltaPartialTick(false) , clientLevel, mc);
+        //}
+
         renderAurora(poseStack, 0, time, bufferSource, event, mc, player, level);
         renderAurora(poseStack, 16, time, bufferSource, event, mc, player, level);
 
@@ -445,7 +455,7 @@ public class ModClientEvents {
 
                     poseStack.translate(centerPos.getX(), centerPos.getY(), centerPos.getZ());
                     float wiggle = Mth.sin((time + (chunkPos.z)*20)/10);
-                    float wiggle2 = Mth.sin((time + (chunkPos.z)*10)/20) + (Mth.sin(chunkPos.z/2f)*15);
+                    float wiggle2 = Mth.sin((time + yoffset + (chunkPos.z)*10)/20) + (Mth.sin(chunkPos.z/2f)*15);
 
                     poseStack.translate(wiggle2, wiggle, 0);
                     poseStack.translate(0, yoffset, 0);
@@ -465,10 +475,11 @@ public class ModClientEvents {
                     double distanceFromPlayer = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
                     double maxPlayerDistance = renderDistance * 16 * 0.8;
                     float l = (float) (1.0 - (distanceFromPlayer / maxPlayerDistance));
-                    float flash = (Mth.sin((chunkPos.z*10) + time/5) + 1.0f) * 0.5f;
+                    float flash = (Mth.sin(((chunkPos.z+ yoffset)*10) + time/5f) + 1.0f) * 0.5f;
                     int color = (int) (255 * Math.max(l, flash));
 
-                    RenderUtils.renderModel(getAuroraModel(x, z, chunkPos, renderDistance), poseStack, buffer.getBuffer(RenderType.cutout()), color, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
+                    //RenderUtils.renderModel(getAuroraModel(x, z, chunkPos, renderDistance), poseStack, buffer.getBuffer(BeyondRenderTypes.entityCutout(getAuroraTexture(x, z, chunkPos, renderDistance))), color, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
+                    RenderUtils.renderModel(getAuroraModel(x, z, chunkPos, renderDistance), poseStack, buffer.getBuffer(BeyondRenderTypes.cutout()), color, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
 
                     poseStack.popPose();
                 }
@@ -495,6 +506,28 @@ public class ModClientEvents {
             case 1 -> AURORA_1_MODEL;
             case 2 -> AURORA_2_MODEL;
             default -> AURORA_3_MODEL;
+        };
+    }
+
+    public static ResourceLocation getAuroraTexture(int relX, int relZ, ChunkPos chunkPos, int renderDistance) {
+        double worldX = chunkPos.getMiddleBlockX();
+        double worldZ = chunkPos.getMiddleBlockZ();
+        double distanceFromCenter = Math.sqrt(worldX * worldX + worldZ * worldZ);
+
+        if (distanceFromCenter < renderDistance * 16 * 0.7) {
+            return ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_crumbling.png");
+        }
+
+        if (Math.abs(relZ) == renderDistance-1 || Math.abs(relZ) == renderDistance+1 || Math.abs(relZ) == renderDistance) {
+            return ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_crumbling.png");
+        }
+
+        int i = chunkPos.x + chunkPos.z;
+        return switch (i % 3) {
+            case 0 -> ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_0.png");
+            case 1 -> ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_1.png");
+            case 2 -> ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_2.png");
+            default -> ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_3.png");
         };
     }
 }

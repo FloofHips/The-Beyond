@@ -62,7 +62,7 @@ public class LanternSmallModel<T extends LanternEntity> extends EntityModel<Lant
         if (lantern.getDeltaMovement().horizontalDistanceSqr() > 1.0E-7)
             this.body.xRot += -0.05F - 0.05F * Mth.cos(ageInTicks * 0.3F);
 
-        this.root.y = 0.5F * Mth.sin(ageInTicks * 0.18f) + 8;
+        this.root.y = 0.5F * Mth.sin(ageInTicks * 0.18f) + 24;
 
         this.root.xRot = 0.5f * 0.3F * Mth.cos(ageInTicks * 0.18f);
         this.root.yRot = 0.5f * 0.5F * Mth.cos((ageInTicks - 0.25f) * 0.09f);

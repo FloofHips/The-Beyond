@@ -6,13 +6,17 @@ import com.thebeyond.common.registry.BeyondEntityTypes;
 import com.thebeyond.util.RandomUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
@@ -59,15 +63,18 @@ public class PolarBulbBlock extends Block {
         if (state.getValue(GLOP_CHARGE) == 4) {
             level.setBlock(pos, state.setValue(GLOP_CHARGE, 0), 3);
 
-            Entity enderglop = new EnderglopEntity(BeyondEntityTypes.ENDERGLOP.get(), level);
+            level.playSound(null, pos, SoundEvents.BREEZE_DEFLECT, SoundSource.BLOCKS, 3, level.random.nextFloat());
+            EnderglopEntity enderglop = new EnderglopEntity(BeyondEntityTypes.ENDERGLOP.get(), level);
             enderglop.setPos(pos.getX()+0.5, pos.getY()+0.8, pos.getZ()+0.5);
-            enderglop.setDeltaMovement(
-                    RandomUtils.nextDouble(0.2, 0.4) * (RandomUtils.nextBoolean() ? -1 : 1),
-                    RandomUtils.nextDouble(0.5, 0.75),
-                    RandomUtils.nextDouble(0.2, 0.4) * (RandomUtils.nextBoolean() ? -1 : 1)
-            );
-
+            enderglop.setSize(2, false);
             level.addFreshEntity(enderglop);
+            LivingEntity player = level.getNearestPlayer(enderglop, 10);
+            Vec3 direction = player == null ? Vec3.ZERO : player.position().subtract(enderglop.position()).normalize();
+            enderglop.setDeltaMovement(
+                    direction.x,
+                    RandomUtils.nextDouble(0.5, 0.75),
+                    direction.z
+            );
         }
     }
 

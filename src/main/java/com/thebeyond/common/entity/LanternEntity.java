@@ -11,6 +11,8 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -36,15 +38,18 @@ import net.minecraft.world.phys.Vec3;
 import java.util.EnumSet;
 import java.util.function.Predicate;
 
-public class LanternEntity extends PathfinderMob {
+public class LanternEntity extends PathfinderMob implements PlayerRideable {
     private static final EntityDataAccessor<Integer> SIZE = SynchedEntityData.defineId(LanternEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Boolean> TRUSTING = SynchedEntityData.defineId(LanternEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer> ALPHA = SynchedEntityData.defineId(LanternEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> FLYING = SynchedEntityData.defineId(LanternEntity.class, EntityDataSerializers.BOOLEAN);
     public LanternEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
         this.noPhysics = true;
         this.moveControl = new FlyingMoveControl(this, 20, false);
-        this.lookControl = new SmoothSwimmingLookControl(this, 10);
+        if (!level.isClientSide) {
+            this.entityData.set(SIZE, this.random.nextInt(4));
+        }
+        this.lookControl = new SmoothSwimmingLookControl(this, 10/(getSize()+1));
     }
 
     @Override
@@ -118,36 +123,42 @@ public class LanternEntity extends PathfinderMob {
 
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
-        builder.define(TRUSTING, false);
         builder.define(FLYING, false);
-        builder.define(SIZE, level().isThundering() ? 3 : this.random.nextInt(3));
+        builder.define(SIZE, 0);
+        builder.define(ALPHA, 0);
     }
     public boolean isTrusting() {
-        return this.entityData.get(TRUSTING);
-    }
-    private void setTrusting(boolean trust) {
-        this.entityData.set(TRUSTING, trust);
+        return getAlpha() > 0;
     }
     public boolean isFlying() {
         return this.entityData.get(FLYING);
     }
-    private void setFlying(boolean flying) {
+    public void setFlying(boolean flying) {
         this.entityData.set(FLYING, flying);
     }
     public int getSize() {
         return this.entityData.get(SIZE);
     }
-    private void setSize(int size) {
+    public void setSize(int size) {
         this.entityData.set(SIZE, size);
+    }
+    public int getAlpha() {
+        return this.entityData.get(ALPHA);
+    }
+    public void setAlpha(int alpha) {
+        int finalAlpha = Math.clamp(alpha, 0, 255);
+        this.entityData.set(ALPHA, finalAlpha);
     }
     public void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
         compound.putInt("Size", this.getSize());
+        compound.putInt("Alpha", this.getAlpha());
     }
 
     public void readAdditionalSaveData(CompoundTag compound) {
         super.readAdditionalSaveData(compound);
         this.setSize(compound.getInt("Size"));
+        this.setAlpha(compound.getInt("Alpha"));
     }
 
     @Override
@@ -162,7 +173,7 @@ public class LanternEntity extends PathfinderMob {
             case 0: return entitydimensions.scale(0.3f, 0.3f);
             case 1: return entitydimensions.scale(0.7f, 0.5f);
             case 2: return entitydimensions.scale(0.7f, 1.5f);
-            case 3: return entitydimensions.scale(2f, 2f);
+            case 3: return entitydimensions.scale(1.75f, 1.75f);
         }
         return entitydimensions.scale(1.0F);
     }
@@ -180,10 +191,8 @@ public class LanternEntity extends PathfinderMob {
         super.tick();
 
         if (isFlying()) {
-
             navigation.moveTo(this.getX(), 197f, this.getZ()-10, 0.7);
         }
-
 
         if (!isFlying() && level().isThundering())
             setFlying(true);
@@ -208,18 +217,19 @@ public class LanternEntity extends PathfinderMob {
 
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);
+
         if (!level().isClientSide) {
             if (itemstack.is(Items.SOUL_TORCH)) {
-                this.setTrusting(true);
+                this.setAlpha((int) (getAlpha()+150*random.nextFloat()));
                 itemstack.shrink(1);
                 player.addItem(new ItemStack(Items.TORCH));
                 this.playSound(SoundEvents.DOLPHIN_EAT);
                 return InteractionResult.SUCCESS;
             }
 
-            if (isTrusting()) {
-                if (itemstack.is(Items.BRUSH)) {
-                    this.spawnAtLocation(new ItemStack(Items.ARMADILLO_SCUTE));
+            if (itemstack.is(Items.BRUSH)) {
+                if (!isTrusting()) {
+                    this.spawnAtLocation(new ItemStack(Items.ARMADILLO_SCUTE, 1+random.nextInt(0, getSize()+1)));
                     this.gameEvent(GameEvent.ENTITY_INTERACT);
                     this.playSound(SoundEvents.ARMADILLO_BRUSH);
                     itemstack.hurtAndBreak(16, player, getSlotForHand(hand));
@@ -229,13 +239,49 @@ public class LanternEntity extends PathfinderMob {
                     this.discard();
                     return InteractionResult.SUCCESS;
                 }
-                return InteractionResult.CONSUME;
+
+                this.spawnAtLocation(new ItemStack(Items.WHITE_CONCRETE, 1+random.nextInt(0, (getSize()+1)*2)));
+                this.gameEvent(GameEvent.ENTITY_INTERACT);
+                this.playSound(SoundEvents.ARMADILLO_BRUSH);
+                itemstack.hurtAndBreak(16, player, getSlotForHand(hand));
+                ((ServerLevel) this.level()).sendParticles(ParticleTypes.DUST_PLUME, this.getX(), getY(),getZ(), 5 * (getSize()+1), 0.4*(getSize()+1),0.4*(getSize()+1),0.4*(getSize()+1),0.01);
+
+                this.setAlpha((int) (getAlpha()-150*random.nextFloat()));
+                flee(player);
+                return InteractionResult.SUCCESS;
+            }
+
+            if (getSize() == 3 && isTrusting()) {
+                player.startRiding(this);
+                return InteractionResult.SUCCESS;
             } else {
-                Flee(player);
+                flee(player);
                 return InteractionResult.SUCCESS;
             }
         }
-        return super.mobInteract(player, hand);
+
+        return InteractionResult.sidedSuccess(level().isClientSide);
+    }
+
+    @Override
+    public Vec3 getDismountLocationForPassenger(LivingEntity entity) {
+        entity.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, 15 * 20, 0));
+        return super.getDismountLocationForPassenger(entity);
+    }
+
+    @Override
+    protected void positionRider(Entity entity, MoveFunction moveFunction) {
+        moveFunction.accept(entity, this.getX(), this.getY()+2, this.getZ());
+    }
+
+    @Override
+    protected Vec3 getPassengerAttachmentPoint(Entity entity, EntityDimensions dimensions, float partialTick) {
+        return super.getPassengerAttachmentPoint(entity, dimensions, partialTick);
+    }
+
+    @Override
+    public boolean isPushable() {
+        return false;
     }
 
     @Override
@@ -251,7 +297,7 @@ public class LanternEntity extends PathfinderMob {
             this.setDeltaMovement(getViewVector(0).scale(-0.01f));
     }
 
-    private void Flee(Entity entity) {
+    private void flee(Entity entity) {
         if (entity == null) return;
         Vec3 awayVector = this.position().subtract(entity.position()).normalize();
         if (this.level() instanceof ServerLevel level)
@@ -366,7 +412,7 @@ public class LanternEntity extends PathfinderMob {
         @Override
         public void start() {
             this.panicTime = 60;
-            this.lantern.Flee(this.toAvoid);
+            this.lantern.flee(this.toAvoid);
         }
 
         @Override
@@ -387,7 +433,7 @@ public class LanternEntity extends PathfinderMob {
                 this.panicTime--;
 
                 if (this.lantern.tickCount % 10 == 0) {
-                    this.lantern.Flee(this.toAvoid);
+                    this.lantern.flee(this.toAvoid);
                 }
 
                 if (this.lantern.getRandom().nextInt(20) == 0) {
