@@ -59,10 +59,14 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         RandomSource random2 = RandomSource.create();
         RandomSource random3 = RandomSource.create();
         RandomSource random4 = RandomSource.create();
-        simplexNoise = new SimplexNoise(random1);
-        globalHOffsetNoise = new PerlinSimplexNoise(random2, Collections.singletonList(1));
-        globalVOffsetNoise = new PerlinSimplexNoise(random3, Collections.singletonList(1));
-        globalCOffsetNoise = new PerlinSimplexNoise(random4, Collections.singletonList(1));
+        if (simplexNoise == null)
+            simplexNoise = new SimplexNoise(random1);
+        if (globalHOffsetNoise == null)
+            globalHOffsetNoise = new PerlinSimplexNoise(random2, Collections.singletonList(1));
+        if (globalVOffsetNoise == null)
+            globalVOffsetNoise = new PerlinSimplexNoise(random3, Collections.singletonList(1));
+        if (globalCOffsetNoise == null)
+            globalCOffsetNoise = new PerlinSimplexNoise(random4, Collections.singletonList(1));
     }
 
     @Override
@@ -115,9 +119,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
         int shiftedY = globalY + TERRAIN_Y_OFFSET;
 
-        double warpX = globalX + simplexNoise.getValue(globalX * 0.01, globalZ * 0.01) * 10;
-        double warpZ = globalZ + simplexNoise.getValue(globalX * 0.01 + 1000, globalZ * 0.01 + 1000) * 10;
-
         double noiseValue = 0.0;
         double amplitude = 1.0;
         double frequency = 1.0;
@@ -127,9 +128,9 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             double hScale = horizontalBaseScale * frequency;
             double vScale = verticalBaseScale * frequency;
 
-            double sampleX = warpX * hScale;
+            double sampleX = globalX * hScale;
             double sampleY = shiftedY * vScale;
-            double sampleZ = warpZ * hScale;
+            double sampleZ = globalZ * hScale;
 
             double octaveNoise = simplexNoise.getValue(sampleX, sampleY, sampleZ);
             noiseValue += octaveNoise * amplitude;
@@ -269,11 +270,14 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         double threshold = getThreshold(pos.getX(), pos.getZ(), distanceFromOrigin);
         double cycleHeight = getCycleHeight(pos.getX(), pos.getZ());
         double terrainNoise = getTerrainDensity(pos.getX(), pos.getY(), pos.getZ());
+        double simplex = simplexNoise.getValue(pos.getX(), pos.getY(), pos.getZ());
 
-        info.add("TerrainNoise T: " + decimalformat.format(terrainNoise) +
-                " HS: " + decimalformat.format(horizontalBaseScale) +
-                " VS: " + decimalformat.format(verticalBaseScale) +
-                " Threshold: " + decimalformat.format(threshold) +
-                " CH: " + decimalformat.format(cycleHeight));
+        //info.add("TerrainNoise T: " + decimalformat.format(terrainNoise) +
+        //        " HS: " + decimalformat.format(horizontalBaseScale) +
+        //        " VS: " + decimalformat.format(verticalBaseScale) +
+        //        " Threshold: " + decimalformat.format(threshold) +
+        //        " CH: " + decimalformat.format(cycleHeight));
+
+        info.add("Simplex: " + decimalformat.format(simplex));
     }
 }

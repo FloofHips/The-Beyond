@@ -2,6 +2,7 @@ package com.thebeyond.common.block;
 
 import com.thebeyond.common.registry.BeyondBlocks;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
@@ -15,7 +16,7 @@ public class StardustBlock extends PinkPetalsBlock {
         super(p_273335_);
     }
     protected boolean mayPlaceOn(BlockState state, BlockGetter level, BlockPos pos) {
-        return state.is(BeyondBlocks.AURORACITE.get());
+        return state.isFaceSturdy(level, pos, Direction.UP);
     }
     public boolean isValidBonemealTarget(LevelReader p_272968_, BlockPos p_273762_, BlockState p_273662_) {
         return false;
