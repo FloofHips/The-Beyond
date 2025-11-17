@@ -3,6 +3,8 @@ package com.thebeyond.util;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.geom.ModelLayerLocation;
+import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.entity.ItemRenderer;
@@ -20,6 +22,9 @@ public class RenderUtils {
     private static final RandomSource RANDOM = RandomSource.create();
     public static void renderModel(ResourceLocation loc, PoseStack poseStack, VertexConsumer consumer, int packedLight, int overlayCoord) {
         renderModel(loc, poseStack, consumer, packedLight, overlayCoord, 1,1,1,1);
+    }
+    public static ModelPart bakeLayer(ModelLayerLocation location) {
+        return Minecraft.getInstance().getEntityModels().bakeLayer(location);
     }
 
     public static void renderModel(ResourceLocation loc, PoseStack poseStack, VertexConsumer consumer, int packedLight, int overlayCoord, int r, int g, int b, int a) {

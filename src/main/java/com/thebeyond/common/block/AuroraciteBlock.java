@@ -52,7 +52,7 @@ public class AuroraciteBlock extends Block {
     }
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        if (Minecraft.getInstance().player != null && !Minecraft.getInstance().player.isCreative()) return Shapes.empty();
+        if (Minecraft.getInstance() != null && Minecraft.getInstance().player != null && !Minecraft.getInstance().player.isCreative()) return Shapes.empty();
         return Shapes.block();
     }
 

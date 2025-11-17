@@ -55,6 +55,12 @@ public class BeyondBlocks {
             .strength(1.5F, 6.0F)
             .sound(BeyondSoundTypes.END_STONE))
     );
+    public static final DeferredBlock<Block> ECTOPLASM = registerBlockWithoutItem("ectoplasm", () -> new EctoplasmBlock(BlockBehaviour.Properties.of()
+            .mapColor(MapColor.WOOL)
+            .sound(SoundType.COBWEB)
+            .noOcclusion())
+    );
+    //STRUCTURES
     public static final DeferredBlock<Block> PORTELAIN = registerBlock("portelain", () -> new Block(BlockBehaviour.Properties.of()
             .mapColor(MapColor.WOOL)
             .requiresCorrectToolForDrops()

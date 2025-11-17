@@ -8,16 +8,21 @@ import com.thebeyond.TheBeyond;
 import com.thebeyond.client.event.specialeffects.EndSpecialEffects;
 import com.thebeyond.client.model.*;
 
+import com.thebeyond.client.model.equipment.ArmorModel;
+import com.thebeyond.client.model.equipment.MultipartArmorModel;
 import com.thebeyond.client.particle.AuroraciteStepParticle;
 import com.thebeyond.client.particle.GlopParticle;
 import com.thebeyond.client.renderer.*;
 import com.thebeyond.common.entity.LanternEntity;
+import com.thebeyond.common.item.ModelArmorItem;
 import com.thebeyond.common.registry.*;
 import com.thebeyond.util.ColorUtils;
 import com.thebeyond.util.RenderUtils;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColors;
+import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.model.Model;
 import net.minecraft.client.model.geom.builders.CubeDeformation;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.*;
@@ -27,11 +32,14 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.SpawnPlacementTypes;
+import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
@@ -47,6 +55,7 @@ import net.minecraft.world.level.block.SweetBerryBushBlock;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.synth.PerlinSimplexNoise;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.portal.DimensionTransition;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
@@ -56,18 +65,27 @@ import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.*;
 import net.neoforged.neoforge.client.event.sound.PlaySoundEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.ChunkEvent;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
 import java.nio.Buffer;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Optional;
 
 @SuppressWarnings("unused")
 @EventBusSubscriber(modid = TheBeyond.MODID, value = Dist.CLIENT)
 public class ModClientEvents {
+    protected static Collection<ModelArmorItem> MODEL_ARMOR = new ArrayList<>();
     public static ShaderInstance ENTITY_DEPTH_SHADER;
     private static final ResourceLocation AURORA_TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/environment/aurora.png");
     public static final ResourceLocation CLOUD_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/cloud");
@@ -118,6 +136,11 @@ public class ModClientEvents {
         event.registerLayerDefinition(BeyondModelLayers.LANTERN_SMALL, LanternSmallModel::createBodyLayer);
         event.registerLayerDefinition(BeyondModelLayers.ABYSSAL_NOMAD, () -> AbyssalNomadModel.createBodyLayer(CubeDeformation.NONE));
         event.registerLayerDefinition(BeyondModelLayers.ABYSSAL_NOMAD_GLOW, () -> AbyssalNomadModel.createBodyLayer(new CubeDeformation(-0.1f)));
+        for (ModelArmorItem item : MODEL_ARMOR) {
+            EquipmentSlot slot = item.getEquipmentSlot();
+            MultipartArmorModel model = item.getArmorModel();
+            event.registerLayerDefinition(model.getLayerLocation(slot), ArmorModel.wrap(model.getLayerDefinition(slot), model.textureWidth(slot), model.textureHeight(slot)));
+        }
     }
 
     @SubscribeEvent
@@ -140,6 +163,9 @@ public class ModClientEvents {
         event.registerSpriteSet(BeyondParticleTypes.AURORACITE_STEP.get(), sprites
                 -> (simpleParticleType, clientLevel, d, e, f, g, h, i)
                 -> new AuroraciteStepParticle(clientLevel, d, e, f, sprites));
+    }
+    public static void addModelArmor(ModelArmorItem item) {
+        MODEL_ARMOR.add(item);
     }
 
     @SubscribeEvent
@@ -208,24 +234,70 @@ public class ModClientEvents {
     }
 
     @SubscribeEvent
-    public static void onDeath(LivingDeathEvent event) {
+    public static void onDeath(LivingDropsEvent event) {
+        if (event.isCanceled()) return;
+        event.setCanceled(true);
+
         if (event.getEntity() instanceof Player player) {
             ChestBoat boat = new ChestBoat(EntityType.CHEST_BOAT, player.level());
             boat.setPos(player.position());
             player.level().addFreshEntity(boat);
+
+            CompoundTag persistedData = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
+            persistedData.putUUID("Boatem", boat.getUUID());
+            player.getPersistentData().put(Player.PERSISTED_NBT_TAG, persistedData);
+
             int i = 0;
-            for (ItemStack stack : player.getInventory().items ) {
-                boat.setItem(i, stack);
+            for (ItemEntity item : event.getDrops() ) {
+                if (item.getItem().isEmpty())
+                    continue;
+                boat.setItem(i, item.getItem());
                 if (i<26)
                     i++;
+                item.remove(Entity.RemovalReason.CHANGED_DIMENSION);
             }
-            player.getInventory().clearContent();
         }
     }
 
+    @SubscribeEvent
+    public static void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
+        if (event.getEntity() instanceof Player player) {
+            Optional<GlobalPos> deathLocation = player.getLastDeathLocation();
+
+            if (deathLocation.isPresent()) {
+                GlobalPos globalPos = deathLocation.get();
+                ServerLevel deathLevel = player.getServer().getLevel(globalPos.dimension());
+
+                if (deathLevel != null) {
+
+                    CompoundTag persistedData = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
+
+                    if (!persistedData.contains("Boatem")) {
+                        return;
+                    }
+
+                    Entity entity = deathLevel.getEntity(persistedData.getUUID("Boatem"));
+
+                    if (deathLevel == player.level()) {
+                        entity.teleportTo(player.getX(), player.getY(), player.getZ());
+                    } else {
+                        DimensionTransition.PostDimensionTransition postdimensiontransition = DimensionTransition.PLAY_PORTAL_SOUND.then(DimensionTransition.PLACE_PORTAL_TICKET);
+                        ChestBoat teleportedBoat = (ChestBoat) entity.changeDimension(new DimensionTransition((ServerLevel) player.level(), entity, postdimensiontransition));
+                        teleportedBoat.teleportTo(player.getX(), player.getY(), player.getZ());
+                    }
+
+                    persistedData.remove("Boatem");
+                }
+            }
+        }
+    }
+    //@SubscribeEvent
+    //public static void onChunkLoadEvent(ChunkEvent.Unload event) {
+    //    event.getChunk().getbloc
+    //}
     //@SubscribeEvent
     //public static void onChunkLoadEvent(ChunkEvent.Load event) {
-    //    event.getChunk().findBlocks();
+        //event.getChunk().findBlocks();
     //}
 
     @SubscribeEvent
@@ -260,6 +332,25 @@ public class ModClientEvents {
 
     @SubscribeEvent
     public static void registerClientExtensions(RegisterClientExtensionsEvent event) {
+
+        for (ModelArmorItem armorItem : MODEL_ARMOR) {
+            event.registerItem(new IClientItemExtensions() {
+                @Override
+                @NotNull
+                public HumanoidModel<?> getHumanoidArmorModel(LivingEntity entity, ItemStack stack, EquipmentSlot slot, HumanoidModel<?> original) {
+                    ArmorModel part = armorItem.getArmorModel().getModelPart(slot);
+                    part.setup(entity, stack, slot, original);
+                    return part;
+                }
+
+                @Override
+                public HumanoidModel<?> getGenericArmorModel(LivingEntity entity, ItemStack stack, EquipmentSlot slot, HumanoidModel<?> original) {
+                    return getHumanoidArmorModel(entity, stack, slot, original);
+                }
+            }, armorItem);
+        }
+        //MODEL_ARMOR.clear();
+
         event.registerFluidType(new IClientFluidTypeExtensions() {
             private static final ResourceLocation STILL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void"),
                     STILL_2 = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/plate_block"),
