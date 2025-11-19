@@ -34,6 +34,7 @@ import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
@@ -67,9 +68,11 @@ import net.neoforged.neoforge.client.event.sound.PlaySoundEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
+import net.neoforged.neoforge.common.util.TriState;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.ChunkEvent;
@@ -230,6 +233,24 @@ public class ModClientEvents {
         if(Minecraft.getInstance().player != null && Minecraft.getInstance().player.hasEffect(BeyondEffects.DEAFENED)) {
             Minecraft.getInstance().getMusicManager().stopPlaying();
             event.setSound(null);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onRenderNameTag(RenderNameTagEvent event) {
+        if (event.getEntity() != null && event.getEntity() instanceof LivingEntity livingEntity) {
+            if (livingEntity.getItemBySlot(EquipmentSlot.HEAD).is(BeyondItems.ETHER_CLOAK.get()))
+            if (!event.canRender().isFalse())
+                event.setCanRender(TriState.FALSE);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onRenderNameTag(LivingEvent.LivingVisibilityEvent event) {
+        if (event.getEntity() != null && event.getEntity() instanceof LivingEntity livingEntity) {
+            if (livingEntity.getItemBySlot(EquipmentSlot.HEAD).is(BeyondItems.ETHER_CLOAK.get())) {
+                event.modifyVisibility(0.1f);
+            }
         }
     }
 

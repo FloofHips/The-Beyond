@@ -1,6 +1,7 @@
 package com.thebeyond.common.block;
 
 import com.thebeyond.common.entity.AbyssalNomadEntity;
+import com.thebeyond.common.registry.BeyondItems;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -47,7 +48,7 @@ public class AuroraciteBlock extends Block {
         if (entity instanceof AbyssalNomadEntity) {
             return true;
         } else {
-            return entity instanceof LivingEntity ? ((LivingEntity)entity).getItemBySlot(EquipmentSlot.FEET).is(Items.GOLDEN_BOOTS) : false;
+            return entity instanceof LivingEntity ? ((LivingEntity)entity).getItemBySlot(EquipmentSlot.FEET).is(BeyondItems.PATHFINDER_BOOTS.get()) : false;
         }
     }
     @Override

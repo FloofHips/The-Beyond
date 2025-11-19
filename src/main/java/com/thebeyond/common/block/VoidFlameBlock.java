@@ -3,6 +3,8 @@ package com.thebeyond.common.block;
 import com.mojang.serialization.MapCodec;
 import com.thebeyond.common.fluid.GellidVoidBlock;
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondTabs;
+import com.thebeyond.common.registry.BeyondTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.tags.BlockTags;
@@ -43,7 +45,7 @@ public class VoidFlameBlock extends BaseFireBlock {
     }
 
     public static boolean canSurviveOnBlock(BlockState state) {
-        return state.is(BlockTags.INFINIBURN_END);
+        return state.is(BeyondTags.VOID_FLAME_BASE_BLOCKS);
     }
 
     protected boolean canBurn(BlockState state) {

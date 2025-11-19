@@ -1,5 +1,6 @@
 package com.thebeyond.client.model.equipment;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
@@ -40,22 +41,18 @@ public class EtherCloakModel extends MultipartArmorModel{
         PartDefinition body = root.addOrReplaceChild("body", CubeListBuilder.create().texOffs(24, 32).addBox(-4.0F, 0.0F, -2.0F, 8.0F, 12.0F, 4.0F, new CubeDeformation(0.6F))
                 .texOffs(28, 16).addBox(-4.0F, 0.0F, -2.0F, 8.0F, 7.0F, 4.0F, new CubeDeformation(0.8F)), PartPose.offset(0.0F, 0.0F, 0.0F));
 
-        PartDefinition left_arm = root.addOrReplaceChild("left_arm", CubeListBuilder.create().texOffs(16, 59).addBox(0.0F, -2.25F, -2.0F, 4.0F, 1.0F, 4.0F, new CubeDeformation(0.76F)), PartPose.offset(5.0F, 2.0F, 0.0F));
 
-        PartDefinition left_front = left_arm.addOrReplaceChild("left_front", CubeListBuilder.create().texOffs(0, 16).mirror().addBox(-5.0F, -2.0F, -2.0F, 9.0F, 12.0F, 4.0F, new CubeDeformation(0.75F)).mirror(false), PartPose.offset(0.0F, 0.0F, 0.0F));
+        PartDefinition left_arm = root.addOrReplaceChild("left_arm", CubeListBuilder.create().texOffs(16, 59).mirror().addBox(0.0F, -2.25F, -2.0F, 4.0F, 1.0F, 4.0F, new CubeDeformation(1.5F)).mirror(false), PartPose.offset(5.0F, 2.0F, 0.0F));
 
-        PartDefinition left_back = left_arm.addOrReplaceChild("left_back", CubeListBuilder.create().texOffs(0, 32).mirror().addBox(-4.0F, -2.0F, -2.0F, 8.0F, 12.0F, 4.0F, new CubeDeformation(0.74F)).mirror(false), PartPose.offset(0.0F, 0.0F, 0.0F));
+        PartDefinition left_front = left_arm.addOrReplaceChild("left_front", CubeListBuilder.create().texOffs(0, 16).mirror().addBox(-5.0F, -2.0F, -2.0F, 9.0F, 12.0F, 4.0F, new CubeDeformation(1.2F)).mirror(false), PartPose.offset(0.0F, 0.0F, 0.0F));
 
-        PartDefinition right_arm = root.addOrReplaceChild("right_arm", CubeListBuilder.create().texOffs(16, 59).mirror().addBox(-4.0F, -2.25F, -2.0F, 4.0F, 1.0F, 4.0F, new CubeDeformation(0.76F)).mirror(false), PartPose.offset(-5.0F, 2.0F, 0.0F));
+        PartDefinition left_back = left_arm.addOrReplaceChild("left_back", CubeListBuilder.create().texOffs(0, 32).mirror().addBox(-4.0F, -2.0F, -2.0F, 8.0F, 12.0F, 4.0F, new CubeDeformation(1.1F)).mirror(false), PartPose.offset(0.0F, 0.0F, 0.0F));
 
-        PartDefinition right_front = right_arm.addOrReplaceChild("right_front", CubeListBuilder.create().texOffs(0, 16).addBox(-4.0F, -2.0F, -2.0F, 8.0F, 12.0F, 4.0F, new CubeDeformation(0.75F)), PartPose.offset(0.0F, 0.0F, 0.0F));
+        PartDefinition right_arm = root.addOrReplaceChild("right_arm", CubeListBuilder.create().texOffs(16, 59).addBox(-4.0F, -2.25F, -2.0F, 4.0F, 1.0F, 4.0F, new CubeDeformation(1.5F)), PartPose.offset(-5.0F, 2.0F, 0.0F));
 
-        PartDefinition right_back = right_arm.addOrReplaceChild("right_back", CubeListBuilder.create().texOffs(0, 32).addBox(-4.0F, -2.0F, -2.0F, 8.0F, 12.0F, 4.0F, new CubeDeformation(0.74F)), PartPose.offset(0.0F, 0.0F, 0.0F));
+        PartDefinition right_front = right_arm.addOrReplaceChild("right_front", CubeListBuilder.create().texOffs(0, 16).addBox(-4.0F, -2.0F, -2.0F, 8.0F, 12.0F, 4.0F, new CubeDeformation(1.2F)), PartPose.offset(0.0F, 0.0F, 0.0F));
 
-        PartDefinition left_leg = root.addOrReplaceChild("left_leg", CubeListBuilder.create().texOffs(0, 48).addBox(-2.0F, 0.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.75F)), PartPose.offset(1.9F, 12.0F, 0.0F));
-
-        PartDefinition right_leg = root.addOrReplaceChild("right_leg", CubeListBuilder.create().texOffs(0, 48).addBox(-2.2F, 0.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.75F)), PartPose.offset(-1.9F, 12.0F, 0.0F));
-
+        PartDefinition right_back = right_arm.addOrReplaceChild("right_back", CubeListBuilder.create().texOffs(0, 32).addBox(-4.0F, -2.0F, -2.0F, 8.0F, 12.0F, 4.0F, new CubeDeformation(1.1F)), PartPose.offset(0.0F, 0.0F, 0.0F));
     }
 
     @Override
@@ -91,15 +88,21 @@ public class EtherCloakModel extends MultipartArmorModel{
 
         @Override
         public void setup(LivingEntity entity, ItemStack stack, EquipmentSlot slot, HumanoidModel<?> original) {
-
             super.setup(entity, stack, slot, original);
-            f1.xRot = (float) ((Math.sin((entity.tickCount) * entity.swingTime * 0.09f) * 0.20));
-            f2.xRot = (float) ((Math.sin((entity.tickCount - 10f) * 0.09f) * 0.25));
-            f3.xRot = (float) ((Math.sin((entity.tickCount - 20f) * 0.09f) * 0.3));
 
+            float p = 0;
+            if (Minecraft.getInstance() != null)
+                p = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
+
+            f1.xRot = (float) ((Math.sin((entity.tickCount + p) * 0.09f) * 0.20));
+            f2.xRot = (float) ((Math.sin((entity.tickCount + p - 10f) * 0.09f) * 0.25));
+            f3.xRot = (float) ((Math.sin((entity.tickCount + p - 20f) * 0.09f) * 0.3));
+
+            leftArm.zRot = (float) (Math.sin((entity.tickCount + p) * 0.02f) * 0.09);
             left_front.xRot = Math.min(0, -original.leftArm.xRot);
             left_back.xRot = Math.max(0, -original.leftArm.xRot);
 
+            rightArm.zRot = (float) -(Math.sin((entity.tickCount + p) * 0.02f) * 0.09);
             right_front.xRot = Math.min(0, -original.rightArm.xRot);
             right_back.xRot = Math.max(0, -original.rightArm.xRot);
         }
