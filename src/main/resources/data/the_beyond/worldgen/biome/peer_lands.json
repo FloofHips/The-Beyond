@@ -43,9 +43,9 @@
     "monster": [
       {
         "type": "minecraft:enderman",
-        "maxCount": 4,
-        "minCount": 4,
-        "weight": 10
+        "maxCount": 1,
+        "minCount": 1,
+        "weight": 1
       }
     ],
     "underground_water_creature": [],

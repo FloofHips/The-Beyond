@@ -13,7 +13,9 @@ import com.thebeyond.client.model.equipment.MultipartArmorModel;
 import com.thebeyond.client.particle.AuroraciteStepParticle;
 import com.thebeyond.client.particle.GlopParticle;
 import com.thebeyond.client.renderer.*;
+import com.thebeyond.common.entity.AbyssalNomadEntity;
 import com.thebeyond.common.entity.LanternEntity;
+import com.thebeyond.common.entity.TotemOfRespiteEntity;
 import com.thebeyond.common.item.ModelArmorItem;
 import com.thebeyond.common.registry.*;
 import com.thebeyond.util.ColorUtils;
@@ -110,6 +112,7 @@ public class ModClientEvents {
         EntityRenderers.register(BeyondEntityTypes.UNSTABLE_SEED.get(), UnstableSeedRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.LANTERN.get(), LanternRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.ABYSSAL_NOMAD.get(), AbyssalNomadRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.TOTEM_OF_RESPITE.get(), TotemOfRespiteRenderer::new);
 
         ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID.get(), RenderType.cutoutMipped());
         ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID_FLOWING.get(), RenderType.cutoutMipped());
@@ -153,6 +156,14 @@ public class ModClientEvents {
                 SpawnPlacementTypes.NO_RESTRICTIONS,
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 LanternEntity::checkMonsterSpawnRules,
+                RegisterSpawnPlacementsEvent.Operation.OR
+        );
+
+        event.register(
+                BeyondEntityTypes.ABYSSAL_NOMAD.get(),
+                SpawnPlacementTypes.ON_GROUND,
+                Heightmap.Types.MOTION_BLOCKING,
+                AbyssalNomadEntity::checkMonsterSpawnRules,
                 RegisterSpawnPlacementsEvent.Operation.OR
         );
     }
@@ -255,26 +266,34 @@ public class ModClientEvents {
     }
 
     @SubscribeEvent
-    public static void onDeath(LivingDropsEvent event) {
+    public static void onDeath(LivingDeathEvent event) {
+
+    }
+
+    @SubscribeEvent
+    public static void onDrop(LivingDropsEvent event) {
         if (event.isCanceled()) return;
-        event.setCanceled(true);
 
         if (event.getEntity() instanceof Player player) {
-            ChestBoat boat = new ChestBoat(EntityType.CHEST_BOAT, player.level());
-            boat.setPos(player.position());
-            player.level().addFreshEntity(boat);
+            TotemOfRespiteEntity totem = new TotemOfRespiteEntity(BeyondEntityTypes.TOTEM_OF_RESPITE.get(), player.level());
+            totem.setOwner(player);
+
+            float y = (float) Math.clamp(player.getY(), player.level().getMinBuildHeight() + 5, player.level().getMaxBuildHeight() - 5);
+
+            //totem.setPos(new Vec3(player.position().x, y, player.position().z));
+            totem.setPos(new Vec3(0, 0, 0));
+            player.level().addFreshEntity(totem);
+
+            System.out.println(totem);
+            System.out.println(totem.position());
 
             CompoundTag persistedData = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
-            persistedData.putUUID("Boatem", boat.getUUID());
+            persistedData.putUUID("RespiteTotem", totem.getUUID());
             player.getPersistentData().put(Player.PERSISTED_NBT_TAG, persistedData);
 
-            int i = 0;
+            totem.fillInventory(event.getDrops());
+
             for (ItemEntity item : event.getDrops() ) {
-                if (item.getItem().isEmpty())
-                    continue;
-                boat.setItem(i, item.getItem());
-                if (i<26)
-                    i++;
                 item.remove(Entity.RemovalReason.CHANGED_DIMENSION);
             }
         }
@@ -283,6 +302,9 @@ public class ModClientEvents {
     @SubscribeEvent
     public static void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
         if (event.getEntity() instanceof Player player) {
+
+            if (player.level().isClientSide) return;
+
             Optional<GlobalPos> deathLocation = player.getLastDeathLocation();
 
             if (deathLocation.isPresent()) {
@@ -293,21 +315,29 @@ public class ModClientEvents {
 
                     CompoundTag persistedData = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
 
-                    if (!persistedData.contains("Boatem")) {
+                    if (!persistedData.contains("RespiteTotem")) {
                         return;
                     }
 
-                    Entity entity = deathLevel.getEntity(persistedData.getUUID("Boatem"));
+                    TotemOfRespiteEntity entity = (TotemOfRespiteEntity) deathLevel.getEntity(persistedData.getUUID("RespiteTotem"));
+
+                    if (entity == null) {
+                        System.out.println("erm... : )");
+                        persistedData.remove("RespiteTotem");
+                        return;
+                    }
+
+                    float y = (float) Math.clamp(player.getY(), player.level().getMinBuildHeight() + 5, player.level().getMaxBuildHeight() - 5);
 
                     if (deathLevel == player.level()) {
                         entity.teleportTo(player.getX(), player.getY(), player.getZ());
                     } else {
                         DimensionTransition.PostDimensionTransition postdimensiontransition = DimensionTransition.PLAY_PORTAL_SOUND.then(DimensionTransition.PLACE_PORTAL_TICKET);
-                        ChestBoat teleportedBoat = (ChestBoat) entity.changeDimension(new DimensionTransition((ServerLevel) player.level(), entity, postdimensiontransition));
-                        teleportedBoat.teleportTo(player.getX(), player.getY(), player.getZ());
+                        TotemOfRespiteEntity teleportedTotem = (TotemOfRespiteEntity) entity.changeDimension(new DimensionTransition((ServerLevel) player.level(), entity, postdimensiontransition));
+                        teleportedTotem.teleportTo(player.getX(), player.getY(), player.getZ());
                     }
 
-                    persistedData.remove("Boatem");
+                    persistedData.remove("RespiteTotem");
                 }
             }
         }

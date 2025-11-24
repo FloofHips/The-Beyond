@@ -44,6 +44,21 @@
   ],
   "has_precipitation": false,
   "spawn_costs": {},
-  "spawners": {},
+  "spawners": {
+    "ambient": [],
+    "creature": [
+      {
+        "type": "the_beyond:abyssal_nomad",
+        "maxCount": 2,
+        "minCount": 1,
+        "weight": 1
+      }
+    ],
+    "misc": [],
+    "monster": [],
+    "underground_water_creature": [],
+    "water_ambient": [],
+    "water_creature": []
+  },
   "temperature": 0.5
 }
