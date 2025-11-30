@@ -95,11 +95,6 @@ public class ModClientEvents {
     private static final ResourceLocation AURORA_TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/environment/aurora.png");
     public static final ResourceLocation CLOUD_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/cloud");
     public static final ResourceLocation CLOUD_2_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/cloud_2");
-    public static final ResourceLocation AURORA_0_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/aurora_0");
-    public static final ResourceLocation AURORA_1_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/aurora_1");
-    public static final ResourceLocation AURORA_2_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/aurora_2");
-    public static final ResourceLocation AURORA_3_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/aurora_3");
-    public static final ResourceLocation AURORA_CRUMBLING_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/aurora_crumbling");
     static RandomSource random = RandomSource.create(254572);
     public static PerlinSimplexNoise gellidVoidNoise = new PerlinSimplexNoise(random, Collections.singletonList(1));
     @SubscribeEvent
@@ -121,11 +116,11 @@ public class ModClientEvents {
     public static void onAdditional(ModelEvent.RegisterAdditional event) {
         event.register(ModelResourceLocation.standalone(CLOUD_MODEL));
         event.register(ModelResourceLocation.standalone(CLOUD_2_MODEL));
-        event.register(ModelResourceLocation.standalone(AURORA_0_MODEL));
-        event.register(ModelResourceLocation.standalone(AURORA_1_MODEL));
-        event.register(ModelResourceLocation.standalone(AURORA_2_MODEL));
-        event.register(ModelResourceLocation.standalone(AURORA_3_MODEL));
-        event.register(ModelResourceLocation.standalone(AURORA_CRUMBLING_MODEL));
+        event.register(ModelResourceLocation.standalone(AuroraBorealisRenderer.AURORA_0_MODEL));
+        event.register(ModelResourceLocation.standalone(AuroraBorealisRenderer.AURORA_1_MODEL));
+        event.register(ModelResourceLocation.standalone(AuroraBorealisRenderer.AURORA_2_MODEL));
+        event.register(ModelResourceLocation.standalone(AuroraBorealisRenderer.AURORA_3_MODEL));
+        event.register(ModelResourceLocation.standalone(AuroraBorealisRenderer.AURORA_CRUMBLING_MODEL));
     }
     @SubscribeEvent
     public static void registerLayer(EntityRenderersEvent.RegisterLayerDefinitions event){
@@ -486,44 +481,6 @@ public class ModClientEvents {
         }, BeyondFluids.GELLID_VOID_TYPE.get());
     }
 
-    public static void renderClouds(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
-            return;
-        }
-
-        Minecraft mc = Minecraft.getInstance();
-        Player player = mc.player;
-        Level level = player.level();
-
-        //if (event.getCamera().getEntity().level().dimensionType().effectsLocation().equals(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"))) {
-        //    if(!event.getCamera().getEntity().level().isRaining())
-        //        return;
-        //}
-
-        PoseStack poseStack = event.getPoseStack();
-        Vec3 camPos = event.getCamera().getPosition();
-        Frustum frustum = event.getFrustum();
-
-        poseStack.pushPose();
-        //poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
-
-        MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
-        //int renderDistance = mc.options.getEffectiveRenderDistance();
-        //ChunkPos playerChunk = player.chunkPosition();
-
-        //int yLevel = 192;
-
-        poseStack.pushPose();
-        //poseStack.translate(0.5F - 0.5F * thickness, 1.9F, 0.5F);
-        poseStack.scale(10, 10, 10);
-        float time = level.getGameTime();
-
-        poseStack.popPose();
-
-        bufferSource.endBatch();
-        poseStack.popPose();
-    }
-
     @SubscribeEvent
     public static void renderLast(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
@@ -556,14 +513,8 @@ public class ModClientEvents {
             renderClouds(poseStack, 112, 90,time/80f, CLOUD_2_MODEL, bufferSource);
             renderClouds(poseStack, 102, 200,time/200f, CLOUD_2_MODEL, bufferSource);
         }
-
-        //if (mc.level != null && mc.player != null && level instanceof ClientLevel clientLevel) {
-        //    //AuroraBorealisRenderer.renderAurora(poseStack, 0, time, bufferSource, event, mc, player, level);
-        //    AuroraBorealisRenderer.renderAurora(poseStack, event.getProjectionMatrix(), event.getPartialTick().getGameTimeDeltaPartialTick(false) , clientLevel, mc);
-        //}
-
-        renderAurora(poseStack, 0, time, bufferSource, event, mc, player, level);
-        renderAurora(poseStack, 16, time, bufferSource, event, mc, player, level);
+        AuroraBorealisRenderer.renderAurora(poseStack, 0, time, bufferSource, event, mc, player, level);
+        AuroraBorealisRenderer.renderAurora(poseStack, 16, time, bufferSource, event, mc, player, level);
 
         bufferSource.endBatch();
         poseStack.popPose();
@@ -581,119 +532,5 @@ public class ModClientEvents {
         poseStack.popPose();
     }
 
-    public static void renderAurora(PoseStack poseStack, float yoffset, float time, MultiBufferSource.BufferSource buffer, RenderLevelStageEvent event, Minecraft mc, Player player, Level level) {
-        if (!event.getCamera().getEntity().level().isRaining()) return;
 
-        Frustum frustum = event.getFrustum();
-        int renderDistance = mc.options.getEffectiveRenderDistance();
-        ChunkPos playerChunk = player.chunkPosition();
-        int yLevel = 192;
-
-        for (int x = -renderDistance; x <= renderDistance; x++) {
-            for (int z = -renderDistance; z <= renderDistance; z++) {
-                ChunkPos chunkPos = new ChunkPos(playerChunk.x + x, playerChunk.z + z);
-                if (chunkPos.z % 2 == 0) continue;
-                if (chunkPos.x % 2 == 0) continue;
-                if ((chunkPos.x % (4))+1 == 0) continue;
-                if ((chunkPos.x % (4))-1 == 0) continue;
-                double worldX = chunkPos.getMiddleBlockX();
-                double worldZ = chunkPos.getMiddleBlockZ();
-                double distanceFromCenter = Math.sqrt(worldX * worldX + worldZ * worldZ);
-                if (distanceFromCenter < 100) continue;
-
-                double distance = Math.sqrt(chunkPos.x * chunkPos.x + chunkPos.z * chunkPos.z);
-                double maxDistance = renderDistance * Math.sqrt(2);
-                float alpha = (float) (distance*2);
-
-                BlockPos centerPos = new BlockPos(
-                        chunkPos.getMiddleBlockX(),
-                        yLevel,
-                        chunkPos.getMiddleBlockZ()
-                );
-
-                AABB pickaxeAABB = new AABB(
-                        centerPos.getX() - 128, centerPos.getY() - 128, centerPos.getZ() - 128,
-                        centerPos.getX() + 128, centerPos.getY() + 128, centerPos.getZ() + 128
-                );
-
-                if (frustum.isVisible(pickaxeAABB)) {
-                    poseStack.pushPose();
-
-                    poseStack.translate(centerPos.getX(), centerPos.getY(), centerPos.getZ());
-                    float wiggle = Mth.sin((time + (chunkPos.z)*20)/10);
-                    float wiggle2 = Mth.sin((time + yoffset + (chunkPos.z)*10)/20) + (Mth.sin(chunkPos.z/2f)*15);
-
-                    poseStack.translate(wiggle2, wiggle, 0);
-                    poseStack.translate(0, yoffset, 0);
-                    poseStack.translate(-0.5f, -0.5f, -0.5f);
-                    poseStack.scale( 32,32,32);
-                    //poseStack.translate(4, 0, 4);
-
-                    poseStack.mulPose(Axis.XP.rotationDegrees(-90f));
-
-                    //poseStack.mulPose(Axis.XP.rotationDegrees(alpha));
-                    poseStack.translate(0, -0.5f, -0.5f);
-
-                    double chunkCenterX = chunkPos.getMiddleBlockX();
-                    double chunkCenterZ = chunkPos.getMiddleBlockZ();
-                    double deltaX = chunkCenterX - player.getX();
-                    double deltaZ = chunkCenterZ - player.getZ();
-                    double distanceFromPlayer = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
-                    double maxPlayerDistance = renderDistance * 16 * 0.8;
-                    float l = (float) (1.0 - (distanceFromPlayer / maxPlayerDistance));
-                    float flash = (Mth.sin(((chunkPos.z+ yoffset)*10) + time/5f) + 1.0f) * 0.5f;
-                    int color = (int) (255 * Math.max(l, flash));
-
-                    //RenderUtils.renderModel(getAuroraModel(x, z, chunkPos, renderDistance), poseStack, buffer.getBuffer(BeyondRenderTypes.entityCutout(getAuroraTexture(x, z, chunkPos, renderDistance))), color, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
-                    RenderUtils.renderModel(getAuroraModel(x, z, chunkPos, renderDistance), poseStack, buffer.getBuffer(BeyondRenderTypes.cutout()), color, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
-
-                    poseStack.popPose();
-                }
-            }
-        }
-    }
-
-    public static ResourceLocation getAuroraModel(int relX, int relZ, ChunkPos chunkPos, int renderDistance) {
-        double worldX = chunkPos.getMiddleBlockX();
-        double worldZ = chunkPos.getMiddleBlockZ();
-        double distanceFromCenter = Math.sqrt(worldX * worldX + worldZ * worldZ);
-
-        if (distanceFromCenter < renderDistance * 16 * 0.7) {
-            return AURORA_CRUMBLING_MODEL;
-        }
-
-        if (Math.abs(relZ) == renderDistance-1 || Math.abs(relZ) == renderDistance+1 || Math.abs(relZ) == renderDistance) {
-            return AURORA_CRUMBLING_MODEL;
-        }
-
-        int i = chunkPos.x + chunkPos.z;
-        return switch (i % 3) {
-            case 0 -> AURORA_0_MODEL;
-            case 1 -> AURORA_1_MODEL;
-            case 2 -> AURORA_2_MODEL;
-            default -> AURORA_3_MODEL;
-        };
-    }
-
-    public static ResourceLocation getAuroraTexture(int relX, int relZ, ChunkPos chunkPos, int renderDistance) {
-        double worldX = chunkPos.getMiddleBlockX();
-        double worldZ = chunkPos.getMiddleBlockZ();
-        double distanceFromCenter = Math.sqrt(worldX * worldX + worldZ * worldZ);
-
-        if (distanceFromCenter < renderDistance * 16 * 0.7) {
-            return ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_crumbling.png");
-        }
-
-        if (Math.abs(relZ) == renderDistance-1 || Math.abs(relZ) == renderDistance+1 || Math.abs(relZ) == renderDistance) {
-            return ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_crumbling.png");
-        }
-
-        int i = chunkPos.x + chunkPos.z;
-        return switch (i % 3) {
-            case 0 -> ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_0.png");
-            case 1 -> ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_1.png");
-            case 2 -> ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_2.png");
-            default -> ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_3.png");
-        };
-    }
 }

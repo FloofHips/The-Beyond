@@ -11,11 +11,14 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.LevelHeightAccessor;
+import net.minecraft.world.level.NoiseColumn;
 import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeResolver;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.*;
@@ -77,6 +80,28 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     @Override
     protected MapCodec<? extends ChunkGenerator> codec() {
         return CODEC;
+    }
+
+    @Override
+    public int getBaseHeight(int x, int z, Heightmap.Types heightmapType, LevelHeightAccessor level, RandomState randomState) {
+        float distanceFromOrigin = (float) Math.sqrt(x * x + z * z);
+
+        for (int y = 132; y >= level.getMinBuildHeight() - 10; y--) {
+            if (isSolidTerrain(x, y, z, distanceFromOrigin)) {
+                return y;
+            }
+        }
+
+        return 10;
+    }
+    @Override
+    public int getFirstFreeHeight(int x, int z, Heightmap.Types type, LevelHeightAccessor level, RandomState random) {
+        return Math.max(this.getBaseHeight(x, z, type, level, random), level.getMinBuildHeight() - 10);
+    }
+
+    @Override
+    public int getMinY() {
+        return 10;
     }
 
     public static double getHorizontalBaseScale(int globalX, int globalZ) {
@@ -150,6 +175,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     public static boolean isSolidTerrain(int globalX, int globalY, int globalZ, float distanceFromOrigin) {
         double threshold = getThreshold(globalX, globalZ, distanceFromOrigin);
         double density = getTerrainDensity(globalX, globalY, globalZ);
+
         return density > threshold;
     }
 

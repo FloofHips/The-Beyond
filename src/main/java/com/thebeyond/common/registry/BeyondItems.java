@@ -2,10 +2,7 @@ package com.thebeyond.common.registry;
 
 import com.google.common.collect.Sets;
 import com.thebeyond.client.model.equipment.EtherCloakModel;
-import com.thebeyond.common.item.AirPlaceableBlockItem;
-import com.thebeyond.common.item.AlsoPlaceableOnFluidBlockItem;
-import com.thebeyond.common.item.MagnetItem;
-import com.thebeyond.common.item.ModelArmorItem;
+import com.thebeyond.common.item.*;
 import net.minecraft.world.item.*;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -20,6 +17,10 @@ public class BeyondItems {
 
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
     public static LinkedHashSet<DeferredItem<Item>> CREATIVE_TAB_ITEMS = Sets.newLinkedHashSet();
+
+    public static final DeferredItem<Item> LINER = registerItem("liner", () -> new LinerItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> FILLER = registerItem("filler", () -> new FillerItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> HOLLOWER = registerItem("hollower", () -> new HollowFillerItem(new Item.Properties().stacksTo(1)));
 
     public static final DeferredItem<Item> MAGNET = registerItem("magnet", () -> new MagnetItem(new Item.Properties().stacksTo(1), 8));
     public static final DeferredItem<Item> VOID_CRYSTAL = registerItem("void_crystal", () -> new AlsoPlaceableOnFluidBlockItem(BeyondBlocks.VOID_CRYSTAL.get(), new Item.Properties()));

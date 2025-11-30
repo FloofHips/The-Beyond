@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "powered=false": {
+      "model": "the_beyond:block/guster_off"
+    },
+    "powered=true": {
+      "model": "the_beyond:block/guster"
+    }
+  }
+}

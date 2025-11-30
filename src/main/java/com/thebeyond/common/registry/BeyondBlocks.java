@@ -62,7 +62,13 @@ public class BeyondBlocks {
     );
     //STRUCTURES
     public static final DeferredBlock<Block> PORTELAIN = registerBlock("portelain", () -> new Block(BlockBehaviour.Properties.of()
-            .mapColor(MapColor.WOOL)
+            .mapColor(MapColor.TERRACOTTA_PURPLE)
+            .requiresCorrectToolForDrops()
+            .strength(1.5F, 6.0F)
+            .sound(SoundType.NETHER_BRICKS))
+    );
+    public static final DeferredBlock<Block> GUSTER = registerBlock("guster", () -> new GusterBlock(BlockBehaviour.Properties.of()
+            .mapColor(MapColor.TERRACOTTA_PURPLE)
             .requiresCorrectToolForDrops()
             .strength(1.5F, 6.0F)
             .sound(SoundType.NETHER_BRICKS))

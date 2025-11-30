@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "the_beyond:block/guster_top_off",
+    "bottom": "the_beyond:block/guster_bottom",
+    "side": "the_beyond:block/guster"
+  }
+} 
