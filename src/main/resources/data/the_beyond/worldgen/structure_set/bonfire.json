@@ -1,0 +1,14 @@
+{
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 14357921,
+    "separation": 5,
+    "spacing": 9
+  },
+  "structures": [
+    {
+      "structure": "the_beyond:bonfire",
+      "weight": 1
+    }
+  ]
+}

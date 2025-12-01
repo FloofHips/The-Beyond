@@ -1,0 +1,59 @@
+{
+  "elements": [
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:bridge/bridge_road",
+        "projection": "rigid",
+        "processors": "minecraft:empty"
+      },
+      "weight": 12
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:bridge/bridge_stair",
+        "projection": "rigid",
+        "processors": "minecraft:empty"
+      },
+      "weight": 6
+    },{
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:bridge/bridge_gentle_stair",
+        "projection": "rigid",
+        "processors": "minecraft:empty"
+      },
+      "weight": 6
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:bridge/bridge_end",
+        "projection": "rigid",
+        "processors": "the_beyond:end_structure_more_rot"
+      },
+      "weight": 3
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:bridge/bridge_start",
+        "projection": "rigid",
+        "processors": "minecraft:empty"
+      },
+      "weight": 3
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:bridge/bridge_garden",
+        "projection": "rigid",
+        "processors": "minecraft:empty"
+      },
+      "weight": 1
+    }
+  ],
+  "fallback": "the_beyond:bridge/final",
+  "name": "the_beyond:bridge/road"
+}

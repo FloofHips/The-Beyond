@@ -3,22 +3,22 @@
     {
       "element": {
         "element_type": "minecraft:single_pool_element",
-        "location": "the_beyond:aberrant_remains/stairs/loose_stairs",
+        "location": "the_beyond:bridge/bridge_pillar_mid",
         "projection": "rigid",
         "processors": "the_beyond:end_structure_rot"
       },
-      "weight": 10
+      "weight": 5
     },
     {
       "element": {
         "element_type": "minecraft:single_pool_element",
-        "location": "the_beyond:aberrant_remains/stairs/loose_stairs_doorway",
+        "location": "the_beyond:bridge/bridge_pillar_end",
         "projection": "rigid",
         "processors": "minecraft:empty"
       },
       "weight": 1
     }
   ],
-  "fallback": "minecraft:empty",
-  "name": "the_beyond:aberrant_remains/stairs"
+  "fallback": "the_beyond:bridge/end",
+  "name": "the_beyond:bridge/middle"
 }

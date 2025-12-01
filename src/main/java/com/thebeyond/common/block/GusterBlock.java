@@ -28,9 +28,9 @@ public class GusterBlock extends Block {
             level.setBlockAndUpdate(pos, state.setValue(POWERED, false));
             level.scheduleTick(pos, this, 200);
 
-            serverLevel.explode(null, null, null, pos.getX(), pos.getY(), pos.getZ(), 1.2F, false, Level.ExplosionInteraction.TRIGGER, ParticleTypes.GUST_EMITTER_SMALL, ParticleTypes.GUST_EMITTER_LARGE, SoundEvents.WIND_CHARGE_BURST);
+            serverLevel.explode(null, null, null, pos.getX()+0.5, pos.getY()+1, pos.getZ()+0.5, 1.2F, false, Level.ExplosionInteraction.TRIGGER, ParticleTypes.GUST_EMITTER_SMALL, ParticleTypes.GUST_EMITTER_LARGE, SoundEvents.WIND_CHARGE_BURST);
 
-            entity.push(0,1,0);
+            entity.setDeltaMovement(entity.getDeltaMovement().add(0,2,0));
             entity.hurtMarked = true;
         }
         super.stepOn(level, pos, state, entity);

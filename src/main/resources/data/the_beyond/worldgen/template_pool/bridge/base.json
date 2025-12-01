@@ -1,0 +1,15 @@
+{
+  "elements": [
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:bridge/bridge_start",
+        "projection": "rigid",
+        "processors": "minecraft:empty"
+      },
+      "weight": 1
+    }
+  ],
+  "fallback": "the_beyond:bridge/middle",
+  "name": "the_beyond:bridge/base"
+}
