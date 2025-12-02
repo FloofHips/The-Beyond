@@ -11,10 +11,14 @@
         "the_beyond:end_barrens",
         "the_beyond:attracta_expanse",
         "the_beyond:peer_lands",
-	"the_beyond:pearlescent_planes"
+	    "the_beyond:pearlescent_planes"
       ],
-      "void_biomes": [
+      "outer_void_biomes": [
         "the_beyond:the_void",
+        "the_beyond:small_end_islands"
+      ],
+      "inner_void_biomes": [
+        "the_beyond:true_void",
         "the_beyond:small_end_islands"
       ],
       "center_biome": "the_beyond:the_end",

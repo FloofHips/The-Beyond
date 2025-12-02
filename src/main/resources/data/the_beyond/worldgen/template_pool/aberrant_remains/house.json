@@ -1,0 +1,24 @@
+{
+  "elements": [
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:aberrant_remains/house/house_2",
+        "projection": "rigid",
+        "processors": "the_beyond:end_structure_rot"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:aberrant_remains/house/house_3",
+        "projection": "rigid",
+        "processors": "the_beyond:end_structure_rot"
+      },
+      "weight": 1
+    }
+  ],
+  "fallback": "minecraft:empty",
+  "name": "the_beyond:aberrant_remains/house"
+}

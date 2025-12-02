@@ -21,29 +21,33 @@ public class BeyondEndBiomeSource extends BiomeSource {
     public static final MapCodec<BeyondEndBiomeSource> CODEC = RecordCodecBuilder.mapCodec(instance ->
             instance.group(
                     RegistryCodecs.homogeneousList(Registries.BIOME).fieldOf("end_biomes").forGetter(source -> source.endBiomes),
-                    RegistryCodecs.homogeneousList(Registries.BIOME).fieldOf("void_biomes").forGetter(source -> source.voidBiomes),
+                    RegistryCodecs.homogeneousList(Registries.BIOME).fieldOf("outer_void_biomes").forGetter(source -> source.outerVoidBiomes),
+                    RegistryCodecs.homogeneousList(Registries.BIOME).fieldOf("inner_void_biomes").forGetter(source -> source.innerVoidBiomes),
                     Biome.CODEC.fieldOf("center_biome").forGetter(source -> source.centerBiome),
                     Biome.CODEC.fieldOf("bottom_biome").forGetter(source -> source.bottomBiome)
             ).apply(instance, BeyondEndBiomeSource::new)
     );
 
     private final HolderSet<Biome> endBiomes;
-    private final HolderSet<Biome> voidBiomes;
+    private final HolderSet<Biome> outerVoidBiomes;
+    private final HolderSet<Biome> innerVoidBiomes;
     private final Holder<Biome> centerBiome;
     private final Holder<Biome> bottomBiome;
     private final Set<Holder<Biome>> allBiomes;
 
-    public BeyondEndBiomeSource(HolderSet<Biome> endBiomes, HolderSet<Biome> voidBiomes,
+    public BeyondEndBiomeSource(HolderSet<Biome> endBiomes, HolderSet<Biome> outerVoidBiomes, HolderSet<Biome> innerVoidBiomes,
                                 Holder<Biome> centerBiome, Holder<Biome> bottomBiome) {
         super();
         this.endBiomes = endBiomes;
-        this.voidBiomes = voidBiomes;
+        this.outerVoidBiomes = outerVoidBiomes;
         this.centerBiome = centerBiome;
         this.bottomBiome = bottomBiome;
+        this.innerVoidBiomes = innerVoidBiomes;
 
         this.allBiomes = ImmutableSet.<Holder<Biome>>builder()
                 .addAll(endBiomes.stream().toList())
-                .addAll(voidBiomes.stream().toList())
+                .addAll(innerVoidBiomes.stream().toList())
+                .addAll(outerVoidBiomes.stream().toList())
                 .add(centerBiome)
                 .add(bottomBiome)
                 .build();
@@ -71,7 +75,9 @@ public class BeyondEndBiomeSource extends BiomeSource {
         int sectionX = SectionPos.blockToSectionCoord(blockX);
         int sectionZ = SectionPos.blockToSectionCoord(blockZ);
 
-        if ((long) sectionX * (long) sectionX + (long) sectionZ * (long) sectionZ <= 256)
+        float distanceFromO = (float) Math.sqrt(blockX * blockX + blockZ * blockZ);
+
+        if (distanceFromO <= 116)
             return centerBiome;
 
         if(blockY < 20)
@@ -92,13 +98,19 @@ public class BeyondEndBiomeSource extends BiomeSource {
 
         long seed = (long) (biomeNoise * threshold * 1000000) + biomeX * 31L + biomeZ * 961L;
         int solid_index = (int) (Math.abs(seed) % endBiomes.size());
-        int void_index = (int) (Math.abs(seed) % voidBiomes.size());
+        int inner_void_index = (int) (Math.abs(seed) % innerVoidBiomes.size());
+        int outer_void_index = (int) (Math.abs(seed) % outerVoidBiomes.size());
+
 
         boolean f = BeyondEndChunkGenerator.getTerrainDensity(blockX, blockY, blockZ) < 0.01f;
 
         List<Holder<Biome>> endBiomeList = endBiomes.stream().toList();
-        List<Holder<Biome>> voidBiomeList = voidBiomes.stream().toList();
+        List<Holder<Biome>> innerVoidBiomeList = innerVoidBiomes.stream().toList();
+        List<Holder<Biome>> outerVoidBiomeList = outerVoidBiomes.stream().toList();
 
-        return f ? voidBiomeList.get(void_index) : endBiomeList.get(solid_index);
+        if (distanceFromO <= 690)
+            return innerVoidBiomes.get(inner_void_index);
+
+        return f ? outerVoidBiomeList.get(outer_void_index) : endBiomeList.get(solid_index);
     }
 }

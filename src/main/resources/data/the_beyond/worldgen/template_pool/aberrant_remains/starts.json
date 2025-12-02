@@ -5,7 +5,52 @@
         "element_type": "minecraft:single_pool_element",
         "location": "the_beyond:aberrant_remains/starts/loose_stairs_start",
         "projection": "rigid",
-        "processors": "minecraft:empty"
+        "processors": "the_beyond:end_structure_rot"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:aberrant_remains/starts/house_stair_1",
+        "projection": "rigid",
+        "processors": "the_beyond:end_structure_rot"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:aberrant_remains/starts/house_stair_2",
+        "projection": "rigid",
+        "processors": "the_beyond:end_structure_rot"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:aberrant_remains/starts/house_stair_3",
+        "projection": "rigid",
+        "processors": "the_beyond:end_structure_rot"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:aberrant_remains/house/house_4",
+        "projection": "rigid",
+        "processors": "the_beyond:end_structure_rot"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:aberrant_remains/house/house_1",
+        "projection": "rigid",
+        "processors": "the_beyond:end_structure_rot"
       },
       "weight": 1
     }
