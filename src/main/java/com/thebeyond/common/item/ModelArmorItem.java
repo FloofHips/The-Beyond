@@ -30,7 +30,7 @@ public abstract class ModelArmorItem extends ArmorItem {
 
         super(material, slot, properties);
         this.modelSupplier = modelSupplier;
-        ModClientEvents.addModelArmor(this);
+        //ModClientEvents.addModelArmor(this);
     }
 
     public String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {

@@ -76,6 +76,7 @@ import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.ChunkEvent;
 import org.jetbrains.annotations.NotNull;
@@ -137,11 +138,17 @@ public class ModClientEvents {
         event.registerLayerDefinition(BeyondModelLayers.LANTERN_SMALL, LanternSmallModel::createBodyLayer);
         event.registerLayerDefinition(BeyondModelLayers.ABYSSAL_NOMAD, () -> AbyssalNomadModel.createBodyLayer(CubeDeformation.NONE));
         event.registerLayerDefinition(BeyondModelLayers.ABYSSAL_NOMAD_GLOW, () -> AbyssalNomadModel.createBodyLayer(new CubeDeformation(-0.1f)));
-        for (ModelArmorItem item : MODEL_ARMOR) {
-            EquipmentSlot slot = item.getEquipmentSlot();
-            MultipartArmorModel model = item.getArmorModel();
-            event.registerLayerDefinition(model.getLayerLocation(slot), ArmorModel.wrap(model.getLayerDefinition(slot), model.textureWidth(slot), model.textureHeight(slot)));
-        }
+
+        BeyondItems.ITEMS.getEntries().stream()
+                .filter(item -> item.get() instanceof ModelArmorItem)
+                .map(item -> (ModelArmorItem) item.get())
+                .forEach(armor -> {
+
+                    EquipmentSlot slot = armor.getEquipmentSlot();
+                    MultipartArmorModel model = armor.getArmorModel();
+                    event.registerLayerDefinition(model.getLayerLocation(slot), ArmorModel.wrap(model.getLayerDefinition(slot), model.textureWidth(slot), model.textureHeight(slot)));
+
+                });
     }
 
     @SubscribeEvent
@@ -378,23 +385,25 @@ public class ModClientEvents {
 
     @SubscribeEvent
     public static void registerClientExtensions(RegisterClientExtensionsEvent event) {
+        BeyondItems.ITEMS.getEntries().stream()
+                .filter(item -> item.get() instanceof ModelArmorItem)
+                .map(item -> (ModelArmorItem) item.get())
+                .forEach(armor -> {
+                    event.registerItem(new IClientItemExtensions() {
+                        @Override
+                        @NotNull
+                        public HumanoidModel<?> getHumanoidArmorModel(LivingEntity entity, ItemStack stack, EquipmentSlot slot, HumanoidModel<?> original) {
+                            ArmorModel part = armor.getArmorModel().getModelPart(slot);
+                            part.setup(entity, stack, slot, original);
+                            return part;
+                        }
 
-        for (ModelArmorItem armorItem : MODEL_ARMOR) {
-            event.registerItem(new IClientItemExtensions() {
-                @Override
-                @NotNull
-                public HumanoidModel<?> getHumanoidArmorModel(LivingEntity entity, ItemStack stack, EquipmentSlot slot, HumanoidModel<?> original) {
-                    ArmorModel part = armorItem.getArmorModel().getModelPart(slot);
-                    part.setup(entity, stack, slot, original);
-                    return part;
-                }
-
-                @Override
-                public HumanoidModel<?> getGenericArmorModel(LivingEntity entity, ItemStack stack, EquipmentSlot slot, HumanoidModel<?> original) {
-                    return getHumanoidArmorModel(entity, stack, slot, original);
-                }
-            }, armorItem);
-        }
+                        @Override
+                        public HumanoidModel<?> getGenericArmorModel(LivingEntity entity, ItemStack stack, EquipmentSlot slot, HumanoidModel<?> original) {
+                            return getHumanoidArmorModel(entity, stack, slot, original);
+                        }
+                    }, armor);
+                });
         //MODEL_ARMOR.clear();
 
         event.registerFluidType(new IClientFluidTypeExtensions() {
