@@ -62,6 +62,13 @@ public class BeyondEntityTypes {
                             .sized(0.6F, 0.6F)
                             .clientTrackingRange(4)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "unstable_seed").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<RisingBlockEntity>> RISING_BLOCK =
+            ENTITY_TYPES.register("rising_block",
+                    () -> EntityType.Builder.<RisingBlockEntity>of(RisingBlockEntity::new, MobCategory.MISC)
+                            .sized(1, 1)
+                            .clientTrackingRange(4)
+                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rising_block").toString()));
     public static void register(EventBus eventBus) {
         ENTITY_TYPES.register(eventBus);
     }

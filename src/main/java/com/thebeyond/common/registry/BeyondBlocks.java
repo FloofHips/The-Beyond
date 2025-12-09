@@ -148,12 +148,17 @@ public class BeyondBlocks {
 
     //PeerLands
     public static final DeferredBlock<Block> OBIROOT = registerBlock("obiroot",
-            () -> new Block(BlockBehaviour.Properties.of()
+            () -> new ParanoiaBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_GRAY)
                     .sound(SoundType.NETHER_WOOD))
     );
     public static final DeferredBlock<Block> PEEPING_OBIROOT = registerBlock("peeping_obiroot",
             () -> new ParanoiaBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .sound(SoundType.NETHER_WOOD))
+    );
+    public static final DeferredBlock<Block> OBIROOT_SPROUT = registerBlock("obiroot_sprout",
+            () -> new ObirootSproutBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_GRAY)
                     .sound(SoundType.NETHER_WOOD))
     );
@@ -195,7 +200,7 @@ public class BeyondBlocks {
 
     // Pearlescent Plains
     public static final DeferredBlock<Block> NACRE = registerBlock("nacre",
-            () -> new Block(BlockBehaviour.Properties.of()
+            () -> new NacreBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_LIGHT_GRAY)
                     .sound(SoundType.GRAVEL))
     );

@@ -3,8 +3,9 @@
   "package": "com.thebeyond.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "BaseFireBlockMixin",
     "BlockBehaviourMixin",
-    "BaseFireBlockMixin"
+    "FallingBlockEntityAccessor"
   ],
   "server": [],
   "injectors": {

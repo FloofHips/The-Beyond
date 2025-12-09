@@ -8,8 +8,10 @@ import net.minecraft.client.model.geom.builders.CubeDeformation;
 import net.minecraft.client.model.geom.builders.CubeListBuilder;
 import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.PartDefinition;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.function.Function;
@@ -94,7 +96,11 @@ public class EtherCloakModel extends MultipartArmorModel{
             if (Minecraft.getInstance() != null)
                 p = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
 
-            f1.xRot = (float) ((Math.sin((entity.tickCount + p) * 0.09f) * 0.20));
+            double d0 = (float) ((Math.sin((entity.tickCount + p) * 0.09f) * 0.20));
+            if (entity instanceof Player player)
+                d0 = Mth.lerp((double)p, player.xCloakO, player.xCloak) - Mth.lerp((double)p, player.xo, player.getX());
+
+            f1.xRot = (float) d0;
             f2.xRot = (float) ((Math.sin((entity.tickCount + p - 10f) * 0.09f) * 0.25));
             f3.xRot = (float) ((Math.sin((entity.tickCount + p - 20f) * 0.09f) * 0.3));
 

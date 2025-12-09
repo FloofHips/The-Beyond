@@ -37,8 +37,10 @@ public class ItemModels extends ItemModelProvider {
         items.remove(BeyondBlocks.VOID_FLAME.asItem());
         items.remove(BeyondBlocks.STARDUST.asItem());
         items.remove(BeyondBlocks.CREEPING_ZYMOTE.asItem());
+
         items.remove(BeyondBlocks.REACHING_ZYMOTE.asItem());
         items.remove(BeyondBlocks.PORTELAIN_DOOR.asItem());
+        items.remove(BeyondBlocks.OBIROOT_SPROUT.asItem());
 
         itemGeneratedModel(BeyondBlocks.VOID_CRYSTAL.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/void_crystal"));
         itemGeneratedModel(BeyondBlocks.VOID_FLAME.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/void_flame"));

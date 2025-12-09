@@ -2,9 +2,14 @@ package com.thebeyond.common.block;
 
 import com.mojang.serialization.MapCodec;
 import com.thebeyond.common.block.blockstates.PillarHeightProperty;
+import com.thebeyond.common.entity.RisingBlockEntity;
 import com.thebeyond.common.fluid.GellidVoidBlock;
+import com.thebeyond.common.registry.BeyondBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -12,12 +17,10 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.Fallable;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.state.properties.EnumProperty;
-import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.state.properties.*;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -57,11 +60,6 @@ public class VoidCrystalBlock extends Block {
         if (!state.getValue(UP)) return !level.getBlockState(pos.above()).isAir();
 
         return false;
-        //Direction direction = state.getValue(UP) ? Direction.UP : Direction.DOWN;
-        //BlockPos supportingPos = pos.relative(direction.getOpposite());
-        //if (level.getBlockState(supportingPos).getBlock() instanceof VoidCrystalBlock) return true;
-        //if (direction == Direction.UP && level.getBlockState(supportingPos).getBlock() instanceof GellidVoidBlock) return true;
-        //return canSupportCenter(level, supportingPos, direction);
     }
 
     @Nullable
@@ -82,9 +80,11 @@ public class VoidCrystalBlock extends Block {
 
     @Override
     public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+        if (!canSurvive(state, level, pos)) level.scheduleTick(pos, this, 2);
+
         if (state.getValue(UP)) {
             if (level.getBlockState(pos.below()).isAir()){
-                return Blocks.AIR.defaultBlockState();
+                return state;
             }
            if (!(level.getBlockState(pos.above()).getBlock() instanceof VoidCrystalBlock)){
               return this.defaultBlockState().setValue(UP, true).setValue(HEIGHT, PillarHeightProperty.TIP);
@@ -101,7 +101,7 @@ public class VoidCrystalBlock extends Block {
 
         if (!state.getValue(UP)) {
             if (level.getBlockState(pos.above()).isAir()){
-                return Blocks.AIR.defaultBlockState();
+                return state;
             }
             if (!(level.getBlockState(pos.below()).getBlock() instanceof VoidCrystalBlock)){
                 return this.defaultBlockState().setValue(UP, false).setValue(HEIGHT, PillarHeightProperty.TIP);
@@ -117,6 +117,80 @@ public class VoidCrystalBlock extends Block {
         }
 
         return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
+    }
+
+    @Override
+    protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        if (state.getValue(UP)) {
+            spawnRisingStalactite(state, level, pos);
+        } else {
+            spawnFallingStalactite(state, level, pos);
+        }
+    }
+    private static void spawnRisingStalactite(BlockState state, ServerLevel level, BlockPos pos) {
+        BlockPos.MutableBlockPos blockpos$mutableblockpos = pos.mutable();
+
+        for(BlockState blockstate = state; isStalagmite(blockstate); blockstate = level.getBlockState(blockpos$mutableblockpos)) {
+            RisingBlockEntity risingblockentity = RisingBlockEntity.rise(level, blockpos$mutableblockpos, blockstate);
+            if (isTip(blockstate)) {
+                BlockPos.MutableBlockPos checkPos = blockpos$mutableblockpos.mutable().move(Direction.DOWN);
+                int length = 1;
+
+                while (isStalagmite(level.getBlockState(checkPos))) {
+                    length++;
+                    checkPos.move(Direction.DOWN);
+                }
+
+                int i = Math.max(length, 6);
+                float f = 1.0F * (float) i;
+                risingblockentity.setHurtsEntities(f, 40);
+                break;
+            }
+
+            blockpos$mutableblockpos.move(Direction.UP);
+        }
+
+    }
+    private static void spawnFallingStalactite(BlockState state, ServerLevel level, BlockPos pos) {
+        BlockPos.MutableBlockPos blockpos$mutableblockpos = pos.mutable();
+
+        for(BlockState blockstate = state; isStalactite(blockstate); blockstate = level.getBlockState(blockpos$mutableblockpos)) {
+            FallingBlockEntity fallingblockentity = FallingBlockEntity.fall(level, blockpos$mutableblockpos, blockstate);
+            if (isTip(blockstate)) {
+                int i = Math.max(1 + pos.getY() - blockpos$mutableblockpos.getY(), 6);
+                float f = 1.0F * (float)i;
+                fallingblockentity.setHurtsEntities(f, 40);
+                break;
+
+            }
+
+            blockpos$mutableblockpos.move(Direction.DOWN);
+        }
+
+    }
+
+    private static boolean isStalactite(BlockState state) {
+        return isPointedDripstoneWithDirection(state, false);
+    }
+
+    private static boolean isStalagmite(BlockState state) {
+        return isPointedDripstoneWithDirection(state, true);
+    }
+    private static boolean isPointedDripstoneWithDirection(BlockState state, Boolean up) {
+        return state.is(BeyondBlocks.VOID_CRYSTAL.get()) && state.getValue(UP) == up;
+    }
+
+    private static boolean isTip(BlockState state) {
+        if (!state.is(BeyondBlocks.VOID_CRYSTAL.get())) {
+            return false;
+        } else {
+            PillarHeightProperty height = state.getValue(HEIGHT);
+            return height == PillarHeightProperty.TIP;
+        }
+    }
+
+
+    protected void falling(FallingBlockEntity entity) {
     }
 
     private static final VoxelShape TIP_SHAPE;
