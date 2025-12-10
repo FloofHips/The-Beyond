@@ -56,7 +56,12 @@ public class NacreBlock extends Block {
         double d6 = random.nextDouble() * 0.3;
         level.addParticle(options, d0, d1 + d6, d2, 0.0, 0.0, 0.0);
     }
-    
+
+    public void spawnParticles(Level level, BlockPos pos, RandomSource random, ParticleOptions options, int amount) {
+        for (int i = 0; i < amount; i++) {
+            spawnParticles(level, pos, random, options);
+        }
+    }
     @Override
     public void stepOn(Level level, BlockPos pos, BlockState state, Entity entity) {
         if (level.isRaining())
@@ -83,15 +88,16 @@ public class NacreBlock extends Block {
         }
         RisingBlockEntity risingblockentity = RisingBlockEntity.rise(level, pos, state);
         risingblockentity.disableDrop();
-        //level.setBlockAndUpdate(pos, getColor(getVariant(pos)));
+
         super.tick(state, level, pos, random);
     }
 
     public void trigger(Level level, BlockPos pos, int delay, RandomSource random) {
-        if (level.getBlockState(pos).getValue(POWERED).booleanValue()) return;
-        spawnParticles(level, pos, random, new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.NACRE.get().defaultBlockState()));
-        level.playSound(null, pos, SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS);
-        level.setBlockAndUpdate(pos, BeyondBlocks.NACRE.get().defaultBlockState().setValue(POWERED, false));
+        spawnParticles(level, pos, random, new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.NACRE.get().defaultBlockState()), 20);
+
+        if (level.getBlockState(pos).getValue(POWERED)) return;
+        level.playSound(null, pos, SoundEvents.BRUSH_GRAVEL_COMPLETED, SoundSource.BLOCKS);
+        level.setBlockAndUpdate(pos, BeyondBlocks.NACRE.get().defaultBlockState().setValue(POWERED, true));
         level.scheduleTick(pos, this, delay);
     }
 

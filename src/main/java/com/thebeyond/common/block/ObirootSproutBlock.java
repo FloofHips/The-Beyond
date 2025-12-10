@@ -67,7 +67,7 @@ public class ObirootSproutBlock extends Block implements BonemealableBlock, Fall
                 return;
             }
 
-            state.setValue(AGE, state.getValue(AGE) + 1);
+        level.setBlockAndUpdate(pos, state.setValue(AGE, state.getValue(AGE) + 1));
         }
     }
 

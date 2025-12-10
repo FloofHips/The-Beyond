@@ -20,7 +20,7 @@ public abstract class BaseFireBlockMixin extends Block {
     }
 
     @Inject(method = "getState", at = @At("HEAD"), cancellable = true)
-    private static void dungeonsdelight$getState(BlockGetter reader, BlockPos pos, CallbackInfoReturnable<BlockState> cir) {
+    private static void beyond$getState(BlockGetter reader, BlockPos pos, CallbackInfoReturnable<BlockState> cir) {
         if (VoidFlameBlock.canSurviveOnBlock(reader.getBlockState(pos.below()))) {
             cir.setReturnValue(BeyondBlocks.VOID_FLAME.get().defaultBlockState());
         }

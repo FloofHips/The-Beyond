@@ -35,6 +35,7 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -54,8 +55,11 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SweetBerryBushBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.synth.PerlinSimplexNoise;
 import net.minecraft.world.level.material.FluidState;
@@ -78,16 +82,15 @@ import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.entity.player.UseItemOnBlockEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.ChunkEvent;
+import net.neoforged.neoforge.event.level.PistonEvent;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
 import java.nio.Buffer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Optional;
+import java.util.*;
 
 @SuppressWarnings("unused")
 @EventBusSubscriber(modid = TheBeyond.MODID, value = Dist.CLIENT)
@@ -270,6 +273,24 @@ public class ModClientEvents {
     }
 
     @SubscribeEvent
+    public static void onPistonMove(PistonEvent.Pre event) {
+        //LevelAccessor level = event.getLevel();
+//
+        //event.getStructureHelper().getToPush().add(event.getFaceOffsetPos().above());
+        //System.out.println(event.getStructureHelper().getToPush().size());
+        //event.getStructureHelper().resolve();
+        //event.getStructureHelper().getToPush().add(event.getFaceOffsetPos().above());
+        //event.getStructureHelper().resolve();
+    }
+
+    @SubscribeEvent
+    public static void onPistonMove(PistonEvent.Post event) {
+        //LevelAccessor level = event.getLevel();
+        //
+        //event.getStructureHelper().getToPush().add(event.getFaceOffsetPos().above());
+        //event.getStructureHelper().getToPush().size();
+    }
+    @SubscribeEvent
     public static void onDeath(LivingDeathEvent event) {
 
     }
@@ -346,6 +367,7 @@ public class ModClientEvents {
             }
         }
     }
+
     //@SubscribeEvent
     //public static void onChunkLoadEvent(ChunkEvent.Unload event) {
     //    event.getChunk().getbloc

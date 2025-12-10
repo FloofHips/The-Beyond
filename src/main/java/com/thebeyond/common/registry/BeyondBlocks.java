@@ -125,6 +125,11 @@ public class BeyondBlocks {
                     .sound(BeyondSoundTypes.POLAR_ANTENNA)
                     .offsetType(BlockBehaviour.OffsetType.XZ))
     );
+    public static final DeferredBlock<Block> FERROJELLY_BLOCK = registerBlock("ferrojelly_block",
+            () -> new FerroJellyBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.DEEPSLATE)
+                    .sound(SoundType.SLIME_BLOCK))
+    );
     public static final DeferredBlock<Block> PLATE_BLOCK = registerBlock("plate_block",
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.DEEPSLATE)
@@ -147,6 +152,11 @@ public class BeyondBlocks {
     );
 
     //PeerLands
+    public static final DeferredBlock<Block> OBIROOT_SPROUT = registerBlock("obiroot_sprout",
+              () -> new ObirootSproutBlock(BlockBehaviour.Properties.of()
+                      .mapColor(MapColor.COLOR_GRAY)
+                      .sound(SoundType.NETHER_WOOD))
+    );
     public static final DeferredBlock<Block> OBIROOT = registerBlock("obiroot",
             () -> new ParanoiaBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_GRAY)
@@ -157,11 +167,8 @@ public class BeyondBlocks {
                     .mapColor(MapColor.COLOR_GRAY)
                     .sound(SoundType.NETHER_WOOD))
     );
-    public static final DeferredBlock<Block> OBIROOT_SPROUT = registerBlock("obiroot_sprout",
-            () -> new ObirootSproutBlock(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.COLOR_GRAY)
-                    .sound(SoundType.NETHER_WOOD))
-    );
+    public static final DeferredBlock<Block> XYLEM = registerBlock("xylem", () -> new RotatedPillarBlock(
+            BlockBehaviour.Properties.ofFullCopy(OBIROOT.get()).sound(SoundType.NETHER_WOOD)));
     public static final DeferredBlock<Block> ENADRAKE_HUT = registerBlock("enadrake_hut",
             () -> new EnadrakeHutBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_YELLOW)

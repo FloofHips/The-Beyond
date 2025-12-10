@@ -1,6 +1,7 @@
 package com.thebeyond.common.block;
 
 import com.thebeyond.common.entity.AbyssalNomadEntity;
+import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondItems;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import net.minecraft.client.Minecraft;
@@ -13,9 +14,11 @@ import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -23,6 +26,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -39,6 +43,15 @@ public class AuroraciteBlock extends Block {
         super(properties);
         registerDefaultState(this.stateDefinition.any().setValue(POWERED, false));
     }
+
+    private boolean canEntityWalkOn(Entity entity) {
+        if (entity instanceof AbyssalNomadEntity || entity instanceof Villager) {
+            return true;
+        } else {
+            return entity instanceof LivingEntity ? ((LivingEntity)entity).getItemBySlot(EquipmentSlot.FEET).is(BeyondItems.PATHFINDER_BOOTS.get()) : false;
+        }
+    }
+
     @Override
     protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         if (context instanceof EntityCollisionContext entitycollisioncontext) {
@@ -53,30 +66,30 @@ public class AuroraciteBlock extends Block {
         return Shapes.block();
     }
 
-    private boolean canEntityWalkOn(Entity entity) {
-        if (entity instanceof AbyssalNomadEntity) {
-            return true;
-        } else {
-            return entity instanceof LivingEntity ? ((LivingEntity)entity).getItemBySlot(EquipmentSlot.FEET).is(BeyondItems.PATHFINDER_BOOTS.get()) : false;
-        }
-    }
-
-
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        if (context.isHoldingItem(BeyondItems.VOID_CRYSTAL.get()))
+        if (context.isHoldingItem(BeyondItems.ECTOPLASM.get()) || context.isHoldingItem(BeyondBlocks.AURORACITE.get().asItem()))
             return Shapes.block();
         return Shapes.box(0.0001, 0.0001, 0.0001, 0.0002, 0.0002, 0.0002);
     }
 
     @Override
-    protected boolean isPathfindable(BlockState state, PathComputationType pathComputationType) {
+    protected VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
+        return Shapes.block();
+    }
+
+    @Override
+    protected boolean isCollisionShapeFullBlock(BlockState state, BlockGetter level, BlockPos pos) {
+        return true;
+    }
+    @Override
+    protected boolean isOcclusionShapeFullBlock(BlockState state, BlockGetter level, BlockPos pos) {
         return true;
     }
 
     @Override
-    protected VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        return Shapes.block();
+    protected boolean isPathfindable(BlockState state, PathComputationType pathComputationType) {
+        return super.isPathfindable(state, pathComputationType);
     }
 
     @Override

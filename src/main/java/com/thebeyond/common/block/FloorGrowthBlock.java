@@ -1,6 +1,7 @@
 package com.thebeyond.common.block;
 
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -14,7 +15,7 @@ public class FloorGrowthBlock extends TallGrassBlock {
         super(properties);
     }
     protected boolean mayPlaceOn(BlockState state, BlockGetter level, BlockPos pos) {
-        return state.is(BeyondBlocks.ZYMOTE);
+        return state.is(BeyondTags.END_FLOOR_BLOCKS);
     }
     public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
 
@@ -24,6 +25,6 @@ public class FloorGrowthBlock extends TallGrassBlock {
         BlockPos blockpos = pos.below();
         BlockState belowBlockState = level.getBlockState(blockpos);
         //replace with tag
-        return belowBlockState.is(BeyondBlocks.ZYMOTE);
+        return belowBlockState.is(BeyondTags.END_FLOOR_BLOCKS);
     }
 }

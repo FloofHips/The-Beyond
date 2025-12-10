@@ -31,9 +31,9 @@ public class AbyssalNomadEntity extends PathfinderMob {
     }
 
     protected void registerGoals() {
-        this.goalSelector.addGoal(1, new RandomStrollGoal(this, 1));
+        this.goalSelector.addGoal(0, new RandomStrollGoal(this, 1));
         this.goalSelector.addGoal(1, new RandomLookAroundGoal(this));
-        this.goalSelector.addGoal(0, new LookAtPlayerGoal(this, Player.class, 3f));
+        this.goalSelector.addGoal(1, new LookAtPlayerGoal(this, Player.class, 3f));
 
         this.targetSelector.addGoal(0, new NearestAttackableTargetGoal<>(this, EnderglopEntity.class, true));
     }
@@ -45,9 +45,9 @@ public class AbyssalNomadEntity extends PathfinderMob {
     @Override
     public void tick() {
         super.tick();
-        if (tickCount % 100 == 0) {
-            checkInsideBlocks();
-        }
+        //if (tickCount % 100 == 0) {
+        //    checkInsideBlocks();
+        //}
         this.navigation.moveTo(0,0,0,1);
         //if (tickCount % 20 == 0) {
         //    this.navigation.stop();

@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "the_beyond:block/ferrojelly_block_top",
+    "side": "the_beyond:block/ferrojelly_block"
+  }
+}

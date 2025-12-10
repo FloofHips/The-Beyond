@@ -5,7 +5,8 @@
   "mixins": [
     "BaseFireBlockMixin",
     "BlockBehaviourMixin",
-    "FallingBlockEntityAccessor"
+    "FallingBlockEntityAccessor",
+    "PistonStructureResolverMixin"
   ],
   "server": [],
   "injectors": {

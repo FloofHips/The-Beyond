@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class BlockBehaviourMixin {
 
     @Inject(at = @At("HEAD"), method = "getSoundType", cancellable = true)
-    public void getSoundType(BlockState state, CallbackInfoReturnable<SoundType> cir) {
+    public void beyond$getSoundType(BlockState state, CallbackInfoReturnable<SoundType> cir) {
         if (state.is(Blocks.END_STONE)) cir.setReturnValue(BeyondSoundTypes.END_STONE);
     }
 }

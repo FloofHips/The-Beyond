@@ -33,6 +33,8 @@ public class BlockStates extends BlockStateProvider {
         basicBlock(BeyondBlocks.ENGRAVED_END_STONE);
         basicBlock(BeyondBlocks.COBBLED_PEARL);
         basicBlock(BeyondBlocks.COBBLED_PEARL_BRICKS);
+        //rotatedPillarBlock(BeyondBlocks.XYLEM);
+        //rotatedPillarBlock(BeyondBlocks.FERROJELLY_BLOCK);
 
         doorBlockWithRenderType((DoorBlock) BeyondBlocks.PORTELAIN_DOOR.get(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/portelain_door_bottom"), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/portelain_door_top"), "minecraft:cutout");
 
