@@ -2,8 +2,10 @@ package com.thebeyond.common.block;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -18,13 +20,23 @@ public class FerroJellyBlock extends RotatedPillarBlock {
         return true;
     }
 
-    public boolean canStickTo(Level level, BlockState state, BlockPos neighborPos, BlockState neighborState, Direction dir) {
+    public boolean canStickTo(Level level, BlockPos relative, BlockState state, BlockPos neighborPos, BlockState neighborState, Direction opposite, Direction dir) {
+
+        if (neighborState.isAir()) return false;
+
         Direction.Axis axis = state.getValue(AXIS);
 
-        if (axis != dir.getAxis()) return false;
-        if (neighborState.is(this)) return axis == neighborState.getValue(AXIS);
+        Direction toNeighbor = Direction.fromDelta(
+                neighborPos.getX() - relative.getX(),
+                neighborPos.getY() - relative.getY(),
+                neighborPos.getZ() - relative.getZ()
+        );
 
-        return Block.canSupportCenter(level, neighborPos, dir.getOpposite());
+        if (neighborState.is(this)) {
+            return neighborState.getValue(RotatedPillarBlock.AXIS) == state.getValue(RotatedPillarBlock.AXIS);
+        }
+
+        return toNeighbor != null && toNeighbor.getAxis() == axis;
     }
 
     @Override

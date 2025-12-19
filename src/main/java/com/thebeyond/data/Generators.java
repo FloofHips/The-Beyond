@@ -26,7 +26,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 @SuppressWarnings("unused")
-@EventBusSubscriber(modid = TheBeyond.MODID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = TheBeyond.MODID)
 public class Generators {
     @SubscribeEvent
     public static void gatherData(GatherDataEvent event) {

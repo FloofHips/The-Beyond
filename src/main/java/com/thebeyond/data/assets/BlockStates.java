@@ -36,6 +36,8 @@ public class BlockStates extends BlockStateProvider {
         //rotatedPillarBlock(BeyondBlocks.XYLEM);
         //rotatedPillarBlock(BeyondBlocks.FERROJELLY_BLOCK);
 
+        blocks.remove(BeyondBlocks.FERROJELLY_BLOCK);
+
         doorBlockWithRenderType((DoorBlock) BeyondBlocks.PORTELAIN_DOOR.get(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/portelain_door_bottom"), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/portelain_door_top"), "minecraft:cutout");
 
         DataHelper.takeAll(blocks, b -> b.get() instanceof RotatedPillarBlock).forEach(this::rotatedPillarBlock);
