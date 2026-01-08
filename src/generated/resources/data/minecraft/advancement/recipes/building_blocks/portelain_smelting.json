@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "minecraft:portelain_smelting"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    },
+    "has_zymote": {
+      "conditions": {
+        "items": [
+          {
+            "items": "the_beyond:zymote"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_zymote"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "minecraft:portelain_smelting"
+    ]
+  }
+}

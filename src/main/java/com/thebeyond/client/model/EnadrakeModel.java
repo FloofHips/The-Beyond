@@ -13,15 +13,19 @@ public class EnadrakeModel <T extends EnadrakeEntity> extends EntityModel<Enadra
     private final ModelPart root;
     private final ModelPart right_arm;
     private final ModelPart left_arm;
-    private final ModelPart head;
+    public final ModelPart head;
     private final ModelPart body;
+    private final ModelPart left_leg;
+    private final ModelPart right_leg;
 
     public EnadrakeModel(ModelPart root) {
         this.root = root.getChild("root");
         this.right_arm = this.root.getChild("right_arm");
         this.left_arm = this.root.getChild("left_arm");
         this.head = this.root.getChild("head");
-        this.body = this.head.getChild("body");
+        this.body = this.root.getChild("body");
+        this.left_leg = this.body.getChild("left_leg");
+        this.right_leg = this.body.getChild("right_leg");
     }
 
     public static LayerDefinition createBodyLayer() {
@@ -42,25 +46,58 @@ public class EnadrakeModel <T extends EnadrakeEntity> extends EntityModel<Enadra
 
         PartDefinition cube_r2 = head.addOrReplaceChild("cube_r2", CubeListBuilder.create().texOffs(14, 13).addBox(-4.5F, -3.0F, 0.0F, 9.0F, 6.0F, 0.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(1.0F, -8.0F, 0.0F, 0.0F, 0.7854F, 0.0F));
 
-        PartDefinition body = head.addOrReplaceChild("body", CubeListBuilder.create().texOffs(0, 13).addBox(-2.0F, -1.3333F, -1.5F, 4.0F, 6.0F, 3.0F, new CubeDeformation(0.0F))
-                .texOffs(14, 25).addBox(1.0F, 4.6667F, -0.5F, 1.0F, 1.0F, 1.0F, new CubeDeformation(0.0F))
-                .texOffs(18, 25).addBox(-2.0F, 4.6667F, -0.5F, 1.0F, 1.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.3333F, 0.0F));
+        PartDefinition body = root.addOrReplaceChild("body", CubeListBuilder.create().texOffs(0, 13).addBox(-2.0F, -1.3333F, -1.5F, 4.0F, 6.0F, 3.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, -7.6667F, -0.5F));
+
+        PartDefinition left_leg = body.addOrReplaceChild("left_leg", CubeListBuilder.create().texOffs(14, 25).addBox(-0.5F, 0.0F, -0.5F, 1.0F, 1.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offset(1.5F, 4.6667F, 0.0F));
+
+        PartDefinition right_leg = body.addOrReplaceChild("right_leg", CubeListBuilder.create().texOffs(18, 25).addBox(-0.5F, 0.0F, -0.5F, 1.0F, 1.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offset(-1.5F, 4.6667F, 0.0F));
 
         return LayerDefinition.create(meshdefinition, 32, 32);
     }
 
     @Override
-    public void setupAnim(EnadrakeEntity enadrakeEntity, float v, float v1, float v2, float v3, float v4) {
-        this.left_arm.xRot = Mth.cos(v) * 1.4F * v1;
-        this.right_arm.xRot = Mth.cos(v + 0.5f) * 1.4F * v1;
+    public void setupAnim(EnadrakeEntity enadrakeEntity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
+        this.body.xRot = 0;
+        this.body.yRot = 0;
+        this.body.y = -8;
 
-        this.body.xRot = Mth.cos(v + Mth.PI) * 1.4F * v1;
-        this.head.xRot = v4 * 0.017453292F;
-        this.head.yRot = v3 * 0.017453292F;
+        this.head.y = -8;
+        this.head.xRot = headPitch * 0.017453292F;
+        this.head.yRot = netHeadYaw * 0.017453292F;
 
-        this.body.y = Mth.cos(v / 2f) * 1.4F * v1;
-        this.head.y = - 8 + Mth.cos(v + Mth.PI) * 4F * v1;
+        this.left_arm.xRot = 0;
+        this.right_arm.xRot = 0;
+        this.left_arm.zRot = 0;
+        this.right_arm.zRot = 0;
+        this.left_arm.yRot = 0;
+        this.right_arm.yRot = 0;
 
+        this.left_leg.xRot = 0;
+        this.right_leg.xRot = 0;
+
+        if (enadrakeEntity.getMainHandItem().isEmpty()) {
+            this.left_arm.xRot += Mth.cos(limbSwing) * 1.4F * limbSwingAmount;
+            this.right_arm.xRot += Mth.cos(limbSwing + 0.5f) * 1.4F * limbSwingAmount;
+            this.body.xRot += Mth.cos(limbSwing + Mth.PI) * 1.4F * limbSwingAmount;
+            this.body.y += Mth.cos(limbSwing / 2f) * 1.4F * limbSwingAmount + Mth.cos(limbSwing + Mth.PI) * 4F * limbSwingAmount;
+            this.head.y += Mth.cos(limbSwing + Mth.PI) * 4F * limbSwingAmount;
+
+        } else {
+            this.left_arm.xRot += Mth.cos(limbSwing) * 0.1F * limbSwingAmount;
+            this.right_arm.xRot += Mth.cos(limbSwing) * 0.1F * limbSwingAmount;
+            this.left_arm.zRot += Mth.PI + 0.01f;
+            this.right_arm.zRot += -Mth.PI - 0.01f;
+
+            this.left_arm.yRot += Mth.HALF_PI;
+            this.right_arm.yRot += -Mth.HALF_PI;
+
+            this.body.y = -5.8f;
+            this.body.yRot = Mth.cos(limbSwing * 2.2f) * 1.5F * limbSwingAmount;
+            this.head.y = -5.8f + Mth.cos(limbSwing * 2) * 2F * limbSwingAmount;
+
+            this.left_leg.xRot += Mth.cos(limbSwing) * 1.4F * limbSwingAmount;
+            this.right_leg.xRot -= Mth.cos(limbSwing + 0.5f) * 1.4F * limbSwingAmount;
+        }
     }
 
     @Override

@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "building",
+  "group": "planks",
+  "ingredients": [
+    {
+      "tag": "the_beyond:obiroots"
+    }
+  ],
+  "result": {
+    "count": 4,
+    "id": "the_beyond:xylem"
+  }
+}

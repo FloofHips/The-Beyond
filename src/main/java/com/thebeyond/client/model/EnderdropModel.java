@@ -33,11 +33,12 @@ public class EnderdropModel<T extends EnderglopEntity> extends HierarchicalModel
 
 	@Override
 	public void setupAnim(T entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
+		body.yRot = 0;
 		if(entity.getIsCharging()){
-			body.yRot = Mth.cos(ageInTicks*3) * 0.06f;
+			body.yRot += Mth.cos(ageInTicks*3) * 0.06f;
 		}
 		if(entity.getIsArmored()){
-			body.yRot = entity.squish * Mth.cos(ageInTicks);
+			body.yRot += entity.squish * Mth.cos(ageInTicks);
 		}
 		body.xRot = entity.squish;
 	}

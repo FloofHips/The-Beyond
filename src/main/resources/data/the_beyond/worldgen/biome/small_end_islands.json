@@ -15,7 +15,8 @@
   },
   "features": [
     [
-      "minecraft:end_island_decorated"
+      "minecraft:end_island_decorated",
+      "the_beyond:ceiling_void_crystal"
     ]
   ],
   "has_precipitation": false,

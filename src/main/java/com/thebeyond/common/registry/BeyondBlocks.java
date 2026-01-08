@@ -37,6 +37,7 @@ public class BeyondBlocks {
                     .mapColor(MapColor.COLOR_PURPLE)
                     .sound(SoundType.SHROOMLIGHT)
                     .noOcclusion()
+                    .strength(1.0F, 0.1F)
                     .offsetType(BlockBehaviour.OffsetType.XZ)
                     .dynamicShape())
 
@@ -52,7 +53,7 @@ public class BeyondBlocks {
     public static final DeferredBlock<Block> ENGRAVED_END_STONE = registerBlock("engraved_end_stone", () -> new Block(BlockBehaviour.Properties.of()
             .mapColor(MapColor.WOOL)
             .requiresCorrectToolForDrops()
-            .strength(1.5F, 6.0F)
+            .strength(3.0F, 9.0F)
             .sound(BeyondSoundTypes.END_STONE))
     );
     public static final DeferredBlock<Block> ECTOPLASM = registerBlockWithoutItem("ectoplasm", () -> new EctoplasmBlock(BlockBehaviour.Properties.of()
@@ -92,6 +93,7 @@ public class BeyondBlocks {
     public static final DeferredBlock<Block> AURORACITE = registerBlock("auroracite",
             () -> new AuroraciteBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_LIGHT_BLUE)
+                    .strength(-1, 3600000F)
                     .sound(SoundType.AMETHYST))
     );
     public static final DeferredBlock<Block> STARDUST = registerBlock("stardust",
@@ -106,12 +108,14 @@ public class BeyondBlocks {
             () -> new PolarPillarBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.DEEPSLATE)
                     .lightLevel(PolarPillarBlock.STATE_TO_LUMINANCE)
+                    .strength(2F, 12.0F)
                     .randomTicks())
     );
     public static final DeferredBlock<Block> POLAR_BULB = registerBlock("polar_bulb",
             () -> new PolarBulbBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.DEEPSLATE)
                     .lightLevel(PolarBulbBlock.STATE_TO_LUMINANCE)
+                    .strength(2F, 12.0F)
                     .randomTicks())
     );
     public static final DeferredBlock<Block> POLAR_ANTENNA = registerBlock("polar_antenna",
@@ -122,6 +126,7 @@ public class BeyondBlocks {
                     .forceSolidOff()
                     .noCollission()
                     .noOcclusion()
+                    .strength(0.5F, 8.0F)
                     .sound(BeyondSoundTypes.POLAR_ANTENNA)
                     .offsetType(BlockBehaviour.OffsetType.XZ))
     );
@@ -133,11 +138,13 @@ public class BeyondBlocks {
     public static final DeferredBlock<Block> PLATE_BLOCK = registerBlock("plate_block",
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.DEEPSLATE)
+                    .strength(3.5F, 12.0F)
                     .sound(BeyondSoundTypes.PLATE_BLOCK))
     );
     public static final DeferredBlock<Block> PLATED_END_STONE = registerBlock("plated_end_stone",
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.DEEPSLATE)
+                    .strength(3.0F, 11.0F)
                     .sound(BeyondSoundTypes.PLATED_END_STONE_BLOCK))
     );
     public static final DeferredBlock<Block> MAGNOLILLY = registerBlockWithoutItem("magnolilly",
@@ -160,11 +167,13 @@ public class BeyondBlocks {
     public static final DeferredBlock<Block> OBIROOT = registerBlock("obiroot",
             () -> new ParanoiaBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_GRAY)
+                    .strength(2.0F, 2.0F)
                     .sound(SoundType.NETHER_WOOD))
     );
     public static final DeferredBlock<Block> PEEPING_OBIROOT = registerBlock("peeping_obiroot",
             () -> new ParanoiaBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_GRAY)
+                    .strength(2.0F, 2.0F)
                     .sound(SoundType.NETHER_WOOD))
     );
     public static final DeferredBlock<Block> XYLEM = registerBlock("xylem", () -> new RotatedPillarBlock(
@@ -172,6 +181,7 @@ public class BeyondBlocks {
     public static final DeferredBlock<Block> ENADRAKE_HUT = registerBlock("enadrake_hut",
             () -> new EnadrakeHutBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_YELLOW)
+                    .strength(2.0F, 2.0F)
                     .sound(BeyondSoundTypes.END_STONE))
     );
     public static final DeferredBlock<Block> ZYMOTE = registerBlock("zymote",
@@ -209,28 +219,29 @@ public class BeyondBlocks {
     public static final DeferredBlock<Block> NACRE = registerBlock("nacre",
             () -> new NacreBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                    .strength(2.0F, 2.0F)
                     .sound(SoundType.GRAVEL))
     );
-    public static final DeferredBlock<Block> PEARL = registerBlock("pearl",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.TERRACOTTA_WHITE)
-                    .sound(SoundType.AMETHYST))
-    );
-    public static final DeferredBlock<Block> PEARL_BRICKS = registerBlock("pearl_bricks",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.TERRACOTTA_WHITE)
-                    .sound(SoundType.AMETHYST))
-    );
-    public static final DeferredBlock<Block> COBBLED_PEARL = registerBlock("cobbled_pearl",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.TERRACOTTA_WHITE)
-                    .sound(SoundType.AMETHYST))
-    );
-    public static final DeferredBlock<Block> COBBLED_PEARL_BRICKS = registerBlock("cobbled_pearl_bricks",
-            () -> new Block(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.TERRACOTTA_WHITE)
-                    .sound(SoundType.AMETHYST))
-    );
+    //public static final DeferredBlock<Block> PEARL = registerBlock("pearl",
+    //        () -> new Block(BlockBehaviour.Properties.of()
+    //                .mapColor(MapColor.TERRACOTTA_WHITE)
+    //                .sound(SoundType.AMETHYST))
+    //);
+    //public static final DeferredBlock<Block> PEARL_BRICKS = registerBlock("pearl_bricks",
+    //        () -> new Block(BlockBehaviour.Properties.of()
+    //                .mapColor(MapColor.TERRACOTTA_WHITE)
+    //                .sound(SoundType.AMETHYST))
+    //);
+    //public static final DeferredBlock<Block> COBBLED_PEARL = registerBlock("cobbled_pearl",
+    //        () -> new Block(BlockBehaviour.Properties.of()
+    //                .mapColor(MapColor.TERRACOTTA_WHITE)
+    //                .sound(SoundType.AMETHYST))
+    //);
+    //public static final DeferredBlock<Block> COBBLED_PEARL_BRICKS = registerBlock("cobbled_pearl_bricks",
+    //        () -> new Block(BlockBehaviour.Properties.of()
+    //                .mapColor(MapColor.TERRACOTTA_WHITE)
+    //                .sound(SoundType.AMETHYST))
+    //);
     @SuppressWarnings("unchecked")
     private static <T extends Block> DeferredBlock<T> registerBlockWithoutItem(String name, Supplier<? extends Block> block) {
         DeferredBlock<Block> toReturn = BLOCKS.register(name, block);

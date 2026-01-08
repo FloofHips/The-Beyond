@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:stonecutting",
+  "ingredient": {
+    "item": "minecraft:end_stone"
+  },
+  "result": {
+    "count": 1,
+    "id": "the_beyond:engraved_end_stone"
+  }
+}

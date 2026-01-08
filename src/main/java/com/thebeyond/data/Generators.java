@@ -4,10 +4,10 @@ import com.thebeyond.TheBeyond;
 import com.thebeyond.data.assets.BlockStates;
 import com.thebeyond.data.assets.ItemModels;
 import com.thebeyond.data.assets.Lang;
-import com.thebeyond.data.tags.BlockTags;
-import com.thebeyond.data.tags.DamageTypeTags;
-import com.thebeyond.data.tags.EntityTypeTags;
-import com.thebeyond.data.tags.ItemTags;
+import com.thebeyond.data.tags.BeyondBlockTags;
+import com.thebeyond.data.tags.BeyondDamageTypeTags;
+import com.thebeyond.data.tags.BeyondEntityTypeTags;
+import com.thebeyond.data.tags.BeyondItemTags;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.data.DataGenerator;
@@ -36,19 +36,19 @@ public class Generators {
         ExistingFileHelper helper = event.getExistingFileHelper();
         RegistrySetBuilder registrySetBuilder = new RegistrySetBuilder();
 
-        BlockTags blockTags = new BlockTags(output, lookupProvider, helper);
+        BeyondBlockTags blockTags = new BeyondBlockTags(output, lookupProvider, helper);
         generator.addProvider(event.includeServer(), blockTags);
-        generator.addProvider(event.includeServer(), new ItemTags(output, lookupProvider, blockTags.contentsGetter(), helper));
-        generator.addProvider(event.includeServer(), new EntityTypeTags(output, lookupProvider, helper));
-        generator.addProvider(event.includeServer(), new DamageTypeTags(output, lookupProvider, helper));
+        generator.addProvider(event.includeServer(), new BeyondItemTags(output, lookupProvider, blockTags.contentsGetter(), helper));
+        generator.addProvider(event.includeServer(), new BeyondEntityTypeTags(output, lookupProvider, helper));
+        generator.addProvider(event.includeServer(), new BeyondDamageTypeTags(output, lookupProvider, helper));
 
         DatapackBuiltinEntriesProvider datapackProvider = new DatapackBuiltinEntriesProvider(output, lookupProvider, registrySetBuilder, Set.of(TheBeyond.MODID));
         CompletableFuture<HolderLookup.Provider> builtinLookupProvider = datapackProvider.getRegistryProvider();
         generator.addProvider(event.includeServer(), datapackProvider);
 
-        generator.addProvider(event.includeServer(), new Recipes(output, lookupProvider));
-        generator.addProvider(event.includeServer(), new DataMaps(output, lookupProvider));
-        generator.addProvider(event.includeServer(), new Advancements(output, lookupProvider, helper));
+        generator.addProvider(event.includeServer(), new BeyondRecipes(output, lookupProvider));
+        generator.addProvider(event.includeServer(), new BeyondDataMaps(output, lookupProvider));
+        generator.addProvider(event.includeServer(), new BeyondAdvancements(output, lookupProvider, helper));
         generator.addProvider(event.includeServer(), new LootTableProvider(output, Collections.emptySet(), List.of(
                 new LootTableProvider.SubProviderEntry(BeyondBlockLoot::new, LootContextParamSets.BLOCK)
         ), lookupProvider));

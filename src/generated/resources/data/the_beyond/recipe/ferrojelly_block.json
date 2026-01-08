@@ -1,0 +1,37 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "redstone",
+  "ingredients": [
+    {
+      "item": "the_beyond:ferrojelly"
+    },
+    {
+      "item": "the_beyond:ferrojelly"
+    },
+    {
+      "item": "the_beyond:ferrojelly"
+    },
+    {
+      "item": "the_beyond:ferrojelly"
+    },
+    {
+      "item": "the_beyond:ferrojelly"
+    },
+    {
+      "item": "the_beyond:ferrojelly"
+    },
+    {
+      "item": "the_beyond:ferrojelly"
+    },
+    {
+      "item": "the_beyond:ferrojelly"
+    },
+    {
+      "item": "the_beyond:ferrojelly"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "the_beyond:ferrojelly_block"
+  }
+}

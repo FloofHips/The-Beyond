@@ -44,6 +44,7 @@ public class ItemModels extends ItemModelProvider {
 
         itemGeneratedModel(BeyondBlocks.VOID_CRYSTAL.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/void_crystal"));
         itemGeneratedModel(BeyondBlocks.VOID_FLAME.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/void_flame"));
+        itemGeneratedModel(BeyondBlocks.OBIROOT_SPROUT.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/obiroot_sprout"));
         itemGeneratedModel(BeyondBlocks.CREEPING_ZYMOTE.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/creeping_zymote"));
         itemGeneratedModel(BeyondBlocks.REACHING_ZYMOTE.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/reaching_zymote"));
         itemGeneratedModel(BeyondBlocks.PORTELAIN_DOOR.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/portelain_door"));

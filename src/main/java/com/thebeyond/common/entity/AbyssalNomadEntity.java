@@ -39,26 +39,13 @@ public class AbyssalNomadEntity extends PathfinderMob {
     }
 
     public static boolean checkMonsterSpawnRules(EntityType<AbyssalNomadEntity> abyssalNomadEntityEntityType, ServerLevelAccessor serverLevelAccessor, MobSpawnType mobSpawnType, BlockPos blockPos, RandomSource randomSource) {
-        return serverLevelAccessor.getBlockState(blockPos.below()).is(BeyondBlocks.AURORACITE.get()) && serverLevelAccessor.getBlockState(blockPos.above()).isAir() && serverLevelAccessor.getBlockState(blockPos).isAir();
+        return serverLevelAccessor.getBlockState(blockPos.above()).isAir() && serverLevelAccessor.getBlockState(blockPos).isAir();
     }
 
     @Override
     public void tick() {
         super.tick();
-        //if (tickCount % 100 == 0) {
-        //    checkInsideBlocks();
-        //}
-        this.navigation.moveTo(0,0,0,1);
-        //if (tickCount % 20 == 0) {
-        //    this.navigation.stop();
-        //}
-    }
 
-    @Override
-    protected void onInsideBlock(BlockState state) {
-        super.onInsideBlock(state);
-        if (state.is(BeyondBlocks.AURORACITE))
-            this.setDeltaMovement(0, 0.5f, 0);
+        navigation.moveTo(this.getX(), 197f, this.getZ()-10, 0.7);
     }
-
 }

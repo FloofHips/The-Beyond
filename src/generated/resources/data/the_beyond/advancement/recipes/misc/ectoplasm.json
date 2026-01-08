@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_lantern_shed": {
+      "conditions": {
+        "items": [
+          {
+            "items": "the_beyond:lantern_shed"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "the_beyond:ectoplasm"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_lantern_shed"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "the_beyond:ectoplasm"
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_portelain_tiles": {
+      "conditions": {
+        "items": [
+          {
+            "items": "the_beyond:portelain_tiles"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "the_beyond:portelain_mosaic"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_portelain_tiles"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "the_beyond:portelain_mosaic"
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "M": {
+      "item": "the_beyond:abyssal_shroud"
+    },
+    "N": {
+      "item": "the_beyond:lantern_shed"
+    }
+  },
+  "pattern": [
+    "MMM",
+    "M M",
+    "NNN"
+  ],
+  "result": {
+    "count": 1,
+    "id": "the_beyond:ether_cloak"
+  }
+}

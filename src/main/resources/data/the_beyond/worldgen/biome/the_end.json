@@ -27,7 +27,8 @@
     [],
     [],
     [
-      "minecraft:end_platform"
+      "minecraft:end_platform",
+      "the_beyond:ceiling_void_crystal"
     ]
   ],
   "has_precipitation": false,

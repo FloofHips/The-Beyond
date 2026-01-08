@@ -31,8 +31,8 @@ public class BlockStates extends BlockStateProvider {
         basicBlock(BeyondBlocks.PORTELAIN);
         basicBlock(BeyondBlocks.PORTELAIN_TILES);
         basicBlock(BeyondBlocks.ENGRAVED_END_STONE);
-        basicBlock(BeyondBlocks.COBBLED_PEARL);
-        basicBlock(BeyondBlocks.COBBLED_PEARL_BRICKS);
+        //basicBlock(BeyondBlocks.COBBLED_PEARL);
+        //basicBlock(BeyondBlocks.COBBLED_PEARL_BRICKS);
         //rotatedPillarBlock(BeyondBlocks.XYLEM);
         //rotatedPillarBlock(BeyondBlocks.FERROJELLY_BLOCK);
 

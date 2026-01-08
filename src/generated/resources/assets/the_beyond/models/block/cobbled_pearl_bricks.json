@@ -1,6 +1,0 @@
-{
-  "parent": "minecraft:block/cube_all",
-  "textures": {
-    "all": "the_beyond:block/cobbled_pearl_bricks"
-  }
-}

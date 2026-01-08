@@ -1,6 +1,8 @@
 package com.thebeyond.common.entity;
 
+import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondParticleTypes;
+import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -16,6 +18,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
@@ -202,7 +205,7 @@ public class EnderglopEntity extends Mob implements Enemy {
     }
 
     protected SoundEvent getHurtSound(DamageSource damageSource) {
-        return this.isTiny() ? SoundEvents.MAGMA_CUBE_HURT_SMALL : SoundEvents.MAGMA_CUBE_HURT;
+        return this.isTiny() ? SoundEvents.MAGMA_CUBE_HURT_SMALL : (this.getIsArmored() ? SoundEvents.SHIELD_BLOCK : SoundEvents.MAGMA_CUBE_HURT);
     }
 
     protected SoundEvent getDeathSound() {
@@ -210,7 +213,7 @@ public class EnderglopEntity extends Mob implements Enemy {
     }
 
     protected SoundEvent getSquishSound() {
-        return this.isTiny() ? SoundEvents.MAGMA_CUBE_SQUISH_SMALL : SoundEvents.MAGMA_CUBE_SQUISH;
+        return this.isTiny() ? SoundEvents.MAGMA_CUBE_SQUISH_SMALL : (this.getIsArmored() ? SoundEvents.NETHERITE_BLOCK_BREAK : SoundEvents.MAGMA_CUBE_SQUISH);
     }
 
     @Override
@@ -226,7 +229,57 @@ public class EnderglopEntity extends Mob implements Enemy {
         return this.isAlive() && mergeCooldown <= 0 && this.getSize() < 4;
     }
 
+    @Override
+    public boolean hurt(DamageSource source, float amount) {
+        if (getIsArmored()) {
+            Entity attacker = source.getDirectEntity();
+
+            if (attacker instanceof LivingEntity) {
+
+                float entityYaw = this.getYRot();
+                float attackerYaw = (float) Math.toDegrees(Math.atan2(attacker.getZ() - this.getZ(), attacker.getX() - this.getX())) - 90.0F;
+
+                float yawDiff = ((attackerYaw - entityYaw) % 360 + 540) % 360 - 180;
+
+                if (Math.abs(yawDiff) > 120) {
+
+                    if (amount > 2) {
+                        if (level() instanceof ServerLevel serverLevel) {
+                            serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.PLATE_BLOCK.get().defaultBlockState()), this.getX(), this.getY(), this.getZ(), 30, 1.0F, 1.0F, 1.0F, 0.2F);
+                        }
+                        this.level().playSound(null, this.blockPosition(), SoundEvents.SHIELD_BREAK, SoundSource.HOSTILE, 1.0F, 1.0F);
+                        setIsArmored(false);
+                    }
+                    if (level() instanceof ServerLevel serverLevel) {
+                        serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.FERROJELLY_BLOCK.get().defaultBlockState()), this.getX(), this.getY(), this.getZ(), 15, 1.0F, 1.0F, 1.0F, 0.2F);
+                    }
+                    return super.hurt(source, amount);
+
+                } else if (Math.abs(yawDiff) < 60) {
+                    this.level().playSound(null, this.blockPosition(), SoundEvents.IRON_GOLEM_HURT, SoundSource.HOSTILE, 1.0F, 1.0F);
+                    if (amount > 3) {
+                        for(int i = 0; i < 20; ++i) {
+                            this.level().addParticle(ParticleTypes.CRIT, this.getRandomX(2.5), this.getRandomY(), this.getRandomZ(2.5), 0, 0, 0);
+                        }
+                        this.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 255));
+                        this.navigation.stop();
+                    }
+                    return super.hurt(source, 0.1F);
+                } else {
+                    this.level().playSound(null, this.blockPosition(), SoundEvents.IRON_GOLEM_HURT, SoundSource.HOSTILE, 1.0F, 1.0F);
+                    return super.hurt(source, 0.5F);
+                }
+            }
+        }
+        return super.hurt(source, amount);
+    }
+
     public void tick() {
+
+        if (this.hasEffect(MobEffects.MOVEMENT_SLOWDOWN)) {
+            this.setTarget(null);
+        }
+
         this.squish += (this.targetSquish - this.squish) * 0.5F;
         this.oSquish = this.squish;
         super.tick();
@@ -389,7 +442,7 @@ public class EnderglopEntity extends Mob implements Enemy {
     }
 
     protected void dealDamage(LivingEntity livingEntity) {
-        if (this.isAlive() && this.isWithinMeleeAttackRange(livingEntity) && this.hasLineOfSight(livingEntity)) {
+        if (this.isAlive() && this.isWithinMeleeAttackRange(livingEntity) && this.hasLineOfSight(livingEntity) && !isTiny()) {
             DamageSource damagesource = this.damageSources().mobAttack(this);
             if (livingEntity.hurt(damagesource, this.getAttackDamage())) {
                 this.playSound(SoundEvents.SLIME_ATTACK, 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
@@ -476,41 +529,40 @@ public class EnderglopEntity extends Mob implements Enemy {
         }
 
         public void tick() {
-                this.mob.setYRot(this.rotlerp(this.mob.getYRot(), this.yRot, 90.0F));
-                this.mob.yHeadRot = this.mob.getYRot();
-                this.mob.yBodyRot = this.mob.getYRot();
+            this.mob.setYRot(this.rotlerp(this.mob.getYRot(), this.yRot, 90.0F));
+            this.mob.yHeadRot = this.mob.getYRot();
+            this.mob.yBodyRot = this.mob.getYRot();
+            if (this.slime.getIsCharging()){
+                this.slime.xxa = 0.0F;
+                this.slime.zza = 0.0F;
+                this.mob.setSpeed(0.0F);
+            }else{
+                if (this.operation != Operation.MOVE_TO) {
+                    this.mob.setZza(0.0F);
+                } else {
+                    this.operation = Operation.WAIT;
+                    if (this.mob.onGround()) {
+                        this.mob.setSpeed((float)(this.speedModifier * this.mob.getAttributeValue(Attributes.MOVEMENT_SPEED)));
+                        if (this.jumpDelay-- <= 0) {
+                            this.jumpDelay = this.slime.getJumpDelay();
+                            if (this.isAggressive) {
+                                this.jumpDelay /= 3;
+                            }
 
-                if (this.slime.getIsCharging()){
-                    this.slime.xxa = 0.0F;
-                    this.slime.zza = 0.0F;
-                    this.mob.setSpeed(0.0F);
-                }else{
-                    if (this.operation != Operation.MOVE_TO) {
-                        this.mob.setZza(0.0F);
-                    } else {
-                        this.operation = Operation.WAIT;
-                        if (this.mob.onGround()) {
-                            this.mob.setSpeed((float)(this.speedModifier * this.mob.getAttributeValue(Attributes.MOVEMENT_SPEED)));
-                            if (this.jumpDelay-- <= 0) {
-                                this.jumpDelay = this.slime.getJumpDelay();
-                                if (this.isAggressive) {
-                                    this.jumpDelay /= 3;
-                                }
-
-                                this.slime.getJumpControl().jump();
-                                if (this.slime.doPlayJumpSound()) {
-                                    this.slime.playSound(this.slime.getJumpSound(), this.slime.getSoundVolume(), this.slime.getSoundPitch());
-                                }
-                            } else {
-                                this.slime.xxa = 0.0F;
-                                this.slime.zza = 0.0F;
-                                this.mob.setSpeed(0.0F);
+                            this.slime.getJumpControl().jump();
+                            if (this.slime.doPlayJumpSound()) {
+                                this.slime.playSound(this.slime.getJumpSound(), this.slime.getSoundVolume(), this.slime.getSoundPitch());
                             }
                         } else {
-                            this.mob.setSpeed((float)(this.speedModifier * this.mob.getAttributeValue(Attributes.MOVEMENT_SPEED)));
+                            this.slime.xxa = 0.0F;
+                            this.slime.zza = 0.0F;
+                            this.mob.setSpeed(0.0F);
                         }
+                    } else {
+                        this.mob.setSpeed((float)(this.speedModifier * this.mob.getAttributeValue(Attributes.MOVEMENT_SPEED)));
                     }
                 }
+            }
 
         }
 

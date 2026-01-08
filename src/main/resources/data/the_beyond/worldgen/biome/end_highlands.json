@@ -35,7 +35,8 @@
     ],
     [],
     [
-      "minecraft:chorus_plant"
+      "minecraft:chorus_plant",
+      "the_beyond:ceiling_void_crystal"
     ]
   ],
   "has_precipitation": false,

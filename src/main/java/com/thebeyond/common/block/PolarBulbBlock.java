@@ -66,7 +66,7 @@ public class PolarBulbBlock extends Block {
             level.playSound(null, pos, SoundEvents.BREEZE_DEFLECT, SoundSource.BLOCKS, 3, level.random.nextFloat());
             EnderglopEntity enderglop = new EnderglopEntity(BeyondEntityTypes.ENDERGLOP.get(), level);
             enderglop.setPos(pos.getX()+0.5, pos.getY()+0.8, pos.getZ()+0.5);
-            enderglop.setSize(2, false);
+            enderglop.setSize(level.isRaining() ? 3 : 2, false);
             level.addFreshEntity(enderglop);
             LivingEntity player = level.getNearestPlayer(enderglop, 10);
             Vec3 direction = player == null ? Vec3.ZERO : player.position().subtract(enderglop.position()).normalize();

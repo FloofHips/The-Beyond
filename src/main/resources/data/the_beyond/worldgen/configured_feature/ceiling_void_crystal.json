@@ -1,0 +1,32 @@
+{
+  "type": "minecraft:flower",
+  "config": {
+    "feature": {
+      "feature": "the_beyond:down_void_crystal",
+      "placement": [
+        {
+          "type": "minecraft:block_predicate_filter",
+          "predicate": {
+            "type": "minecraft:has_sturdy_face",
+            "offset": [
+              0,
+              1,
+              0
+            ],
+            "direction": "down"
+          }
+        },
+        {
+          "type": "minecraft:block_predicate_filter",
+          "predicate": {
+            "type": "minecraft:matching_blocks",
+            "blocks": "minecraft:air"
+          }
+        }
+      ]
+    },
+    "tries": 96,
+    "xz_spread": 4,
+    "y_spread": 6
+  }
+}

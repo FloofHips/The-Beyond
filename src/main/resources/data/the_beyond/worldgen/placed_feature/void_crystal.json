@@ -1,5 +1,5 @@
 {
-    "feature": "the_beyond:void_crystal",
+    "feature": "the_beyond:ceiling_void_crystal",
     "placement": [
         {
             "type": "minecraft:count_on_every_layer",

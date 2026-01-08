@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "M": {
+      "item": "the_beyond:ferrojelly"
+    },
+    "P": {
+      "item": "the_beyond:ferropetal"
+    }
+  },
+  "pattern": [
+    "M M",
+    "P P",
+    "PPP"
+  ],
+  "result": {
+    "count": 1,
+    "id": "the_beyond:magnet"
+  }
+}
