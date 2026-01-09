@@ -39,7 +39,7 @@ public class AbyssalNomadEntity extends PathfinderMob {
     }
 
     public static boolean checkMonsterSpawnRules(EntityType<AbyssalNomadEntity> abyssalNomadEntityEntityType, ServerLevelAccessor serverLevelAccessor, MobSpawnType mobSpawnType, BlockPos blockPos, RandomSource randomSource) {
-        return serverLevelAccessor.getBlockState(blockPos.above()).isAir() && serverLevelAccessor.getBlockState(blockPos).isAir();
+        return true;// serverLevelAccessor.getBlockState(blockPos.above()).isAir() && serverLevelAccessor.getBlockState(blockPos).isAir();
     }
 
     @Override

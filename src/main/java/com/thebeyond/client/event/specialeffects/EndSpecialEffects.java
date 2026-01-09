@@ -41,12 +41,15 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
     private static final ResourceLocation HORIZON_LOCATION = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/environment/horizon.png");
     private static final ResourceLocation END_SKY_LOCATION = ResourceLocation.withDefaultNamespace("textures/environment/end_sky.png");
 
+    private float bossFog;
+
     @javax.annotation.Nullable
     private VertexBuffer starBuffer;
 
     public EndSpecialEffects() {
         super(Float.NaN, false, SkyType.NORMAL, false, false);
         this.createStars();
+        this.bossFog = 0;
     }
 
     private void createStars() {
@@ -89,6 +92,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
     @Override
     public Vec3 getBrightnessDependentFogColor(Vec3 biomeFogColor, float daylight) {
         Level level = Minecraft.getInstance().level;
+
         if (level == null) return biomeFogColor;
 
         if (level.isThundering()) {
@@ -96,7 +100,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         } else if (level.isRaining()) {
             return biomeFogColor.subtract(0,0.3 * level.getRainLevel(0),0);
         }
-        return biomeFogColor;
+        return biomeFogColor.subtract(0,0.3 * bossFog,0);
     }
 
     @Nullable
@@ -146,7 +150,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
                     Mth.lerp(thunder, colors.z() * 0.9f, Mth.lerp(position, colors.z() + skyLight,Mth.clamp(colors.z() + 2 * blue * strength, 0, 1)))
             );
             return;
-        } if (rain > 0) {
+        } else if (rain > 0) {
             colors.set(
                     colors.x(),
                     Mth.lerp(rain, Mth.clamp(colors.y() * 1.1f, 0, 1), colors.y() * 0.7f),
@@ -154,10 +158,11 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
             );
             return;
         }
+
         colors.set(
-                colors.x() * 0.9f,
-                Mth.clamp(colors.y() * 1.1f, 0, 1),
-                colors.z() * 0.9f
+                Mth.lerp(bossFog, colors.x() * 0.9f, colors.x() + skyLight),
+                Mth.lerp(bossFog, Mth.clamp(colors.y() * 1.1f, 0, 1), colors.y()),
+                Mth.lerp(bossFog, colors.z() * 0.9f, colors.z() + skyLight)
         );
     }
 
@@ -210,8 +215,13 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
     }
 
     public boolean renderSky(ClientLevel level, int ticks, float partialTick, Matrix4f modelViewMatrix, Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
-        if (isFoggy) {
-            return false;
+        //if (isFoggy) {
+        //    return false;
+        //}
+        if (Minecraft.getInstance().gui.getBossOverlay().shouldCreateWorldFog()) {
+            bossFog = (float) Mth.clamp(bossFog + 0.005, 0, 1);
+        } else {
+            bossFog = (float) Mth.clamp(bossFog - 0.005, 0, 1);
         }
 
         PoseStack poseStack = new PoseStack();
@@ -227,21 +237,15 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         Tesselator tesselator = Tesselator.getInstance();
 
         drawTopSkyGradient(poseStack, tesselator, level);
-        ////renderEndSky(poseStack, level);
-//
-        ////drawBottomSkyGradient(poseStack, tesselator, level);
-        ////drawNadir(poseStack);
-//
-        ////if (f10 > 0.0F) {
+
         RenderSystem.setShaderColor(1, 0.5f, 1, 1);
-        ////FogRenderer.setupNoFog();
+
         this.starBuffer.bind();
         this.starBuffer.drawWithShader(poseStack.last().pose(), projectionMatrix, GameRenderer.getPositionShader());
         VertexBuffer.unbind();
         RenderSystem.setShaderColor(1, 1, 1, 1);
-        ////}
         this.renderHorizon(level, poseStack, tesselator);
-//
+
         this.renderCloud(level, poseStack, tesselator, 1f,    100);
         this.renderCloud(level, poseStack, tesselator, -.7f,  95);
         this.renderCloud(level, poseStack, tesselator, 1.2f,  95);

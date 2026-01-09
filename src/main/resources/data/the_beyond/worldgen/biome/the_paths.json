@@ -51,7 +51,7 @@
         "type": "the_beyond:abyssal_nomad",
         "maxCount": 2,
         "minCount": 1,
-        "weight": 1
+        "weight": 10
       }
     ],
     "misc": [],

@@ -34,7 +34,8 @@ public class AuroraBorealisRenderer {
     public static final ResourceLocation AURORA_CRUMBLING_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/aurora_crumbling");
 
     public static void renderAurora(PoseStack poseStack, float yoffset, float time, MultiBufferSource.BufferSource buffer, RenderLevelStageEvent event, Minecraft mc, Player player, Level level) {
-        if (!event.getCamera().getEntity().level().isRaining()) return;
+        if (!event.getCamera().getEntity().level().isThundering()) return;
+        double rainlevel = event.getCamera().getEntity().level().getThunderLevel(time);
 
         Frustum frustum = event.getFrustum();
         int renderDistance = mc.options.getEffectiveRenderDistance();
@@ -52,10 +53,6 @@ public class AuroraBorealisRenderer {
                 double worldZ = chunkPos.getMiddleBlockZ();
                 double distanceFromCenter = Math.sqrt(worldX * worldX + worldZ * worldZ);
                 if (distanceFromCenter < 100) continue;
-
-                double distance = Math.sqrt(chunkPos.x * chunkPos.x + chunkPos.z * chunkPos.z);
-                double maxDistance = renderDistance * Math.sqrt(2);
-                float alpha = (float) (distance*2);
 
                 BlockPos centerPos = new BlockPos(
                         chunkPos.getMiddleBlockX(),
@@ -75,16 +72,18 @@ public class AuroraBorealisRenderer {
                     float wiggle = Mth.sin((time + (chunkPos.z)*20)/10);
                     float wiggle2 = Mth.sin((time + yoffset + (chunkPos.z)*10)/20) + (Mth.sin(chunkPos.z/2f)*15);
 
+
                     poseStack.translate(wiggle2, wiggle, 0);
                     poseStack.translate(0, yoffset, 0);
                     poseStack.translate(-0.5f, -0.5f, -0.5f);
                     poseStack.scale( 32,32,32);
-                    //poseStack.translate(4, 0, 4);
 
                     poseStack.mulPose(Axis.XP.rotationDegrees(-90f));
 
-                    //poseStack.mulPose(Axis.XP.rotationDegrees(alpha));
                     poseStack.translate(0, -0.5f, -0.5f);
+
+                    poseStack.translate(0, 0, (1 - rainlevel)*2);
+                    poseStack.scale((float) rainlevel, (float) rainlevel, (float) rainlevel);
 
                     double chunkCenterX = chunkPos.getMiddleBlockX();
                     double chunkCenterZ = chunkPos.getMiddleBlockZ();
@@ -96,7 +95,6 @@ public class AuroraBorealisRenderer {
                     float flash = (Mth.sin(((chunkPos.z+ yoffset)*10) + time/5f) + 1.0f) * 0.5f;
                     int color = (int) (255 * Math.max(l, flash));
 
-                    //RenderUtils.renderModel(getAuroraModel(x, z, chunkPos, renderDistance), poseStack, buffer.getBuffer(BeyondRenderTypes.entityCutout(getAuroraTexture(x, z, chunkPos, renderDistance))), color, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
                     RenderUtils.renderModel(getAuroraModel(x, z, chunkPos, renderDistance), poseStack, buffer.getBuffer(BeyondRenderTypes.cutout()), color, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
 
                     poseStack.popPose();

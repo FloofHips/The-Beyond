@@ -102,6 +102,7 @@ public class ModClientEvents {
     public static final ResourceLocation CLOUD_2_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/cloud_2");
     static RandomSource random = RandomSource.create(254572);
     public static PerlinSimplexNoise gellidVoidNoise = new PerlinSimplexNoise(random, Collections.singletonList(1));
+    private static float bossFog = 0;
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event){
         EntityRenderers.register(BeyondEntityTypes.ENDERGLOP.get(), EnderglopRenderer::new);
@@ -157,7 +158,7 @@ public class ModClientEvents {
     }
 
     @SubscribeEvent
-    public static void registerLayer(RegisterSpawnPlacementsEvent event){
+    public static void registerSpawnPlacements(RegisterSpawnPlacementsEvent event){
         event.register(
                 BeyondEntityTypes.LANTERN.get(),
                 SpawnPlacementTypes.NO_RESTRICTIONS,
@@ -168,8 +169,8 @@ public class ModClientEvents {
 
         event.register(
                 BeyondEntityTypes.ABYSSAL_NOMAD.get(),
-                SpawnPlacementTypes.ON_GROUND,
-                Heightmap.Types.MOTION_BLOCKING,
+                SpawnPlacementTypes.NO_RESTRICTIONS,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 AbyssalNomadEntity::checkMonsterSpawnRules,
                 RegisterSpawnPlacementsEvent.Operation.OR
         );
@@ -542,9 +543,17 @@ public class ModClientEvents {
         float time = level.getGameTime() + event.getPartialTick().getGameTimeDeltaPartialTick(true);
 
         if (!(Math.sqrt(player.getX() * player.getX() + player.getZ() * player.getZ())>300)) {
-            renderClouds(poseStack, 122, 50, time/50f, CLOUD_MODEL, bufferSource);
-            renderClouds(poseStack, 112, 90,time/80f, CLOUD_2_MODEL, bufferSource);
-            renderClouds(poseStack, 102, 200,time/200f, CLOUD_2_MODEL, bufferSource);
+
+            if (Minecraft.getInstance().gui.getBossOverlay().shouldCreateWorldFog()) {
+                bossFog = Mth.lerp(0.05f , bossFog, 1);
+            } else {
+                bossFog = Mth.lerp(0.05f , bossFog, 0);
+            }
+            if (bossFog != 0) {
+                renderClouds(poseStack, 132, 50, time/50f, CLOUD_MODEL, bufferSource);
+                renderClouds(poseStack, 122, 90,time/80f, CLOUD_2_MODEL, bufferSource);
+                renderClouds(poseStack, 112, 200,time/200f, CLOUD_2_MODEL, bufferSource);
+            }
         }
         AuroraBorealisRenderer.renderAurora(poseStack, 0, time, bufferSource, event, mc, player, level);
         AuroraBorealisRenderer.renderAurora(poseStack, 16, time, bufferSource, event, mc, player, level);
@@ -555,13 +564,22 @@ public class ModClientEvents {
 
     public static void renderClouds(PoseStack poseStack, float translate, float scale, float time, ResourceLocation model, MultiBufferSource.BufferSource buffer) {
         poseStack.pushPose();
+        boolean flag = scale == 50;
+
+        float trueScale = flag ? scale : scale * bossFog;
+
         poseStack.translate(0.5, 0.5, 0.5);
         poseStack.mulPose(Axis.YP.rotation(time));
         poseStack.translate(0, translate, 0);
-        poseStack.scale(scale, scale/2f, scale);
+        poseStack.translate(0, (1 - bossFog) * (flag ? 20 : 50), 0);
+        poseStack.scale(trueScale, trueScale / 2f, trueScale);
+
         poseStack.mulPose(Axis.XP.rotation((float) -Math.PI/2f));
         poseStack.translate(-0.5, -0.5, -0.5);
+
+
         RenderUtils.renderModel(model, poseStack, buffer.getBuffer(RenderType.cutout()), 255, OverlayTexture.NO_OVERLAY);
+
         poseStack.popPose();
     }
 
