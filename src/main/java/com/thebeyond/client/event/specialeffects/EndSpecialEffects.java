@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Axis;
 import com.thebeyond.TheBeyond;
+import com.thebeyond.client.event.ModClientEvents;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -17,6 +18,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.CubicSampler;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeManager;
@@ -92,15 +95,19 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
     @Override
     public Vec3 getBrightnessDependentFogColor(Vec3 biomeFogColor, float daylight) {
         Level level = Minecraft.getInstance().level;
-
+//
         if (level == null) return biomeFogColor;
-
+//
         if (level.isThundering()) {
             return biomeFogColor.subtract(0,1 * level.getThunderLevel(0),0);
         } else if (level.isRaining()) {
             return biomeFogColor.subtract(0,0.3 * level.getRainLevel(0),0);
         }
-        return biomeFogColor.subtract(0,0.3 * bossFog,0);
+
+        return biomeFogColor.multiply(
+                Mth.lerp(bossFog, 1, 0.3F),
+                Mth.lerp(bossFog, 1, 0.4F),
+                Mth.lerp(bossFog, 1, 0.4F));
     }
 
     @Nullable
@@ -126,17 +133,17 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
 
         float rain = level.getRainLevel(partialTicks);
         float thunder = level.getThunderLevel(partialTicks);
-
+//
         float position = Mth.clamp((float) (((Minecraft.getInstance().player.position().y) - 100) / 100), 0, 1);
-
+//
         if (thunder > 0) {
             float time = (level.getGameTime() + partialTicks) * 0.05f;
-
+//
             float red = Mth.clamp(Mth.sin(time) * 0.7f + 0.7f, 0f, 1f);
             float blue = Mth.clamp(Mth.sin(time + Mth.TWO_PI*2f/3f) * 0.8f + 0.5f, 0f, 1f);
-
+//
             float strength = skyLight * 2;
-
+//
             if (level.isRaining())
                 colors.set(
                         Mth.lerp(thunder, colors.x(), Mth.lerp(position, colors.x() + skyLight,Mth.clamp(colors.x() + 2 * red * strength, 0, 1))),
@@ -158,71 +165,31 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
             );
             return;
         }
-
+        ////i think the skylight is being fucked with by thunderstorms... or ambient light
+//
         colors.set(
-                Mth.lerp(bossFog, colors.x() * 0.9f, colors.x() + skyLight),
-                Mth.lerp(bossFog, Mth.clamp(colors.y() * 1.1f, 0, 1), colors.y()),
-                Mth.lerp(bossFog, colors.z() * 0.9f, colors.z() + skyLight)
+                Mth.lerp(bossFog, colors.x() * 0.9f, colors.x() * 0.3 + 0.22983016),
+                Mth.lerp(bossFog, Mth.clamp(colors.y() * 1.1f, 0, 1), colors.y() * 0.4),
+                Mth.lerp(bossFog, colors.z() * 0.9f, colors.z() * 0.4 + 0.22983016)
         );
     }
 
     public Vec3 getBiomeColor(ClientLevel level) {
-
-        //FogRenderer.FogData fogData = new FogRenderer.FogData();
-
-        // This is what Vanilla calls to get blended fog color
-        //FogRenderer.setupColor(camera, partialTick, level, Minecraft.getInstance().options.getRenderDistance().get(), fogData);
-
         Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
         BiomeManager biomemanager = level.getBiomeManager();
         Vec3 samplePos = camera.getPosition().subtract(2.0, 2.0, 2.0).scale(0.25);
-        return CubicSampler.gaussianSampleVec3(samplePos, (x, y, z) ->
-                Vec3.fromRGB24(biomemanager.getNoiseBiomeAtQuart(x, y, z).value().getFogColor())
-        );
-
-        //Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
-        //Vec3 cameraPos = camera.getPosition();
-//
-        //BiomeManager biomeManager = level.getBiomeManager();
-//
-        //Vec3 totalColor = Vec3.ZERO;
-        //int sampleCount = 0;
-//
-        //for (int x = -1; x <= 1; x++) {
-        //    for (int z = -1; z <= 1; z++) {
-        //        BlockPos samplePos = BlockPos.containing(
-        //                cameraPos.x + x,
-        //                cameraPos.y,
-        //                cameraPos.z + z
-        //        );
-//
-        //        Holder<Biome> biomeHolder = biomeManager.getBiome(samplePos);
-        //        Biome biome = biomeHolder.value();
-        //        int fogColor = biome.getFogColor();
-//
-        //        float r = ((fogColor >> 16) & 0xFF) / 255.0f;
-        //        float g = ((fogColor >> 8) & 0xFF) / 255.0f;
-        //        float b = (fogColor & 0xFF) / 255.0f;
-//
-        //        totalColor = totalColor.add(r, g, b);
-        //        sampleCount++;
-        //    }
-        //}
-//
-        //Vec3 averageColor = totalColor.multiply(1.0 / sampleCount, 1.0 / sampleCount, 1.0 / sampleCount);
-//
-        //return getBrightnessDependentFogColor(averageColor, 0);
+        Vec3 color = CubicSampler.gaussianSampleVec3(samplePos, (x, y, z) -> Vec3.fromRGB24(biomemanager.getNoiseBiomeAtQuart(x, y, z).value().getFogColor()));
+        return color.lerp(new Vec3(0,0,0), 1-ModClientEvents.effectFog);
     }
 
     public boolean renderSky(ClientLevel level, int ticks, float partialTick, Matrix4f modelViewMatrix, Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
-        //if (isFoggy) {
-        //    return false;
-        //}
         if (Minecraft.getInstance().gui.getBossOverlay().shouldCreateWorldFog()) {
             bossFog = (float) Mth.clamp(bossFog + 0.005, 0, 1);
         } else {
             bossFog = (float) Mth.clamp(bossFog - 0.005, 0, 1);
         }
+
+        //if (ModClientEvents.effectFog == 0) return false;
 
         PoseStack poseStack = new PoseStack();
 
@@ -266,83 +233,16 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         return true;
     }
 
-    private void renderEndSky(PoseStack poseStack, ClientLevel level) {
-
-        //RenderSystem.enableBlend();
-        //RenderSystem.depthMask(false);
-
-        Vec3 skyColor = getBiomeColor(level);
-        float alpha = 0.2f;
-
-        RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
-        RenderSystem.setShaderTexture(0, END_SKY_LOCATION);
-        Tesselator tesselator = Tesselator.getInstance();
-        for(int i = 0; i < 6; ++i) {
-            poseStack.pushPose();
-            if (i == 0) continue;
-            Matrix4f matrix4f = poseStack.last().pose();
-            BufferBuilder bufferbuilder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-
-            if (i == 3) {
-                poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(180.0F));
-                bufferbuilder.addVertex(matrix4f, -100.0F, -100.0F, -100.0F).setUv(0.0F, 0.0F).setColor((float) skyColor.x, (float) skyColor.y, (float) skyColor.z, alpha);
-                bufferbuilder.addVertex(matrix4f, -100.0F, -100.0F, 100.0F).setUv(0.0F, 16.0F).setColor((float) skyColor.x, (float) skyColor.y, (float) skyColor.z, alpha);
-                bufferbuilder.addVertex(matrix4f, 100.0F, -100.0F, 100.0F).setUv(16.0F, 16.0F).setColor((float) skyColor.x, (float) skyColor.y, (float) skyColor.z, alpha);
-                bufferbuilder.addVertex(matrix4f, 100.0F, -100.0F, -100.0F).setUv(16.0F, 0.0F).setColor((float) skyColor.x, (float) skyColor.y, (float) skyColor.z, alpha);
-            }
-
-            if (i == 1) {
-                poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(90.0F));
-                bufferbuilder.addVertex(matrix4f, -100.0F, -100.0F, -100.0F).setUv(0.0F, 0.0F).setColor((float) skyColor.x, (float) skyColor.y, (float) skyColor.z, alpha);
-                bufferbuilder.addVertex(matrix4f, -100.0F, -100.0F, 100.0F).setUv(0.0F, 16.0F).setColor((float) skyColor.x, (float) skyColor.y, (float) skyColor.z, 0.0f);
-                bufferbuilder.addVertex(matrix4f, 100.0F, -100.0F, 100.0F).setUv(16.0F, 16.0F).setColor((float) skyColor.x, (float) skyColor.y, (float) skyColor.z, 0.0f);
-                bufferbuilder.addVertex(matrix4f, 100.0F, -100.0F, -100.0F).setUv(16.0F, 0.0F).setColor((float) skyColor.x, (float) skyColor.y, (float) skyColor.z, alpha);
-            }
-
-            if (i == 2) {
-                poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(-90.0F));
-                bufferbuilder.addVertex(matrix4f, -100.0F, -100.0F, -100.0F).setUv(0.0F, 0.0F).setColor((float) skyColor.x, (float) skyColor.y, (float) skyColor.z, 0.0f);
-                bufferbuilder.addVertex(matrix4f, -100.0F, -100.0F, 100.0F).setUv(0.0F, 16.0F).setColor((float) skyColor.x, (float) skyColor.y, (float) skyColor.z, alpha);
-                bufferbuilder.addVertex(matrix4f, 100.0F, -100.0F, 100.0F).setUv(16.0F, 16.0F).setColor((float) skyColor.x, (float) skyColor.y, (float) skyColor.z, alpha);
-                bufferbuilder.addVertex(matrix4f, 100.0F, -100.0F, -100.0F).setUv(16.0F, 0.0F).setColor((float) skyColor.x, (float) skyColor.y, (float) skyColor.z, 0.0f);
-            }
-
-
-            if (i == 4) {
-                poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(90.0F));
-                bufferbuilder.addVertex(matrix4f, -100.0F, -100.0F, -100.0F).setUv(0.0F, 0.0F).setColor((float) skyColor.x, (float) skyColor.y, (float) skyColor.z, 0.0f);
-                bufferbuilder.addVertex(matrix4f, -100.0F, -100.0F, 100.0F).setUv(0.0F, 16.0F).setColor((float) skyColor.x, (float) skyColor.y, (float) skyColor.z, 0.0f);
-                bufferbuilder.addVertex(matrix4f, 100.0F, -100.0F, 100.0F).setUv(16.0F, 16.0F).setColor((float) skyColor.x, (float) skyColor.y, (float) skyColor.z, alpha);
-                bufferbuilder.addVertex(matrix4f, 100.0F, -100.0F, -100.0F).setUv(16.0F, 0.0F).setColor((float) skyColor.x, (float) skyColor.y, (float) skyColor.z, alpha);
-            }
-
-            if (i == 5) {
-                poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(-90.0F));
-                bufferbuilder.addVertex(matrix4f, -100.0F, -100.0F, -100.0F).setUv(0.0F, 0.0F).setColor((float) skyColor.x, (float) skyColor.y, (float) skyColor.z, alpha);
-                bufferbuilder.addVertex(matrix4f, -100.0F, -100.0F, 100.0F).setUv(0.0F, 16.0F).setColor((float) skyColor.x, (float) skyColor.y, (float) skyColor.z, alpha);
-                bufferbuilder.addVertex(matrix4f, 100.0F, -100.0F, 100.0F).setUv(16.0F, 16.0F).setColor((float) skyColor.x, (float) skyColor.y, (float) skyColor.z, 0.0f);
-                bufferbuilder.addVertex(matrix4f, 100.0F, -100.0F, -100.0F).setUv(16.0F, 0.0F).setColor((float) skyColor.x, (float) skyColor.y, (float) skyColor.z, 0.0f);
-            }
-
-            BufferUploader.drawWithShader(bufferbuilder.buildOrThrow());
-            poseStack.popPose();
-        }
-
-        RenderSystem.defaultBlendFunc();
-        //RenderSystem.depthMask(true);
-        //RenderSystem.disableBlend();
-    }
-
     private void drawTopSkyGradient(PoseStack poseStack, Tesselator tesselator, ClientLevel level) {
         RenderSystem.disableCull();
         Matrix4f matrix = poseStack.last().pose();
 
         float offset = (float) Minecraft.getInstance().cameraEntity.position().y;
         float offsetReal = 40 - ((Mth.clamp(offset, 20, 60)) - 20);
-        Vector4f skyColorVector = TS_COLOR;
+        Vector4f skyColorVector = getSkycolor(TS_COLOR);
 
         float radius = SKY_RADIUS;
-        Vector4f color = BLACK_COLOR;
+        Vector4f color = getSkycolor(BLACK_COLOR);
         BufferBuilder bufferbuilder = tesselator.begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
 
         bufferbuilder.addVertex(matrix, 0, 50, 0)
@@ -364,89 +264,13 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         RenderSystem.enableCull();
     }
 
-    private void drawBottomSkyGradient(PoseStack poseStack, Tesselator tesselator, ClientLevel level) {
-        RenderSystem.disableCull();
-        Matrix4f matrix = poseStack.last().pose();
-
-        Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
-        BlockPos cameraPos = BlockPos.containing(camera.getPosition());
-        Biome biome = level.getBiome(cameraPos).value();
-        int fogColor = biome.getFogColor();
-        float r = ((fogColor >> 16) & 0xFF) / 255.0f;
-        float g = ((fogColor >> 8) & 0xFF) / 255.0f;
-        float b = (fogColor & 0xFF) / 255.0f;
-        Vec3 rgbfogColor = new Vec3(r,g,b);
-        //float gamma = Minecraft.getInstance().options.gamma().get().floatValue();
-        //Vec3 skyColorVector = level.effects().getBrightnessDependentFogColor(rgbfogColor,0);//.multiply(gamma, gamma, gamma);
-        Vector4f skyColorVector = TS_COLOR;
-
-        float radius = SKY_RADIUS;
-        Vector4f color = TS_COLOR;
-        Vector4f top_color = HORIZON_COLOR;
-
-        BufferBuilder bufferbuilder = tesselator.begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
-
-        bufferbuilder.addVertex(matrix, 0, -250, 0)
-                .setColor(color.x(), color.y(), color.z(), 0.0f);
-
-        for (int i = 0; i <= 5; ++i) {
-            float angle = (float)i * ((float)Math.PI * 2F) / 6F;
-            float x = (float)Math.sin(angle) * radius;
-            float z = (float)Math.cos(angle) * radius;
-            bufferbuilder.addVertex(matrix, x, -10, z)
-                    .setColor((float) skyColorVector.x(), (float) skyColorVector.y(), (float) skyColorVector.z(), 1.0f);
-        }
-
-        bufferbuilder.addVertex(matrix, 0, -10, radius)
-                .setColor((float) skyColorVector.x(), (float) skyColorVector.y(), (float) skyColorVector.z(), 1.0f);
-
-        BufferUploader.drawWithShader(bufferbuilder.buildOrThrow());
-
-        RenderSystem.enableCull();
-    }
-
-    private void drawHorizon(PoseStack poseStack) {
-        RenderSystem.disableCull();
-        Tesselator tesselator = Tesselator.getInstance();
-        Matrix4f matrix = poseStack.last().pose();
-
-        float radius = SKY_RADIUS;
-        Vector4f color = new Vector4f(1.0f, 0.0f, 0.0f, 1.0f);;
-
-        //RenderSystem.setShaderTexture(0, 0);
-        RenderSystem.setShaderTexture(0, ResourceLocation.withDefaultNamespace("textures/entity/end_portal.png"));
-        RenderSystem.setShader(GameRenderer::getRendertypeEndPortalShader);
-
-        BufferBuilder bufferbuilder = tesselator.begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_TEX_COLOR);
-
-        bufferbuilder.addVertex(matrix, 0, -250, 0)
-                .setUv(0.5f, 0.5f)
-                .setColor(color.x(), color.y(), color.z(), 1.0f);
-
-        for (int i = 0; i <= 6; ++i) {
-            float angle = (float)i * ((float)Math.PI * 2F) / 6F;
-            float x = (float)Math.sin(angle) * radius;
-            float z = (float)Math.cos(angle) * radius;
-
-            float u = (float)Math.sin(angle) * 0.5f + 0.5f;
-            float v = (float)Math.cos(angle) * 0.5f + 0.5f;
-
-            bufferbuilder.addVertex(matrix, x, -220, z)
-                    .setUv(u, v)
-                    .setColor(color.x(), color.y(), color.z(), 0.0f);
-        }
-
-        float firstAngle = 0;
-        float firstX = (float)Math.sin(firstAngle) * radius;
-        float firstZ = (float)Math.cos(firstAngle) * radius;
-
-        bufferbuilder.addVertex(matrix, firstX, -220, firstZ)
-                .setUv(0.0f, 0.5f)
-                .setColor(color.x(), color.y(), color.z(), 0.0f);
-
-        BufferUploader.drawWithShader(bufferbuilder.buildOrThrow());
-
-        RenderSystem.enableCull();
+    private Vector4f getSkycolor(Vector4f color) {
+        return new Vector4f(
+                Mth.lerp(ModClientEvents.effectFog, 0, color.x),
+                Mth.lerp(ModClientEvents.effectFog, 0, color.y),
+                Mth.lerp(ModClientEvents.effectFog, 0, color.z),
+                Mth.lerp(ModClientEvents.effectFog, 1, color.w)
+        );
     }
 
     private void renderCloud(ClientLevel level, PoseStack poseStack, Tesselator tesselator, float speed, int size) {
@@ -524,34 +348,4 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         RenderSystem.defaultBlendFunc();
         poseStack.popPose();
     }
-
-    //private static void drawCelestialObjects(ClientLevel level, float ticks, float partialTick, PoseStack poseStack) {
-
-    //    float sunAngle = level.getTimeOfDay(partialTick);
-    //    float sunX = (float)Math.cos(sunAngle * Math.PI * 2.0) * 20.0F;
-    //    float sunY = (float)Math.sin(sunAngle * Math.PI * 2.0) * 20.0F;
-    //    float sunZ = -10.0F;
-////
-    //    RenderSystem.setShaderTexture(0, SUN_TEXTURE);
-    //    RenderSystem.setShader(GameRenderer::getPositionTexShader);
-////
-    //    poseStack.pushPose();
-    //    poseStack.mulPose(Axis.YP.rotationDegrees(sunAngle * 360.0F));
-    //    poseStack.translate(sunX, sunY, sunZ);
-////
-    //    Matrix4f matrix = poseStack.last().pose();
-    //    BufferBuilder bufferBuilder = Tesselator.getInstance().getBuilder();
-    //    bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-////
-    //    bufferBuilder.vertex(matrix, -5.0F, -5.0F, 0.0F).uv(0.0F, 0.0F).endVertex();
-    //    bufferBuilder.vertex(matrix, 5.0F, -5.0F, 0.0F).uv(1.0F, 0.0F).endVertex();
-    //    bufferBuilder.vertex(matrix, 5.0F, 5.0F, 0.0F).uv(1.0F, 1.0F).endVertex();
-    //    bufferBuilder.vertex(matrix, -5.0F, 5.0F, 0.0F).uv(0.0F, 1.0F).endVertex();
-////
-    //    BufferUploader.drawWithShader(bufferBuilder.end());
-    //    poseStack.popPose();
-    //}
-
-
-
 }

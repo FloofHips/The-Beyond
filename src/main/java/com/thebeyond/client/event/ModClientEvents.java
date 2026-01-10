@@ -43,6 +43,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Zombie;
@@ -102,7 +104,8 @@ public class ModClientEvents {
     public static final ResourceLocation CLOUD_2_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/cloud_2");
     static RandomSource random = RandomSource.create(254572);
     public static PerlinSimplexNoise gellidVoidNoise = new PerlinSimplexNoise(random, Collections.singletonList(1));
-    private static float bossFog = 0;
+    public static float bossFog = 0;
+    public static float effectFog = 1;
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event){
         EntityRenderers.register(BeyondEntityTypes.ENDERGLOP.get(), EnderglopRenderer::new);
@@ -242,9 +245,33 @@ public class ModClientEvents {
         if (event.getCamera().getEntity().level().dimensionType().effectsLocation().equals(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"))) {
             event.setCanceled(true);
             event.setFogShape(FogShape.SPHERE);
-            event.setFarPlaneDistance((float) Minecraft.getInstance().cameraEntity.position().y + 30);
-            event.setNearPlaneDistance(15);
+
+            float finalFog = finalEffectFog(event.getCamera());
+
+            event.setFarPlaneDistance((float) (Minecraft.getInstance().cameraEntity.position().y + 30) * finalFog);
+            event.setNearPlaneDistance(15 * finalFog);
        }
+    }
+
+    public static float finalEffectFog(Camera camera) {
+        int type = doesMobEffectBlockSky(camera);
+        if (type == 0) {
+            effectFog = (float) Mth.lerp(0.05, effectFog, 1);
+            return (float) Math.clamp(effectFog, 0.05, 1);
+        } else if (type == 1) {
+            effectFog = (float) Mth.lerp(0.05, effectFog, 0);
+            return (float) Math.clamp(effectFog, 0.05, 1);
+        }
+        effectFog = 1;
+        return 1;
+    }
+
+    private static int doesMobEffectBlockSky(Camera camera) {
+        if (camera.getEntity() instanceof LivingEntity livingentity) {
+            if (livingentity.hasEffect(MobEffects.BLINDNESS)) return 1;
+            if (livingentity.hasEffect(MobEffects.DARKNESS)) return 2;
+        }
+        return 0;
     }
 
     @SubscribeEvent
