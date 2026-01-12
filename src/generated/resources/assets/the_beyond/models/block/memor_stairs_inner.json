@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/inner_stairs",
+  "textures": {
+    "bottom": "the_beyond:block/memor",
+    "side": "the_beyond:block/memor",
+    "top": "the_beyond:block/memor"
+  }
+}

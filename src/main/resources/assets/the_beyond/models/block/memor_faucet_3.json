@@ -1,0 +1,6 @@
+{
+  "parent": "the_beyond:block/memor_faucet",
+  "textures": {
+    "0": "the_beyond:block/memor_faucet_3"
+  }
+}

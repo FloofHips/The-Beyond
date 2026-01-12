@@ -1,0 +1,63 @@
+{
+	"parent": "minecraft:block/block",
+	"texture_size": [32, 32],
+	"textures": {
+		"0": "the_beyond:block/memor_faucet_0",
+		"particle": "the_beyond:block/memor_faucet_0"
+	},
+	"elements": [
+		{
+			"from": [3, 3, 6],
+			"to": [13, 16, 16],
+			"rotation": {"angle": 0, "axis": "y", "origin": [3, 3, 6]},
+			"faces": {
+				"north": {"uv": [0, 0, 5, 6.5], "texture": "#0"},
+				"east": {"uv": [5, 0, 10, 6.5], "texture": "#0"},
+				"south": {"uv": [10, 0, 15, 6.5], "texture": "#0", "cullface": "south"},
+				"west": {"uv": [10, 0, 5, 6.5], "texture": "#0"},
+				"up": {"uv": [6.5, 16, 1.5, 11], "texture": "#0", "cullface": "up"},
+				"down": {"uv": [9.5, 11, 14.5, 16], "texture": "#0"}
+			}
+		},
+		{
+			"from": [13, 5, 9],
+			"to": [16, 13, 13],
+			"rotation": {"angle": 0, "axis": "y", "origin": [13, 11, 9]},
+			"faces": {
+				"north": {"uv": [0, 6.5, 1.5, 10.5], "texture": "#0"},
+				"east": {"uv": [6.5, 1.5, 8.5, 5.5], "texture": "#0", "cullface": "east"},
+				"south": {"uv": [13.5, 6.5, 15, 10.5], "texture": "#0"},
+				"west": {"uv": [6.5, 1.5, 8.5, 5.5], "texture": "#0"},
+				"up": {"uv": [1.5, 14.5, 0, 12.5], "texture": "#0"},
+				"down": {"uv": [14.5, 12.5, 16, 14.5], "texture": "#0"}
+			}
+		},
+		{
+			"from": [0, 5, 9],
+			"to": [3, 13, 13],
+			"rotation": {"angle": 0, "axis": "y", "origin": [0, 11, 9]},
+			"faces": {
+				"north": {"uv": [3.5, 6.5, 5, 10.5], "texture": "#0"},
+				"east": {"uv": [6.5, 1.5, 8.5, 5.5], "texture": "#0"},
+				"south": {"uv": [10, 6.5, 11.5, 10.5], "texture": "#0"},
+				"west": {"uv": [6.5, 1.5, 8.5, 5.5], "texture": "#0", "cullface": "west"},
+				"up": {"uv": [8, 14.5, 6.5, 12.5], "texture": "#0"},
+				"down": {"uv": [8, 12.5, 9.5, 14.5], "texture": "#0"}
+			}
+		},
+		{
+			"from": [6, 0, 9],
+			"to": [10, 3, 13],
+			"rotation": {"angle": 0, "axis": "y", "origin": [6, 0, 9]},
+			"faces": {
+				"north": {"uv": [1.5, 6.5, 3.5, 8], "texture": "#0"},
+				"east": {"uv": [6.5, 6.5, 8.5, 8], "texture": "#0"},
+				"south": {"uv": [11.5, 6.5, 13.5, 8], "texture": "#0"},
+				"west": {"uv": [6.5, 6.5, 8.5, 8], "texture": "#0"},
+				"up": {"uv": [11, 12.5, 13, 14.5], "texture": "#0"},
+				"down": {"uv": [11, 12.5, 13, 14.5], "texture": "#0", "cullface": "down"}
+			}
+		}
+	],
+	"display": {}
+}

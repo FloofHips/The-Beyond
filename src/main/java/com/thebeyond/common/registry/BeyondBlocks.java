@@ -51,16 +51,32 @@ public class BeyondBlocks {
                     .replaceable())
     );
     public static final DeferredBlock<Block> ENGRAVED_END_STONE = registerBlock("engraved_end_stone", () -> new Block(BlockBehaviour.Properties.of()
-            .mapColor(MapColor.WOOL)
+            .mapColor(MapColor.COLOR_YELLOW)
             .requiresCorrectToolForDrops()
             .strength(3.0F, 9.0F)
             .sound(BeyondSoundTypes.END_STONE))
     );
     public static final DeferredBlock<Block> ECTOPLASM = registerBlockWithoutItem("ectoplasm", () -> new EctoplasmBlock(BlockBehaviour.Properties.of()
-            .mapColor(MapColor.WOOL)
+            .mapColor(MapColor.SNOW)
             .sound(SoundType.COBWEB)
             .noOcclusion())
     );
+    public static final DeferredBlock<Block> MEMOR = registerBlock("memor", () -> new Block(BlockBehaviour.Properties.of()
+            .mapColor(MapColor.WOOL)
+            .requiresCorrectToolForDrops()
+            .strength(-1, 3600000F)
+            .sound(SoundType.ANCIENT_DEBRIS))
+    );
+    public static final DeferredBlock<Block> CHISELED_MEMOR = registerBlock("chiseled_memor", () -> new Block(
+            BlockBehaviour.Properties.ofFullCopy(MEMOR.get()).sound(SoundType.NETHER_BRICKS)));
+    public static final DeferredBlock<Block> MEMOR_PILLAR = registerBlock("memor_pillar", () -> new RotatedPillarBlock(
+            BlockBehaviour.Properties.ofFullCopy(MEMOR.get()).sound(SoundType.NETHER_BRICKS)));
+    public static final DeferredBlock<Block> MEMOR_STAIRS = registerBlock("memor_stairs", () -> new StairBlock(
+            MEMOR.get().defaultBlockState(),
+            BlockBehaviour.Properties.ofFullCopy(MEMOR.get()).sound(SoundType.ANCIENT_DEBRIS)));
+    public static final DeferredBlock<Block> MEMOR_FAUCET = registerBlock("memor_faucet", () -> new MemorFaucetBlock(
+            BlockBehaviour.Properties.ofFullCopy(MEMOR.get()).noOcclusion().sound(SoundType.NETHER_BRICKS)));
+
     //STRUCTURES
     public static final DeferredBlock<Block> PORTELAIN = registerBlock("portelain", () -> new Block(BlockBehaviour.Properties.of()
             .mapColor(MapColor.TERRACOTTA_PURPLE)

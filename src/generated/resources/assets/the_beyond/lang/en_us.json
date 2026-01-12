@@ -1,5 +1,6 @@
 {
   "block.the_beyond.auroracite": "Auroracite",
+  "block.the_beyond.chiseled_memor": "Chiseled Memor",
   "block.the_beyond.creeping_zymote": "Creeping Zymote",
   "block.the_beyond.ectoplasm": "Ectoplasm",
   "block.the_beyond.enadrake_hut": "Enadrake Hut",
@@ -8,6 +9,10 @@
   "block.the_beyond.gellid_void_block": "Air",
   "block.the_beyond.guster": "Guster",
   "block.the_beyond.magnolilly": "Magnolilly",
+  "block.the_beyond.memor": "Memor",
+  "block.the_beyond.memor_faucet": "Memor Faucet",
+  "block.the_beyond.memor_pillar": "Memor Pillar",
+  "block.the_beyond.memor_stairs": "Memor Stairs",
   "block.the_beyond.nacre": "Nacre",
   "block.the_beyond.obiroot": "Obiroot",
   "block.the_beyond.obiroot_sprout": "Obiroot Sprout",
