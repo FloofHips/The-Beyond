@@ -2,6 +2,7 @@
     "parent": "minecraft:block/cross",
     "render_type": "minecraft:cutout",
     "textures": {
-        "cross": "the_beyond:block/void_crystal_tip"
+        "cross": "the_beyond:block/void_crystal_tip",
+		"particle": "the_beyond:block/void_crystal_tip"
     }
 }

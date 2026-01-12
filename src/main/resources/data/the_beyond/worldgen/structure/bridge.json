@@ -1,6 +1,6 @@
 {
   "type": "minecraft:jigsaw",
-  "biomes": "#the_beyond:has_remains",
+  "biomes": "#the_beyond:has_bridges",
   "terrain_adaptation": "beard_thin",
   "start_height": {
     "type": "minecraft:uniform",

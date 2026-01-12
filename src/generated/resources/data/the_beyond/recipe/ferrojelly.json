@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "the_beyond:ferrojelly_block"
+    }
+  ],
+  "result": {
+    "count": 9,
+    "id": "the_beyond:ferrojelly"
+  }
+}

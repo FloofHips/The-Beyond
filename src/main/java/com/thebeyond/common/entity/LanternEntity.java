@@ -1,5 +1,7 @@
 package com.thebeyond.common.entity;
 
+import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -229,7 +231,7 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
 
             if (itemstack.is(Items.BRUSH)) {
                 if (!isTrusting()) {
-                    this.spawnAtLocation(new ItemStack(Items.ARMADILLO_SCUTE, 1+random.nextInt(0, getSize()+1)));
+                    this.spawnAtLocation(new ItemStack(BeyondItems.LANTERN_SHED.get(), 1+random.nextInt(0, getSize()+1)));
                     this.gameEvent(GameEvent.ENTITY_INTERACT);
                     this.playSound(SoundEvents.ARMADILLO_BRUSH);
                     itemstack.hurtAndBreak(16, player, getSlotForHand(hand));
@@ -240,7 +242,7 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
                     return InteractionResult.SUCCESS;
                 }
 
-                this.spawnAtLocation(new ItemStack(Items.WHITE_CONCRETE, 1+random.nextInt(0, (getSize()+1)*2)));
+                this.spawnAtLocation(new ItemStack(BeyondBlocks.ECTOPLASM.asItem(), 1+random.nextInt(0, (getSize()+1)*2)));
                 this.gameEvent(GameEvent.ENTITY_INTERACT);
                 this.playSound(SoundEvents.ARMADILLO_BRUSH);
                 itemstack.hurtAndBreak(16, player, getSlotForHand(hand));

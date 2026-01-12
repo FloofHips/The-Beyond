@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "B": {
+      "item": "minecraft:wind_charge"
+    },
+    "C": {
+      "item": "the_beyond:portelain"
+    }
+  },
+  "pattern": [
+    " C ",
+    "CBC",
+    " C "
+  ],
+  "result": {
+    "count": 4,
+    "id": "the_beyond:guster"
+  }
+}

@@ -10,6 +10,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.item.FallingBlockEntity;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -21,6 +22,7 @@ import net.minecraft.world.level.block.Fallable;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.*;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -120,6 +122,15 @@ public class VoidCrystalBlock extends Block {
     }
 
     @Override
+    protected void onProjectileHit(Level level, BlockState state, BlockHitResult hit, Projectile projectile) {
+        BlockPos blockpos = hit.getBlockPos();
+        if (!level.isClientSide && projectile.mayInteract(level, blockpos)) {
+            level.destroyBlock(blockpos, true, projectile);
+        }
+        super.onProjectileHit(level, state, hit, projectile);
+    }
+
+    @Override
     protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         if (state.getValue(UP)) {
             spawnRisingStalactite(state, level, pos);
@@ -187,10 +198,6 @@ public class VoidCrystalBlock extends Block {
             PillarHeightProperty height = state.getValue(HEIGHT);
             return height == PillarHeightProperty.TIP;
         }
-    }
-
-
-    protected void falling(FallingBlockEntity entity) {
     }
 
     private static final VoxelShape TIP_SHAPE;

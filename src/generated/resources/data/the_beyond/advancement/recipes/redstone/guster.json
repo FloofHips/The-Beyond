@@ -1,0 +1,43 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_portelain": {
+      "conditions": {
+        "items": [
+          {
+            "items": "the_beyond:portelain"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "the_beyond:guster"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    },
+    "has_wind_charge": {
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:wind_charge"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_wind_charge",
+      "has_portelain"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "the_beyond:guster"
+    ]
+  }
+}

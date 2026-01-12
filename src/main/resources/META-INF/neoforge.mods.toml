@@ -8,6 +8,7 @@ config = "the_beyond.mixins.json"
 config = "the_beyond.client.mixins.json"
 
 [[mods]]
+enumExtensions="META-INF/enumextensions.json"
 modId="the_beyond"
 version="0.1.0"
 displayName="The Beyond"

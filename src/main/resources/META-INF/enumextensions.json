@@ -1,0 +1,14 @@
+{
+  "entries": [
+    {
+      "enum": "net/minecraft/world/item/Rarity",
+      "name": "THE_BEYOND_REMEMBRANCE",
+      "constructor": "(ILjava/lang/String;Ljava/util/function/UnaryOperator;)V",
+
+      "parameters": {
+        "class": "com/thebeyond/common/registry/BeyondEnums",
+        "field": "REMEMBRANCE"
+      }
+    }
+  ]
+}
