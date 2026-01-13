@@ -24,6 +24,7 @@ public class TheBeyond {
         modEventBus.addListener(this::commonSetup);
 
         BeyondBlocks.BLOCKS.register(modEventBus);
+        BeyondBlockEntities.BLOCK_ENTITY_TYPES.register(modEventBus);
         BeyondItems.ITEMS.register(modEventBus);
         BeyondArmorMaterials.ARMOR_MATERIALS.register(modEventBus);
         BeyondTabs.CREATIVE_MODE_TABS.register(modEventBus);

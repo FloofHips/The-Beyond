@@ -1,9 +1,7 @@
 package com.thebeyond.common.block;
 
 import com.thebeyond.common.entity.AbyssalNomadEntity;
-import com.thebeyond.common.registry.BeyondBlocks;
-import com.thebeyond.common.registry.BeyondItems;
-import com.thebeyond.common.registry.BeyondParticleTypes;
+import com.thebeyond.common.registry.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -11,6 +9,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -45,10 +44,10 @@ public class AuroraciteBlock extends Block {
     }
 
     private boolean canEntityWalkOn(Entity entity) {
-        if (entity instanceof AbyssalNomadEntity || entity instanceof Villager) {
+        if (entity instanceof AbyssalNomadEntity) {
             return true;
         } else {
-            return entity instanceof LivingEntity ? ((LivingEntity)entity).getItemBySlot(EquipmentSlot.FEET).is(BeyondItems.PATHFINDER_BOOTS.get()) : false;
+            return entity instanceof LivingEntity && (((LivingEntity) entity).getItemBySlot(EquipmentSlot.FEET).is(BeyondItems.PATHFINDER_BOOTS.get()) || ((LivingEntity) entity).hasEffect(BeyondEffects.NOMADS_BLESSING));
         }
     }
 
@@ -68,8 +67,17 @@ public class AuroraciteBlock extends Block {
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        if (context.isHoldingItem(BeyondItems.ECTOPLASM.get()) || context.isHoldingItem(BeyondBlocks.AURORACITE.get().asItem()))
-            return Shapes.block();
+        if (context instanceof EntityCollisionContext entityContext) {
+            Entity entity = entityContext.getEntity();
+            if (entity instanceof LivingEntity living) {
+                if (living instanceof Player player && player.isCreative()) {
+                    return Shapes.block();
+                }
+                if (living.getMainHandItem().is(BeyondTags.AURORACITE_INTERACTABLE) || living.getOffhandItem().is(BeyondTags.AURORACITE_INTERACTABLE)) {
+                    return Shapes.block();
+                }
+            }
+        }
         return Shapes.box(0.0001, 0.0001, 0.0001, 0.0002, 0.0002, 0.0002);
     }
 

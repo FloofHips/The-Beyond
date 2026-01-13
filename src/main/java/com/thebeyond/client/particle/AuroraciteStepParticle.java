@@ -53,13 +53,12 @@ public class AuroraciteStepParticle extends TextureSheetParticle {
         float y = (float)(Mth.lerp(partialTicks, this.yo, this.y) - cameraPos.y());
         float z = (float)(Mth.lerp(partialTicks, this.zo, this.z) - cameraPos.z());
 
-        Quaternionf quaternion;
-        quaternion = new Quaternionf().rotationYXZ(0, 0, 0);
+        this.renderSquare(buffer, x, y, z, partialTicks, -Mth.HALF_PI);
 
-        this.renderSquare(buffer, x, y, z, partialTicks, quaternion);
+        this.renderSquare(buffer, x, y, z, partialTicks, Mth.HALF_PI);
     }
 
-    private void renderSquare(VertexConsumer buffer, float x, float y, float z, float partialTicks, Quaternionf rotation) {
+    private void renderSquare(VertexConsumer buffer, float x, float y, float z, float partialTicks, float r) {
         float f1 = this.getU0();
         float f2 = this.getU1();
         float f3 = this.getV0();
@@ -67,14 +66,16 @@ public class AuroraciteStepParticle extends TextureSheetParticle {
 
         int i = this.getLightColor(partialTicks);
 
-        this.renderVertex(buffer, x, y, z,  1.0F, -1.0F, f2, f4, i);
-        this.renderVertex(buffer, x, y, z,  1.0F,  1.0F, f2, f3, i);
-        this.renderVertex(buffer, x, y, z, -1.0F,  1.0F, f1, f3, i);
-        this.renderVertex(buffer, x, y, z, -1.0F, -1.0F, f1, f4, i);
+        this.renderVertex(buffer, x, y, z,  1.0F, -1.0F, f2, f4, 255, r);
+        this.renderVertex(buffer, x, y, z,  1.0F,  1.0F, f2, f3, 255, r);
+        this.renderVertex(buffer, x, y, z, -1.0F,  1.0F, f1, f3, 255, r);
+        this.renderVertex(buffer, x, y, z, -1.0F, -1.0F, f1, f4, 255, r);
     }
 
-    private void renderVertex(VertexConsumer buffer, float x, float y, float z, float xOffset, float yOffset, float u, float v, int packedLight) {
-        Vector3f vector3f = (new Vector3f(xOffset, yOffset, 0.0F)).rotate(new Quaternionf().rotationX(-Mth.HALF_PI)).mul(quadSize).add(x, y, z);
+    private void renderVertex(VertexConsumer buffer, float x, float y, float z, float xOffset, float yOffset, float u, float v, int packedLight, float r) {
+
+        Vector3f vector3f = (new Vector3f(xOffset, yOffset, 0.0F)).rotate(new Quaternionf().rotationX(r)).mul(quadSize).add(x, y, z);
+
         buffer.addVertex(vector3f.x(), vector3f.y(), vector3f.z()).setUv(u, v).setColor(this.rCol, this.gCol, this.bCol, this.alpha).setLight(packedLight);
     }
 }

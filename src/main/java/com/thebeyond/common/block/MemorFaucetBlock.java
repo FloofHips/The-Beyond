@@ -1,8 +1,12 @@
 package com.thebeyond.common.block;
 
 import com.mojang.serialization.MapCodec;
+import com.thebeyond.common.block.blockentities.MemorFaucetBlockEntity;
+import com.thebeyond.common.registry.BeyondBlockEntities;
+import com.thebeyond.common.registry.BeyondParticleTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -13,12 +17,15 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.entity.vault.VaultBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.BlockHitResult;
@@ -26,17 +33,19 @@ import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.jetbrains.annotations.Nullable;
 
-public class MemorFaucetBlock extends HorizontalDirectionalBlock {
+public class MemorFaucetBlock extends BaseEntityBlock {
     public static final int MAX_AGE = 5;
     public static final IntegerProperty AGE = BlockStateProperties.AGE_5;
+    public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
     public MemorFaucetBlock(Properties properties) {
         super(properties);
     }
 
     @Override
-    protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
+    protected MapCodec<? extends BaseEntityBlock> codec() {
         return null;
     }
 
@@ -46,6 +55,19 @@ public class MemorFaucetBlock extends HorizontalDirectionalBlock {
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         return (BlockState)this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
+
+    public BlockState rotate(BlockState blockState, Rotation rotation) {
+        return (BlockState)blockState.setValue(FACING, rotation.rotate((Direction)blockState.getValue(FACING)));
+    }
+
+    public BlockState mirror(BlockState blockState, Mirror mirror) {
+        return blockState.rotate(mirror.getRotation((Direction)blockState.getValue(FACING)));
+    }
+
+    public RenderShape getRenderShape(BlockState blockState) {
+        return RenderShape.MODEL;
+    }
+
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
         if (stack.isEmpty()) return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
@@ -53,11 +75,16 @@ public class MemorFaucetBlock extends HorizontalDirectionalBlock {
         if (state.getValue(AGE) < MAX_AGE-1) {
             level.playSound(null, pos, SoundEvents.RESPAWN_ANCHOR_CHARGE, SoundSource.BLOCKS, 1, 1);
             level.setBlockAndUpdate(pos, state.setValue(AGE, state.getValue(AGE) + 1));
+            if (level instanceof ServerLevel serverLevel)
+                serverLevel.sendParticles(BeyondParticleTypes.AURORACITE_STEP.get(), pos.getX() + 0.5, pos.getY() - 0.5, pos.getZ() + 0.5, 1, 0, 0, 0, 0);
             return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
         }
         else {
             level.playSound(null, pos, SoundEvents.TRIAL_SPAWNER_OMINOUS_ACTIVATE, SoundSource.BLOCKS, 1, 1);
             level.setBlockAndUpdate(pos, state.setValue(AGE, 5));
+            if (level instanceof ServerLevel serverLevel)
+                serverLevel.sendParticles(BeyondParticleTypes.AURORACITE_STEP.get(), pos.getX() + 0.5, pos.getY() - 0.5, pos.getZ() + 0.5, 1, 0, 0, 0, 0);
+
             if (level.getBlockState(pos.below()).isAir()) {
                 level.setBlockAndUpdate(pos.below(), Blocks.WATER.defaultBlockState());
                 level.playSound(null, pos, SoundEvents.BUCKET_EMPTY, SoundSource.BLOCKS, 1, 0.5f);
@@ -129,4 +156,17 @@ public class MemorFaucetBlock extends HorizontalDirectionalBlock {
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return makeShape(state.getValue(FACING));
     }
+
+    @Nullable
+    @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new MemorFaucetBlockEntity(pos, state);
+    }
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return level.isClientSide ? null : createTickerHelper(type, BeyondBlockEntities.MEMOR_FAUCET.get(), MemorFaucetBlockEntity::tick);
+    }
+
 }

@@ -1,0 +1,15 @@
+{
+  "ctm": {
+    "ctm_version": 1,
+    "type": "ctm",
+    "layer": "SOLID",
+    "textures": ["the_beyond:block/memor_ctm"],
+    "extra": {
+      "ignore_states": "true",
+      "connect_to": [
+        { "block": "the_beyond:memor" },
+        { "block": "the_beyond:memor_stairs" }
+      ]
+    }
+  }
+}

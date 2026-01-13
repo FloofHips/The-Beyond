@@ -65,5 +65,30 @@ public class BeyondItemTags extends ItemTagsProvider {
         tag(ItemTags.EQUIPPABLE_ENCHANTABLE)
                 .add(BeyondItems.PATHFINDER_BOOTS.get())
                 .add(BeyondItems.ETHER_CLOAK.get());
+
+
+        tag(BeyondTags.REMEMBRANCES)
+                .add(BeyondItems.REMEMBRANCE_BEADS.get())
+                .add(BeyondItems.REMEMBRANCE_IDOL.get())
+                .add(BeyondItems.REMEMBRANCE_BRACE.get())
+                .add(BeyondItems.REMEMBRANCE_RING.get())
+                .add(BeyondItems.REMEMBRANCE_MEMORY.get())
+                .add(BeyondItems.REMEMBRANCE_HORN.get())
+                .add(BeyondItems.REMEMBRANCE_LACE.get())
+                .add(BeyondItems.REMEMBRANCE_BROCHE.get())
+                .add(BeyondItems.REMEMBRANCE_LIFE.get())
+                .add(BeyondItems.REMEMBRANCE_HOME.get())
+                .add(BeyondItems.REMEMBRANCE_EYE.get())
+                .add(BeyondItems.REMEMBRANCE_SPIKE.get())
+                .add(BeyondItems.REMEMBRANCE_ORNAMENT.get())
+                .add(BeyondItems.REMEMBRANCE_MOUNT.get())
+                .add(BeyondItems.REMEMBRANCE_HAND.get())
+                .add(BeyondItems.REMEMBRANCE_CLOTH.get());
+
+        tag(BeyondTags.AURORACITE_INTERACTABLE)
+                .add(BeyondItems.ABYSSAL_NOMAD_SPAWN_EGG.get())
+                .add(BeyondBlocks.AURORACITE.asItem())
+                .add(BeyondItems.ECTOPLASM.get());
+
     }
 }

@@ -24,6 +24,8 @@ public class BeyondTags {
     public static final TagKey<Block> PORTELAIN_BLOCKS = createBlock("portelain_blocks");
     public static final TagKey<Block> OBIROOT_BLOCKS = createBlock("obiroot_blocks");
     public static final TagKey<Item> OBIROOTS = createItem("obiroots");
+    public static final TagKey<Item> REMEMBRANCES = createItem("remembrances");
+    public static final TagKey<Item> AURORACITE_INTERACTABLE = createItem("auroracite_interactable");
 
     private static TagKey<Block> createBlock(String id) {
         return BlockTags.create(ResourceLocation.fromNamespaceAndPath(MODID, id));
