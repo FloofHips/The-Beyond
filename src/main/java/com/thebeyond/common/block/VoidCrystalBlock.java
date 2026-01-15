@@ -5,10 +5,19 @@ import com.thebeyond.common.block.blockstates.PillarHeightProperty;
 import com.thebeyond.common.entity.RisingBlockEntity;
 import com.thebeyond.common.fluid.GellidVoidBlock;
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondEffects;
+import com.thebeyond.common.registry.BeyondParticleTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySelector;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -22,14 +31,16 @@ import net.minecraft.world.level.block.Fallable;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.*;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 import javax.annotation.Nullable;
+import java.util.function.Predicate;
 
-public class VoidCrystalBlock extends Block {
+public class VoidCrystalBlock extends Block implements Fallable {
     public static final MapCodec<VoidCrystalBlock> CODEC = simpleCodec(VoidCrystalBlock::new);
     public static final EnumProperty<PillarHeightProperty> HEIGHT;
     public static final BooleanProperty UP;
@@ -138,6 +149,26 @@ public class VoidCrystalBlock extends Block {
             spawnFallingStalactite(state, level, pos);
         }
     }
+
+    @Override
+    public void onBrokenAfterFall(Level level, BlockPos pos, FallingBlockEntity fallingBlock) {
+        Predicate<Entity> predicate = EntitySelector.NO_CREATIVE_OR_SPECTATOR.and(EntitySelector.LIVING_ENTITY_STILL_ALIVE);
+        AABB bb = new AABB(pos).inflate(1.5);
+
+        level.getEntities(fallingBlock, bb, predicate).forEach((entity) -> {
+            if (entity instanceof LivingEntity livingEntity) {
+                livingEntity.addEffect(new MobEffectInstance(BeyondEffects.UNSTABLE, 60));
+                livingEntity.addEffect(new MobEffectInstance(BeyondEffects.WEIGHTLESS, 60));
+            }
+        });
+
+        if (level instanceof ServerLevel serverLevel) {
+            serverLevel.playSound(fallingBlock, pos, SoundEvents.GLASS_BREAK, SoundSource.BLOCKS, 1, 1);
+            serverLevel.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5, pos.getY() - 0.5, pos.getZ() + 0.5, 5, 0.5, 0.5, 0.5, 0.1);
+        }
+        Fallable.super.onBrokenAfterFall(level, pos, fallingBlock);
+    }
+
     private static void spawnRisingStalactite(BlockState state, ServerLevel level, BlockPos pos) {
         BlockPos.MutableBlockPos blockpos$mutableblockpos = pos.mutable();
 

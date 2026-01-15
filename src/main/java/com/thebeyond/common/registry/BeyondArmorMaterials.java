@@ -48,4 +48,23 @@ public class BeyondArmorMaterials {
                     0.0F
             ));
 
+    public static final DeferredHolder<ArmorMaterial, ArmorMaterial> ANCHOR_ARMOR = ARMOR_MATERIALS.register("anchor",
+            () -> new ArmorMaterial(
+                    Map.of(
+                            ArmorItem.Type.BOOTS, 2,
+                            ArmorItem.Type.LEGGINGS, 4,
+                            ArmorItem.Type.CHESTPLATE, 5,
+                            ArmorItem.Type.HELMET, 3
+                    ),
+                    20,
+                    BuiltInRegistries.SOUND_EVENT.wrapAsHolder(SoundEvents.ARMOR_EQUIP_NETHERITE.value()),
+                    () -> Ingredient.of(BeyondItems.FERROPETAL.get()),
+                    List.of(
+                            new ArmorMaterial.Layer(
+                                    ResourceLocation.fromNamespaceAndPath(MODID, "anchor")
+                            )
+                    ),
+                    0.5F,
+                    0.1F
+            ));
 }

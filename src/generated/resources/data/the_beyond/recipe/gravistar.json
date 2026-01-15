@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "M": {
+      "item": "the_beyond:void_crystal"
+    },
+    "N": {
+      "item": "the_beyond:ferrojelly"
+    }
+  },
+  "pattern": [
+    " M ",
+    "MNM",
+    " M "
+  ],
+  "result": {
+    "count": 2,
+    "id": "the_beyond:gravistar"
+  }
+}

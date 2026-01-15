@@ -6,6 +6,7 @@ import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Axis;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.event.specialeffects.EndSpecialEffects;
+import com.thebeyond.client.gui.NomadsBlessingOverlay;
 import com.thebeyond.client.model.*;
 
 import com.thebeyond.client.model.equipment.ArmorModel;
@@ -18,6 +19,7 @@ import com.thebeyond.common.entity.LanternEntity;
 import com.thebeyond.common.entity.TotemOfRespiteEntity;
 import com.thebeyond.common.item.ModelArmorItem;
 import com.thebeyond.common.registry.*;
+import com.thebeyond.util.AOEManager;
 import com.thebeyond.util.ColorUtils;
 import com.thebeyond.util.RenderUtils;
 import net.minecraft.client.Camera;
@@ -41,6 +43,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -82,6 +87,7 @@ import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEvent;
+import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.entity.player.UseItemOnBlockEvent;
@@ -98,14 +104,16 @@ import java.util.*;
 @EventBusSubscriber(modid = TheBeyond.MODID, value = Dist.CLIENT)
 public class ModClientEvents {
     protected static Collection<ModelArmorItem> MODEL_ARMOR = new ArrayList<>();
-    public static ShaderInstance ENTITY_DEPTH_SHADER;
     private static final ResourceLocation AURORA_TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/environment/aurora.png");
     public static final ResourceLocation CLOUD_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/cloud");
     public static final ResourceLocation CLOUD_2_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/cloud_2");
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath("minecraft", "textures/block/red_concrete.png");
+
     static RandomSource random = RandomSource.create(254572);
     public static PerlinSimplexNoise gellidVoidNoise = new PerlinSimplexNoise(random, Collections.singletonList(1));
     public static float bossFog = 0;
     public static float effectFog = 1;
+    public static float nomadEyes = 0;
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event){
         EntityRenderers.register(BeyondEntityTypes.ENDERGLOP.get(), EnderglopRenderer::new);
@@ -301,23 +309,23 @@ public class ModClientEvents {
     }
 
     @SubscribeEvent
-    public static void onPistonMove(PistonEvent.Pre event) {
-        //LevelAccessor level = event.getLevel();
-//
-        //event.getStructureHelper().getToPush().add(event.getFaceOffsetPos().above());
-        //System.out.println(event.getStructureHelper().getToPush().size());
-        //event.getStructureHelper().resolve();
-        //event.getStructureHelper().getToPush().add(event.getFaceOffsetPos().above());
-        //event.getStructureHelper().resolve();
+    public static void onLand(LivingFallEvent event) {
+        if (event.getEntity() instanceof LivingEntity livingEntity && !livingEntity.getItemBySlot(EquipmentSlot.LEGS).is(BeyondItems.ANCHOR_LEGGINGS)) {
+            return;
+        }
+
+        if (event.getEntity() instanceof ServerPlayer serverplayer && serverplayer.isShiftKeyDown() && serverplayer.level() instanceof ServerLevel serverlevel) {
+
+            if (serverplayer.fallDistance > 1.5F && !serverplayer.isFallFlying()) {
+                serverplayer.setSpawnExtraParticlesOnFall(true);
+                SoundEvent soundevent = serverplayer.fallDistance > 5.0F ? SoundEvents.MACE_SMASH_GROUND_HEAVY : SoundEvents.MACE_SMASH_GROUND;
+                serverlevel.playSound((Player)null, serverplayer.getX(), serverplayer.getY(), serverplayer.getZ(), soundevent, serverplayer.getSoundSource(), 1.0F, 1.0F);
+                AOEManager.knockback(serverlevel, serverplayer, serverplayer);
+                event.setDamageMultiplier(0.3f);
+            }
+        }
     }
 
-    @SubscribeEvent
-    public static void onPistonMove(PistonEvent.Post event) {
-        //LevelAccessor level = event.getLevel();
-        //
-        //event.getStructureHelper().getToPush().add(event.getFaceOffsetPos().above());
-        //event.getStructureHelper().getToPush().size();
-    }
     @SubscribeEvent
     public static void onDeath(LivingDeathEvent event) {
 
@@ -540,6 +548,11 @@ public class ModClientEvents {
             //    return true;
             //}
         }, BeyondFluids.GELLID_VOID_TYPE.get());
+    }
+
+    @SubscribeEvent
+    public static void renderGui(RegisterGuiLayersEvent event) {
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "nomad_eyes"), new NomadsBlessingOverlay());
     }
 
     @SubscribeEvent

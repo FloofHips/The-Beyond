@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "M": {
+      "item": "the_beyond:ferropetal"
+    },
+    "N": {
+      "item": "the_beyond:plate_block"
+    },
+    "O": {
+      "item": "minecraft:heavy_core"
+    }
+  },
+  "pattern": [
+    "NON",
+    "M M",
+    "N N"
+  ],
+  "result": {
+    "count": 1,
+    "id": "the_beyond:anchor_leggings"
+  }
+}

@@ -22,16 +22,19 @@ import org.joml.Vector3f;
 import java.util.List;
 
 public class RenderUtils {
+
+    public static final int GHOSTLY_WHITE = 0x88FFFFFF;
+    public static final int GHOSTLY_BLUE = 0x88CCEEFF;
+    public static final int GHOSTLY_GREEN = 0x88CCFFCC;
+    public static final int GHOSTLY_RED = 0x88FFCCCC;
+    public static final int GHOSTLY_PURPLE = 0x88EECCFF;
+
     private static final RandomSource RANDOM = RandomSource.create();
     public static void renderModel(ResourceLocation loc, PoseStack poseStack, VertexConsumer consumer, int packedLight, int overlayCoord) {
         Vector3f colors = new Vector3f(1,1,1);
-        if (ModClientEvents.bossFog > 0) {
-            Vector3f vector3f3 = new Vector3f(colors).mul(0.7F, 0.6F, 0.6F);
-
-            colors.lerp(vector3f3, ModClientEvents.bossFog);
-        }
         renderModel(loc, poseStack, consumer, packedLight, overlayCoord, colors.x, colors.y, colors.z,1);
     }
+
     public static ModelPart bakeLayer(ModelLayerLocation location) {
         return Minecraft.getInstance().getEntityModels().bakeLayer(location);
     }
@@ -46,30 +49,27 @@ public class RenderUtils {
         }
     }
 
-    public static void renderAuroraModel(ResourceLocation modelLocation, PoseStack poseStack,
-                                         MultiBufferSource buffer, int light, int overlay,
-                                         float r, float g, float b, float a) {
-        Minecraft mc = Minecraft.getInstance();
-        BakedModel model = mc.getModelManager().getModel(ModelResourceLocation.standalone(modelLocation));
-
-        if (model != mc.getModelManager().getMissingModel()) {
-            VertexConsumer consumer = buffer.getBuffer(net.minecraft.client.renderer.RenderType.translucent());
-            List<BakedQuad> quads = model.getQuads(null, null, RANDOM, ModelData.EMPTY, null);
-
-            for (BakedQuad quad : quads) {
-                consumer.putBulkData(poseStack.last(), quad, r, g, b, a, light, overlay, true);
-            }
-        }
+    public static int getPulsingGhostlyColor(long time) {
+        float pulse = (float) (Math.sin(time * 0.001) * 0.2 + 0.6);
+        int alpha = (int) (pulse * 0x88);
+        return (alpha << 24) | 0xCCEEFF;
     }
 
-    //public static void renderModel(ResourceLocation loc, PoseStack poseStack, VertexConsumer consumer, int packedLight, int overlayCoord, int r, int g, int b, int a) {
-    //    ItemRenderer renderer = Minecraft.getInstance().getItemRenderer();
-    //    ModelManager manager = Minecraft.getInstance().getModelManager();
-    //    for (BakedModel pass : manager.getModel(ModelResourceLocation.standalone(loc)).getRenderPasses(ItemStack.EMPTY, true)) {
-    //        //for (RenderType type : pass.getRenderTypes(ItemStack.EMPTY, true)) {
-    //        //VertexConsumer consumer = ItemRenderer.getFoilBufferDirect(buffer, type, true, true);
-    //        renderer.renderModelLists(pass, ItemStack.EMPTY, packedLight, overlayCoord, poseStack, consumer);
-    //        //}
-    //    }
-    //}
+    public static boolean isGhostlyItem(ItemStack stack) {
+        return true; //stack.getComponents().has() && stack.getTag().contains("isghostly") && stack.getTag().getBoolean("isghostly");
+    }
+
+    public static int getGhostlyColor(ItemStack stack, BakedQuad quad) {
+        if (!isGhostlyItem(stack)) return -1;
+
+        long time = System.currentTimeMillis();
+        int baseColor = getPulsingGhostlyColor(time);
+
+        int tintIndex = quad.getTintIndex();
+        if (tintIndex == 1) {
+            return (baseColor & 0xFF000000) | ((baseColor & 0x00FF00) << 8) | ((baseColor & 0x0000FF) >> 8);
+        }
+
+        return baseColor;
+    }
 }

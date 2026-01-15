@@ -21,7 +21,6 @@ public class BeyondShaders {
         ENTITY_DEPTH_SHADER = instance;
     }
 
-
     @SubscribeEvent
     public static void onRegisterShaders(RegisterShadersEvent event) {
         try {

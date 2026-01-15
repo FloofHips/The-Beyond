@@ -23,6 +23,8 @@ public class BeyondTags {
     public static final TagKey<Block> END_FLOOR_BLOCKS = createBlock("end_floor_blocks");
     public static final TagKey<Block> PORTELAIN_BLOCKS = createBlock("portelain_blocks");
     public static final TagKey<Block> OBIROOT_BLOCKS = createBlock("obiroot_blocks");
+    public static final TagKey<Block> METAL_BLOCKS = createBlock("metal_blocks");
+
     public static final TagKey<Item> OBIROOTS = createItem("obiroots");
     public static final TagKey<Item> REMEMBRANCES = createItem("remembrances");
     public static final TagKey<Item> AURORACITE_INTERACTABLE = createItem("auroracite_interactable");

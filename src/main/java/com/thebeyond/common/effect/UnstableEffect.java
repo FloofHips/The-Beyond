@@ -1,5 +1,6 @@
 package com.thebeyond.common.effect;
 
+import com.thebeyond.util.TeleportUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -29,45 +30,7 @@ public class UnstableEffect extends MobEffect {
     @Override
     public void onMobHurt(LivingEntity entityLiving, int amplifier, DamageSource damageSource, float amount) {
         Level level = entityLiving.level();
-        if (!level.isClientSide) {
-            for(int i = 0; i < 16; ++i) {
-                double d0 = entityLiving.getX() + (entityLiving.getRandom().nextDouble() - 0.5) * 16.0;
-                double d1 = Mth.clamp(entityLiving.getY() + (double)(entityLiving.getRandom().nextInt(16) - 8), (double)level.getMinBuildHeight(), (double)(level.getMinBuildHeight() + ((ServerLevel)level).getLogicalHeight() - 1));
-                double d2 = entityLiving.getZ() + (entityLiving.getRandom().nextDouble() - 0.5) * 16.0;
-                if (entityLiving.isPassenger()) {
-                    entityLiving.stopRiding();
-                }
-
-                Vec3 vec3 = entityLiving.position();
-                EntityTeleportEvent.ChorusFruit event = EventHooks.onChorusFruitTeleport(entityLiving, d0, d1, d2);
-                if (event.isCanceled()) {
-                    return;
-                }
-
-                if (entityLiving.randomTeleport(event.getTargetX(), event.getTargetY(), event.getTargetZ(), true)) {
-                    level.gameEvent(GameEvent.TELEPORT, vec3, GameEvent.Context.of(entityLiving));
-                    SoundSource soundsource;
-                    SoundEvent soundevent;
-                    if (entityLiving instanceof Fox) {
-                        soundevent = SoundEvents.FOX_TELEPORT;
-                        soundsource = SoundSource.NEUTRAL;
-                    } else {
-                        soundevent = SoundEvents.CHORUS_FRUIT_TELEPORT;
-                        soundsource = SoundSource.PLAYERS;
-                    }
-
-                    level.playSound((Player)null, entityLiving.getX(), entityLiving.getY(), entityLiving.getZ(), soundevent, soundsource);
-                    entityLiving.resetFallDistance();
-                    break;
-                }
-            }
-
-            if (entityLiving instanceof Player) {
-                Player player = (Player)entityLiving;
-                player.resetCurrentImpulseContext();
-            }
-        }
-
+        TeleportUtils.randomTeleport(level, entityLiving);
         super.onMobHurt(entityLiving, amplifier, damageSource, amount);
     }
 }

@@ -1,17 +1,33 @@
 package com.thebeyond.common.entity;
 
+import com.thebeyond.common.registry.BeyondEffects;
 import com.thebeyond.common.registry.BeyondEntityTypes;
 import com.thebeyond.mixin.FallingBlockEntityAccessor;
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageSources;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Fallable;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.List;
+import java.util.function.Predicate;
+
+import static com.ibm.icu.text.PluralRules.Operand.f;
+
 public class RisingBlockEntity extends FallingBlockEntity {
+    private int fallDamageMax;
+    private float fallDamagePerDistance;
     public RisingBlockEntity(EntityType<? extends RisingBlockEntity> entityType, Level level) {
         super(entityType, level);
     }
@@ -34,12 +50,32 @@ public class RisingBlockEntity extends FallingBlockEntity {
     @Override
     public void tick() {
         super.tick();
+
+        Predicate<Entity> predicate = EntitySelector.NO_CREATIVE_OR_SPECTATOR.and(EntitySelector.LIVING_ENTITY_STILL_ALIVE);
+        List<Entity> entities = this.level().getEntities(this, this.getBoundingBox(), predicate);
+
+        if (!entities.isEmpty()) this.causeFallDamage(this.blockPosition().getY() - this.getStartPos().getY(), 0.0f, this.damageSources().fall());
+
     }
 
+    public void setHurtsEntities(float fallDamagePerDistance, int fallDamageMax) {
+        this.fallDamagePerDistance = fallDamagePerDistance;
+        this.fallDamageMax = fallDamageMax;
+        super.setHurtsEntities(fallDamagePerDistance, fallDamageMax);
+    }
+
+    @Override
+    public boolean causeFallDamage(float fallDistance, float multiplier, DamageSource source) {
+        int i = Mth.ceil(fallDistance - 1.0F);
+        if (i < 0)
+            return false;
+
+        return super.causeFallDamage(fallDistance, multiplier, source);
+    }
 
     @Override
     public boolean onGround() {
-        if (this.blockPosition().above().getY() > level().getMaxBuildHeight()) return true;
+        if (this.blockPosition().above().getY() > level().getMaxBuildHeight() + 20) return true;
         if (!level().getBlockState(this.blockPosition().above()).isAir()) return true;
         return super.onGround();
     }

@@ -45,27 +45,35 @@ public class BeyondItemTags extends ItemTagsProvider {
         tag(ItemTags.FOOT_ARMOR)
                 .add(BeyondItems.PATHFINDER_BOOTS.get());
 
+        tag(ItemTags.LEG_ARMOR)
+                .add(BeyondItems.ANCHOR_LEGGINGS.get());
+
         tag(ItemTags.HEAD_ARMOR)
                 .add(BeyondItems.ETHER_CLOAK.get());
 
         tag(ItemTags.FOOT_ARMOR_ENCHANTABLE)
                 .add(BeyondItems.PATHFINDER_BOOTS.get());
 
+        tag(ItemTags.LEG_ARMOR_ENCHANTABLE)
+                .add(BeyondItems.ANCHOR_LEGGINGS.get());
+
         tag(ItemTags.HEAD_ARMOR_ENCHANTABLE)
                 .add(BeyondItems.ETHER_CLOAK.get());
 
         tag(ItemTags.ARMOR_ENCHANTABLE)
                 .add(BeyondItems.PATHFINDER_BOOTS.get())
+                .add(BeyondItems.ANCHOR_LEGGINGS.get())
                 .add(BeyondItems.ETHER_CLOAK.get());
 
         tag(ItemTags.DURABILITY_ENCHANTABLE)
                 .add(BeyondItems.PATHFINDER_BOOTS.get())
+                .add(BeyondItems.ANCHOR_LEGGINGS.get())
                 .add(BeyondItems.ETHER_CLOAK.get());
 
         tag(ItemTags.EQUIPPABLE_ENCHANTABLE)
                 .add(BeyondItems.PATHFINDER_BOOTS.get())
+                .add(BeyondItems.ANCHOR_LEGGINGS.get())
                 .add(BeyondItems.ETHER_CLOAK.get());
-
 
         tag(BeyondTags.REMEMBRANCES)
                 .add(BeyondItems.REMEMBRANCE_BEADS.get())
