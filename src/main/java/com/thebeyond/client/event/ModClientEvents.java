@@ -39,7 +39,10 @@ import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -48,6 +51,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
@@ -59,10 +63,7 @@ import net.minecraft.world.entity.vehicle.ChestBoat;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.BlockAndTintGetter;
-import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.*;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SweetBerryBushBlock;
@@ -74,6 +75,7 @@ import net.minecraft.world.level.portal.DimensionTransition;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
@@ -99,6 +101,7 @@ import org.joml.Vector3f;
 
 import java.nio.Buffer;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
 @EventBusSubscriber(modid = TheBeyond.MODID, value = Dist.CLIENT)
@@ -326,81 +329,97 @@ public class ModClientEvents {
         }
     }
 
-    @SubscribeEvent
-    public static void onDeath(LivingDeathEvent event) {
+    private static final String TAG_PENDING_TOTEM = "the_beyond:pendingTotem";
+    private static final String TAG_TOTEM_ITEMS = "the_beyond:totemItems";
 
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onDeath(LivingDeathEvent event) {
+        if (event.isCanceled()) return;
+
+        if (event.getEntity() instanceof Player player) {
+            if (player.level().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY))
+                return;
+            if (player.getHealth() > 0)
+                return;
+            CompoundTag persistent = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
+            persistent.remove(TAG_PENDING_TOTEM);
+            persistent.remove(TAG_TOTEM_ITEMS);
+
+            ListTag itemsList = new ListTag();
+            RegistryAccess regAccess = player.registryAccess();
+
+            for (ItemStack stack : player.getInventory().items) {
+                if (!stack.isEmpty()) {
+                    Tag itemTag = stack.save(regAccess);
+                    itemsList.add(itemTag);
+                }
+            }
+
+            for (ItemStack stack : player.getInventory().armor) {
+                if (!stack.isEmpty()) {
+                    Tag itemTag = stack.save(regAccess);
+                    itemsList.add(itemTag);
+                }
+            }
+
+            for (ItemStack stack : player.getInventory().offhand) {
+                if (!stack.isEmpty()) {
+                    Tag itemTag = stack.save(regAccess);
+                    itemsList.add(itemTag);
+                }
+            }
+
+            if (!itemsList.isEmpty()) {
+                persistent.put(TAG_TOTEM_ITEMS, itemsList);
+                persistent.putBoolean(TAG_PENDING_TOTEM, true);
+            }
+
+            player.getPersistentData().put(Player.PERSISTED_NBT_TAG, persistent);
+        }
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onDrop(LivingDropsEvent event) {
         if (event.isCanceled()) return;
 
         if (event.getEntity() instanceof Player player) {
-            TotemOfRespiteEntity totem = new TotemOfRespiteEntity(BeyondEntityTypes.TOTEM_OF_RESPITE.get(), player.level());
-            totem.setOwner(player);
-
-            float y = (float) Math.clamp(player.getY(), player.level().getMinBuildHeight() + 5, player.level().getMaxBuildHeight() - 5);
-
-            //totem.setPos(new Vec3(player.position().x, y, player.position().z));
-            totem.setPos(new Vec3(0, 0, 0));
-            player.level().addFreshEntity(totem);
-
-            System.out.println(totem);
-            System.out.println(totem.position());
-
-            CompoundTag persistedData = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
-            persistedData.putUUID("RespiteTotem", totem.getUUID());
-            player.getPersistentData().put(Player.PERSISTED_NBT_TAG, persistedData);
-
-            totem.fillInventory(event.getDrops());
-
-            for (ItemEntity item : event.getDrops() ) {
-                item.remove(Entity.RemovalReason.CHANGED_DIMENSION);
-            }
+            CompoundTag persistent = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
+            if (persistent.getBoolean(TAG_PENDING_TOTEM)) event.setCanceled(true);
         }
     }
 
     @SubscribeEvent
     public static void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
         if (event.getEntity() instanceof Player player) {
-
             if (player.level().isClientSide) return;
 
-            Optional<GlobalPos> deathLocation = player.getLastDeathLocation();
+            CompoundTag persistent = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
 
-            if (deathLocation.isPresent()) {
-                GlobalPos globalPos = deathLocation.get();
-                ServerLevel deathLevel = player.getServer().getLevel(globalPos.dimension());
+            if (!persistent.getBoolean(TAG_PENDING_TOTEM)) return;
 
-                if (deathLevel != null) {
+            ListTag itemsList = persistent.getList(TAG_TOTEM_ITEMS, Tag.TAG_COMPOUND);
+            if (itemsList.isEmpty()) return;
 
-                    CompoundTag persistedData = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
+            TotemOfRespiteEntity totem = new TotemOfRespiteEntity(BeyondEntityTypes.TOTEM_OF_RESPITE.get(), player.level());
+            totem.setPos(player.getX(), player.getY() + 1.5, player.getZ());
+            totem.setOwner(player);
 
-                    if (!persistedData.contains("RespiteTotem")) {
-                        return;
+            RegistryAccess regAccess = player.registryAccess();
+
+            for (Tag tag : itemsList) {
+                if (tag instanceof CompoundTag itemTag) {
+                    ItemStack stack = ItemStack.parse(regAccess, itemTag).orElse(ItemStack.EMPTY);
+
+                    if (!stack.isEmpty()) {
+                        totem.addItem(stack);
                     }
-
-                    TotemOfRespiteEntity entity = (TotemOfRespiteEntity) deathLevel.getEntity(persistedData.getUUID("RespiteTotem"));
-
-                    if (entity == null) {
-                        System.out.println("erm... : )");
-                        persistedData.remove("RespiteTotem");
-                        return;
-                    }
-
-                    float y = (float) Math.clamp(player.getY(), player.level().getMinBuildHeight() + 5, player.level().getMaxBuildHeight() - 5);
-
-                    if (deathLevel == player.level()) {
-                        entity.teleportTo(player.getX(), player.getY(), player.getZ());
-                    } else {
-                        DimensionTransition.PostDimensionTransition postdimensiontransition = DimensionTransition.PLAY_PORTAL_SOUND.then(DimensionTransition.PLACE_PORTAL_TICKET);
-                        TotemOfRespiteEntity teleportedTotem = (TotemOfRespiteEntity) entity.changeDimension(new DimensionTransition((ServerLevel) player.level(), entity, postdimensiontransition));
-                        teleportedTotem.teleportTo(player.getX(), player.getY(), player.getZ());
-                    }
-
-                    persistedData.remove("RespiteTotem");
                 }
             }
+
+            player.level().addFreshEntity(totem);
+
+            persistent.remove(TAG_PENDING_TOTEM);
+            persistent.remove(TAG_TOTEM_ITEMS);
         }
     }
 
