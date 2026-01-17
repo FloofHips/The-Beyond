@@ -131,8 +131,4 @@ public class MemorFaucetBlockEntity extends BlockEntity {
 
         level.setBlock(pos, level.getBlockState(pos).setValue(MemorFaucetBlock.AGE, 0), 3);
     }
-
-    public static void onBlockEntityRegister(BlockEntityType<MemorFaucetBlockEntity> type) {
-
-    }
 }

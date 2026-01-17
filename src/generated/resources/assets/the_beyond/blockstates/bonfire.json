@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "the_beyond:block/bonfire"
+    },
+    "lit=true": {
+      "model": "the_beyond:block/bonfire"
+    }
+  }
+}

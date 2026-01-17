@@ -38,6 +38,7 @@ public class TheBeyond {
         BeyondFeatures.FEATURES.register(modEventBus);
         BeyondEffects.MOB_EFFECTS.register(modEventBus);
         BeyondComponents.COMPONENTS.register(modEventBus);
+        BeyondPoiTypes.POI_TYPES.register(modEventBus);
 
         modEventBus.addListener(BeyondTabs::addCreative);
 

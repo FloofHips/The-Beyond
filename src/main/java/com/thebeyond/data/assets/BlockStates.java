@@ -33,6 +33,7 @@ public class BlockStates extends BlockStateProvider {
         basicBlock(BeyondBlocks.ENGRAVED_END_STONE);
         basicBlock(BeyondBlocks.MEMOR);
         basicBlock(BeyondBlocks.CHISELED_MEMOR);
+        customBlock(BeyondBlocks.BONFIRE);
 
         //basicBlock(BeyondBlocks.COBBLED_PEARL);
         //basicBlock(BeyondBlocks.COBBLED_PEARL_BRICKS);

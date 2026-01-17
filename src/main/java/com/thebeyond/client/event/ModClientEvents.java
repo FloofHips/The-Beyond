@@ -14,6 +14,7 @@ import com.thebeyond.client.model.equipment.MultipartArmorModel;
 import com.thebeyond.client.particle.AuroraciteStepParticle;
 import com.thebeyond.client.particle.GlopParticle;
 import com.thebeyond.client.renderer.*;
+import com.thebeyond.client.renderer.blockentities.BonfireRenderer;
 import com.thebeyond.common.entity.AbyssalNomadEntity;
 import com.thebeyond.common.entity.LanternEntity;
 import com.thebeyond.common.entity.TotemOfRespiteEntity;
@@ -30,6 +31,7 @@ import net.minecraft.client.model.Model;
 import net.minecraft.client.model.geom.builders.CubeDeformation;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.entity.FallingBlockRenderer;
@@ -132,6 +134,8 @@ public class ModClientEvents {
 
         ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID.get(), RenderType.cutoutMipped());
         ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID_FLOWING.get(), RenderType.cutoutMipped());
+
+        BlockEntityRenderers.register(BeyondBlockEntities.BONFIRE.get(), BonfireRenderer::new);
     }
     @SubscribeEvent
     public static void onAdditional(ModelEvent.RegisterAdditional event) {

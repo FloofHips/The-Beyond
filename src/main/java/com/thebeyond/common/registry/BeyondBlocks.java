@@ -78,6 +78,12 @@ public class BeyondBlocks {
             BlockBehaviour.Properties.ofFullCopy(MEMOR.get()).noOcclusion().sound(SoundType.NETHER_BRICKS)));
 
     //STRUCTURES
+    public static final DeferredBlock<Block> BONFIRE = registerBlock("bonfire", () -> new BonfireBlock(BlockBehaviour.Properties.of()
+            .mapColor(MapColor.TERRACOTTA_PURPLE)
+            .strength(50, 50)
+            .noOcclusion()
+            .sound(SoundType.LANTERN))
+    );
     public static final DeferredBlock<Block> PORTELAIN = registerBlock("portelain", () -> new Block(BlockBehaviour.Properties.of()
             .mapColor(MapColor.TERRACOTTA_PURPLE)
             .requiresCorrectToolForDrops()

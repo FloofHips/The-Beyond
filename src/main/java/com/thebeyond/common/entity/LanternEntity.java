@@ -212,7 +212,7 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
             level().addParticle(ParticleTypes.SOUL_FIRE_FLAME, this.getX(), this.getY() + this.getBbHeight()/2, this.getZ(), 0, 0.01, 0);
         }
 
-        if (!isFlying() && getTarget() != null && getTarget() instanceof LanternEntity && getSize() < 2) {
+        if (!isFlying() && getTarget() != null && getTarget() instanceof LanternEntity) {
             this.getNavigation().moveTo(getTarget(), 0.7);
         }
     }
