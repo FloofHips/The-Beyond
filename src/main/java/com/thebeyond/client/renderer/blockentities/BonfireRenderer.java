@@ -30,8 +30,8 @@ public class BonfireRenderer implements BlockEntityRenderer<BonfireBlockEntity> 
     public void render(BonfireBlockEntity bonBlockEntity, float v, PoseStack poseStack, MultiBufferSource multiBufferSource, int i, int i1) {
         if (bonBlockEntity.getBlockState().getValue(BonfireBlock.LIT)) {
             poseStack.translate(-0.1,0.5,-0.1);
-            poseStack.scale(1.2f,1.5f,1.2f);
-            Minecraft.getInstance().getBlockRenderer().renderSingleBlock(Blocks.SOUL_FIRE.defaultBlockState(), poseStack, multiBufferSource, 255, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, RenderType.CUTOUT);
+            poseStack.scale(1.2f, 1.5f + bonBlockEntity.getLevel().thunderLevel,1.2f);
+            Minecraft.getInstance().getBlockRenderer().renderSingleBlock(bonBlockEntity.getLevel().isRaining() ? BeyondBlocks.VOID_FLAME.get().defaultBlockState() : Blocks.SOUL_FIRE.defaultBlockState(), poseStack, multiBufferSource, 255, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, RenderType.CUTOUT);
         }
     }
 

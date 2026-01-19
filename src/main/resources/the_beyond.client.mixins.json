@@ -2,7 +2,9 @@
   "required": true,
   "package": "com.thebeyond.mixin.client",
   "compatibilityLevel": "JAVA_21",
+  "refmap": "the_beyond.refmap.json",
   "mixins": [
+    "ItemRendererMixin"
   ],
   "server": [],
   "injectors": {

@@ -44,9 +44,6 @@ public class MagnetItem extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         ItemStack itemstack = player.getItemInHand(usedHand);
 
-        Components.DynamicColorComponent colors = new Components.DynamicColorComponent(0.5f, 1.7f, 1.9f, 0.8f, 0, 0.2f, 0, 0.2f, 0xF000F0);
-        itemstack.set(BeyondComponents.COLOR_COMPONENT, colors);
-
         if (!level.isClientSide) {
             double range = 32;
             Vec3 eyePos = player.getEyePosition();

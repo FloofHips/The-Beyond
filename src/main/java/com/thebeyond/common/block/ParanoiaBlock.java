@@ -47,9 +47,15 @@ public class ParanoiaBlock extends Block {
             level.setBlockAndUpdate(pos.below(), BeyondBlocks.OBIROOT_SPROUT.get().defaultBlockState());
         }
 
-        if(!block.isAir()){
+        if(paranoiaChance(level) && !block.isAir()){
             level.playSound(null, pos, block.getSoundType(level, pos.below(), null).getStepSound(), SoundSource.AMBIENT, level.random.nextFloat() * 2, level.random.nextFloat() * 2);
         }
         super.randomTick(state, level, pos, random);
+    }
+
+    public boolean paranoiaChance(ServerLevel level) {
+        if (level.isThundering()) return true;
+        if (level.isRaining()) return level.random.nextBoolean();
+        return level.random.nextFloat() < 0.05;
     }
 }

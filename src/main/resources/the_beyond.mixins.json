@@ -2,6 +2,7 @@
   "required": true,
   "package": "com.thebeyond.mixin",
   "compatibilityLevel": "JAVA_21",
+  "refmap": "the_beyond.refmap.json",
   "mixins": [
     "BaseFireBlockMixin",
     "BlockBehaviourMixin",
@@ -11,8 +12,5 @@
   "server": [],
   "injectors": {
     "defaultRequire": 1
-  },
-  "client": [
-    "ItemRendererMixin"
-  ]
+  }
 }

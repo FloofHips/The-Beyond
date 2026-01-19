@@ -2,11 +2,14 @@ package com.thebeyond.common.entity;
 
 import com.thebeyond.common.registry.BeyondBlocks;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
-import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.behavior.FollowTemptation;
@@ -21,8 +24,69 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.gameevent.GameEvent;
 
 public class AbyssalNomadEntity extends PathfinderMob {
+
+    private static final byte SIT = 67;
+    private static final byte SIT_DOWN = 68;
+    private static final byte NOD = 69;
+    private static final byte ATTACK = 70;
+    private static final byte STAND_UP = 71;
+
+    public final AnimationState sitAnimationState = new AnimationState();
+    public final AnimationState sitPoseAnimationState = new AnimationState();
+    public final AnimationState standUpAnimationState = new AnimationState();
+    public final AnimationState nodAnimationState = new AnimationState();
+    public final AnimationState attackAnimationState = new AnimationState();
+
+    public static final EntityDataAccessor<Boolean> DATA_SITTING = SynchedEntityData.defineId(AbyssalNomadEntity.class, EntityDataSerializers.BOOLEAN);
+
+    public int sittingDownProgress = 0;
+    public int gettingUpProgress = 0;
+    public int nodProgress = 0;
+    public int attackProgress = 0;
+
+    public boolean isSitting() {
+        return this.entityData.get(DATA_SITTING);
+    }
+    public void setSitting(boolean i) {
+        this.entityData.set(DATA_SITTING, i);
+    }
+
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(DATA_SITTING, false);
+    }
+
+    @Override
+    public void handleEntityEvent(byte id) {
+        if (this.level().isClientSide) {
+            if (id == NOD) {
+                this.nodAnimationState.start(this.tickCount);
+                return;
+            }
+            if (id == ATTACK) {
+                this.attackAnimationState.start(this.tickCount);
+                return;
+            }
+            if (id == SIT_DOWN) {
+                this.sitAnimationState.start(this.tickCount);
+                return;
+            }
+            if (id == STAND_UP) {
+                this.standUpAnimationState.start(this.tickCount);
+                return;
+            }
+            if (id == SIT) {
+                this.sitPoseAnimationState.start(this.tickCount);
+                return;
+            }
+        }
+        super.handleEntityEvent(id);
+    }
+
     public AbyssalNomadEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
     }
@@ -38,14 +102,25 @@ public class AbyssalNomadEntity extends PathfinderMob {
         this.targetSelector.addGoal(0, new NearestAttackableTargetGoal<>(this, EnderglopEntity.class, true));
     }
 
-    public static boolean checkMonsterSpawnRules(EntityType<AbyssalNomadEntity> abyssalNomadEntityEntityType, ServerLevelAccessor serverLevelAccessor, MobSpawnType mobSpawnType, BlockPos blockPos, RandomSource randomSource) {
-        return true;// serverLevelAccessor.getBlockState(blockPos.above()).isAir() && serverLevelAccessor.getBlockState(blockPos).isAir();
+    public static boolean checkMonsterSpawnRules(EntityType<AbyssalNomadEntity> entityType, ServerLevelAccessor serverLevelAccessor, MobSpawnType mobSpawnType, BlockPos blockPos, RandomSource randomSource) {
+        return true;
     }
 
     @Override
     public void tick() {
         super.tick();
+        if (this.level().isClientSide) handleAnimations();
 
         navigation.moveTo(this.getX(), 197f, this.getZ()-10, 0.7);
+    }
+
+    private void handleAnimations() {
+
+    }
+
+    @Override
+    protected InteractionResult mobInteract(Player player, InteractionHand hand) {
+        this.level().broadcastEntityEvent(this, NOD);
+        return super.mobInteract(player, hand);
     }
 }

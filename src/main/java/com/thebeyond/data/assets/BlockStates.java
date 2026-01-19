@@ -27,7 +27,7 @@ public class BlockStates extends BlockStateProvider {
         Set<DeferredBlock<Block>> blocks = new HashSet(BeyondBlocks.BLOCKS.getEntries());
 
         basicBlock(BeyondBlocks.OBIROOT);
-        basicBlock(BeyondBlocks.NACRE);
+        //basicBlock(BeyondBlocks.NACRE);
         basicBlock(BeyondBlocks.PORTELAIN);
         basicBlock(BeyondBlocks.PORTELAIN_TILES);
         basicBlock(BeyondBlocks.ENGRAVED_END_STONE);

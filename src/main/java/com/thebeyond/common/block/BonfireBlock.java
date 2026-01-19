@@ -3,6 +3,7 @@ package com.thebeyond.common.block;
 import com.mojang.serialization.MapCodec;
 import com.thebeyond.common.block.blockentities.BonfireBlockEntity;
 import com.thebeyond.common.block.blockentities.MemorFaucetBlockEntity;
+import com.thebeyond.common.registry.BeyondBlockEntities;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.common.registry.BeyondPoiTypes;
@@ -15,6 +16,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.stats.Stats;
 import net.minecraft.tags.PoiTypeTags;
 import net.minecraft.util.ParticleUtils;
 import net.minecraft.world.InteractionHand;
@@ -26,6 +28,8 @@ import net.minecraft.world.entity.animal.Bee;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.crafting.CampfireCookingRecipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -33,6 +37,9 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.entity.CampfireBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -90,7 +97,11 @@ public class BonfireBlock extends BaseEntityBlock {
             level.setBlockAndUpdate(pos, state.setValue(LIT, true));
             if (level instanceof ServerLevel serverLevel)
                 serverLevel.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 20, 0.25, 1, 0.25, 0.015);
-            return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
+            BlockEntity bonfire = level.getBlockEntity(pos);
+            if (bonfire instanceof BonfireBlockEntity bonfireBlockEntity) {
+                bonfireBlockEntity.activate(player);
+            }
+            return ItemInteractionResult.CONSUME;
         }
 
         return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
@@ -103,11 +114,10 @@ public class BonfireBlock extends BaseEntityBlock {
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (level instanceof ServerLevel serverLevel) {
-            Optional<BlockPos> sisterBonfire = findNearestHeart(serverLevel, state, pos, 200);
+            Optional<BlockPos> sisterBonfire = findNearestBonfire(serverLevel, state, pos, 200);
 
             if (sisterBonfire.isPresent()) {
                 BlockPos sisterPos = sisterBonfire.get();
-                BlockState sisterState = level.getBlockState(sisterPos);
 
                 level.playSound(null, pos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F, 1.0F);
                 level.playSound(null, sisterPos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F, 1.0F);
@@ -124,7 +134,7 @@ public class BonfireBlock extends BaseEntityBlock {
         return InteractionResult.SUCCESS;
     }
 
-    public static Optional<BlockPos> findNearestHeart(ServerLevel level, BlockState sourceState, BlockPos sourcePos, int radius) {
+    public static Optional<BlockPos> findNearestBonfire(ServerLevel level, BlockState sourceState, BlockPos sourcePos, int radius) {
         return level.getPoiManager().findClosest(
                 poiType -> poiType.is(BeyondPoiTypes.BONFIRE),
                 blockPos -> {
@@ -138,7 +148,6 @@ public class BonfireBlock extends BaseEntityBlock {
     }
 
     public static void particleBeam(Level level, Player player, BlockPos from, BlockPos to) {
-
         float red = 0.1F + level.random.nextFloat() * 0.1F;
         float green = 0.4F + level.random.nextFloat() * 0.3F;
         float blue = 0.8F + level.random.nextFloat() * 0.2F;
@@ -174,5 +183,10 @@ public class BonfireBlock extends BaseEntityBlock {
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return Shapes.create(0, 0, 0, 1, 0.5, 1);
+    }
+
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return createTickerHelper(type, BeyondBlockEntities.BONFIRE.get(), BonfireBlockEntity::tick);
     }
 }

@@ -131,7 +131,7 @@ public class AbyssalNomadModel <T extends AbyssalNomadEntity> extends Hierarchic
     @Override
     public void setupAnim(AbyssalNomadEntity abyssalNomadEntity, float v, float v1, float v2, float v3, float v4) {
         this.root().getAllParts().forEach(ModelPart::resetPose);
-        this.animateWalk(AbyssalNomadAnimations.WALK, v, v1, 6, 10);
+        this.animateWalk(AbyssalNomadAnimations.walk, v, v1, 6, 10);
 
         this.body.y += Mth.sin(((v2) * 0.09f) - 2f);
         this.body.yRot += v3 * 0.005F;

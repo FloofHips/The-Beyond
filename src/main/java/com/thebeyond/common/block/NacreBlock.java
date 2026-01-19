@@ -16,6 +16,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
@@ -24,6 +25,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 import java.util.function.Supplier;
 
@@ -64,9 +68,28 @@ public class NacreBlock extends Block {
     }
     @Override
     public void stepOn(Level level, BlockPos pos, BlockState state, Entity entity) {
-        if (level.isRaining())
-            trigger(level, pos, 10, level.random);
+        if (level.isRaining() && !state.getValue(POWERED))
+            trigger(level, pos, 30, level.random);
         super.stepOn(level, pos, state, entity);
+    }
+
+    private void trigger(Level level, BlockPos pos, int delay, RandomSource random) {
+        spawnParticles(level, pos, random, new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.NACRE.get().defaultBlockState()), 20);
+
+        if (level.getBlockState(pos).getValue(POWERED)) return;
+        level.playSound(null, pos, SoundEvents.BRUSH_GRAVEL_COMPLETED, SoundSource.BLOCKS);
+        level.setBlockAndUpdate(pos, BeyondBlocks.NACRE.get().defaultBlockState().setValue(POWERED, true));
+
+        int cell = getVariant(pos);
+        for (Direction direction : Direction.values()) {
+            Block block = level.getBlockState(pos.relative(direction)).getBlock();
+            if (block instanceof NacreBlock nacreBlock) {
+                if (isSameVariant(cell, pos.relative(direction)))
+                    nacreBlock.trigger(level, pos.relative(direction), delay, random);
+            }
+        }
+
+        level.scheduleTick(pos, this, delay);
     }
 
     @Override
@@ -78,28 +101,22 @@ public class NacreBlock extends Block {
 
     @Override
     protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        int cell = getVariant(pos);
-        for (Direction direction : Direction.values()) {
-            Block block = level.getBlockState(pos.relative(direction)).getBlock();
-            if (block instanceof NacreBlock nacreBlock) {
-                if (isSameVariant(cell, pos.relative(direction)))
-                    nacreBlock.trigger(level, pos.relative(direction), 2, random);
-            }
+        if (state.getValue(POWERED)) {
+            RisingBlockEntity risingblockentity = RisingBlockEntity.rise(level, pos, state);
+            risingblockentity.disableDrop();
         }
-        RisingBlockEntity risingblockentity = RisingBlockEntity.rise(level, pos, state);
-        risingblockentity.disableDrop();
 
         super.tick(state, level, pos, random);
     }
-
-    public void trigger(Level level, BlockPos pos, int delay, RandomSource random) {
-        spawnParticles(level, pos, random, new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.NACRE.get().defaultBlockState()), 20);
-
-        if (level.getBlockState(pos).getValue(POWERED)) return;
-        level.playSound(null, pos, SoundEvents.BRUSH_GRAVEL_COMPLETED, SoundSource.BLOCKS);
-        level.setBlockAndUpdate(pos, BeyondBlocks.NACRE.get().defaultBlockState().setValue(POWERED, true));
-        level.scheduleTick(pos, this, delay);
-    }
+//
+    //public void trigger(Level level, BlockPos pos, int delay, RandomSource random) {
+    //    spawnParticles(level, pos, random, new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.NACRE.get().defaultBlockState()), 20);
+//
+    //    if (level.getBlockState(pos).getValue(POWERED)) return;
+    //    level.playSound(null, pos, SoundEvents.BRUSH_GRAVEL_COMPLETED, SoundSource.BLOCKS);
+    //    level.setBlockAndUpdate(pos, BeyondBlocks.NACRE.get().defaultBlockState().setValue(POWERED, true));
+    //    level.scheduleTick(pos, this, delay);
+    //}
 
     private boolean isSameVariant(int parent, BlockPos pos) {
         double cellSize = 2.5;
@@ -124,17 +141,18 @@ public class NacreBlock extends Block {
         return (int)(Math.abs(cell.cellId()) % 4);
     }
 
-    private BlockState getColor(int variant) {
-        switch (variant) {
-            case 0: return Blocks.BLACK_WOOL.defaultBlockState();
-            case 1: return Blocks.GREEN_WOOL.defaultBlockState();
-            case 2: return Blocks.LIME_WOOL.defaultBlockState();
-            case 3: return Blocks.CYAN_WOOL.defaultBlockState();
-        }
-        return Blocks.RED_WOOL.defaultBlockState();
-    }
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(POWERED);
+    }
+
+    @Override
+    protected boolean useShapeForLightOcclusion(BlockState state) {
+        return true;
+    }
+
+    @Override
+    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return !state.getValue(POWERED) ? Shapes.block() : Block.box((double)0.0F, (double)0.0F, (double)0.0F, (double)16.0F, (double)15.0F, (double)16.0F);
     }
 }

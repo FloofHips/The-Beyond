@@ -15,6 +15,7 @@ import com.thebeyond.client.particle.AuroraciteStepParticle;
 import com.thebeyond.client.particle.GlopParticle;
 import com.thebeyond.client.renderer.*;
 import com.thebeyond.client.renderer.blockentities.BonfireRenderer;
+import com.thebeyond.client.renderer.blockentities.MemorFaucetRenderer;
 import com.thebeyond.common.entity.AbyssalNomadEntity;
 import com.thebeyond.common.entity.LanternEntity;
 import com.thebeyond.common.entity.TotemOfRespiteEntity;
@@ -136,6 +137,7 @@ public class ModClientEvents {
         ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID_FLOWING.get(), RenderType.cutoutMipped());
 
         BlockEntityRenderers.register(BeyondBlockEntities.BONFIRE.get(), BonfireRenderer::new);
+        BlockEntityRenderers.register(BeyondBlockEntities.MEMOR_FAUCET.get(), MemorFaucetRenderer::new);
     }
     @SubscribeEvent
     public static void onAdditional(ModelEvent.RegisterAdditional event) {

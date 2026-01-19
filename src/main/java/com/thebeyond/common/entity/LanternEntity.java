@@ -1,6 +1,8 @@
 package com.thebeyond.common.entity;
 
+import com.thebeyond.common.block.BonfireBlock;
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondEntityTypes;
 import com.thebeyond.common.registry.BeyondItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -10,6 +12,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -103,9 +106,6 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
         this.goalSelector.addGoal(4, new TemptGoal(this, 1.2, (p_336182_) -> {
             return p_336182_.is(Items.SOUL_TORCH);
         }, false));
-        //this.goalSelector.addGoal(0, new LanternTemptGoal(this, 1.5f, (item) -> {
-        //    return item.is(ItemTags.OCELOT_FOOD);
-        //} , true));
 
         this.targetSelector.addGoal(0, new NearestAttackableTargetGoal<>(this, Player.class, true));
         this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, LanternEntity.class, true,
@@ -249,6 +249,7 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
                 ((ServerLevel) this.level()).sendParticles(ParticleTypes.DUST_PLUME, this.getX(), getY(),getZ(), 5 * (getSize()+1), 0.4*(getSize()+1),0.4*(getSize()+1),0.4*(getSize()+1),0.01);
 
                 this.setAlpha((int) (getAlpha()-150*random.nextFloat()));
+                if ((getAlpha()/255f) < this.level().random.nextFloat())
                 flee(player);
                 return InteractionResult.SUCCESS;
             }
@@ -306,10 +307,67 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
             ((ServerLevel) this.level()).sendParticles(ParticleTypes.DUST_PLUME, this.getX(), this.getY(),this.getZ(), 5 * (this.getSize()+1), 0.4*(this.getSize()+1),0.4*(this.getSize()+1),0.4*(this.getSize()+1),0.01);
         this.lookControl.setLookAt(awayVector);
         this.setDeltaMovement(awayVector);
+        if (this.level() instanceof ServerLevel serverLevel)
+            serverLevel.sendParticles(ParticleTypes.DAMAGE_INDICATOR, getX(), getY() + 0.5, getZ(), 2 * (this.getSize()+1), 0.1, 0.5, 0.1, 0);
+
     }
 
     public static boolean checkMonsterSpawnRules(EntityType<LanternEntity> lanternEntityEntityType, ServerLevelAccessor serverLevelAccessor, MobSpawnType mobSpawnType, BlockPos blockPos, RandomSource randomSource) {
         return serverLevelAccessor.getBlockState(blockPos.below()).isAir() && serverLevelAccessor.getBlockState(blockPos.above()).isAir() && serverLevelAccessor.getBlockState(blockPos).isAir();
+    }
+
+    public void split(ServerLevel level, Player player) {
+        if (getSize() == 0) return;
+        level.sendParticles(ParticleTypes.EXPLOSION, this.getX() + 0, this.getY() + 0, this.getZ() + 0, 10, 0.25, 1, 0.25, 0.015);
+        spawnChild(level);
+        spawnChild(level);
+        this.spawnAtLocation(new ItemStack(BeyondItems.LANTERN_SHED.get(), 0+random.nextInt(0, getSize()+2)));
+        if (getSize() == 3) spawnTotem(level, player);
+        this.discard();
+    }
+
+    private void spawnTotem(ServerLevel level, Player player) {
+        TotemOfRespiteEntity totem = new TotemOfRespiteEntity(BeyondEntityTypes.TOTEM_OF_RESPITE.get(), level);
+        totem.setOwner(player);
+
+        if(level.addFreshEntity(totem)){
+            totem.setPos(this.getX() + level.random.nextFloat(), this.getY() + level.random.nextFloat(), this.getZ() + level.random.nextFloat());
+            Vec3 direction = totem.position().subtract(this.position()).normalize();
+            totem.setDeltaMovement(direction.x, direction.y, direction.z);
+            level.sendParticles(ParticleTypes.PORTAL, totem.getX() + 0, totem.getY() + 0, totem.getZ() + 0, 10, 0.25, 1, 0.25, 0.015);
+            level.playSound(null, BlockPos.containing(totem.position()), SoundEvents.ALLAY_DEATH, SoundSource.AMBIENT);
+        }
+    }
+
+    public void spawnChild(ServerLevel level) {
+        LanternEntity child = new LanternEntity(BeyondEntityTypes.LANTERN.get(), level);
+        child.setPos(this.getX() + level.random.nextFloat(), this.getY() + level.random.nextFloat(), this.getZ() + level.random.nextFloat());
+        child.setSize(this.getSize()-1);
+        child.setAlpha(255);
+
+        if(level.addFreshEntity(child)){
+            Vec3 direction = child.position().subtract(this.position()).normalize().scale(0.4f);
+            child.setDeltaMovement(direction.x, direction.y, direction.z);
+            level.sendParticles(ParticleTypes.PORTAL, child.getX() + 0, child.getY() + 0, child.getZ() + 0, 10, 0.25, 1, 0.25, 0.015);
+            level.playSound(null, BlockPos.containing(child.position()), SoundEvents.ALLAY_DEATH, SoundSource.AMBIENT,5,1);
+        }
+    }
+
+    public static void spawnSelf(ServerLevel level, BlockPos pos, Player player) {
+        LanternEntity lantern = new LanternEntity(BeyondEntityTypes.LANTERN.get(), level);
+        lantern.setPos(pos.getX() + level.random.nextFloat(), pos.getY() + level.random.nextFloat(), pos.getZ() + level.random.nextFloat());
+        lantern.setSize(level.random.nextInt(4));
+        lantern.setAlpha(150);
+
+        if(level.addFreshEntity(lantern)){
+
+            lantern.playSound(SoundEvents.FOX_TELEPORT);
+            Vec3 direction = lantern.position().subtract(player.position()).normalize().scale(0.8f);
+            lantern.setDeltaMovement(direction.x, direction.y, direction.z);
+            lantern.lookAt(player, 180, 180);
+            level.sendParticles(ParticleTypes.PORTAL, lantern.getX() + 0, lantern.getY() + 0, lantern.getZ() + 0, 10, 0.25, 1, 0.25, 0.015);
+            level.playSound(null, BlockPos.containing(lantern.position()), SoundEvents.WIND_CHARGE_BURST.value(), SoundSource.AMBIENT,5,1);
+        }
     }
 
     static class LanternTemptGoal extends TemptGoal {
@@ -486,7 +544,8 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
 
         protected boolean isValidTarget(LevelReader level, BlockPos pos) {
             BlockState blockstate = level.getBlockState(pos);
-            return blockstate.getBlock() instanceof SoulFireBlock;
+            if (blockstate.is(BeyondBlocks.BONFIRE.get())) return blockstate.getValue(BonfireBlock.LIT) != lantern.level().isRaining();
+            return false;
         }
 
         @Override

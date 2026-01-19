@@ -55,7 +55,6 @@ public class TotemOfRespiteEntity extends Entity {
     public void addItem(ItemStack stack) {
         storedItems.add(stack);
     }
-
     public void setOwner(Player player) {
         owner = player.getUUID().toString();
     }
@@ -82,10 +81,8 @@ public class TotemOfRespiteEntity extends Entity {
             items.set(i, storedItems.get(i));
         }
 
-        Containers.dropContents(this.level(), this.blockPosition(), items);
-
-        if (this.level() instanceof ServerLevel serverLevel)
-            serverLevel.sendParticles(ParticleTypes.DAMAGE_INDICATOR, getX(), getY() + 0.5, getZ(), storedItems.size(), 0.1, 0.5, 0.1, 0);
+        if (items.isEmpty()) this.spawnAtLocation(new ItemStack(BeyondItems.TOTEM_OF_RESPITE.get(), 1));
+        else Containers.dropContents(this.level(), this.blockPosition(), items);
 
         this.playSound(SoundEvents.ENDER_EYE_DEATH, 1.0F, 1.0F);
 
@@ -160,20 +157,6 @@ public class TotemOfRespiteEntity extends Entity {
 
         super.tick();
         this.move(MoverType.SELF, this.getDeltaMovement());
-    }
-
-    private void dropEverythingAndDie() {
-            for(ItemStack storedItem : storedItems)
-                spawnAtLocation(storedItem, 0);
-
-        storedItems.clear();
-
-        Player owner = getOwner();
-        if(owner != null && !level().isClientSide) {
-            owner.sendSystemMessage(Component.translatable("yikes").withStyle(ChatFormatting.BOLD));
-        }
-
-        discard();
     }
 
     public void setLifeSpan(int lifespan) {
