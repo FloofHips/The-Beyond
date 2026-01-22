@@ -21,8 +21,10 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
 import net.minecraft.world.level.levelgen.*;
 import net.minecraft.world.level.levelgen.blending.Blender;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 import net.minecraft.world.level.levelgen.synth.PerlinSimplexNoise;
 import net.minecraft.world.level.levelgen.synth.SimplexNoise;
 
@@ -58,18 +60,22 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         super(biomeSource, settings);
 
         this.settings = settings;
-        RandomSource random1 = RandomSource.create();
-        RandomSource random2 = RandomSource.create();
-        RandomSource random3 = RandomSource.create();
-        RandomSource random4 = RandomSource.create();
-        if (simplexNoise == null)
-            simplexNoise = new SimplexNoise(random1);
-        if (globalHOffsetNoise == null)
-            globalHOffsetNoise = new PerlinSimplexNoise(random2, Collections.singletonList(1));
-        if (globalVOffsetNoise == null)
-            globalVOffsetNoise = new PerlinSimplexNoise(random3, Collections.singletonList(1));
-        if (globalCOffsetNoise == null)
-            globalCOffsetNoise = new PerlinSimplexNoise(random4, Collections.singletonList(1));
+    }
+
+    @Override
+    public void createStructures(RegistryAccess registryAccess, ChunkGeneratorStructureState structureState, StructureManager structureManager, ChunkAccess chunk, StructureTemplateManager structureTemplateManager) {
+        long seed = structureState.getLevelSeed();
+
+        RandomSource random1 = RandomSource.create(seed);
+        RandomSource random2 = RandomSource.create(seed);
+        RandomSource random3 = RandomSource.create(seed);
+        RandomSource random4 = RandomSource.create(seed);
+        simplexNoise = new SimplexNoise(random1);
+        globalHOffsetNoise = new PerlinSimplexNoise(random2, Collections.singletonList(1));
+        globalVOffsetNoise = new PerlinSimplexNoise(random3, Collections.singletonList(1));
+        globalCOffsetNoise = new PerlinSimplexNoise(random4, Collections.singletonList(1));
+
+        super.createStructures(registryAccess, structureState, structureManager, chunk, structureTemplateManager);
     }
 
     @Override

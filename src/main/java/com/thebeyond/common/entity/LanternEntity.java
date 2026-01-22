@@ -1,6 +1,7 @@
 package com.thebeyond.common.entity;
 
 import com.thebeyond.common.block.BonfireBlock;
+import com.thebeyond.common.entity.util.SlowRotFlyingMoveControl;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondEntityTypes;
 import com.thebeyond.common.registry.BeyondItems;
@@ -50,16 +51,11 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
     public LanternEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
         this.noPhysics = true;
-        this.moveControl = new FlyingMoveControl(this, 20, false);
+        this.moveControl = new SlowRotFlyingMoveControl(this, 1, false);
         if (!level.isClientSide) {
             this.entityData.set(SIZE, this.random.nextInt(4));
         }
-        this.lookControl = new SmoothSwimmingLookControl(this, 10/(getSize()+1));
-    }
-
-    @Override
-    public int getMaxHeadYRot() {
-        return 5;
+        this.lookControl = new SmoothSwimmingLookControl(this, 1);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -107,13 +103,24 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
             return p_336182_.is(Items.SOUL_TORCH);
         }, false));
 
-        this.targetSelector.addGoal(0, new NearestAttackableTargetGoal<>(this, Player.class, true));
+        this.targetSelector.addGoal(0, new NearestAttackableTargetGoal<>(this, Player.class, true) {
+            @Override
+            public boolean canUse() {
+                if (isFlying()) return false;
+                return super.canUse();
+            }
+        });
         this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, LanternEntity.class, true,
                 (entity) -> {
                     if (entity instanceof LanternEntity lantern)
                         return lantern.getSize() == this.getSize() + 1;
-                    return false;
-                }));
+                    return false; }) {
+            @Override
+            public boolean canUse() {
+                if (isFlying()) return false;
+                return super.canUse();
+            }
+        });
     }
     protected PathNavigation createNavigation(Level level) {
         FlyingPathNavigation flyingpathnavigation = new FlyingPathNavigation(this, level);
@@ -193,7 +200,8 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
         super.tick();
 
         if (isFlying()) {
-            navigation.moveTo(this.getX(), 197f, this.getZ()-10, 0.7);
+            navigation.stop();
+            navigation.moveTo(this.position().x, 197f, this.getZ()-10, 0.7);
         }
 
         if (!isFlying() && level().isThundering())
@@ -270,6 +278,16 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
     public Vec3 getDismountLocationForPassenger(LivingEntity entity) {
         entity.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, 15 * 20, 0));
         return super.getDismountLocationForPassenger(entity);
+    }
+
+    @Override
+    public int getMaxHeadYRot() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxHeadXRot() {
+        return 1;
     }
 
     @Override

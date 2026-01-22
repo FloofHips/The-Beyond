@@ -157,8 +157,8 @@ public class VoidCrystalBlock extends Block implements Fallable {
 
         level.getEntities(fallingBlock, bb, predicate).forEach((entity) -> {
             if (entity instanceof LivingEntity livingEntity) {
-                livingEntity.addEffect(new MobEffectInstance(BeyondEffects.UNSTABLE, 60));
-                livingEntity.addEffect(new MobEffectInstance(BeyondEffects.WEIGHTLESS, 60));
+                livingEntity.addEffect(new MobEffectInstance(BeyondEffects.UNSTABLE, 400));
+                livingEntity.addEffect(new MobEffectInstance(BeyondEffects.WEIGHTLESS, 400,1));
             }
         });
 

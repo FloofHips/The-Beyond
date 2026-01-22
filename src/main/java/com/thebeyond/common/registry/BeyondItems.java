@@ -38,6 +38,10 @@ public class BeyondItems {
     public static final DeferredItem<Item> ANCHOR_LEGGINGS = registerItem("anchor_leggings", () -> new AnchorLeggingsItem(BeyondArmorMaterials.ANCHOR_ARMOR, ArmorItem.Type.LEGGINGS, new Item.Properties().durability(ArmorItem.Type.LEGGINGS.getDurability(10)).stacksTo(1), AnchorLeggingsModel::new) {});
     public static final DeferredItem<Item> PATHFINDER_BOOTS = registerItem("pathfinder_boots", () -> new ModelArmorItem(BeyondArmorMaterials.SHROUD_ARMOR, ArmorItem.Type.BOOTS, new Item.Properties().durability(ArmorItem.Type.BOOTS.getDurability(10)).stacksTo(1), EtherCloakModel::new) {});
     public static final DeferredItem<Item> ECTOPLASM = registerItem("ectoplasm", () -> new AirPlaceableBlockItem(BeyondBlocks.ECTOPLASM.get(), new Item.Properties()));
+
+    public static final DeferredItem<Item> LIVE_FLAME = registerItem("live_flame", () -> new LiveFlameItem(new Item.Properties().durability(12000)));
+    public static final DeferredItem<Item> LIVID_FLAME = registerItem("livid_flame", () -> new LiveFlameItem(new Item.Properties().durability(6000)));
+
     public static final DeferredItem<SpawnEggItem> LANTERN_SPAWN_EGG  = ITEMS.register("lantern_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.LANTERN.get(),15136255, 16777215,new Item.Properties()));
     public static final DeferredItem<SpawnEggItem> ABYSSAL_NOMAD_SPAWN_EGG  = ITEMS.register("abyssal_nomad_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ABYSSAL_NOMAD.get(),-7693156, -13703706,new Item.Properties()));
     public static final DeferredItem<SpawnEggItem> ENDERGLOP_SPAWN_EGG  = ITEMS.register("enderglop_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENDERGLOP.get(),0x7127f8, -297995,new Item.Properties()));

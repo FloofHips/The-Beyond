@@ -26,7 +26,7 @@ public class BeyondBlocks {
     public static LinkedHashSet<DeferredHolder<Item, BlockItem>> CREATIVE_TAB_ITEMS = Sets.newLinkedHashSet();
 
     //Generic
-    public static final DeferredBlock<Block> VOID_FLAME = registerBlock("void_flame",
+    public static final DeferredBlock<Block> VOID_FLAME = registerBlockWithoutItem("void_flame",
             () -> new VoidFlameBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_PURPLE)
                     .sound(SoundType.SHROOMLIGHT))

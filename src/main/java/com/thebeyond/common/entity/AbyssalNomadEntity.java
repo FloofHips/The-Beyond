@@ -1,11 +1,15 @@
 package com.thebeyond.common.entity;
 
+import com.thebeyond.client.event.ModClientEvents;
+import com.thebeyond.common.entity.util.SlowRotMoveControl;
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.util.TeleportUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -54,6 +58,11 @@ public class AbyssalNomadEntity extends PathfinderMob {
         this.entityData.set(DATA_SITTING, i);
     }
 
+    public AbyssalNomadEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
+        super(entityType, level);
+        this.moveControl = new SlowRotMoveControl(this, 20f);
+    }
+
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
@@ -87,9 +96,6 @@ public class AbyssalNomadEntity extends PathfinderMob {
         super.handleEntityEvent(id);
     }
 
-    public AbyssalNomadEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
-        super(entityType, level);
-    }
     public static AttributeSupplier.Builder createAttributes() {
         return Monster.createMonsterAttributes().add(Attributes.MOVEMENT_SPEED, 0.2);
     }
@@ -110,12 +116,18 @@ public class AbyssalNomadEntity extends PathfinderMob {
     public void tick() {
         super.tick();
         if (this.level().isClientSide) handleAnimations();
+        if (this.position().y < this.level().getMinBuildHeight() - 5) TeleportUtils.randomTeleport(this.level(), this);
 
         navigation.moveTo(this.getX(), 197f, this.getZ()-10, 0.7);
     }
 
     private void handleAnimations() {
 
+    }
+
+    @Override
+    public int getMaxHeadYRot() {
+        return 40;
     }
 
     @Override

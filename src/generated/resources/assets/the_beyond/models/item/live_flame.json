@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "the_beyond:item/void_flame"
+    "layer0": "the_beyond:item/live_flame"
   }
 }

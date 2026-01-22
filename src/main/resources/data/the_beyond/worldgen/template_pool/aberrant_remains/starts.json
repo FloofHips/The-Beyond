@@ -7,7 +7,7 @@
         "projection": "rigid",
         "processors": "the_beyond:end_structure_rot"
       },
-      "weight": 1
+      "weight": 3
     },
     {
       "element": {
