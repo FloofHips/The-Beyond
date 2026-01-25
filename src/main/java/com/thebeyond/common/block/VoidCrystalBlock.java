@@ -164,7 +164,7 @@ public class VoidCrystalBlock extends Block implements Fallable {
 
         if (level instanceof ServerLevel serverLevel) {
             serverLevel.playSound(fallingBlock, pos, SoundEvents.GLASS_BREAK, SoundSource.BLOCKS, 1, 1);
-            serverLevel.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5, pos.getY() - 0.5, pos.getZ() + 0.5, 5, 0.5, 0.5, 0.5, 0.1);
+            serverLevel.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5, pos.getY() - 0.5, pos.getZ() + 0.5, 1, 0.5, 0.5, 0.5, 0.1);
         }
         Fallable.super.onBrokenAfterFall(level, pos, fallingBlock);
     }
@@ -176,22 +176,15 @@ public class VoidCrystalBlock extends Block implements Fallable {
             RisingBlockEntity risingblockentity = RisingBlockEntity.rise(level, blockpos$mutableblockpos, blockstate);
             if (isTip(blockstate)) {
                 BlockPos.MutableBlockPos checkPos = blockpos$mutableblockpos.mutable().move(Direction.DOWN);
-                int length = 1;
-
                 while (isStalagmite(level.getBlockState(checkPos))) {
-                    length++;
                     checkPos.move(Direction.DOWN);
                 }
-
-                int i = Math.max(length, 6);
-                float f = 1.0F * (float) i;
-                risingblockentity.setHurtsEntities(f, 40);
+                risingblockentity.setHurtsEntities(0.1f, 4);
                 break;
             }
 
             blockpos$mutableblockpos.move(Direction.UP);
         }
-
     }
     private static void spawnFallingStalactite(BlockState state, ServerLevel level, BlockPos pos) {
         BlockPos.MutableBlockPos blockpos$mutableblockpos = pos.mutable();
@@ -199,11 +192,8 @@ public class VoidCrystalBlock extends Block implements Fallable {
         for(BlockState blockstate = state; isStalactite(blockstate); blockstate = level.getBlockState(blockpos$mutableblockpos)) {
             FallingBlockEntity fallingblockentity = FallingBlockEntity.fall(level, blockpos$mutableblockpos, blockstate);
             if (isTip(blockstate)) {
-                int i = Math.max(1 + pos.getY() - blockpos$mutableblockpos.getY(), 6);
-                float f = 1.0F * (float)i;
-                fallingblockentity.setHurtsEntities(f, 40);
+                fallingblockentity.setHurtsEntities(0.1f, 4);
                 break;
-
             }
 
             blockpos$mutableblockpos.move(Direction.DOWN);

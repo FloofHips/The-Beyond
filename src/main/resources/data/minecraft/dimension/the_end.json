@@ -6,21 +6,21 @@
     "biome_source": {
       "type": "the_beyond:the_end",
       "end_biomes": [
-        "the_beyond:end_highlands",
-        "the_beyond:end_midlands",
-        "the_beyond:end_barrens",
+        "minecraft:end_highlands",
+        "minecraft:end_midlands",
+        "minecraft:end_barrens",
         "the_beyond:attracta_expanse",
         "the_beyond:peer_lands"
       ],
       "outer_void_biomes": [
-        "the_beyond:the_void",
-        "the_beyond:small_end_islands"
+        "minecraft:the_void",
+        "minecraft:small_end_islands"
       ],
       "inner_void_biomes": [
         "the_beyond:true_void",
-        "the_beyond:small_end_islands"
+        "minecraft:small_end_islands"
       ],
-      "center_biome": "the_beyond:the_end",
+      "center_biome": "minecraft:the_end",
       "bottom_biome": "the_beyond:the_paths"
     }
   }

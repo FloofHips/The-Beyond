@@ -124,7 +124,7 @@ public class BonfireBlock extends BaseEntityBlock {
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (level instanceof ServerLevel serverLevel) {
             Optional<BlockPos> sisterBonfire = findNearestBonfire(serverLevel, state, pos, 200);
-            BlockPos sisterStructure = findNearestMapStructure(serverLevel, BeyondTags.BONFIRE_LOCATABLE, pos, 500, true);
+            BlockPos sisterStructure = serverLevel.findNearestMapStructure(BeyondTags.BONFIRE_LOCATABLE, pos, 500, true);
 
             if (sisterBonfire.isPresent()) {
                 sendBeam(level, pos, player, serverLevel, sisterBonfire.get(), false);
@@ -162,20 +162,6 @@ public class BonfireBlock extends BaseEntityBlock {
                 radius,
                 PoiManager.Occupancy.ANY
         );
-    }
-
-    public BlockPos findNearestMapStructure(ServerLevel level, TagKey<Structure> structureTag, BlockPos pos, int radius, boolean skipExistingChunks) {
-        if (!level.getServer().getWorldData().worldGenOptions().generateStructures()) {
-            return null;
-        } else {
-            Optional<HolderSet.Named<Structure>> optional = level.registryAccess().registryOrThrow(Registries.STRUCTURE).getTag(structureTag);
-            if (optional.isEmpty()) {
-                return null;
-            } else {
-                Pair<BlockPos, Holder<Structure>> pair = level.getChunkSource().getGenerator().findNearestMapStructure(level, (HolderSet)optional.get(), pos, radius, skipExistingChunks);
-                return pair != null ? (BlockPos)pair.getFirst() : null;
-            }
-        }
     }
 
     public static void particleBeam(Level level, Player player, BlockPos from, BlockPos to, boolean structure) {

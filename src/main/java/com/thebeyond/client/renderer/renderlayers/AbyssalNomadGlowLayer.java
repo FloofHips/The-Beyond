@@ -19,6 +19,8 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.client.NeoForgeRenderTypes;
 
+import java.awt.*;
+
 public class AbyssalNomadGlowLayer extends RenderLayer<AbyssalNomadEntity, AbyssalNomadModel<AbyssalNomadEntity>> {
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/abyssal_nomad_glow.png");
     private final AbyssalNomadModel<AbyssalNomadEntity> model;
@@ -40,6 +42,9 @@ public class AbyssalNomadGlowLayer extends RenderLayer<AbyssalNomadEntity, Abyss
         this.model.prepareMobModel(entity, limbSwing, limbSwingAmount, partialTick);
 
         VertexConsumer vertexConsumer = bufferSource.getBuffer(NeoForgeRenderTypes.getUnlitTranslucent(TEXTURE));
-        this.model.renderToBuffer(poseStack, vertexConsumer, 255, OverlayTexture.NO_OVERLAY, -1);
+
+        Color color = new Color(1,(255 - entity.getCorruption())/255f,1,1);
+
+        this.model.renderToBuffer(poseStack, vertexConsumer, 255, OverlayTexture.NO_OVERLAY, color.getRGB());
     }
 }

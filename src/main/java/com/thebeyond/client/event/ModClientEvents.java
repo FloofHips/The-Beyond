@@ -270,6 +270,11 @@ public class ModClientEvents {
        }
     }
 
+    @SubscribeEvent
+    public static void onColorFog(ViewportEvent.ComputeFogColor event) {
+
+    }
+
     public static float finalEffectFog(Camera camera) {
         int type = doesMobEffectBlockSky(camera);
         if (type == 0) {
@@ -309,7 +314,7 @@ public class ModClientEvents {
     }
 
     @SubscribeEvent
-    public static void onRenderNameTag(LivingEvent.LivingVisibilityEvent event) {
+    public static void onLivingVisibility(LivingEvent.LivingVisibilityEvent event) {
         if (event.getEntity() != null && event.getEntity() instanceof LivingEntity livingEntity) {
             if (livingEntity.getItemBySlot(EquipmentSlot.HEAD).is(BeyondItems.ETHER_CLOAK.get())) {
                 event.modifyVisibility(0.1f);

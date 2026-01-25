@@ -5,6 +5,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
@@ -57,6 +59,13 @@ public class GellidVoidBlock extends LiquidBlock {
     @Override
     protected void randomTick(BlockState pState, ServerLevel pLevel, BlockPos pPos, RandomSource pRandom) {
         super.randomTick(pState, pLevel, pPos, pRandom);
+
+        if (pLevel.isRaining() && pRandom.nextInt(50) == 0){
+            pLevel.playSound(null, pPos, SoundEvents.ALLAY_DEATH, SoundSource.AMBIENT);
+            pos = new Vec3(pPos.getX() + pRandom.nextFloat(), pPos.getY(), pPos.getZ() + pRandom.nextFloat());
+            if(pLevel.getBlockState(pPos.relative(Direction.UP)).isAir()) addParticle(BeyondParticleTypes.GLOP.get(), pos, pLevel);
+        }
+
         //if(pState.getValue(LEVEL)==8){
         //    pLevel.playSound(null, pPos, SoundEvents.ALLAY_DEATH, SoundSource.AMBIENT);
         //    pLevel.setBlock(pPos, Blocks.AIR.defaultBlockState(), 3);

@@ -2,7 +2,7 @@
   "carvers": {},
   "downfall": 0.8,
   "effects": {
-    "fog_color": 0,
+    "fog_color": -16044745,
     "foliage_color": 6460379,
     "grass_color": 5938914,
     "mood_sound": {
@@ -22,9 +22,20 @@
     "water_fog_color": 6141935,
     "particle": {
       "options": {
-        "type": "minecraft:crimson_spore"
+        "type": "minecraft:dust_color_transition",
+        "from_color": [
+          0,
+          0.9,
+          0.9
+        ],
+        "to_color": [
+          0,
+          0.5,
+          0.5
+        ],
+        "scale": 0.5
       },
-      "probability": 0.025
+      "probability": 0.118093334
     }
   },
   "features": [
@@ -37,9 +48,7 @@
     [],
     [],
     [],
-    [
-      "the_beyond:stardust"
-    ],
+    [],
     []
   ],
   "has_precipitation": false,

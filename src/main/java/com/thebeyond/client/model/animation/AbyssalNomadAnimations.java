@@ -476,7 +476,7 @@ public class AbyssalNomadAnimations {
                 ))
                 .build();
 
-        public static final AnimationDefinition sitting = AnimationDefinition.Builder.withLength(0.25F)
+        public static final AnimationDefinition sitting = AnimationDefinition.Builder.withLength(0.25F).looping()
                 .addAnimation("right_arm", new AnimationChannel(AnimationChannel.Targets.ROTATION,
                         new Keyframe(0.0F, KeyframeAnimations.degreeVec(90.0F, 0.0F, 90.0F), AnimationChannel.Interpolations.LINEAR),
                         new Keyframe(0.25F, KeyframeAnimations.degreeVec(90.0F, 0.0F, 90.0F), AnimationChannel.Interpolations.LINEAR)

@@ -17,6 +17,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
@@ -318,6 +319,12 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
             this.setDeltaMovement(getViewVector(0).scale(-0.01f));
     }
 
+    @Override
+    public boolean hurt(DamageSource source, float amount) {
+        flee(source.getEntity());
+        return super.hurt(source, amount);
+    }
+
     private void flee(Entity entity) {
         if (entity == null) return;
         Vec3 awayVector = this.position().subtract(entity.position()).normalize();
@@ -327,7 +334,6 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
         this.setDeltaMovement(awayVector);
         if (this.level() instanceof ServerLevel serverLevel)
             serverLevel.sendParticles(ParticleTypes.DAMAGE_INDICATOR, getX(), getY() + 0.5, getZ(), 2 * (this.getSize()+1), 0.1, 0.5, 0.1, 0);
-
     }
 
     public static boolean checkMonsterSpawnRules(EntityType<LanternEntity> lanternEntityEntityType, ServerLevelAccessor serverLevelAccessor, MobSpawnType mobSpawnType, BlockPos blockPos, RandomSource randomSource) {

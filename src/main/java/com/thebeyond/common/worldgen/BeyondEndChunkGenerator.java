@@ -3,22 +3,16 @@ package com.thebeyond.common.worldgen;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.util.WorldSeedHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.core.HolderGetter;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.LevelHeightAccessor;
-import net.minecraft.world.level.NoiseColumn;
 import net.minecraft.world.level.StructureManager;
-import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.biome.BiomeResolver;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
@@ -62,24 +56,46 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         this.settings = settings;
     }
 
+    public void computeNoisesIfNotPresent(RandomState randomState) {
+        if (simplexNoise == null || globalHOffsetNoise == null || globalVOffsetNoise == null || globalCOffsetNoise == null) {
+            WorldSeedHolder holder = (WorldSeedHolder) (Object) randomState;
+            long worldSeed = holder.the_Beyond$getWorldSeed();
+
+            RandomSource random1 = RandomSource.create(worldSeed);
+            RandomSource random2 = RandomSource.create(worldSeed);
+            RandomSource random3 = RandomSource.create(worldSeed);
+            RandomSource random4 = RandomSource.create(worldSeed);
+
+            simplexNoise = new SimplexNoise(random1);
+            globalHOffsetNoise = new PerlinSimplexNoise(random2, Collections.singletonList(1));
+            globalVOffsetNoise = new PerlinSimplexNoise(random3, Collections.singletonList(1));
+            globalCOffsetNoise = new PerlinSimplexNoise(random4, Collections.singletonList(1));
+        }
+    }
+
+    public void computeNoisesIfNotPresent(long worldSeed) {
+        if (simplexNoise == null || globalHOffsetNoise == null || globalVOffsetNoise == null || globalCOffsetNoise == null) {
+            RandomSource random1 = RandomSource.create(worldSeed);
+            RandomSource random2 = RandomSource.create(worldSeed);
+            RandomSource random3 = RandomSource.create(worldSeed);
+            RandomSource random4 = RandomSource.create(worldSeed);
+
+            simplexNoise = new SimplexNoise(random1);
+            globalHOffsetNoise = new PerlinSimplexNoise(random2, Collections.singletonList(1));
+            globalVOffsetNoise = new PerlinSimplexNoise(random3, Collections.singletonList(1));
+            globalCOffsetNoise = new PerlinSimplexNoise(random4, Collections.singletonList(1));
+        }
+    }
+
     @Override
     public void createStructures(RegistryAccess registryAccess, ChunkGeneratorStructureState structureState, StructureManager structureManager, ChunkAccess chunk, StructureTemplateManager structureTemplateManager) {
-        long seed = structureState.getLevelSeed();
-
-        RandomSource random1 = RandomSource.create(seed);
-        RandomSource random2 = RandomSource.create(seed);
-        RandomSource random3 = RandomSource.create(seed);
-        RandomSource random4 = RandomSource.create(seed);
-        simplexNoise = new SimplexNoise(random1);
-        globalHOffsetNoise = new PerlinSimplexNoise(random2, Collections.singletonList(1));
-        globalVOffsetNoise = new PerlinSimplexNoise(random3, Collections.singletonList(1));
-        globalCOffsetNoise = new PerlinSimplexNoise(random4, Collections.singletonList(1));
-
+        computeNoisesIfNotPresent(structureState.getLevelSeed());
         super.createStructures(registryAccess, structureState, structureManager, chunk, structureTemplateManager);
     }
 
     @Override
     public CompletableFuture<ChunkAccess> createBiomes(RandomState randomState, Blender blender, StructureManager structureManager, ChunkAccess chunk) {
+        computeNoisesIfNotPresent(randomState);
         return super.createBiomes(randomState, blender, structureManager, chunk);
     }
 
@@ -92,17 +108,17 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     public int getBaseHeight(int x, int z, Heightmap.Types heightmapType, LevelHeightAccessor level, RandomState randomState) {
         float distanceFromOrigin = (float) Math.sqrt(x * x + z * z);
 
-        for (int y = 132; y >= level.getMinBuildHeight() - 10; y--) {
+        for (int y = 132; y >= level.getMinBuildHeight(); y--) {
             if (isSolidTerrain(x, y, z, distanceFromOrigin)) {
                 return y;
             }
         }
 
-        return 10;
+        return 0;
     }
     @Override
     public int getFirstFreeHeight(int x, int z, Heightmap.Types type, LevelHeightAccessor level, RandomState random) {
-        return Math.max(this.getBaseHeight(x, z, type, level, random), level.getMinBuildHeight() - 10);
+        return Math.max(this.getBaseHeight(x, z, type, level, random), level.getMinBuildHeight());
     }
 
     @Override
@@ -187,6 +203,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
     @Override
     public CompletableFuture<ChunkAccess> fillFromNoise(Blender blender, RandomState randomState, StructureManager structureManager, ChunkAccess chunk) {
+        computeNoisesIfNotPresent(randomState);
         return CompletableFuture.supplyAsync(() -> {
             ChunkPos chunkPos = chunk.getPos();
             int startX = chunkPos.getMinBlockX();
@@ -296,6 +313,8 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         int globalX = pos.getX();
         int globalZ = pos.getZ();
 
+        computeNoisesIfNotPresent(random);
+
         float distanceFromOrigin = (float) Math.sqrt(globalX * globalX + globalZ * globalZ);
         double horizontalBaseScale = getHorizontalBaseScale(pos.getX(), pos.getZ());
         double verticalBaseScale = getVerticalBaseScale(pos.getX(), pos.getZ());
@@ -304,12 +323,11 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         double terrainNoise = getTerrainDensity(pos.getX(), pos.getY(), pos.getZ());
         double simplex = simplexNoise.getValue(pos.getX(), pos.getY(), pos.getZ());
 
-        //info.add("TerrainNoise T: " + decimalformat.format(terrainNoise) +
-        //        " HS: " + decimalformat.format(horizontalBaseScale) +
-        //        " VS: " + decimalformat.format(verticalBaseScale) +
-        //        " Threshold: " + decimalformat.format(threshold) +
-        //        " CH: " + decimalformat.format(cycleHeight));
 
-        info.add("Simplex: " + decimalformat.format(simplex));
+        info.add("TerrainNoise T: " + decimalformat.format(terrainNoise) +
+                " HS: " + decimalformat.format(horizontalBaseScale) +
+                " VS: " + decimalformat.format(verticalBaseScale) +
+                " Threshold: " + decimalformat.format(threshold) +
+                " CH: " + decimalformat.format(cycleHeight));
     }
 }

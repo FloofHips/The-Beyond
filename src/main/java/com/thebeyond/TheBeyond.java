@@ -39,6 +39,7 @@ public class TheBeyond {
         BeyondEffects.MOB_EFFECTS.register(modEventBus);
         BeyondComponents.COMPONENTS.register(modEventBus);
         BeyondPoiTypes.POI_TYPES.register(modEventBus);
+        BeyondBiomeModifiers.BIOME_MODIFIERS.register(modEventBus);
 
         modEventBus.addListener(BeyondTabs::addCreative);
 

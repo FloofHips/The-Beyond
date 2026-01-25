@@ -1,0 +1,10 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": [
+    "minecraft:end_barrens",
+    "minecraft:end_midlands",
+    "minecraft:end_highlands"
+  ],
+  "features": "the_beyond:void_crystal",
+  "step": "top_layer_modification"
+}

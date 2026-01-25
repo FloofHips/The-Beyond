@@ -1,5 +1,6 @@
 package com.thebeyond.util;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -34,15 +35,10 @@ public class TeleportUtils {
 
                 if (entityLiving.randomTeleport(event.getTargetX(), event.getTargetY(), event.getTargetZ(), true)) {
                     level.gameEvent(GameEvent.TELEPORT, vec3, GameEvent.Context.of(entityLiving));
-                    SoundSource soundsource;
-                    SoundEvent soundevent;
-                    if (entityLiving instanceof Fox) {
-                        soundevent = SoundEvents.FOX_TELEPORT;
-                        soundsource = SoundSource.NEUTRAL;
-                    } else {
-                        soundevent = SoundEvents.CHORUS_FRUIT_TELEPORT;
-                        soundsource = SoundSource.PLAYERS;
-                    }
+
+                    SoundEvent soundevent = SoundEvents.CHORUS_FRUIT_TELEPORT;
+                    SoundSource soundsource = entityLiving.getSoundSource();
+
 
                     level.playSound((Player)null, entityLiving.getX(), entityLiving.getY(), entityLiving.getZ(), soundevent, soundsource);
                     entityLiving.resetFallDistance();
