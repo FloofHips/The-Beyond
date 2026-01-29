@@ -4,8 +4,10 @@ import com.thebeyond.client.event.ModClientEvents;
 import com.thebeyond.common.entity.util.SlowRotMoveControl;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondEffects;
+import com.thebeyond.common.registry.BeyondItems;
 import com.thebeyond.common.registry.BeyondTags;
 import com.thebeyond.util.AOEManager;
+import com.thebeyond.util.ColorUtils;
 import com.thebeyond.util.TeleportUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -34,6 +36,7 @@ import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.animal.camel.Camel;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -43,12 +46,14 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.EventHooks;
 import net.neoforged.neoforge.event.entity.EntityTeleportEvent;
 import org.spongepowered.asm.mixin.injection.At;
 
 import java.util.EnumSet;
+import java.util.List;
 
 public class AbyssalNomadEntity extends PathfinderMob {
 
@@ -57,25 +62,39 @@ public class AbyssalNomadEntity extends PathfinderMob {
     private static final byte NOD = 69;
     private static final byte ATTACK = 70;
     private static final byte STAND_UP = 71;
+    private static final byte DROP = 72;
 
     public final AnimationState sitAnimationState = new AnimationState();
     public final AnimationState sitPoseAnimationState = new AnimationState();
     public final AnimationState standUpAnimationState = new AnimationState();
     public final AnimationState nodAnimationState = new AnimationState();
     public final AnimationState attackAnimationState = new AnimationState();
+    public final AnimationState dropAnimationState = new AnimationState();
     public BlockPos prayerSite;
+    public BlockPos lookAt;
+    private int stuckTicks = 0;
+    private Vec3 lastPosition = Vec3.ZERO;
 
     public static final EntityDataAccessor<Boolean> DATA_SITTING = SynchedEntityData.defineId(AbyssalNomadEntity.class, EntityDataSerializers.BOOLEAN);
+    public static final EntityDataAccessor<Boolean> DATA_TO_PRAY = SynchedEntityData.defineId(AbyssalNomadEntity.class, EntityDataSerializers.BOOLEAN);
     public static final EntityDataAccessor<Integer> DATA_CORRUPTION = SynchedEntityData.defineId(AbyssalNomadEntity.class, EntityDataSerializers.INT);
 
     public int sitDownCounter = 0;
     public int attackCounter = 0;
+    public int dropCounter = 0;
+    public int uncorruptCounter = 0;
 
     public boolean isSitting() {
         return this.entityData.get(DATA_SITTING);
     }
     public void setSitting(boolean i) {
         this.entityData.set(DATA_SITTING, i);
+    }
+    public boolean isPraying() {
+        return this.entityData.get(DATA_TO_PRAY);
+    }
+    public void setPray(boolean i) {
+        this.entityData.set(DATA_TO_PRAY, i);
     }
     public int getCorruption() {
         return this.entityData.get(DATA_CORRUPTION);
@@ -87,7 +106,7 @@ public class AbyssalNomadEntity extends PathfinderMob {
     public AbyssalNomadEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
         this.moveControl = new SlowRotMoveControl(this, 20f);
-        this.navigation = new NomadNavigation(this, level);
+        this.navigation = new GroundPathNavigation(this, level);
     }
 
     @Override
@@ -99,7 +118,8 @@ public class AbyssalNomadEntity extends PathfinderMob {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(DATA_SITTING, false);
-        builder.define(DATA_CORRUPTION, 255);
+        builder.define(DATA_TO_PRAY, false);
+        builder.define(DATA_CORRUPTION, level().random.nextInt(100,256));
     }
 
     @Override
@@ -107,6 +127,7 @@ public class AbyssalNomadEntity extends PathfinderMob {
         super.readAdditionalSaveData(compound);
         setSitting(compound.getBoolean("Sitting"));
         setCorruption(compound.getInt("Corruption"));
+        setPray(compound.getBoolean("toPray"));
     }
 
     @Override
@@ -114,6 +135,7 @@ public class AbyssalNomadEntity extends PathfinderMob {
         super.addAdditionalSaveData(compound);
         compound.putBoolean("Sitting", entityData.get(DATA_SITTING));
         compound.putInt("Corruption", entityData.get(DATA_CORRUPTION));
+        compound.putBoolean("toPray", entityData.get(DATA_TO_PRAY));
     }
 
     @Override
@@ -146,6 +168,10 @@ public class AbyssalNomadEntity extends PathfinderMob {
                 this.sitPoseAnimationState.start(this.tickCount);
                 return;
             }
+            if (id == DROP) {
+                this.dropAnimationState.start(this.tickCount);
+                return;
+            }
         }
         super.handleEntityEvent(id);
     }
@@ -164,7 +190,6 @@ public class AbyssalNomadEntity extends PathfinderMob {
 
         this.goalSelector.addGoal(3, new RandomLookAroundGoal(this));
         this.goalSelector.addGoal(0, new attackGoal(this));
-        //this.goalSelector.addGoal(0, new goToPrayerSiteGoal(this));
         this.goalSelector.addGoal(0, new PersistentMoveGoal(this));
         this.goalSelector.addGoal(2, new LookAtPlayerGoal(this, Player.class, 5f));
 
@@ -182,19 +207,52 @@ public class AbyssalNomadEntity extends PathfinderMob {
 
         handleSit();
         handleAttack();
+        handlePray();
+        handleLook();
+
+        if (isPraying() && prayerSite == null && level() instanceof ServerLevel serverLevel)
+            prayerSite = serverLevel.getLevel().findNearestMapStructure(BeyondTags.NOMAD_PRAYER_SITE, this.getOnPos(), 200, false);
 
         if (this.position().y < this.level().getMinBuildHeight() - 5) TeleportUtils.randomTeleport(this.level(), this);
     }
 
-    //private void handlePray() {
-    //    if (prayerSite == null) {
-    //        if (level() instanceof ServerLevel serverLevel) {
-    //            prayerSite = serverLevel.findNearestMapStructure(BeyondTags.NOMAD_PRAYER_SITE, this.blockPosition(), 200, false);
-    //        }
-    //    } else return;
-//
-    //    this.navigation.moveTo(prayerSite.getX(), prayerSite.getY(), prayerSite.getZ(), 1);
-    //}
+    private void handleLook() {
+        if (lookAt!=null) {
+            Vec3 target = Vec3.atCenterOf(lookAt);
+            Vec3 direction = target.subtract(this.position());
+
+            float yaw = (float) Math.toDegrees(Math.atan2(direction.z, direction.x)) - 90.0F;
+
+            this.setYRot(Mth.rotLerp(0.5F, this.getYRot(), yaw));
+            this.setYHeadRot(Mth.rotLerp(0.5F, this.getYHeadRot(), yaw));
+        }
+    }
+
+    private void handlePray() {
+        if (dropCounter > 0) {
+            dropCounter--;
+
+            if (dropCounter == 59) level().broadcastEntityEvent(this, DROP);
+            if (dropCounter == 58) {
+                level().broadcastEntityEvent(this, STAND_UP);
+                this.setSitting(false);
+            }
+
+            if (dropCounter == 30) {
+                ItemEntity itementity = new ItemEntity(this.level(), this.getX(), this.getEyeY(), this.getZ(), new ItemStack(BeyondItems.ABYSSAL_SHROUD.get(), 1+random.nextInt(0, 2)));
+                itementity.setNoPickUpDelay();
+                this.level().addFreshEntity(itementity);
+                itementity.setNoGravity(true);
+
+                if (level() instanceof ServerLevel serverLevel)
+                    serverLevel.sendParticles(ColorUtils.auroraOptions, itementity.getX(), itementity.getY(), itementity.getZ(), 3 + random.nextInt(5), 0.05, 0.05, 0.05, 0.001);
+
+                this.playSound(SoundEvents.AXE_STRIP, 1, 0.5f);
+            }
+
+            if (dropCounter == 2) lookAt = null;
+        }
+    }
 
     private void handleSit() {
         if (sitDownCounter > 0) {
@@ -217,27 +275,78 @@ public class AbyssalNomadEntity extends PathfinderMob {
             if (sitDownCounter == 26) setSitting(true);
             if (sitDownCounter == 21) level().broadcastEntityEvent(this, SIT_DOWN);
             if (sitDownCounter == 0) {
+                this.navigation.stop();
+                setSitting(true);
                 level().broadcastEntityEvent(this, SIT);
                 this.setPersistenceRequired();
             }
         }
     }
 
+    private void handleUncorrupt() {
+        if (uncorruptCounter > 0 && getCorruption() > 0) {
+            uncorruptCounter--;
+
+            if(getCorruption() != 0) {
+                this.setYHeadRot(getYHeadRot()+(random.nextInt(-50, 50)));
+                setCorruption((int) Mth.lerp(random.nextFloat(), Math.min(getCorruption() * 3, 255), 0));
+                this.playSound(SoundEvents.NOTE_BLOCK_DIDGERIDOO.value(), 1, random.nextFloat()*2);
+            }
+
+            if (uncorruptCounter == 20) {
+                setCorruption(1);
+                level().broadcastEntityEvent(this, NOD);
+                if (level() instanceof ServerLevel serverLevel)
+                    serverLevel.sendParticles(ParticleTypes.EFFECT, getX(), getEyeY(), getZ(), 3 + random.nextInt(5), 0.1, 0.1, 0.1, 0.001);
+                this.playSound(SoundEvents.SHIELD_BREAK, 1, 0.5f);
+                this.playSound(SoundEvents.CONDUIT_DEACTIVATE, 1, 0.5f);
+            }
+            if (uncorruptCounter == 0) {
+                setCorruption(0);
+            }
+        }
+    }
+
     private void handleAttack() {
-        if (getTarget()!=null && attackCounter == 0) {
-            navigation.moveTo(getTarget(), 1);
+        if (attackCounter == 51) {
+            level().broadcastEntityEvent(this, ATTACK);
+        }
+        if (attackCounter == 21) {
+            this.playSound(SoundEvents.SHIELD_BREAK, 1, 0.5f);
+            AOEManager.nomadKnockback(level(), this);
         }
 
-        if (getTarget()!=null && attackCounter > 0) {
-            navigation.moveTo(getTarget(), 0.5);
-            if (attackCounter == 51) {
-                level().broadcastEntityEvent(this, ATTACK);
-            }
-            if (attackCounter == 21) {
-                this.playSound(SoundEvents.SHIELD_BREAK, 1, 0.5f);
-                AOEManager.nomadKnockback(level(), this);
-            }
+        if(attackCounter > 0) {
             attackCounter--;
+            return;
+        }
+
+        if (getTarget()!=null) {
+            BlockPos t = getTarget().getOnPos();
+            BlockPos target = new BlockPos(t.getX(), this.getBlockY(), t.getZ());
+            double distance = this.position().distanceTo(Vec3.atCenterOf(target));
+
+            if (distance < 3) return;
+
+            Vec3 currentPos = this.position();
+            if (currentPos.distanceTo(lastPosition) < 0.25) {
+                stuckTicks++;
+            } else {
+                stuckTicks = 0;
+            }
+            lastPosition = currentPos;
+
+            if (stuckTicks > 20) {
+                teleportToward(target);
+                stuckTicks = 0;
+                return;
+            }
+
+            if (distance > 32) {
+                moveToward(target, 1.5);
+            } else if (distance > 10) {
+                moveToward(target, 1.0);
+            }
         }
     }
 
@@ -264,77 +373,6 @@ public class AbyssalNomadEntity extends PathfinderMob {
     @Override
     public boolean isPushable() {
         return false;
-    }
-
-    public class NomadNavigation extends GroundPathNavigation {
-        private static final int STUCK_THRESHOLD = 60;
-        private static final int TELEPORT_COOLDOWN = 200;
-        private static final double TELEPORT_RANGE = 8.0;
-        private static final double MIN_GAP_WIDTH = 2.0;
-
-        private int stuckTimer = 0;
-        private int teleportCooldown = 0;
-        private Vec3 lastPosition = Vec3.ZERO;
-
-        public NomadNavigation(Mob mob, Level level) {
-            super(mob, level);
-        }
-
-        @Override
-        public void tick() {
-            super.tick();
-
-            //if (teleportCooldown > 0) {
-            //    teleportCooldown--;
-            //}
-//
-            //if (!isDone()) {
-            //    Vec3 currentPos = mob.position();
-            //    double distanceMoved = currentPos.distanceTo(lastPosition);
-//
-            //    if (distanceMoved < 0.1 && currentPos.distanceTo(getTargetPos().getCenter()) > 1.0) {
-            //        stuckTimer++;
-//
-            //        if (stuckTimer >= STUCK_THRESHOLD && teleportCooldown <= 0) {
-            //            TeleportUtils.directionalTeleport(level, this.mob, getTargetPos(), 10);
-            //            stuckTimer = 0;
-            //            teleportCooldown = TELEPORT_COOLDOWN;
-            //        }
-            //    } else {
-            //        stuckTimer = 0;
-            //    }
-//
-            //    lastPosition = currentPos;
-            //}
-        }
-
-        private boolean isFacingGap() {
-            if (getTargetPos() == null) return false;
-
-            Vec3 mobPos = mob.position();
-            Vec3 targetPos = getTargetPos().getCenter();
-            Vec3 direction = targetPos.subtract(mobPos).normalize();
-
-            double checkDistance = Math.min(TELEPORT_RANGE, mobPos.distanceTo(targetPos));
-
-            for (double d = 1.0; d < checkDistance; d += 0.5) {
-                Vec3 checkPos = mobPos.add(direction.scale(d));
-                BlockPos blockPos = BlockPos.containing(checkPos);
-
-                if (!mob.level().getBlockState(blockPos.below()).isSolid()) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        @Override
-        public void stop() {
-            super.stop();
-            //stuckTimer = 0;
-            //lastPosition = mob.position();
-        }
     }
 
     class NomadBodyRotationControl extends BodyRotationControl {
@@ -364,11 +402,18 @@ public class AbyssalNomadEntity extends PathfinderMob {
             level().broadcastEntityEvent(this, STAND_UP);
             setSitting(false);
             player.startRiding(this);
+
+            AABB box = new AABB(this.blockPosition()).inflate(10);
+            List<AbyssalNomadEntity> nomads = level().getEntitiesOfClass(AbyssalNomadEntity.class, box);
+
+            for (AbyssalNomadEntity nomad : nomads) nomad.setPray(true);
+
             return InteractionResult.SUCCESS;
         }
 
         if (getCorruption() == 0 && !isSitting()) {
             sitDownCounter = 27;
+            this.navigation.stop();
             setSitting(true);
             return InteractionResult.SUCCESS;
         }
@@ -432,8 +477,6 @@ public class AbyssalNomadEntity extends PathfinderMob {
 
     public class PersistentMoveGoal extends Goal {
         private final AbyssalNomadEntity nomad;
-        private int stuckTicks = 0;
-        private Vec3 lastPosition = Vec3.ZERO;
 
         public PersistentMoveGoal(AbyssalNomadEntity nomad) {
             this.nomad = nomad;
@@ -442,7 +485,7 @@ public class AbyssalNomadEntity extends PathfinderMob {
 
         @Override
         public boolean canUse() {
-            return nomad.isVehicle() && nomad.getCorruption() == 0;
+            return nomad.isPraying();
         }
 
         @Override
@@ -457,6 +500,8 @@ public class AbyssalNomadEntity extends PathfinderMob {
             BlockPos t = nomad.prayerSite;
             BlockPos target = new BlockPos(t.getX(), nomad.getBlockY(), t.getZ());
             double distance = nomad.position().distanceTo(Vec3.atCenterOf(target));
+
+            //nomad.lookAt = nomad.prayerSite;
 
             if (distance < 3) return;
 
@@ -473,91 +518,28 @@ public class AbyssalNomadEntity extends PathfinderMob {
                 stuckTicks = 0;
                 return;
             }
-//
+
             if (distance > 32) {
-                moveToward(target, 1.5);
+                moveToward(target,1.5);
             } else if (distance > 10) {
                 moveToward(target, 1.0);
             }
         }
 
-        private void moveToward(BlockPos target, double speed) {
-            if (!nomad.getNavigation().isInProgress() || nomad.tickCount % 40 == 0) {
-                nomad.getNavigation().moveTo(
-                        target.getX(),
-                        target.getY(),
-                        target.getZ(),
-                        speed
-                );
-            }
-
-            //nomad.level().setBlock(target, BeyondBlocks.MEMOR_PILLAR.get().defaultBlockState(), 3);
-        }
-
-        private void teleportToward(BlockPos target) {
-            Vec3 current = nomad.position();
-            Vec3 targetVec = Vec3.atCenterOf(target);
-            Vec3 direction = targetVec.subtract(current).normalize();
-
-            double teleportDist = 8 + nomad.getRandom().nextDouble() * 8;
-            teleportDist = Math.min(teleportDist, current.distanceTo(targetVec) * 0.7);
-
-            Vec3 newPos = current.add(direction.scale(teleportDist));
-            BlockPos landing = findSpot(newPos);
-
-            if (landing != null && !nomad.level().isClientSide) {
-                nomad.level().broadcastEntityEvent(nomad, NOD);
-                //nomad.level().gameEvent(GameEvent.TELEPORT, nomad.position(), GameEvent.Context.of(nomad));
-                //nomad.level().playSound((Player)null, nomad.getX(), nomad.getY(), nomad.getZ(), SoundEvents.CHORUS_FRUIT_TELEPORT, nomad.getSoundSource());
-                //nomad.teleportTo(landing.getX() + 0.5, landing.getY() + 1, landing.getZ() + 0.5);
-                nomad.teleport(landing.getX() + 0.5, landing.getY() + 1, landing.getZ() + 0.5);
-            }
-        }
-
-        private BlockPos findSpot(Vec3 position) {
-            BlockPos pos = BlockPos.containing(position);
-            Level level = nomad.level();
-
-            if ((level.getBlockState(pos.below()).is(BeyondBlocks.AURORACITE) || level.getBlockState(pos.below()).isSolid()) &&
-                    level.getBlockState(pos).isAir() &&
-                    level.getBlockState(pos.above()).isAir()) {
-                return pos;
-            }
-
-            for (int x = -1; x <= 1; x++) {
-                for (int z = -1; z <= 1; z++) {
-                    BlockPos check = pos.offset(x, 0, z);
-                    if ((level.getBlockState(check.below()).is(BeyondBlocks.AURORACITE) || level.getBlockState(pos.below()).isSolid()) &&
-                            level.getBlockState(check).isAir() &&
-                            level.getBlockState(check.above()).isAir()) {
-                      return check;
-                    }
-                }
-            }
-
-            return null;
-        }
-
         @Override
         public boolean canContinueToUse() {
-            return canUse() && nomad.prayerSite != null && nomad.position().distanceTo(Vec3.atCenterOf(nomad.prayerSite)) > 8;
+            return canUse() && nomad.position().distanceTo(Vec3.atCenterOf(nomad.prayerSite)) > 8;
         }
 
         @Override
         public void stop() {
             super.stop();
-            if (nomad.isVehicle()) {
-                LivingEntity entity = nomad.getControllingPassenger();
-                if (entity != null) entity.addEffect(new MobEffectInstance(BeyondEffects.NOMADS_BLESSING, 1200));
-                ejectPassengers();
-            }
-
-            nomad.sitDownCounter = 27;
-            setSitting(true);
+            nomad.lookAt = null;
+            nomad.setPray(false);
         }
     }
 
-    private boolean teleport(double x, double y, double z) {
+    public boolean teleport(double x, double y, double z) {
         BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos(x, y, z);
 
         while(blockpos$mutableblockpos.getY() > this.level().getMinBuildHeight() && !this.level().getBlockState(blockpos$mutableblockpos).blocksMotion()) {
@@ -587,5 +569,51 @@ public class AbyssalNomadEntity extends PathfinderMob {
         } else {
             return false;
         }
+    }
+
+    public void moveToward(BlockPos target, double speed) {
+        if (!this.getNavigation().isInProgress() || this.tickCount % 40 == 0)
+            this.getNavigation().moveTo(target.getX(), target.getY(), target.getZ(), speed);
+    }
+
+    public void teleportToward(BlockPos target) {
+        Vec3 current = this.position();
+        Vec3 targetVec = Vec3.atCenterOf(target);
+        Vec3 direction = targetVec.subtract(current).normalize();
+
+        double teleportDist = 8 + this.getRandom().nextDouble() * 8;
+        teleportDist = Math.min(teleportDist, current.distanceTo(targetVec) * 0.7);
+
+        Vec3 newPos = current.add(direction.scale(teleportDist));
+        BlockPos landing = findSpot(newPos);
+
+        if (landing != null && !this.level().isClientSide) {
+            this.level().broadcastEntityEvent(this, NOD);
+            this.teleport(landing.getX() + 0.5, landing.getY() + 1, landing.getZ() + 0.5);
+        }
+    }
+
+    private BlockPos findSpot(Vec3 position) {
+        BlockPos pos = BlockPos.containing(position);
+        Level level = this.level();
+
+        if ((level.getBlockState(pos.below()).is(BeyondBlocks.AURORACITE) || level.getBlockState(pos.below()).isSolid()) &&
+                level.getBlockState(pos).isAir() &&
+                level.getBlockState(pos.above()).isAir()) {
+            return pos;
+        }
+
+        for (int x = -1; x <= 1; x++) {
+            for (int z = -1; z <= 1; z++) {
+                BlockPos check = pos.offset(x, 0, z);
+                if ((level.getBlockState(check.below()).is(BeyondBlocks.AURORACITE) || level.getBlockState(pos.below()).isSolid()) &&
+                        level.getBlockState(check).isAir() &&
+                        level.getBlockState(check.above()).isAir()) {
+                    return check;
+                }
+            }
+        }
+
+        return null;
     }
 }

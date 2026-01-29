@@ -1,8 +1,11 @@
 package com.thebeyond.common.block;
 
 import com.mojang.serialization.MapCodec;
+import com.thebeyond.client.particle.SmokeColorTransitionOptions;
 import com.thebeyond.common.entity.EnderglopEntity;
 import com.thebeyond.common.registry.BeyondEntityTypes;
+import com.thebeyond.common.registry.BeyondParticleTypes;
+import com.thebeyond.util.ColorUtils;
 import com.thebeyond.util.RandomUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -19,6 +22,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.joml.Vector3f;
 
 import java.util.function.ToIntFunction;
 
@@ -67,6 +71,9 @@ public class PolarBulbBlock extends Block {
             EnderglopEntity enderglop = new EnderglopEntity(BeyondEntityTypes.ENDERGLOP.get(), level);
             enderglop.setPos(pos.getX()+0.5, pos.getY()+0.8, pos.getZ()+0.5);
             enderglop.setSize(level.isRaining() ? 3 : 2, false);
+
+            level.sendParticles(ColorUtils.voidOptions, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 15, 0.1, 0.1, 0.1, 0.000);
+
             level.addFreshEntity(enderglop);
             LivingEntity player = level.getNearestPlayer(enderglop, 10);
             Vec3 direction = player == null ? Vec3.ZERO : player.position().subtract(enderglop.position()).normalize();

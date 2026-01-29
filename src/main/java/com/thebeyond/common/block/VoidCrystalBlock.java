@@ -7,6 +7,7 @@ import com.thebeyond.common.fluid.GellidVoidBlock;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondEffects;
 import com.thebeyond.common.registry.BeyondParticleTypes;
+import com.thebeyond.util.ColorUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -164,7 +165,7 @@ public class VoidCrystalBlock extends Block implements Fallable {
 
         if (level instanceof ServerLevel serverLevel) {
             serverLevel.playSound(fallingBlock, pos, SoundEvents.GLASS_BREAK, SoundSource.BLOCKS, 1, 1);
-            serverLevel.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5, pos.getY() - 0.5, pos.getZ() + 0.5, 1, 0.5, 0.5, 0.5, 0.1);
+            serverLevel.sendParticles(ColorUtils.voidOptions, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 15, 0.25, 0.15, 0.25, 0);
         }
         Fallable.super.onBrokenAfterFall(level, pos, fallingBlock);
     }

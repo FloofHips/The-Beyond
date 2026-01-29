@@ -1,14 +1,34 @@
 package com.thebeyond.util;
 
+import com.thebeyond.client.particle.PixelColorTransitionOptions;
+import com.thebeyond.client.particle.SmokeColorTransitionOptions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.levelgen.XoroshiroRandomSource;
 import net.minecraft.world.level.levelgen.synth.SimplexNoise;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3f;
 
 import java.awt.*;
 
 public class ColorUtils {
+
+    public static SmokeColorTransitionOptions voidOptions = new SmokeColorTransitionOptions(
+            new Vector3f(0.7f, 0.0f, 0.9f),
+            new Vector3f(0.1f, 0.1f, 0.3f),
+            1f
+    );
+
+    public static SmokeColorTransitionOptions auroraOptions = new SmokeColorTransitionOptions(
+            new Vector3f(0.0f, 0.9f, 0.9f),
+            new Vector3f(0.0f, 0.5f, 0.5f),
+            1f
+    );
+    public static PixelColorTransitionOptions pixelAuroraOptions = new PixelColorTransitionOptions(
+            new Vector3f(0.0f, 0.9f, 0.9f),
+            new Vector3f(0.0f, 0.5f, 0.5f),
+            1f
+    );
     public static SimplexNoise noise = new SimplexNoise(new XoroshiroRandomSource(69420));
 
     public static float tri(float f) {
@@ -16,10 +36,6 @@ public class ColorUtils {
     }
 
     public static int getNoiseColor(BlockPos pos, Vec3 color1, Vec3 color2, Vec3 color3, Vec3 color4, Vec3 color5){
-        //double NoiseValue = (tri((0.048F * pos.getX() + 0.016F * pos.getY() + 0.064F * pos.getZ()) +
-        //        ((float) noise.getValue(pos.getX() * 0.05F, pos.getY() * 0.05F, pos.getZ() * 0.05F)) *
-        //                ((float) noise.getValue(pos.getX() * 0.1F, pos.getY() * 0.1F, pos.getZ() * 0.1F))));
-
         double NoiseValue = (tri((0.01F * pos.getX() + 0.032F * pos.getY() + 0.012F * pos.getZ()) +
                 ((float) noise.getValue(pos.getX() * 0.01F, pos.getY() * 0.01F, pos.getZ() * 0.01F)) *
                         ((float) noise.getValue(pos.getX() * 0.005F, pos.getY() * 0.005F, pos.getZ() * 0.005F))));

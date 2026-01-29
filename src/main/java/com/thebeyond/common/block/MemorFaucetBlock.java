@@ -1,6 +1,7 @@
 package com.thebeyond.common.block;
 
 import com.mojang.serialization.MapCodec;
+import com.thebeyond.common.block.blockentities.BonfireBlockEntity;
 import com.thebeyond.common.block.blockentities.MemorFaucetBlockEntity;
 import com.thebeyond.common.registry.BeyondBlockEntities;
 import com.thebeyond.common.registry.BeyondParticleTypes;
@@ -9,6 +10,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
@@ -68,55 +70,6 @@ public class MemorFaucetBlock extends BaseEntityBlock {
         return RenderShape.MODEL;
     }
 
-    @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        //if (stack.isEmpty()) return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
-        //if (level.isClientSide) return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
-        //if (state.getValue(AGE) < MAX_AGE-1) {
-        //    level.playSound(null, pos, SoundEvents.RESPAWN_ANCHOR_CHARGE, SoundSource.BLOCKS, 1, 1);
-        //    level.setBlockAndUpdate(pos, state.setValue(AGE, state.getValue(AGE) + 1));
-        //    if (level instanceof ServerLevel serverLevel)
-        //        serverLevel.sendParticles(BeyondParticleTypes.AURORACITE_STEP.get(), pos.getX() + 0.5, pos.getY() - 0.5, pos.getZ() + 0.5, 1, 0, 0, 0, 0);
-        //    return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
-        //}
-        //else {
-        //    level.playSound(null, pos, SoundEvents.TRIAL_SPAWNER_OMINOUS_ACTIVATE, SoundSource.BLOCKS, 1, 1);
-        //    level.setBlockAndUpdate(pos, state.setValue(AGE, 5));
-        //    if (level instanceof ServerLevel serverLevel)
-        //        serverLevel.sendParticles(BeyondParticleTypes.AURORACITE_STEP.get(), pos.getX() + 0.5, pos.getY() - 0.5, pos.getZ() + 0.5, 1, 0, 0, 0, 0);
-//
-        //    if (level.getBlockState(pos.below()).isAir()) {
-        //        level.setBlockAndUpdate(pos.below(), Blocks.WATER.defaultBlockState());
-        //        level.playSound(null, pos, SoundEvents.BUCKET_EMPTY, SoundSource.BLOCKS, 1, 0.5f);
-        //        level.playSound(null, pos, SoundEvents.TRIAL_SPAWNER_OPEN_SHUTTER, SoundSource.BLOCKS, 1, 0.5f);
-        //    }
-            return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
-        //}
-    }
-
-    @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        //if (level.isClientSide) return super.useWithoutItem(state, level, pos, player, hitResult);
-        //if (state.getValue(AGE) < MAX_AGE) {
-        //    level.playSound(null, pos, SoundEvents.VAULT_DEACTIVATE, SoundSource.BLOCKS, 1, 1);
-        //    return super.useWithoutItem(state, level, pos, player, hitResult);
-        //} else {
-        //    if (level.getBlockState(pos.below()).isAir()) {
-        //        level.setBlockAndUpdate(pos.below(), Blocks.WATER.defaultBlockState());
-        //        level.playSound(null, pos, SoundEvents.BUCKET_EMPTY, SoundSource.BLOCKS, 1, 0.5f);
-        //        level.playSound(null, pos, SoundEvents.TRIAL_SPAWNER_OPEN_SHUTTER, SoundSource.BLOCKS, 1, 1);
-        //        return super.useWithoutItem(state, level, pos, player, hitResult);
-        //    }
-        //    if (level.getBlockState(pos.below()).is(Blocks.WATER)) {
-        //        level.setBlockAndUpdate(pos.below(), Blocks.AIR.defaultBlockState());
-        //        level.playSound(null, pos, SoundEvents.BUCKET_FILL, SoundSource.BLOCKS, 1, 0.5f);
-        //        level.playSound(null, pos, SoundEvents.TRIAL_SPAWNER_OPEN_SHUTTER, SoundSource.BLOCKS, 1, 0.5f);
-        //        return super.useWithoutItem(state, level, pos, player, hitResult);
-        //    }
-        //}
-        return super.useWithoutItem(state, level, pos, player, hitResult);
-    }
-
     public VoxelShape makeShape(Direction facing){
         VoxelShape shape = Shapes.empty();
         if (facing == Direction.SOUTH) {
@@ -172,5 +125,21 @@ public class MemorFaucetBlock extends BaseEntityBlock {
     @Override
     public int getLightEmission(BlockState state, BlockGetter level, BlockPos pos) {
         return state.getValue(AGE)*3;
+    }
+
+    @Override
+    protected boolean isRandomlyTicking(BlockState state) {
+        return state.getValue(AGE)==5;
+    }
+
+    @Override
+    protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        super.randomTick(state, level, pos, random);
+        BlockEntity bonfire = level.getBlockEntity(pos);
+        if (bonfire instanceof BonfireBlockEntity bonfireBlockEntity) {
+            if (bonfireBlockEntity.isItMyBirthdayToday()) {
+                level.setBlockAndUpdate(pos, state.setValue(AGE, 0));
+            }
+        }
     }
 }

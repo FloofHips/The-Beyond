@@ -106,6 +106,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
     @Override
     public int getBaseHeight(int x, int z, Heightmap.Types heightmapType, LevelHeightAccessor level, RandomState randomState) {
+        computeNoisesIfNotPresent(randomState);
         float distanceFromOrigin = (float) Math.sqrt(x * x + z * z);
 
         for (int y = 132; y >= level.getMinBuildHeight(); y--) {
@@ -118,6 +119,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     }
     @Override
     public int getFirstFreeHeight(int x, int z, Heightmap.Types type, LevelHeightAccessor level, RandomState random) {
+        computeNoisesIfNotPresent(random);
         return Math.max(this.getBaseHeight(x, z, type, level, random), level.getMinBuildHeight());
     }
 

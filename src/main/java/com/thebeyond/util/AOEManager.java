@@ -102,6 +102,6 @@ public class AOEManager {
     }
 
     public static double getEntityKnockbackPower(LivingEntity entity, Vec3 entityPos) {
-        return entityPos.length() * 0.7 * ((double)1.0F - entity.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
+        return entityPos.length() * 0.3 * ((double)1.0F - entity.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
     }
 }

@@ -13,6 +13,8 @@ import com.thebeyond.client.model.equipment.ArmorModel;
 import com.thebeyond.client.model.equipment.MultipartArmorModel;
 import com.thebeyond.client.particle.AuroraciteStepParticle;
 import com.thebeyond.client.particle.GlopParticle;
+import com.thebeyond.client.particle.PixelParticle;
+import com.thebeyond.client.particle.SmokeParticle;
 import com.thebeyond.client.renderer.*;
 import com.thebeyond.client.renderer.blockentities.BonfireRenderer;
 import com.thebeyond.client.renderer.blockentities.MemorFaucetRenderer;
@@ -205,6 +207,12 @@ public class ModClientEvents {
         event.registerSpriteSet(BeyondParticleTypes.AURORACITE_STEP.get(), sprites
                 -> (simpleParticleType, clientLevel, d, e, f, g, h, i)
                 -> new AuroraciteStepParticle(clientLevel, d, e, f, sprites));
+
+        event.registerSpriteSet(BeyondParticleTypes.SMOKE.get(),
+                sprites -> new SmokeParticle.Provider(sprites));
+
+        event.registerSpriteSet(BeyondParticleTypes.PIXEL.get(),
+                sprites -> new PixelParticle.Provider(sprites));
     }
     public static void addModelArmor(ModelArmorItem item) {
         MODEL_ARMOR.add(item);
@@ -571,12 +579,6 @@ public class ModClientEvents {
                 RenderSystem.setShaderFogEnd(farDistance);
                 RenderSystem.setShaderFogShape(shape);
             }
-
-            //@Override
-            //public boolean renderFluid(FluidState fluidState, BlockAndTintGetter getter, BlockPos pos, VertexConsumer vertexConsumer, BlockState blockState) {
-            //    new WaveFluidRenderer().tesselate(getter, pos, vertexConsumer, blockState, fluidState);
-            //    return true;
-            //}
         }, BeyondFluids.GELLID_VOID_TYPE.get());
     }
 

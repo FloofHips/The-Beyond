@@ -22,7 +22,7 @@
     "water_fog_color": 6141935,
     "particle": {
       "options": {
-        "type": "minecraft:dust_color_transition",
+        "type": "the_beyond:pixel",
         "from_color": [
           0,
           0.9,
@@ -35,7 +35,7 @@
         ],
         "scale": 0.5
       },
-      "probability": 0.118093334
+      "probability": 0.01
     }
   },
   "features": [

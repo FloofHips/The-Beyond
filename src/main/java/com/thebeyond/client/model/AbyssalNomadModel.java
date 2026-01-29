@@ -138,6 +138,7 @@ public class AbyssalNomadModel <T extends AbyssalNomadEntity> extends Hierarchic
         this.animate(abyssalNomadEntity.sitPoseAnimationState, AbyssalNomadAnimations.sitting, v2, 1);
         this.animate(abyssalNomadEntity.standUpAnimationState, AbyssalNomadAnimations.standup, v2, 1);
         this.animate(abyssalNomadEntity.attackAnimationState, AbyssalNomadAnimations.attack, v2, 1);
+        this.animate(abyssalNomadEntity.dropAnimationState, AbyssalNomadAnimations.drop, v2, 1);
 
         this.body.y += Mth.sin(((v2) * 0.09f) - 2f);
         this.body.yRot += v3 * 0.005F;
