@@ -16,19 +16,27 @@ public class ColorUtils {
     public static SmokeColorTransitionOptions voidOptions = new SmokeColorTransitionOptions(
             new Vector3f(0.7f, 0.0f, 0.9f),
             new Vector3f(0.1f, 0.1f, 0.3f),
-            1f
+            2f
     );
 
     public static SmokeColorTransitionOptions auroraOptions = new SmokeColorTransitionOptions(
             new Vector3f(0.0f, 0.9f, 0.9f),
             new Vector3f(0.0f, 0.5f, 0.5f),
-            1f
+            2f
     );
+
+    public static SmokeColorTransitionOptions dustOptions = new SmokeColorTransitionOptions(
+            new Vector3f(0.69f, 0.75f, 0.86f),
+            new Vector3f(0.85f, 0.95f, 0.85f),
+            1.5f
+    );
+
     public static PixelColorTransitionOptions pixelAuroraOptions = new PixelColorTransitionOptions(
             new Vector3f(0.0f, 0.9f, 0.9f),
             new Vector3f(0.0f, 0.5f, 0.5f),
             1f
     );
+
     public static SimplexNoise noise = new SimplexNoise(new XoroshiroRandomSource(69420));
 
     public static float tri(float f) {

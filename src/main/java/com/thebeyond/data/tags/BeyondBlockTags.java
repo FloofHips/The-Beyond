@@ -34,7 +34,8 @@ public class BeyondBlockTags extends BlockTagsProvider {
                 .add(BeyondBlocks.PORTELAIN_PILLAR.get())
                 .add(BeyondBlocks.PORTELAIN_SLAB.get())
                 .add(BeyondBlocks.PORTELAIN_STAIRS.get())
-                .add(BeyondBlocks.GUSTER.get());
+                .add(BeyondBlocks.GUSTER.get())
+                .add(BeyondBlocks.AMPHORA.get());
 
         tag(BlockTags.PLANKS).add(BeyondBlocks.XYLEM.get());
 
@@ -50,7 +51,8 @@ public class BeyondBlockTags extends BlockTagsProvider {
                 .add(BeyondBlocks.MAGNOLILLY.get())
                 .add(BeyondBlocks.POLAR_ANTENNA.get())
                 .add(BeyondBlocks.VOID_CRYSTAL.get())
-                .addTag(BeyondTags.PORTELAIN_BLOCKS);
+                .addTag(BeyondTags.PORTELAIN_BLOCKS)
+                .add(BeyondBlocks.AMPHORA.get());
 
         tag(BlockTags.MINEABLE_WITH_HOE)
                 .add(BeyondBlocks.ZYMOTE.get());
@@ -59,7 +61,8 @@ public class BeyondBlockTags extends BlockTagsProvider {
                 .add(BeyondBlocks.NACRE.get());
 
         tag(BlockTags.SWORD_EFFICIENT)
-                .add(BeyondBlocks.POLAR_ANTENNA.get());
+                .add(BeyondBlocks.POLAR_ANTENNA.get())
+                .add(BeyondBlocks.AMPHORA.get());
 
         tag(BlockTags.INCORRECT_FOR_WOODEN_TOOL)
                 .add(BeyondBlocks.VOID_CRYSTAL.get());

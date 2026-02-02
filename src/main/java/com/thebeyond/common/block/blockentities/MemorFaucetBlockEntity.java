@@ -23,7 +23,9 @@ import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -44,6 +46,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.thebeyond.common.block.BonfireBlock.LIT;
+import static com.thebeyond.common.block.MemorFaucetBlock.AGE;
 
 public class MemorFaucetBlockEntity extends BlockEntity implements Container {
     private static final int CHECK_INTERVAL = 50;
@@ -79,7 +82,7 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MemorFaucetBlockEntity be) {
-        if (state.getValue(MemorFaucetBlock.AGE) == MemorFaucetBlock.MAX_AGE && be.activeProgress == 0) return;
+        if (state.getValue(AGE) == MemorFaucetBlock.MAX_AGE && be.activeProgress == 0) return;
 
         if (be.active) {
             be.activeProgress = Mth.lerp(0.2f, be.activeProgress, 1);
@@ -90,7 +93,6 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
         be.tickCounter++;
 
         if (be.tickCounter >= CHECK_INTERVAL) {
-            be.tickCounter = 0;
             be.checkForActivation(level, pos);
             be.consumeItems(level, pos);
         }
@@ -101,10 +103,33 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
                 level.sendBlockUpdated(pos, state, state, 3);
             }
         }
+
+        if (be.tickCounter >= CHECK_INTERVAL + 5) {
+            be.tickCounter = 0;
+            AABB detectionBox = new AABB(pos).inflate(20);
+
+            if (level.getBlockState(pos).getValue(AGE) == 0) {
+                List<AbyssalNomadEntity> entities = level.getEntitiesOfClass(AbyssalNomadEntity.class, detectionBox);
+
+                for (AbyssalNomadEntity nomad : entities) {
+                    Vec3 newPos = pos.getCenter().subtract(nomad.position()).normalize().scale(15);
+                    nomad.prayerSite = pos.offset((int) newPos.x, 0, (int) newPos.z);
+                }
+            }
+
+            if (level.getBlockState(pos).getValue(AGE) == 0) {
+                TargetingConditions conditions = TargetingConditions.forNonCombat().range(6).ignoreLineOfSight().selector((entity) -> entity instanceof AbyssalNomadEntity nomad);
+                AbyssalNomadEntity nearestNomad = (AbyssalNomadEntity) level.getNearestEntity(AbyssalNomadEntity.class, conditions, null, pos.getX(), pos.getY(), pos.getZ(), detectionBox);
+
+                if (nearestNomad!=null && pos.getCenter().subtract(nearestNomad.position()).length() < 10)
+                    be.spawnItemFromNomad(nearestNomad, pos);
+            }
+        }
     }
 
     private void checkForActivation(Level level, BlockPos pos) {
         AABB detectionBox = new AABB(pos).inflate(DETECTION_RANGE);
+
         List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, detectionBox);
 
         for (LivingEntity entity : entities) {
@@ -115,6 +140,28 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
                 deactivateFaucet(level, pos);
                 break;
             }
+        }
+    }
+
+    private void spawnItemFromNomad(AbyssalNomadEntity nomad, BlockPos targetPos) {
+        ItemStack item = new ItemStack(BeyondItems.REMEMBRANCE_CLOTH.get());
+
+        if (!item.isEmpty()) {
+            Vec3 startPos = nomad.position().add(0, nomad.getEyeHeight()+1, 0);
+            Vec3 endPos = Vec3.atCenterOf(targetPos).add(0, -0.5, 0);
+
+            nomad.level().broadcastEntityEvent(nomad, (byte) 69);
+
+            ItemEntity itemEntity = new ItemEntity(nomad.level(), startPos.x, startPos.y, startPos.z, item);
+
+            double dx = endPos.x - startPos.x;
+            double dy = endPos.y - startPos.y;
+            double dz = endPos.z - startPos.z;
+
+            itemEntity.setNeverPickUp();
+            itemEntity.setDeltaMovement(dx * 0.1, Math.max(0.2, dy * 0.05 + 0.2), dz * 0.1);
+
+            nomad.level().addFreshEntity(itemEntity);
         }
     }
 
@@ -232,20 +279,20 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
 
     private void increaseAge(Level level, BlockPos pos) {
         BlockState currentState = level.getBlockState(pos);
-        int currentAge = currentState.getValue(MemorFaucetBlock.AGE);
+        int currentAge = currentState.getValue(AGE);
 
         if (currentAge < MemorFaucetBlock.MAX_AGE) {
             int newAge = currentAge + 1;
-            level.setBlock(pos, currentState.setValue(MemorFaucetBlock.AGE, newAge), 3);
+            level.setBlock(pos, currentState.setValue(AGE, newAge), 3);
             if (newAge == 1) {
                 spawnNomads(level, pos);
-                affectNomads(level, pos, (byte) 1);
-                return;
-            }
-            if (newAge == 2) {
                 affectNomads(level, pos, (byte) 2);
                 return;
             }
+            //if (newAge == 2) {
+            //    affectNomads(level, pos, (byte) 2);
+            //    return;
+            //}
             if (newAge >= MemorFaucetBlock.MAX_AGE) {
                 affectNomads(level, pos, (byte) 4);
                 return;
@@ -306,7 +353,7 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
         if (b == (byte) 4) {
             this.birthday = (int) (level.getDayTime() / 24000);
             if (level instanceof ServerLevel serverLevel) {
-                serverLevel.sendParticles(ColorUtils.auroraOptions, pos.getX() + 0.5, pos.getY() - 0.5, pos.getZ() + 0.5, 5, 0.1, 0.1, 0.1, 0);
+                serverLevel.sendParticles(ColorUtils.auroraOptions, pos.getX() + 0.5, pos.getY() - 0.5, pos.getZ() + 0.5, 5, 0.1, 0.1, 0.1, 0.05);
             }
 
             level.playSound(null, pos, SoundEvents.TRIAL_SPAWNER_OMINOUS_ACTIVATE, SoundSource.BLOCKS, 1, 1);
@@ -400,7 +447,7 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
         tag.putBoolean("Active", active);
         tag.putFloat("ActiveProgress", activeProgress);
         ContainerHelper.saveAllItems(tag, items, registries);
-        if (getBlockState().getValue(MemorFaucetBlock.AGE)==5) {
+        if (getBlockState().getValue(AGE)==5) {
             tag.putInt("Birthday", birthday);
         }
     }

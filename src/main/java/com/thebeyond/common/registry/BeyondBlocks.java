@@ -98,6 +98,8 @@ public class BeyondBlocks {
     );
     public static final DeferredBlock<Block> PORTELAIN_PILLAR = registerBlock("portelain_pillar", () -> new RotatedPillarBlock(
             BlockBehaviour.Properties.ofFullCopy(PORTELAIN.get()).sound(SoundType.NETHER_BRICKS)));
+    public static final DeferredBlock<Block> AMPHORA = registerBlock("amphora", () -> new AmphoraBlock(
+            BlockBehaviour.Properties.ofFullCopy(PORTELAIN.get()).sound(SoundType.DECORATED_POT)));
     public static final DeferredBlock<Block> PORTELAIN_TILES = registerBlock("portelain_tiles", () -> new Block(
             BlockBehaviour.Properties.ofFullCopy(PORTELAIN.get()).sound(SoundType.NETHER_BRICKS)));
     public static final DeferredBlock<Block> PORTELAIN_MOSAIC = registerBlock("portelain_mosaic", () -> new GlazedTerracottaBlock(

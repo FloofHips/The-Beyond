@@ -41,7 +41,16 @@
         "element_type": "minecraft:single_pool_element",
         "location": "the_beyond:aberrant_remains/house/house_4",
         "projection": "rigid",
-        "processors": "the_beyond:end_structure_rot"
+        "processors": [
+          {
+            "processor_type": "minecraft:block_rot",
+            "integrity": 0.95,
+            "rottable_blocks": "#the_beyond:end_building_blocks"
+          },
+          {
+            "processor_type": "the_beyond:amphora_size"
+          }
+        ]
       },
       "weight": 1
     },
@@ -50,7 +59,16 @@
         "element_type": "minecraft:single_pool_element",
         "location": "the_beyond:aberrant_remains/house/house_1",
         "projection": "rigid",
-        "processors": "the_beyond:end_structure_rot"
+        "processors": [
+          {
+            "processor_type": "minecraft:block_rot",
+            "integrity": 0.95,
+            "rottable_blocks": "#the_beyond:end_building_blocks"
+          },
+          {
+            "processor_type": "the_beyond:amphora_size"
+          }
+        ]
       },
       "weight": 1
     }

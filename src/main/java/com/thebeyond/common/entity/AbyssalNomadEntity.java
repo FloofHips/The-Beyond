@@ -245,7 +245,7 @@ public class AbyssalNomadEntity extends PathfinderMob {
                 itementity.setNoGravity(true);
 
                 if (level() instanceof ServerLevel serverLevel)
-                    serverLevel.sendParticles(ColorUtils.auroraOptions, itementity.getX(), itementity.getY(), itementity.getZ(), 3 + random.nextInt(5), 0.05, 0.05, 0.05, 0.001);
+                    serverLevel.sendParticles(ColorUtils.auroraOptions, itementity.getX(), itementity.getY(), itementity.getZ(), 3 + random.nextInt(5), 0.05, 0.05, 0.05, 0.03);
 
                 this.playSound(SoundEvents.AXE_STRIP, 1, 0.5f);
             }
@@ -521,20 +521,25 @@ public class AbyssalNomadEntity extends PathfinderMob {
 
             if (distance > 32) {
                 moveToward(target,1.5);
-            } else if (distance > 10) {
+            } else if (distance > 15) {
                 moveToward(target, 1.0);
+            } else if (distance > 10) {
+                moveToward(target, 0.8);
+            } else if (distance < 9) {
+                return;
             }
         }
 
         @Override
         public boolean canContinueToUse() {
-            return canUse() && nomad.position().distanceTo(Vec3.atCenterOf(nomad.prayerSite)) > 8;
+            return canUse() && nomad.position().distanceTo(Vec3.atCenterOf(nomad.prayerSite)) > 3;
         }
 
         @Override
         public void stop() {
             super.stop();
             nomad.lookAt = null;
+            nomad.prayerSite = null;
             nomad.setPray(false);
         }
     }

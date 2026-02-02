@@ -14,7 +14,7 @@
         "element_type": "minecraft:single_pool_element",
         "location": "the_beyond:aberrant_remains/stairs/loose_stairs_doorway",
         "projection": "rigid",
-        "processors": "minecraft:empty"
+        "processors": "the_beyond:amphora_processor"
       },
       "weight": 1
     }

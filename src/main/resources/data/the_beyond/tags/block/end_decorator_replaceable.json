@@ -1,5 +1,6 @@
 {
   "values": [
-    "minecraft:end_stone"
+    "minecraft:end_stone",
+    "#the_beyond:end_building_blocks"
   ]
 }

@@ -19,8 +19,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
 public class EnatiousTotemRenderer extends MobRenderer<EnatiousTotemEntity, EnatiousTotemModel<EnatiousTotemEntity>> {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enatious_totem.png");
-    private static final ResourceLocation TEXTURE_DOWN = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enatious_totem_down.png");
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enatious_totem/enatious_totem.png");
+    private static final ResourceLocation TEXTURE_DOWN = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enatious_totem/enatious_totem_down.png");
     public EnatiousTotemRenderer(EntityRendererProvider.Context pContext) {
         super(pContext,new EnatiousTotemModel<>(pContext.bakeLayer(BeyondModelLayers.ENATIOUS_TOTEM)),1F);
     }

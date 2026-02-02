@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
+import net.minecraft.util.Mth;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.joml.Vector3f;
@@ -17,13 +18,19 @@ public class SmokeParticle extends TextureSheetParticle {
         super(level, x, y, z, xSpeed, ySpeed, zSpeed);
         this.sprites = sprites;
 
-        this.quadSize = (float) (options.scale() * 0.1 + level.random.nextFloat() * 0.5);
+        //this.quadSize = (float) (options.scale() * 0.1 + level.random.nextFloat() * 0.5);
         this.lifetime = 60 + level.random.nextInt(40);
         this.hasPhysics = true;
 
         float f = this.random.nextFloat() * 0.4F + 0.6F;
         this.fromColor = this.randomizeColor(options.getFromColor(), f);
         this.toColor = this.randomizeColor(options.getToColor(), f);
+
+        this.xd = xSpeed;
+        this.yd = Mth.abs((float) ySpeed);
+        this.zd = zSpeed;
+
+        this.scale(options.getScale());
 
         setSpriteFromAge(sprites);
     }

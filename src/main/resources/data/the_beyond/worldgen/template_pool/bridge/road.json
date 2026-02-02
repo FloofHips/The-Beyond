@@ -49,7 +49,7 @@
         "element_type": "minecraft:single_pool_element",
         "location": "the_beyond:bridge/bridge_garden",
         "projection": "rigid",
-        "processors": "minecraft:empty"
+        "processors": "the_beyond:amphora_processor"
       },
       "weight": 1
     }

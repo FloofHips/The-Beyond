@@ -17,7 +17,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
 public class PoisonSeedRenderer extends EntityRenderer<PoisonSeedEntity> {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/poison_seed.png");
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enatious_totem/poison_seed.png");
     private final PoisonSeedModel model;
 
     public PoisonSeedRenderer(EntityRendererProvider.Context context) {

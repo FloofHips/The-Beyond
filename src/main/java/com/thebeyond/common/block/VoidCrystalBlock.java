@@ -1,6 +1,7 @@
 package com.thebeyond.common.block;
 
 import com.mojang.serialization.MapCodec;
+import com.thebeyond.client.particle.SmokeColorTransitionOptions;
 import com.thebeyond.common.block.blockstates.PillarHeightProperty;
 import com.thebeyond.common.entity.RisingBlockEntity;
 import com.thebeyond.common.fluid.GellidVoidBlock;
@@ -37,6 +38,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.joml.Vector3f;
 
 import javax.annotation.Nullable;
 import java.util.function.Predicate;
@@ -165,7 +167,7 @@ public class VoidCrystalBlock extends Block implements Fallable {
 
         if (level instanceof ServerLevel serverLevel) {
             serverLevel.playSound(fallingBlock, pos, SoundEvents.GLASS_BREAK, SoundSource.BLOCKS, 1, 1);
-            serverLevel.sendParticles(ColorUtils.voidOptions, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 15, 0.25, 0.15, 0.25, 0);
+            serverLevel.sendParticles(ColorUtils.voidOptions, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 15, 0.25, 0.15, 0.25, 0.05);
         }
         Fallable.super.onBrokenAfterFall(level, pos, fallingBlock);
     }

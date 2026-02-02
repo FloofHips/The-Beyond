@@ -14,7 +14,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 
 public class UnstableSeedRenderer extends EntityRenderer<UnstableSeedEntity> {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/unstable_seed.png");
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enatious_totem/unstable_seed.png");
     private final UnstableSeedModel model;
 
     public UnstableSeedRenderer(EntityRendererProvider.Context context) {

@@ -368,6 +368,7 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
         child.setPos(this.getX() + level.random.nextFloat(), this.getY() + level.random.nextFloat(), this.getZ() + level.random.nextFloat());
         child.setSize(this.getSize()-1);
         child.setAlpha(255);
+        child.setPersistenceRequired();
 
         if(level.addFreshEntity(child)){
             Vec3 direction = child.position().subtract(this.position()).normalize().scale(0.4f);

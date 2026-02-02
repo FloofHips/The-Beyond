@@ -1,0 +1,14 @@
+{
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 14357921,
+    "separation": 20,
+    "spacing": 25
+  },
+  "structures": [
+    {
+      "structure": "the_beyond:arch",
+      "weight": 1
+    }
+  ]
+}

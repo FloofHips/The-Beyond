@@ -34,6 +34,9 @@ public record SmokeColorTransitionOptions(Vector3f fromColor, Vector3f toColor, 
     public Vector3f getToColor() {
         return toColor;
     }
+    public float getScale() {
+        return scale;
+    }
     @Override
     public ParticleType<?> getType() {
         return BeyondParticleTypes.SMOKE.get();

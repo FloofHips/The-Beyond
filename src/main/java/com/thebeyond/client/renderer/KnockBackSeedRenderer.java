@@ -15,7 +15,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
 public class KnockBackSeedRenderer extends EntityRenderer<KnockbackSeedEntity> {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/knockback_seed.png");
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enatious_totem/knockback_seed.png");
     private final KnockBackSeedModel model;
 
     public KnockBackSeedRenderer(EntityRendererProvider.Context context) {

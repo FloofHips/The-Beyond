@@ -1,0 +1,33 @@
+{
+  "elements": [
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:arches/small",
+        "projection": "rigid",
+        "processors": "the_beyond:end_structure_rot"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:arches/medium",
+        "projection": "rigid",
+        "processors": "the_beyond:end_structure_rot"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:arches/large",
+        "projection": "rigid",
+        "processors": "the_beyond:end_structure_rot"
+      },
+      "weight": 1
+    }
+  ],
+  "fallback": "minecraft:empty",
+  "name": "the_beyond:misc/arch"
+}

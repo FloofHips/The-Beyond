@@ -4,13 +4,13 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.util.WorldSeedHolder;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
-import net.minecraft.core.RegistryAccess;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectListIterator;
+import net.minecraft.core.*;
+import net.minecraft.server.level.WorldGenRegion;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.LevelHeightAccessor;
-import net.minecraft.world.level.StructureManager;
+import net.minecraft.world.level.*;
+import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.chunk.ChunkAccess;
@@ -18,13 +18,15 @@ import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
 import net.minecraft.world.level.levelgen.*;
 import net.minecraft.world.level.levelgen.blending.Blender;
+import net.minecraft.world.level.levelgen.structure.*;
+import net.minecraft.world.level.levelgen.structure.pools.JigsawJunction;
+import net.minecraft.world.level.levelgen.structure.pools.StructurePoolElement;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 import net.minecraft.world.level.levelgen.synth.PerlinSimplexNoise;
 import net.minecraft.world.level.levelgen.synth.SimplexNoise;
 
 import java.text.DecimalFormat;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
@@ -52,7 +54,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
     public BeyondEndChunkGenerator(BiomeSource biomeSource, Holder<NoiseGeneratorSettings> settings) {
         super(biomeSource, settings);
-
         this.settings = settings;
     }
 
@@ -60,25 +61,16 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         if (simplexNoise == null || globalHOffsetNoise == null || globalVOffsetNoise == null || globalCOffsetNoise == null) {
             WorldSeedHolder holder = (WorldSeedHolder) (Object) randomState;
             long worldSeed = holder.the_Beyond$getWorldSeed();
-
-            RandomSource random1 = RandomSource.create(worldSeed);
-            RandomSource random2 = RandomSource.create(worldSeed);
-            RandomSource random3 = RandomSource.create(worldSeed);
-            RandomSource random4 = RandomSource.create(worldSeed);
-
-            simplexNoise = new SimplexNoise(random1);
-            globalHOffsetNoise = new PerlinSimplexNoise(random2, Collections.singletonList(1));
-            globalVOffsetNoise = new PerlinSimplexNoise(random3, Collections.singletonList(1));
-            globalCOffsetNoise = new PerlinSimplexNoise(random4, Collections.singletonList(1));
+            computeNoisesIfNotPresent(worldSeed);
         }
     }
 
     public void computeNoisesIfNotPresent(long worldSeed) {
         if (simplexNoise == null || globalHOffsetNoise == null || globalVOffsetNoise == null || globalCOffsetNoise == null) {
             RandomSource random1 = RandomSource.create(worldSeed);
-            RandomSource random2 = RandomSource.create(worldSeed);
-            RandomSource random3 = RandomSource.create(worldSeed);
-            RandomSource random4 = RandomSource.create(worldSeed);
+            RandomSource random2 = RandomSource.create(worldSeed+1);
+            RandomSource random3 = RandomSource.create(worldSeed+2);
+            RandomSource random4 = RandomSource.create(worldSeed+3);
 
             simplexNoise = new SimplexNoise(random1);
             globalHOffsetNoise = new PerlinSimplexNoise(random2, Collections.singletonList(1));
@@ -90,6 +82,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     @Override
     public void createStructures(RegistryAccess registryAccess, ChunkGeneratorStructureState structureState, StructureManager structureManager, ChunkAccess chunk, StructureTemplateManager structureTemplateManager) {
         computeNoisesIfNotPresent(structureState.getLevelSeed());
+        System.out.println(structureState.getLevelSeed());
         super.createStructures(registryAccess, structureState, structureManager, chunk, structureTemplateManager);
     }
 
@@ -211,6 +204,8 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             int startX = chunkPos.getMinBlockX();
             int startZ = chunkPos.getMinBlockZ();
 
+            Map<Long, Double> adaptationCache = new HashMap<>();
+
             for (int x = 0; x < 16; x++) {
                 for (int z = 0; z < 16; z++) {
                     int globalX = startX + x;
@@ -225,7 +220,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                     }
 
                     else if (distanceFromOrigin >= 650) {
-                      generateEndTerrain(chunk, globalX, globalZ, distanceFromOrigin);
+                      generateEndTerrain(chunk, globalX, globalZ, distanceFromOrigin, adaptationCache);
                     }
                 }
             }
@@ -270,8 +265,15 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         }
     }
 
-    private void generateEndTerrain(ChunkAccess chunk, int globalX, int globalZ, float distanceFromOrigin) {
+    private void generateEndTerrain(ChunkAccess chunk, int globalX, int globalZ, float distanceFromOrigin, Map<Long, Double> adaptationCache) {
         for (int y = 1; y < 160; y++) {
+            double structureAdaptation = getOrCalculateAdaptation(chunk, globalX, y, globalZ, adaptationCache);
+
+            double baseThreshold = getThreshold(globalX, globalZ, distanceFromOrigin);
+            double density = getTerrainDensity(globalX, y, globalZ);
+            double adaptedThreshold = baseThreshold - structureAdaptation * 0.15;
+            density += structureAdaptation * 0.1;
+
             if (isSolidTerrain(globalX, y, globalZ, distanceFromOrigin)) {
                 chunk.setBlockState(new BlockPos(globalX, y, globalZ), Blocks.END_STONE.defaultBlockState(), false);
             }
@@ -331,5 +333,71 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                 " VS: " + decimalformat.format(verticalBaseScale) +
                 " Threshold: " + decimalformat.format(threshold) +
                 " CH: " + decimalformat.format(cycleHeight));
+    }
+
+    @Override
+    public ChunkGeneratorStructureState createState(HolderLookup<StructureSet> structureSetLookup, RandomState randomState, long seed) {
+        computeNoisesIfNotPresent(randomState);
+        return super.createState(structureSetLookup, randomState, seed);
+    }
+
+    @Override
+    public void applyCarvers(WorldGenRegion level, long seed, RandomState random, BiomeManager biomeManager, StructureManager structureManager, ChunkAccess chunk, GenerationStep.Carving step) {
+        super.applyCarvers(level, seed, random, biomeManager, structureManager, chunk, step);
+    }
+
+    @Override
+    public NoiseColumn getBaseColumn(int x, int z, LevelHeightAccessor height, RandomState random) {
+        computeNoisesIfNotPresent(random);
+        return super.getBaseColumn(x, z, height, random);
+    }
+
+    @Override
+    public void buildSurface(WorldGenRegion level, StructureManager structureManager, RandomState random, ChunkAccess chunk) {
+        computeNoisesIfNotPresent(random);
+        super.buildSurface(level, structureManager, random, chunk);
+    }
+
+    private double calculateStructureAdaptation(ChunkAccess chunk, int x, int y, int z) {
+        double adaptation = 0.0;
+
+        for (StructureStart start : chunk.getAllStarts().values()) {
+            if (start.isValid()) {
+                adaptation += calculateStructureInfluence(start, x, y, z);
+            }
+        }
+
+        return adaptation;
+    }
+
+    private double calculateStructureInfluence(StructureStart start, int x, int y, int z) {
+        BoundingBox bounds = start.getBoundingBox();
+
+        int dx = Math.max(Math.max(bounds.minX() - x, x - bounds.maxX()), 0);
+        int dy = Math.max(Math.max(bounds.minY() - y, y - bounds.maxY()), 0);
+        int dz = Math.max(Math.max(bounds.minZ() - z, z - bounds.maxZ()), 0);
+
+        int distance = dx + dy + dz;
+
+        int influenceRadius = Math.max(bounds.getXSpan(), bounds.getZSpan()) * 2;
+
+        if (distance < influenceRadius) {
+            double normalized = 1.0 - ((double)distance / influenceRadius);
+            return normalized * normalized * 0.3;
+        }
+
+        return 0.0;
+    }
+
+    private double getOrCalculateAdaptation(ChunkAccess chunk, int x, int y, int z, Map<Long, Double> adaptationCache) {
+        long cacheKey = ((long)x << 40) | ((long)z << 20) | y;
+
+        if (adaptationCache.containsKey(cacheKey)) {
+            return adaptationCache.get(cacheKey);
+        }
+
+        double adaptation = calculateStructureAdaptation(chunk, x, y, z);
+        adaptationCache.put(cacheKey, adaptation);
+        return adaptation;
     }
 }

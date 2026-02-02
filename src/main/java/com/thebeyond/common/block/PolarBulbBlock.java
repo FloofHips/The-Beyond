@@ -72,7 +72,7 @@ public class PolarBulbBlock extends Block {
             enderglop.setPos(pos.getX()+0.5, pos.getY()+0.8, pos.getZ()+0.5);
             enderglop.setSize(level.isRaining() ? 3 : 2, false);
 
-            level.sendParticles(ColorUtils.voidOptions, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 15, 0.1, 0.1, 0.1, 0.000);
+            level.sendParticles(ColorUtils.voidOptions, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 15, 0.1, 0.1, 0.1, 0.06);
 
             level.addFreshEntity(enderglop);
             LivingEntity player = level.getNearestPlayer(enderglop, 10);

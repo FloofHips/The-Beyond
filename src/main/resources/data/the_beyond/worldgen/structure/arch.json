@@ -3,13 +3,13 @@
   "biomes": "#the_beyond:has_remains",
   "terrain_adaptation": "beard_thin",
   "start_height": {
-    "absolute": 3
+    "absolute": 0
   },
   "project_start_to_heightmap": "MOTION_BLOCKING",
   "max_distance_from_center": 116,
-  "size": 20,
+  "size": 3,
   "spawn_overrides": {},
-  "start_pool": "the_beyond:aberrant_remains/starts",
-  "step": "surface_structures",
+  "start_pool": "the_beyond:misc/arch",
+  "step": "raw_generation",
   "use_expansion_hack": false
 }

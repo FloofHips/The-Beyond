@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "size=small": {
+      "model": "the_beyond:block/amphora_small"
+    },
+    "size=medium": {
+      "model": "the_beyond:block/amphora_medium"
+    },
+    "size=large": {
+      "model": "the_beyond:block/amphora_large"
+    }
+  }
+} 

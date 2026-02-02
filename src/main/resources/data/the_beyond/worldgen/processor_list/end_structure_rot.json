@@ -1,8 +1,9 @@
 {
   "processors": [
     {
-      "integrity": 0.9,
-      "processor_type": "minecraft:block_rot"
+      "processor_type": "minecraft:block_rot",
+      "integrity": 0.95,
+      "rottable_blocks": "#the_beyond:end_building_blocks"
     }
   ]
 }
