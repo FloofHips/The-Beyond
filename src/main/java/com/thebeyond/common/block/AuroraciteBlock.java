@@ -43,7 +43,7 @@ public class AuroraciteBlock extends Block {
         registerDefaultState(this.stateDefinition.any().setValue(POWERED, false));
     }
 
-    private boolean canEntityWalkOn(Entity entity) {
+    public static boolean canEntityWalkOn(Entity entity) {
         if (entity instanceof AbyssalNomadEntity) {
             return true;
         } else {

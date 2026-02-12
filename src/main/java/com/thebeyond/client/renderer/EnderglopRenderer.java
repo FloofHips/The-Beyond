@@ -23,8 +23,8 @@ import org.joml.Quaterniond;
 @OnlyIn(Dist.CLIENT)
 public class EnderglopRenderer extends MobRenderer<EnderglopEntity, EnderdropModel<EnderglopEntity>> {
 
-    private static final ResourceLocation ENDERGLOP = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enderglop.png");
-    private static final ResourceLocation ENDERGLOP_ARMORED = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enderglop_armored.png");
+    private static final ResourceLocation ENDERGLOP = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enderglop/enderglop.png");
+    private static final ResourceLocation ENDERGLOP_ARMORED = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enderglop/enderglop_armored.png");
 
 
     public EnderglopRenderer(EntityRendererProvider.Context pContext){

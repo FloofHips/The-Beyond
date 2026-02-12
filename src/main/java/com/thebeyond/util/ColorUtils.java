@@ -30,13 +30,28 @@ public class ColorUtils {
             new Vector3f(0.85f, 0.95f, 0.85f),
             1.5f
     );
-
+    public static SmokeColorTransitionOptions poisonOptions = new SmokeColorTransitionOptions(
+            new Vector3f(0.2f, 1.0f, 0.3f),
+            new Vector3f(0.8f, 1.0f, 0.3f),
+            1.5f
+    );
     public static PixelColorTransitionOptions pixelAuroraOptions = new PixelColorTransitionOptions(
             new Vector3f(0.0f, 0.9f, 0.9f),
             new Vector3f(0.0f, 0.5f, 0.5f),
             1f
     );
 
+    public static PixelColorTransitionOptions pixelPoisonOptions = new PixelColorTransitionOptions(
+            new Vector3f(0.2f, 1.0f, 0.3f),
+            new Vector3f(0.8f, 1.0f, 0.3f),
+            1f
+    );
+
+    public static PixelColorTransitionOptions pixelWhiteOptions = new PixelColorTransitionOptions(
+            new Vector3f(1.0f, 1.0f, 1.0f),
+            new Vector3f(0.9f, 0.5f, 0.9f),
+            1f
+    );
     public static SimplexNoise noise = new SimplexNoise(new XoroshiroRandomSource(69420));
 
     public static float tri(float f) {

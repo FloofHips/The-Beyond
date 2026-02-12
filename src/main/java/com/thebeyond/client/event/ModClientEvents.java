@@ -23,6 +23,7 @@ import com.thebeyond.common.entity.LanternEntity;
 import com.thebeyond.common.entity.TotemOfRespiteEntity;
 import com.thebeyond.common.item.ModelArmorItem;
 import com.thebeyond.common.registry.*;
+import com.thebeyond.mixin.AbstractSoundInstanceAccessor;
 import com.thebeyond.util.AOEManager;
 import com.thebeyond.util.ColorUtils;
 import com.thebeyond.util.RenderUtils;
@@ -33,6 +34,7 @@ import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.Model;
 import net.minecraft.client.model.geom.builders.CubeDeformation;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.renderer.culling.Frustum;
@@ -41,10 +43,10 @@ import net.minecraft.client.renderer.entity.FallingBlockRenderer;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.ModelResourceLocation;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.core.GlobalPos;
-import net.minecraft.core.RegistryAccess;
+import net.minecraft.client.resources.sounds.AbstractSoundInstance;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.core.*;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -54,6 +56,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageTypes;
@@ -90,6 +93,7 @@ import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtension
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.common.util.TriState;
+import net.neoforged.neoforge.event.PlayLevelSoundEvent;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
@@ -104,6 +108,7 @@ import net.neoforged.neoforge.event.level.PistonEvent;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
+import java.lang.reflect.Field;
 import java.nio.Buffer;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -311,6 +316,47 @@ public class ModClientEvents {
             event.setSound(null);
         }
     }
+
+//    @SubscribeEvent
+//    public static void onSoundEvent(PlayLevelSoundEvent.AtPosition event) {
+//        if (event.getOriginalVolume() < 0.1f) return;
+//        if (skipSound(event.getSound().value())) return;
+//        scheduleDelayedSound(event, 2, event.getOriginalVolume()*0.5f);
+//        //scheduleDelayedSound(event, 5, event.getOriginalVolume()*0.25f);
+//    }
+//
+//    private static void scheduleDelayedSound(PlayLevelSoundEvent.AtPosition event, int delayTicks, float volume) {
+//        SimpleSoundInstance sound = new SimpleSoundInstance(
+//                event.getSound().value().getLocation(),
+//                SoundSource.AMBIENT,
+//                volume,
+//                1.0f,
+//                SoundInstance.createUnseededRandom(),
+//                false,
+//                0,
+//                SoundInstance.Attenuation.LINEAR,
+//                event.getPosition().x,
+//                event.getPosition().y,
+//                event.getPosition().z,
+//                false
+//        );
+//
+//        Minecraft.getInstance().getSoundManager().playDelayed(sound, delayTicks);
+//    }
+//
+//    private static boolean skipSound(SoundEvent sound) {
+//        if (sound == null) return true;
+//        String str = sound.getLocation().toString();
+//
+//        if (str.contains("ambient") || str.contains("music") || str.contains("weather")) {
+//            return true;
+//        }
+//
+//        if (str.contains("entity") || str.contains("block") || str.contains("item") || str.contains("ui")) {
+//            return false;
+//        }
+//        return false;
+//    }
 
     @SubscribeEvent
     public static void onRenderNameTag(RenderNameTagEvent event) {

@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "the_beyond:block/enatious_totem_seed_off_top",
+    "bottom": "minecraft:block/end_stone",
+    "side": "the_beyond:block/enatious_totem_seed"
+  }
+} 

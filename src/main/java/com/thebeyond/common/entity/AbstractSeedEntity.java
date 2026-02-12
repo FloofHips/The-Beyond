@@ -1,7 +1,10 @@
 package com.thebeyond.common.entity;
 
 import com.thebeyond.common.registry.BeyondEntityTypes;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
@@ -17,6 +20,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.UUID;
@@ -91,12 +95,16 @@ public abstract class AbstractSeedEntity extends Projectile {
                     this.targetId = null;
                 }
             }
-        } else this.level().addParticle(ParticleTypes.END_ROD, this.getX(), this.getY() + 0.15, this.getZ(), 0.0, 0.0, 0.0);
+        } else this.level().addParticle(getParticleType(), this.getX(), this.getY() + 0.15, this.getZ(), 0.0, 0.0, 0.0);
 
         HitResult hitresult = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
         if (hitresult.getType() != HitResult.Type.MISS) {
             this.onHit(hitresult);
         }
+    }
+
+    protected ParticleOptions getParticleType() {
+        return ParticleTypes.PORTAL;
     }
 
     protected boolean canHitEntity(Entity target) {

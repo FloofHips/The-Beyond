@@ -1,15 +1,13 @@
 package com.thebeyond.common.entity;
 
-import com.thebeyond.TheBeyond;
+import com.thebeyond.common.block.EnatiousTotemSeedBlock;
 import com.thebeyond.common.block.ObirootSproutBlock;
 import com.thebeyond.common.registry.BeyondBlocks;
-import com.thebeyond.common.registry.BeyondEffects;
 import com.thebeyond.common.registry.BeyondFeatures;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.worldgen.features.CaveFeatures;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -19,14 +17,12 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
-import net.minecraft.world.entity.animal.Fox;
+import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -35,17 +31,19 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Predicate;
 
 public class EnadrakeEntity extends PathfinderMob {
 
     static final Predicate<ItemEntity> ALLOWED_ITEMS = (p_350086_) -> !p_350086_.hasPickUpDelay() && p_350086_.isAlive();
     private static final EntityDataAccessor<Byte> DATA_FLAGS_ID = SynchedEntityData.defineId(EnadrakeEntity.class, EntityDataSerializers.BYTE);
+    private static final EntityDataAccessor<Boolean> DATA_SCREAM = SynchedEntityData.defineId(EnadrakeEntity.class, EntityDataSerializers.BOOLEAN);
+    public int panic;
 
     public EnadrakeEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
@@ -57,6 +55,7 @@ public class EnadrakeEntity extends PathfinderMob {
         this.goalSelector.addGoal(1, new EnadrakeHarvestGoal(this, 1.5, 15, 6));
         this.goalSelector.addGoal(2, new RandomStrollGoal(this, 1));
         this.goalSelector.addGoal(3, new RandomLookAroundGoal(this));
+        this.goalSelector.addGoal(0, new EnadrakeHurtGoal(this, 1.5));
         this.goalSelector.addGoal(0, new LookAtPlayerGoal(this, Player.class, 3f));
 
         this.targetSelector.addGoal(0, new NearestAttackableTargetGoal<>(this, EnderglopEntity.class, true));
@@ -67,20 +66,90 @@ public class EnadrakeEntity extends PathfinderMob {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(DATA_FLAGS_ID, (byte)0);
+        builder.define(DATA_SCREAM, false);
     }
+
+    public void setDataScream(boolean i) {
+        entityData.set(DATA_SCREAM, i);
+    }
+
+    public boolean getDataScream() {
+        return entityData.get(DATA_SCREAM);
+    }
+
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        if(source.getEntity() instanceof LivingEntity livingEntity){
-            if(livingEntity.level().isClientSide){
-                livingEntity.level().playLocalSound(livingEntity, SoundEvents.HORSE_DEATH, SoundSource.HOSTILE, 0.5f, 1);
-                livingEntity.level().playLocalSound(livingEntity, SoundEvents.BELL_RESONATE, SoundSource.HOSTILE, 2, 2);
-            }
-            this.lookAt(livingEntity, 180, 180);
-            livingEntity.addEffect(new MobEffectInstance(BeyondEffects.DEAFENED, 200));
-        }
+        if (source.getEntity() instanceof LivingEntity) panic=220;
         return super.hurt(source, amount);
     }
 
+    @Override
+    public void tick() {
+        super.tick();
+        if (panic > 0) panic--;
+        if (panic > 190) this.setYHeadRot(getYHeadRot()+(random.nextInt(-40, 40)));
+        if (panic < 190 && panic > 140) this.setYHeadRot(getYHeadRot()+(random.nextInt(-10, 10)));
+        if (panic == 190) scream();
+        if (panic == 175) setDataScream(false);
+    }
+
+    public void scream() {
+        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.HORSE_DEATH, SoundSource.HOSTILE, 0.5f, 1);
+        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.BELL_RESONATE, SoundSource.HOSTILE, 2, 2);
+
+        Player player = this.level().getNearestPlayer(this, 16);
+
+        AABB detectionBox = new AABB(getOnPos()).inflate(10);
+        TargetingConditions conditions = TargetingConditions.forNonCombat().range(6).ignoreLineOfSight().selector((entity) -> entity instanceof EnadrakeEntity friend && friend.panic == 0);
+        EnadrakeEntity friend = (EnadrakeEntity) level().getNearestEntity(EnadrakeEntity.class, conditions, null, position().x, position().y, position().z, detectionBox);
+
+        setDataScream(true);
+        BlockPos pos = findNearestSeed();
+
+        if (level() instanceof ServerLevel serverLevel)
+            serverLevel.sendParticles(ParticleTypes.ANGRY_VILLAGER, position().x, position().y+0.6, position().z, random.nextInt(3,6), 0.1, 1, 0.1, 0.01);
+
+        if (pos != null) {
+            EnatiousTotemSeedBlock seed = (EnatiousTotemSeedBlock) level().getBlockState(pos).getBlock();
+            seed.activate(level().getBlockState(pos), level(), pos);
+        }
+
+        if (friend != null) {
+            friend.panic = 192;
+        }
+
+        if (player != null) {
+            this.lookAt(player, 180, 180);
+            //player.addEffect(new MobEffectInstance(BeyondEffects.DEAFENED, 250));
+        }
+    }
+
+    protected BlockPos findNearestSeed() {
+        int i = 16;
+        int j = 16;
+        BlockPos blockpos = this.blockPosition();
+        BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos();
+
+        for(int k = 0; k <= j; k = k > 0 ? -k : 1 - k) {
+            for(int l = 0; l < i; ++l) {
+                for(int i1 = 0; i1 <= l; i1 = i1 > 0 ? -i1 : 1 - i1) {
+                    for(int j1 = i1 < l && i1 > -l ? l : 0; j1 <= l; j1 = j1 > 0 ? -j1 : 1 - j1) {
+                        blockpos$mutableblockpos.setWithOffset(blockpos, i1, k - 1, j1);
+                        if (this.isWithinRestriction(blockpos$mutableblockpos) && this.isValidTarget(this.level(), blockpos$mutableblockpos)) {
+                            return blockpos$mutableblockpos;
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    protected boolean isValidTarget(LevelReader level, BlockPos pos) {
+        if (!level.getBlockState(pos).is(BeyondBlocks.ENATIOUS_TOTEM_SEED.get())) return false;
+        return !level.getBlockState(pos).getValue(EnatiousTotemSeedBlock.POWERED);
+    }
 
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);
@@ -124,8 +193,6 @@ public class EnadrakeEntity extends PathfinderMob {
     protected void pickUpItem(ItemEntity itemEntity) {
         ItemStack itemstack = itemEntity.getItem();
         if (this.canHoldItem(itemstack)) {
-            int i = itemstack.getCount();
-
             this.onItemPickup(itemEntity);
             this.setItemSlot(EquipmentSlot.MAINHAND, itemstack.split(1));
             this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
@@ -244,6 +311,56 @@ public class EnadrakeEntity extends PathfinderMob {
             if (!list.isEmpty()) {
                 EnadrakeEntity.this.getNavigation().moveTo((Entity)list.get(0), (double)1.2F);
             }
+        }
+    }
+
+    class EnadrakeGoHomeGoal extends Goal {
+
+        @Override
+        public boolean canUse() {
+            return false;
+        }
+    }
+
+    class EnadrakeHurtGoal extends PanicGoal {
+        EnadrakeEntity mob;
+        public EnadrakeHurtGoal(PathfinderMob mob, double speedModifier) {
+            super(mob, speedModifier);
+            this.mob = (EnadrakeEntity) mob;
+        }
+
+        @Override
+        protected boolean shouldPanic() {
+            return super.shouldPanic() || (mob != null && mob.panic > 0 && mob.panic < 180);
+        }
+
+        @Override
+        public void start() {
+            super.start();
+        }
+    }
+
+    class EnadrakePlantFriendGoal extends Goal {
+
+        @Override
+        public boolean canUse() {
+            return false;
+        }
+    }
+
+    class EnadrakeStoreInHomeGoal extends Goal {
+
+        @Override
+        public boolean canUse() {
+            return false;
+        }
+    }
+
+    class EnadrakeBuildRefugeGoal extends Goal {
+
+        @Override
+        public boolean canUse() {
+            return false;
         }
     }
 }

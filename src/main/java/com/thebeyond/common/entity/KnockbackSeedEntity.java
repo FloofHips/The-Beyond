@@ -2,6 +2,8 @@ package com.thebeyond.common.entity;
 
 import com.thebeyond.common.registry.BeyondEffects;
 import com.thebeyond.common.registry.BeyondEntityTypes;
+import com.thebeyond.util.ColorUtils;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -99,6 +101,11 @@ public class KnockbackSeedEntity extends AbstractSeedEntity {
             }
             this.setDeltaMovement(this.getDeltaMovement().multiply(0.7, -0.5, 0.7));
         }
+    }
+
+    @Override
+    protected ParticleOptions getParticleType() {
+        return ColorUtils.pixelWhiteOptions;
     }
 
     @Override

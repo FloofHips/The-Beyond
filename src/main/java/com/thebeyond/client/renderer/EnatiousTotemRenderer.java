@@ -22,28 +22,28 @@ public class EnatiousTotemRenderer extends MobRenderer<EnatiousTotemEntity, Enat
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enatious_totem/enatious_totem.png");
     private static final ResourceLocation TEXTURE_DOWN = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enatious_totem/enatious_totem_down.png");
     public EnatiousTotemRenderer(EntityRendererProvider.Context pContext) {
-        super(pContext,new EnatiousTotemModel<>(pContext.bakeLayer(BeyondModelLayers.ENATIOUS_TOTEM)),1F);
+        super(pContext,new EnatiousTotemModel<>(pContext.bakeLayer(BeyondModelLayers.ENATIOUS_TOTEM)),0F);
     }
 
     @Override
     public void render(EnatiousTotemEntity entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
-        boolean flag = entity.hurtTime > 0;
-        if(entity.getSpawnProgress()>8)
-            super.render(entity, entityYaw, 0, poseStack, buffer, packedLight);
+        //boolean flag = entity.hurtTime > 0;
+        if(entity.getSpawnProgress()>2)
+            super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight) ;
 
-        if (entity.getCooldown() > 40 && entity.getCooldown() < 80)
-        {
-            poseStack.pushPose();
-            poseStack.mulPose(Axis.YN.rotationDegrees(entity.yBodyRot));
-            poseStack.translate(entity.blockPosition().getX() - entity.getX() - 0.5,0,entity.blockPosition().getZ() - entity.getZ()- 0.5);
-            Minecraft.getInstance().getBlockRenderer().renderSingleBlock(BeyondBlocks.VOID_FLAME.get().defaultBlockState(), poseStack, buffer, 255, OverlayTexture.pack(0.0F, flag));
-            poseStack.translate(1,0,1);
-            Minecraft.getInstance().getBlockRenderer().renderSingleBlock(BeyondBlocks.VOID_FLAME.get().defaultBlockState(), poseStack, buffer, 255, OverlayTexture.pack(0.0F, flag));
-            poseStack.translate(-1,0,0);
-            Minecraft.getInstance().getBlockRenderer().renderSingleBlock(BeyondBlocks.VOID_FLAME.get().defaultBlockState(), poseStack, buffer, 255, OverlayTexture.pack(0.0F, flag));
-            poseStack.translate(1,0,-1);
-            Minecraft.getInstance().getBlockRenderer().renderSingleBlock(BeyondBlocks.VOID_FLAME.get().defaultBlockState(), poseStack, buffer, 255, OverlayTexture.pack(0.0F, flag));
-            poseStack.popPose();}
+        //if (entity.getCooldown() > 40 && entity.getCooldown() < 80)
+        //{
+        //    poseStack.pushPose();
+        //    poseStack.mulPose(Axis.YN.rotationDegrees(entity.yBodyRot));
+        //    poseStack.translate(entity.blockPosition().getX() - entity.getX() - 0.5,0,entity.blockPosition().getZ() - entity.getZ()- 0.5);
+        //    Minecraft.getInstance().getBlockRenderer().renderSingleBlock(BeyondBlocks.VOID_FLAME.get().defaultBlockState(), poseStack, buffer, 255, OverlayTexture.pack(0.0F, flag));
+        //    poseStack.translate(1,0,1);
+        //    Minecraft.getInstance().getBlockRenderer().renderSingleBlock(BeyondBlocks.VOID_FLAME.get().defaultBlockState(), poseStack, buffer, 255, OverlayTexture.pack(0.0F, flag));
+        //    poseStack.translate(-1,0,0);
+        //    Minecraft.getInstance().getBlockRenderer().renderSingleBlock(BeyondBlocks.VOID_FLAME.get().defaultBlockState(), poseStack, buffer, 255, OverlayTexture.pack(0.0F, flag));
+        //    poseStack.translate(1,0,-1);
+        //    Minecraft.getInstance().getBlockRenderer().renderSingleBlock(BeyondBlocks.VOID_FLAME.get().defaultBlockState(), poseStack, buffer, 255, OverlayTexture.pack(0.0F, flag));
+        //    poseStack.popPose();}
     }
 
     @Override

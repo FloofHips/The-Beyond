@@ -53,20 +53,21 @@ public class EnatiousTotemModel <T extends EnatiousTotemEntity> extends Hierarch
         int max = enatiousTotemEntity.getMaxCooldown();
         float flag = enatiousTotemEntity.getCooldown() == max ? 5 : (enatiousTotemEntity.getCooldown() < max/2f ? 0 : 10);
 
-        int f = (int) (v2/4) * 4;
-        int f2 = (int) (v2/2) * 2;
+        //int f = (int) (v2/4) * 4;
+        //int f2 = (int) (v2/2) * 2;
+
+        float f = v2;
+        float f2 = f;
 
         boolean charging = (enatiousTotemEntity.getCountdown() < 27 && enatiousTotemEntity.getCountdown() > 0);
         boolean cooldown = (enatiousTotemEntity.getCooldown() < 91 && enatiousTotemEntity.getCooldown() > 0);
         boolean spawning = (enatiousTotemEntity.getSpawnProgress() < 30 && enatiousTotemEntity.getSpawnProgress() > 0);
 
         if (enatiousTotemEntity.getCountdown() < 27 && enatiousTotemEntity.getCountdown() > 0) {
-            System.out.println("shooting");
             this.animate(enatiousTotemEntity.shootAnimationState, EnatiousTotemAnimations.SHOOT, f2);
         }
 
         if (enatiousTotemEntity.getCooldown() < 81 && enatiousTotemEntity.getCooldown() > 0) {
-            System.out.println("charging");
             this.animate(enatiousTotemEntity.rechargeAnimationState, EnatiousTotemAnimations.RECHARGE, f2);
         }
 

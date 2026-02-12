@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "powered=false": {
+      "model": "the_beyond:block/enatious_totem_seed_off"
+    },
+    "powered=true": {
+      "model": "the_beyond:block/enatious_totem_seed"
+    }
+  }
+}

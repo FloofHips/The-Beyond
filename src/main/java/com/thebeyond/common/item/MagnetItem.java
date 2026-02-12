@@ -78,7 +78,7 @@ public class MagnetItem extends Item {
                         for (int i = 0; i < 15; i++) {
                             double lerp = i / 15.0;
                             Vec3 particlePos = playerPos.lerp(blockCenter, lerp);
-                            serverLevel.sendParticles(ParticleTypes.ELECTRIC_SPARK, particlePos.x, particlePos.y, particlePos.z, 2, 0.1, 0.1, 0.1, 0);
+                            serverLevel.sendParticles(ParticleTypes.ELECTRIC_SPARK, particlePos.x, particlePos.y + (level.random.nextGaussian()), particlePos.z, 2, 0.1, 0.1, 0.1, 0);
                         }
                     }
 

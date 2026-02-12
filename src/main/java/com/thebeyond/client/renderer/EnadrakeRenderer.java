@@ -13,7 +13,10 @@ import net.minecraft.client.renderer.entity.layers.FoxHeldItemLayer;
 import net.minecraft.resources.ResourceLocation;
 
 public class EnadrakeRenderer extends MobRenderer<EnadrakeEntity, EnadrakeModel<EnadrakeEntity>> {
-    private static final ResourceLocation ENADRAKE_TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enadrake.png");
+
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enadrake/enadrake.png");
+    private static final ResourceLocation TEXTURE_SCREAM = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enadrake/enadrake_scream.png");
+
     public EnadrakeRenderer(EntityRendererProvider.Context pContext) {
         super(pContext,new EnadrakeModel<>(pContext.bakeLayer(BeyondModelLayers.ENADRAKE)),0.25F);
         this.addLayer(new EnadrakeItemLayer(this, pContext.getItemInHandRenderer()));
@@ -21,6 +24,6 @@ public class EnadrakeRenderer extends MobRenderer<EnadrakeEntity, EnadrakeModel<
 
     @Override
     public ResourceLocation getTextureLocation(EnadrakeEntity enadrakeEntity) {
-        return ENADRAKE_TEXTURE;
+        return enadrakeEntity.getDataScream() ? TEXTURE_SCREAM : TEXTURE;
     }
 }

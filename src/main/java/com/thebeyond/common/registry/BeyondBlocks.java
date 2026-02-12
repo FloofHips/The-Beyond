@@ -200,14 +200,21 @@ public class BeyondBlocks {
                     .strength(2.0F, 2.0F)
                     .sound(SoundType.NETHER_WOOD))
     );
-    public static final DeferredBlock<Block> XYLEM = registerBlock("xylem", () -> new RotatedPillarBlock(
-            BlockBehaviour.Properties.ofFullCopy(OBIROOT.get()).sound(SoundType.NETHER_WOOD)));
+    public static final DeferredBlock<Block> XYLEM = registerBlock("xylem",
+            () -> new RotatedPillarBlock(
+            BlockBehaviour.Properties.ofFullCopy(OBIROOT.get()).sound(SoundType.NETHER_WOOD))
+    );
     public static final DeferredBlock<Block> ENADRAKE_HUT = registerBlock("enadrake_hut",
             () -> new EnadrakeHutBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_YELLOW)
                     .strength(2.0F, 2.0F)
                     .sound(BeyondSoundTypes.END_STONE))
     );
+    public static final DeferredBlock<Block> ENATIOUS_TOTEM_SEED = registerBlock("enatious_totem_seed",
+            () -> new EnatiousTotemSeedBlock(Block.Properties.of()
+                    .mapColor(MapColor.COLOR_PURPLE)
+                    .sound(SoundType.METAL)));
+
     public static final DeferredBlock<Block> ZYMOTE = registerBlock("zymote",
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_LIGHT_GRAY)
@@ -232,13 +239,6 @@ public class BeyondBlocks {
                     .sound(SoundType.CHERRY_SAPLING)
                     .pushReaction(PushReaction.DESTROY))
     );
-    //public static final DeferredBlock<Block> ENATIOUS_TOTEM_SEED = registerBlock("enatious_totem_seed",
-    //        () -> new EnatiousTotemSeed(Block.Properties.of()
-    //                .mapColor(MapColor.COLOR_PURPLE)
-    //                .sound(SoundType.METAL)
-    //                .lightLevel(state -> 7)
-    //                .requiresCorrectToolForDrops()));
-
     // Pearlescent Plains
     public static final DeferredBlock<Block> NACRE = registerBlock("nacre",
             () -> new NacreBlock(BlockBehaviour.Properties.of()

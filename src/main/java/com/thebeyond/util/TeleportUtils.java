@@ -1,5 +1,7 @@
 package com.thebeyond.util;
 
+import com.thebeyond.common.block.AuroraciteBlock;
+import com.thebeyond.common.registry.BeyondBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
@@ -21,7 +23,7 @@ public class TeleportUtils {
             int edge = 20;
             for(int i = 0; i < edge; ++i) {
                 double d0 = entityLiving.getX() + (entityLiving.getRandom().nextDouble() - 0.5) * edge;
-                double d1 = Mth.clamp(entityLiving.getY() + (double)(entityLiving.getRandom().nextInt(edge) - 8), (double)level.getMinBuildHeight(), (double)(level.getMinBuildHeight() + ((ServerLevel)level).getLogicalHeight() - 1));
+                double d1 = Mth.clamp(entityLiving.getY() + (double)(entityLiving.getRandom().nextInt(edge) - 10), (double)level.getMinBuildHeight(), (double)(level.getMinBuildHeight() + ((ServerLevel)level).getLogicalHeight() - 1));
                 double d2 = entityLiving.getZ() + (entityLiving.getRandom().nextDouble() - 0.5) * edge;
                 if (entityLiving.isPassenger()) {
                     entityLiving.stopRiding();
@@ -29,6 +31,13 @@ public class TeleportUtils {
 
                 Vec3 vec3 = entityLiving.position();
                 EntityTeleportEvent.ChorusFruit event = EventHooks.onChorusFruitTeleport(entityLiving, d0, d1, d2);
+
+                Vec3 target = new Vec3(event.getTargetX(), event.getTargetY(), event.getTargetZ());
+
+                if (level.getBlockState(BlockPos.containing(target)).is(BeyondBlocks.AURORACITE.get())) {
+                    if (!AuroraciteBlock.canEntityWalkOn(entityLiving)) continue;
+                }
+
                 if (event.isCanceled()) {
                     return;
                 }

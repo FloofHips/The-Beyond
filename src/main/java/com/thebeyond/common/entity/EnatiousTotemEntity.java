@@ -2,6 +2,8 @@ package com.thebeyond.common.entity;
 
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondSoundEvents;
+import com.thebeyond.util.ColorUtils;
+import com.thebeyond.util.TeleportUtils;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
@@ -11,6 +13,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -22,6 +25,8 @@ import net.minecraft.world.entity.monster.RangedAttackMob;
 import net.minecraft.world.entity.monster.Shulker;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.LlamaSpit;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.entity.projectile.ProjectileDeflection;
 import net.minecraft.world.entity.projectile.ShulkerBullet;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -91,7 +96,7 @@ public class EnatiousTotemEntity extends Mob implements Enemy {
         this.goalSelector.addGoal(0, new LookAtPlayerGoal(this, Player.class, 10f));
         this.goalSelector.addGoal(3, new EnatiousTotemAttackGoal(this));
 
-        this.targetSelector.addGoal(0, new NearestAttackableTargetGoal<>(this, Player.class, true));
+        this.targetSelector.addGoal(0, new NearestAttackableTargetGoal<>(this, Player.class, false));
     }
 
     @Override
@@ -110,7 +115,7 @@ public class EnatiousTotemEntity extends Mob implements Enemy {
     }
 
     public static AttributeSupplier.Builder createAttributes() {
-        return Mob.createMobAttributes().add(Attributes.MOVEMENT_SPEED, 0).add(Attributes.KNOCKBACK_RESISTANCE, 1);
+        return Mob.createMobAttributes().add(Attributes.MOVEMENT_SPEED, 0).add(Attributes.KNOCKBACK_RESISTANCE, 1).add(Attributes.MAX_HEALTH, 45).add(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE,1);
     }
 
     @Override
@@ -132,16 +137,54 @@ public class EnatiousTotemEntity extends Mob implements Enemy {
         super.handleEntityEvent(id);
     }
 
-    @Override
-    public void onAddedToLevel() {
-        super.onAddedToLevel();
+    public void spawn() {
         this.playSound(SoundEvents.WARDEN_DIG, 2.0F, (this.random.nextFloat()) + 1F);
         this.level().broadcastEntityEvent(this, SPAWN);
     }
 
     @Override
+    public void onAddedToLevel() {
+        super.onAddedToLevel();
+    }
+
+    @Override
+    public ProjectileDeflection deflection(Projectile projectile) {
+        return this.getCooldown() != getMaxCooldown() ? ProjectileDeflection.AIM_DEFLECT : ProjectileDeflection.REVERSE;
+    }
+
+    @Override
+    public boolean hurt(DamageSource source, float amount) {
+        if (this.getTarget() == null && source.getEntity() instanceof LivingEntity living) {
+            setTarget(living);
+        }
+
+        if (this.getCooldown() == getMaxCooldown()) {
+            TeleportUtils.randomTeleport(level(), this);
+            return super.hurt(source, amount/2f);
+        } return super.hurt(source, amount);
+    }
+
+    @Override
     public void tick() {
         super.tick();
+
+        if (tickCount > 20 && this.getTarget() == null) {
+            Player player = this.level().getNearestPlayer(position().x, position().y, position().z, 32,true);
+            setTarget(player);
+        }
+
+        if (tickCount % (1200 + getRandom().nextInt(300)) == 0 && this.getTarget() == null) {
+            if (this.level() instanceof ServerLevel) {
+                ((ServerLevel)this.level()).sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.PEEPING_OBIROOT.get().defaultBlockState()), this.getX(), this.getY(0.6666666666666666), this.getZ(), 120, (double)(this.getBbWidth() / 4.0F), (double)(this.getBbHeight() / 4.0F), (double)(this.getBbWidth() / 4.0F), 0.05);
+                ((ServerLevel)this.level()).sendParticles(ColorUtils.dustOptions, this.getX(), this.getY(0.6666666666666666), this.getZ(), 25, (double)(this.getBbWidth() / 4.0F), (double)(this.getBbHeight() / 4.0F), (double)(this.getBbWidth() / 4.0F), 0.01);
+                discard();
+            }
+            this.playSound(SoundEvents.WOOD_BREAK, 2.0F, (this.random.nextFloat()) * 2F);
+        }
+
+        if (this.level() instanceof ServerLevel serverLevel) {
+            ((ServerLevel) this.level()).sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, level().getBlockState(getBlockPosBelowThatAffectsMyMovement())), this.getX(), this.getY(), this.getZ(), 20, (double) (this.getBbWidth() / 4.0F), 0.2, (double) (this.getBbWidth() / 4.0F), 0.05);
+        }
 
         if (this.entityData.get(DATA_SPAWN) < 30)
             this.entityData.set(DATA_SPAWN, this.entityData.get(DATA_SPAWN) + 1);
@@ -160,7 +203,6 @@ public class EnatiousTotemEntity extends Mob implements Enemy {
             AABB pushArea = getBoundingBox().inflate(5);
             List<Entity> pushableEntities = this.level().getEntities(this, pushArea);
             pushableEntities.removeIf(entity -> !entity.isPushable() && entity.isPassenger());
-
             Vec3 center = this.position();
             double pushStrength = 3;
 
@@ -189,8 +231,12 @@ public class EnatiousTotemEntity extends Mob implements Enemy {
             this.playSound(SoundEvents.FIRECHARGE_USE, 2.0F, (this.random.nextFloat()) * 2F);
         }
 
-        if (getCooldown() == MAX_COOLDOWN - 1)
+        if (getCooldown() == MAX_COOLDOWN - 1) {
             this.playSound(SoundEvents.ELDER_GUARDIAN_CURSE, 2.0F, (this.random.nextFloat()) * 2F);
+            if (this.level() instanceof ServerLevel serverLevel) {
+                ((ServerLevel)this.level()).sendParticles(ColorUtils.dustOptions, this.getX(), this.getY(0.6666666666666666), this.getZ(), 10, (double)(this.getBbWidth() / 4.0F), (double)(this.getBbHeight() / 4.0F), (double)(this.getBbWidth() / 4.0F), 0.05);
+            }
+        }
     }
 
 
@@ -262,7 +308,6 @@ public class EnatiousTotemEntity extends Mob implements Enemy {
         @Override
         public void tick() {
             super.tick();
-
 
             this.mob.setCountdown(this.mob.getCountdown() + 1);
 

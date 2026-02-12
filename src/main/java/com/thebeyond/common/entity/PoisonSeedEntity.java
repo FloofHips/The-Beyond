@@ -1,7 +1,10 @@
 package com.thebeyond.common.entity;
 
 import com.thebeyond.common.registry.BeyondEntityTypes;
+import com.thebeyond.util.ColorUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -92,14 +95,29 @@ public class PoisonSeedEntity extends AbstractSeedEntity {
     }
 
     @Override
+    protected ParticleOptions getParticleType() {
+        return ColorUtils.pixelPoisonOptions;
+    }
+
+    @Override
     protected void onHitEntity(EntityHitResult result) {
         super.onHitEntity(result);
+
+        if (level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(ColorUtils.poisonOptions, this.getX() + 0.5, this.getY(), this.getZ() + 0.5, level().random.nextInt(10, 20), 0.02,0.2,0.02,0.04);
+        }
+
         SpawnCloud();
     }
 
     @Override
     protected void onHitBlock(BlockHitResult result) {
         super.onHitBlock(result);
+
+        if (level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(ColorUtils.poisonOptions, this.getX() + 0.5, this.getY(), this.getZ() + 0.5, level().random.nextInt(10, 20), 0.02,0.2,0.02,0.04);
+        }
+
         SpawnCloud();
     }
 }

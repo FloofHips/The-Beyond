@@ -2,6 +2,8 @@ package com.thebeyond.common.entity;
 
 import com.thebeyond.common.registry.BeyondEffects;
 import com.thebeyond.common.registry.BeyondEntityTypes;
+import com.thebeyond.util.ColorUtils;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -66,14 +68,20 @@ public class UnstableSeedEntity extends AbstractSeedEntity {
     protected void onHitEntity(EntityHitResult result) {
         super.onHitEntity(result);
         Entity entity = result.getEntity();
-        if (entity instanceof LivingEntity && entity == finalTarget){
+        if (entity instanceof LivingEntity){
             DamageSource damagesource = this.damageSources().mobProjectile(this, (LivingEntity) getOwner());
             entity.hurt(damagesource,1);
             entity.hurtMarked = true;
             this.playSound(SoundEvents.SHROOMLIGHT_BREAK, 2.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
             ((LivingEntity) entity).addEffect(new MobEffectInstance(BeyondEffects.UNSTABLE, 200));
+            if (level() instanceof ServerLevel serverLevel) {
+                serverLevel.sendParticles(ColorUtils.voidOptions, this.getX() + 0.5, this.getY(), this.getZ() + 0.5, level().random.nextInt(10, 20), 0.2,0.2,0.2,0.05);
+            }
         } else {
             this.playSound(SoundEvents.LAVA_EXTINGUISH, 2.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+            if (level() instanceof ServerLevel serverLevel) {
+                serverLevel.sendParticles(ColorUtils.pixelWhiteOptions, this.getX() + 0.5, this.getY(), this.getZ() + 0.5, level().random.nextInt(30, 50), 1,1,1,0.1);
+            }
             discard();
         }
     }
@@ -82,5 +90,8 @@ public class UnstableSeedEntity extends AbstractSeedEntity {
     protected void onHitBlock(BlockHitResult result) {
         super.onHitBlock(result);
         this.playSound(SoundEvents.LAVA_EXTINGUISH, 2.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+        if (level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(ColorUtils.pixelWhiteOptions, this.getX() + 0.5, this.getY(), this.getZ() + 0.5, level().random.nextInt(30, 50), 1,1,1,0.1);
+        }
     }
 }
