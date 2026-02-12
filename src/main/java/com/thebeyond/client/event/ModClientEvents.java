@@ -251,6 +251,13 @@ public class ModClientEvents {
             return 0xFFFFFF;
         }, BeyondBlocks.AURORACITE.get());
 
+        // Color marker for Void Crystal shader detection.
+        // RGB(255, 245, 255) -> G/R ratio = 0.961, detectable in the fragment shader
+        // without visibly changing appearance (~4% green reduction, imperceptible on purple crystals).
+        // This allows the rendertype_cutout shader to identify ONLY crystals for the shine effect,
+        // without affecting other cutout blocks (leaves, grass, glass, etc).
+        colors.register((state, reader, pos, tintIndex) -> 0xFFF5FF, BeyondBlocks.VOID_CRYSTAL.get());
+
         //colors.register((state, reader, pos, tintIndex) -> {
         //    if (pos != null) {
         //        Vec3 B = new Vec3(202, 222, 234);

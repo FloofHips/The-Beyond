@@ -28,8 +28,8 @@ void main() {
 
     vertexDistance = fog_distance(pos, FogShape);
     vertexColor = Color * minecraft_sample_lightmap(Sampler2, UV2);
-    rawColor = Color;
-    worldPos = pos;
+    rawColor = Color;   // Preserve the vertex color without lightmap multiplication
+    worldPos = pos;     // Pass world position for cross-block continuous patterns
 
     texCoord0 = UV0;
 }
