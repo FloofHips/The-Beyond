@@ -1,0 +1,245 @@
+# Crystal Shine Effect – Layer Guide
+
+This guide explains how the Void Crystal shine effect works and how to add new layers with different sizes, pixel densities, and behaviors.
+
+The active shader file is:
+`src/main/resources/assets/minecraft/shaders/core/rendertype_cutout.fsh`
+
+---
+
+## How the system works
+
+### Crystal detection
+
+The shader identifies Void Crystal blocks using a **vertex color ratio marker**:
+
+- `ModClientEvents.java` registers a `BlockColor` of `0xFFF5FF` (RGB 255, 245, 255) for `VOID_CRYSTAL`
+- The block models use `tinted_cross` / `tintindex: 0` so the BlockColor is applied
+- The vertex shader passes the raw vertex color (without lightmap) as `rawColor`
+- The fragment shader checks if `rawColor.g / rawColor.r ≈ 0.961` (245/255)
+
+This means the shine code **only runs on Void Crystal blocks**, not on any other cutout block.
+
+### Coordinate system
+
+The shine pattern uses **world-space coordinates**, not texture UVs:
+
+```glsl
+vec3 wp = worldPos * 16.0;   // 16 pixels per block
+float hAxis = wp.x + wp.z;   // horizontal (works for both cross model faces)
+float vAxis = wp.y;           // vertical (continuous across stacked blocks)
+```
+
+`hAxis` combines X and Z so both perpendicular faces of the cross model produce the same diagonal angle. `vAxis` is the world Y coordinate, which is continuous from bottom to top regardless of how many blocks are stacked.
+
+### The diagonal pattern
+
+```glsl
+float diagonal = mod(hAxis * offset + vAxis * offset + dynamicShift, 16.0);
+```
+
+- `offset = FogEnd * 0.01` — controls the diagonal angle. In The Beyond dimension, FogEnd changes with the player's Y position, making the pattern shift vertically.
+- `dynamicShift = vertexDistance * 0.15` — adds per-fragment movement based on camera-to-crystal distance. As the player moves or looks around, this value changes, making the shine lines slide across the crystal surface.
+
+### Line rendering
+
+```glsl
+float glow = exp(-abs(diagonal - 16.0));              // soft exponential halo
+float line = 1.0 - step(8.0, abs(diagonal - 16.0));   // sharp core line
+```
+
+- `line` is binary (0 or 1) — it defines the sharp edge of each shine stripe
+- `glow` is a smooth falloff (0.0 to 1.0) — it creates the soft halo around each line
+- The `step` threshold (8.0) controls line **width** — lower = thicker lines
+
+---
+
+## Adding a new layer
+
+To add a second (or third) shine layer, duplicate the pattern calculation with different parameters. Each layer needs its own `diagonal`, `glow`, `line`, and `shine` variables.
+
+### Template for a new layer
+
+Add this inside the `if (isCrystalBlock()) { ... }` block, **before** the final `color = ...` line:
+
+```glsl
+// === NEW LAYER ===
+// Choose different parameters to make it visually distinct from existing layers.
+
+// Option A: Different dynamic speed (slower/faster camera response)
+float newShift = vertexDistance * 0.08;  // slower than 0.15
+
+// Option B: Stationary layer (no camera movement at all)
+// float newShift = 0.0;
+
+// Option C: FogStart-driven instead of FogEnd-driven
+// float newOffset = FogStart * 0.01;
+
+float newDiag = mod(hAxis * offset + vAxis * offset + newShift, 16.0);
+
+// Line width: lower step threshold = thicker lines
+// Current layer uses 8.0. Try 5.0 for thicker, 12.0 for thinner.
+float newGlow = exp(-abs(newDiag - 16.0));
+float newLine = 1.0 - step(5.0, abs(newDiag - 16.0));
+
+// Color and intensity
+// R and B channels = purple/magenta. Increase for brighter.
+// The glow multiplier controls halo brightness.
+vec3 newShine = vec3(0.15 + newGlow * 0.5, 0.0, 0.15 + newGlow * 0.5) * newLine;
+vec3 newHalo = vec3(newGlow * 0.03, 0.0, newGlow * 0.03);
+```
+
+Then add it to the final color calculation:
+
+```glsl
+vec3 totalShine = (shine + halo + newShine + newHalo) * vertexColor.rgb * ColorModulator.rgb;
+```
+
+---
+
+## Parameter reference
+
+### Line width
+
+Controlled by the `step()` threshold:
+
+```glsl
+float line = 1.0 - step(THRESHOLD, abs(diagonal - 16.0));
+```
+
+| Threshold | Effect |
+|-----------|--------|
+| 4.0 | Very thick lines (covers ~50% of surface) |
+| 8.0 | Medium lines (current default) |
+| 12.0 | Thin lines |
+| 15.0 | Very thin, subtle lines |
+
+### Pattern period
+
+Controlled by the `mod()` period:
+
+```glsl
+float diagonal = mod(..., PERIOD);
+```
+
+| Period | Effect |
+|--------|--------|
+| 8.0 | Dense stripes (twice as many lines) |
+| 16.0 | Normal spacing (current default) |
+| 32.0 | Wide spacing (half as many lines) |
+
+When changing the period, also update the `step()` and `exp()` center value to match:
+
+```glsl
+float diagonal = mod(..., 32.0);
+float glow = exp(-abs(diagonal - 32.0));          // center matches period
+float line = 1.0 - step(16.0, abs(diagonal - 32.0)); // threshold scales with period
+```
+
+### Dynamic shift speed
+
+Controlled by the `vertexDistance` multiplier:
+
+```glsl
+float dynamicShift = vertexDistance * SPEED;
+```
+
+| Speed | Effect |
+|-------|--------|
+| 0.0 | Stationary (fixed on crystal, no camera response) |
+| 0.05 | Very slow, subtle sliding |
+| 0.15 | Medium movement (current default) |
+| 0.3 | Fast, responsive to small camera movements |
+| 0.5+ | Very fast, might look jittery |
+
+### Shine color
+
+The highlight color is set in the `vec3()` constructors:
+
+```glsl
+vec3 shine = vec3(R, G, B) * line;
+```
+
+| Color | R | G | B | Look |
+|-------|---|---|---|------|
+| Purple/Magenta | 0.2 | 0.0 | 0.2 | Current default |
+| Cyan | 0.0 | 0.2 | 0.2 | Cool blue-green |
+| White | 0.2 | 0.2 | 0.2 | Neutral mirror |
+| Gold | 0.2 | 0.15 | 0.0 | Warm metallic |
+
+### Shine intensity
+
+The base value and glow multiplier control brightness:
+
+```glsl
+vec3 shine = vec3(BASE + glow * MULTIPLIER, 0.0, BASE + glow * MULTIPLIER) * line;
+```
+
+| BASE | MULTIPLIER | Effect |
+|------|------------|--------|
+| 0.1 | 0.5 | Subtle, dim shine |
+| 0.2 | 1.0 | Current default (bright) |
+| 0.3 | 1.5 | Very bright, almost glowing |
+| 0.05 | 0.3 | Ghost-like, barely visible |
+
+### Halo intensity
+
+The halo is the soft glow visible outside the sharp line edges:
+
+```glsl
+vec3 halo = vec3(glow * INTENSITY, 0.0, glow * INTENSITY);
+```
+
+| INTENSITY | Effect |
+|-----------|--------|
+| 0.02 | Barely visible halo |
+| 0.06 | Current default |
+| 0.12 | Strong atmospheric glow |
+| 0.0 | No halo (sharp lines only) |
+
+---
+
+## Example: Two-layer setup
+
+Here's a complete example with a stationary base layer and a dynamic overlay:
+
+```glsl
+if (isCrystalBlock()) {
+
+    float offset = FogEnd * 0.01;
+    vec3 wp = worldPos * 16.0;
+    float hAxis = wp.x + wp.z;
+    float vAxis = wp.y;
+
+    // Layer 1: Stationary base (no vertexDistance)
+    float diag1 = mod(hAxis * offset + vAxis * offset, 16.0);
+    float glow1 = exp(-abs(diag1 - 16.0));
+    float line1 = 1.0 - step(8.0, abs(diag1 - 16.0));
+    vec3 shine1 = vec3(0.2 + glow1, 0.0, 0.2 + glow1) * line1;
+    vec3 halo1 = vec3(glow1 * 0.06, 0.0, glow1 * 0.06);
+
+    // Layer 2: Dynamic overlay (slides with camera)
+    float shift2 = vertexDistance * 0.15;
+    float diag2 = mod(hAxis * offset + vAxis * offset + shift2, 16.0);
+    float glow2 = exp(-abs(diag2 - 16.0));
+    float line2 = 1.0 - step(8.0, abs(diag2 - 16.0));
+    vec3 shine2 = vec3(0.15 + glow2 * 0.7, 0.0, 0.15 + glow2 * 0.7) * line2;
+    vec3 halo2 = vec3(glow2 * 0.04, 0.0, glow2 * 0.04);
+
+    // Combine
+    vec3 totalShine = (shine1 + halo1 + shine2 + halo2) * vertexColor.rgb * ColorModulator.rgb;
+    color = vec4(color.rgb + totalShine, color.a);
+}
+```
+
+## File locations
+
+| File | Purpose |
+|------|---------|
+| `assets/minecraft/shaders/core/rendertype_cutout.vsh` | Vertex shader (active override) |
+| `assets/minecraft/shaders/core/rendertype_cutout.fsh` | Fragment shader (active override) |
+| `assets/the_beyond/shaders/core/rendertype_cutout.*` | Reference copies |
+| `assets/the_beyond/shaders/core/rendertype_crystal_cutout.*` | Dedicated crystal shader (unused, for future named render type) |
+| `ModClientEvents.java` → `colorSetupBlock()` | BlockColor registration (`0xFFF5FF`) |
+| `models/block/void_crystal_*.json` | Block models with `tintindex: 0` |
+
