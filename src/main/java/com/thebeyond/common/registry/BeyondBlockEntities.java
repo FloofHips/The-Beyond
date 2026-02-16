@@ -2,6 +2,7 @@ package com.thebeyond.common.registry;
 
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.block.blockentities.BonfireBlockEntity;
+import com.thebeyond.common.block.blockentities.EnadrakeHutBlockEntity;
 import com.thebeyond.common.block.blockentities.MemorFaucetBlockEntity;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -16,4 +17,7 @@ public class BeyondBlockEntities {
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BonfireBlockEntity>> BONFIRE = BLOCK_ENTITY_TYPES.
             register("bonfire", () -> BlockEntityType.Builder.of(BonfireBlockEntity::new, BeyondBlocks.BONFIRE.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<EnadrakeHutBlockEntity>> ENADRAKE_HUT = BLOCK_ENTITY_TYPES.
+            register("enadrake_hut", () -> BlockEntityType.Builder.of(EnadrakeHutBlockEntity::new, BeyondBlocks.ENADRAKE_HUT.get()).build(null));
 }

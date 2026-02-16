@@ -41,6 +41,12 @@ public class ColorUtils {
             1f
     );
 
+    public static PixelColorTransitionOptions pixelVoidOptions = new PixelColorTransitionOptions(
+            new Vector3f(0.7f, 0.0f, 0.9f),
+            new Vector3f(0.1f, 0.1f, 0.3f),
+            1f
+    );
+
     public static PixelColorTransitionOptions pixelPoisonOptions = new PixelColorTransitionOptions(
             new Vector3f(0.2f, 1.0f, 0.3f),
             new Vector3f(0.8f, 1.0f, 0.3f),

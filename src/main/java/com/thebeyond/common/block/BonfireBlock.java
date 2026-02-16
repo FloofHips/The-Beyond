@@ -2,6 +2,7 @@ package com.thebeyond.common.block;
 
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.MapCodec;
+import com.thebeyond.client.particle.PixelColorTransitionOptions;
 import com.thebeyond.common.block.blockentities.BonfireBlockEntity;
 import com.thebeyond.common.item.components.Components;
 import com.thebeyond.common.registry.*;
@@ -9,9 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
-import net.minecraft.core.particles.DustParticleOptions;
-import net.minecraft.core.particles.ParticleOptions;
-import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.particles.*;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -91,7 +90,7 @@ public class BonfireBlock extends BaseEntityBlock {
                 level.setBlockAndUpdate(pos, state.setValue(LIT, true));
 
                 if (level instanceof ServerLevel serverLevel)
-                    serverLevel.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 20, 0.25, 1, 0.25, 0.015);
+                    serverLevel.sendParticles(getParticle(level), pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 20, 0.25, 1, 0.25, 0.015);
                 BlockEntity bonfire = level.getBlockEntity(pos);
                 if (bonfire instanceof BonfireBlockEntity bonfireBlockEntity) {
                     bonfireBlockEntity.activate(player);
@@ -114,6 +113,10 @@ public class BonfireBlock extends BaseEntityBlock {
             }
             return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
         }
+    }
+
+    public SimpleParticleType getParticle(Level level) {
+        return level.isRaining() ? BeyondParticleTypes.VOID_FLAME.get() : ParticleTypes.SOUL_FIRE_FLAME;
     }
 
     public static boolean isOpposite(BlockState thisState, BlockState potentialState) {
@@ -185,9 +188,10 @@ public class BonfireBlock extends BaseEntityBlock {
                         (level.random.nextDouble() - 0.5) * 0.1
                 );
 
-                ParticleOptions options = new DustParticleOptions(new Vector3f(red, green, blue), scale);
+                Vector3f color = new Vector3f(red, green, blue);
+                ParticleOptions options = new DustParticleOptions(color, scale);
 
-                serverLevel.sendParticles(serverPlayer, options, true, pos.x, pos.y, pos.z, 2, 0.3,0,0.3,0.005);
+                serverLevel.sendParticles(serverPlayer, options, true, pos.x, pos.y, pos.z, 1, 0,0,0,0.000);
             }
         }
     }
@@ -222,7 +226,7 @@ public class BonfireBlock extends BaseEntityBlock {
 
     public void spawnBabyFlames(Level level, Vec3 pos, RandomSource random) {
         for (int i = 0; i < random.nextInt(4,8); i++) {
-            level.addParticle(ParticleTypes.SOUL_FIRE_FLAME, pos.x + ((random.nextFloat() - 0.5) * 0.25), pos.y + ((random.nextFloat() - 0.5) * 0.25), pos.z + ((random.nextFloat() - 0.5) * 0.25), (double) 0.001F, (double) 0.01F, (double) 0.001F);
+            level.addParticle(getParticle(level), pos.x + ((random.nextFloat() - 0.5) * 0.25), pos.y + ((random.nextFloat() - 0.5) * 0.25), pos.z + ((random.nextFloat() - 0.5) * 0.25), (double) 0.001F, (double) 0.01F, (double) 0.001F);
         }
     }
     @Override

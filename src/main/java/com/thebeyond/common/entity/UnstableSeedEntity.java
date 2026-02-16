@@ -73,7 +73,7 @@ public class UnstableSeedEntity extends AbstractSeedEntity {
             entity.hurt(damagesource,1);
             entity.hurtMarked = true;
             this.playSound(SoundEvents.SHROOMLIGHT_BREAK, 2.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
-            ((LivingEntity) entity).addEffect(new MobEffectInstance(BeyondEffects.UNSTABLE, 200));
+            ((LivingEntity) entity).addEffect(new MobEffectInstance(BeyondEffects.UNSTABLE, 300));
             if (level() instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(ColorUtils.voidOptions, this.getX() + 0.5, this.getY(), this.getZ() + 0.5, level().random.nextInt(10, 20), 0.2,0.2,0.2,0.05);
             }

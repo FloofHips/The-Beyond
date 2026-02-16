@@ -1,0 +1,11 @@
+{
+  "ctm": {
+    "ctm_version": 1,
+    "type": "random",
+    "layer": "CUTOUT",
+    "extra": {
+            "width": 1,
+            "height": 6
+    }
+  }
+}

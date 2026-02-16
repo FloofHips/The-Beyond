@@ -27,7 +27,7 @@ public class AnchorLeggingsItem extends ModelArmorItem {
     }
     @Override
     public boolean supportsEnchantment(ItemStack stack, Holder<Enchantment> enchantment) {
-        return enchantment.is(Enchantments.POWER);
+        return super.supportsEnchantment(stack, enchantment) || enchantment.is(Enchantments.POWER);
     }
     @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {

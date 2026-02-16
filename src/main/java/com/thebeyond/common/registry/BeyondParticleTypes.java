@@ -17,6 +17,7 @@ public class BeyondParticleTypes {
 
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> GLOP = PARTICLE_TYPES.register("glop", () -> new SimpleParticleType(false) {});
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> AURORACITE_STEP = PARTICLE_TYPES.register("auroracite_step", () -> new SimpleParticleType(false) {});
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> VOID_FLAME = PARTICLE_TYPES.register("void_flame", () -> new SimpleParticleType(false) {});
 
     public static final DeferredHolder<ParticleType<?>, ParticleType<SmokeColorTransitionOptions>> SMOKE = PARTICLE_TYPES.register("smoke", BeyondParticleTypes::createSmokeParticleType);
     public static final DeferredHolder<ParticleType<?>, ParticleType<PixelColorTransitionOptions>> PIXEL = PARTICLE_TYPES.register("pixel", BeyondParticleTypes::createPixelParticleType);

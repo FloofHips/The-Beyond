@@ -21,6 +21,7 @@ import com.thebeyond.client.renderer.blockentities.MemorFaucetRenderer;
 import com.thebeyond.common.entity.AbyssalNomadEntity;
 import com.thebeyond.common.entity.LanternEntity;
 import com.thebeyond.common.entity.TotemOfRespiteEntity;
+import com.thebeyond.common.item.LiveFlameItem;
 import com.thebeyond.common.item.ModelArmorItem;
 import com.thebeyond.common.registry.*;
 import com.thebeyond.mixin.AbstractSoundInstanceAccessor;
@@ -34,6 +35,7 @@ import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.Model;
 import net.minecraft.client.model.geom.builders.CubeDeformation;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.particle.FlameParticle;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
@@ -41,12 +43,15 @@ import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.entity.FallingBlockRenderer;
 import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.client.resources.sounds.AbstractSoundInstance;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.core.*;
+import net.minecraft.core.particles.ItemParticleOption;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -95,6 +100,7 @@ import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsE
 import net.neoforged.neoforge.common.util.TriState;
 import net.neoforged.neoforge.event.PlayLevelSoundEvent;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
+import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEvent;
@@ -138,6 +144,7 @@ public class ModClientEvents {
         EntityRenderers.register(BeyondEntityTypes.LANTERN.get(), LanternRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.ABYSSAL_NOMAD.get(), AbyssalNomadRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.TOTEM_OF_RESPITE.get(), TotemOfRespiteRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.GRAVISTAR.get(), ThrownItemRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.RISING_BLOCK.get(), FallingBlockRenderer::new);
 
         ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID.get(), RenderType.cutoutMipped());
@@ -212,6 +219,9 @@ public class ModClientEvents {
         event.registerSpriteSet(BeyondParticleTypes.AURORACITE_STEP.get(), sprites
                 -> (simpleParticleType, clientLevel, d, e, f, g, h, i)
                 -> new AuroraciteStepParticle(clientLevel, d, e, f, sprites));
+
+        event.registerSpriteSet(BeyondParticleTypes.VOID_FLAME.get(), sprites
+                -> new FlameParticle.Provider(sprites));
 
         event.registerSpriteSet(BeyondParticleTypes.SMOKE.get(),
                 sprites -> new SmokeParticle.Provider(sprites));
@@ -377,6 +387,23 @@ public class ModClientEvents {
     }
 
     @SubscribeEvent
+    public static void onItemToss(ItemTossEvent event) {
+        ItemStack item = event.getEntity().getItem();
+        if (item.is(BeyondItems.LIVE_FLAME) || item.is(BeyondItems.LIVID_FLAME) ) {
+            boolean flag = item.is(BeyondItems.LIVE_FLAME) ? true : false;
+
+            if (event.getPlayer().level() instanceof ServerLevel serverLevel) {
+                serverLevel.playSound(null, event.getEntity().blockPosition(), SoundEvents.FIRE_EXTINGUISH, SoundSource.NEUTRAL, 1, 0.8f + serverLevel.random.nextFloat());
+                serverLevel.playSound(null, event.getEntity().blockPosition(), SoundEvents.ENDER_EYE_DEATH, SoundSource.NEUTRAL, 1, 0.8f + serverLevel.random.nextFloat());
+                serverLevel.sendParticles(!flag ? BeyondParticleTypes.VOID_FLAME.get() : ParticleTypes.SOUL_FIRE_FLAME, event.getEntity().getX(), event.getEntity().getY(), event.getEntity().getZ(), 10, 0.05,0.1,0.05,0.05);
+                serverLevel.sendParticles(new ItemParticleOption(ParticleTypes.ITEM, item), event.getEntity().getX(), event.getEntity().getY(), event.getEntity().getZ(), 16, 0.02,0.02,0.02,0.1);
+            }
+
+            event.getEntity().discard();
+        }
+    }
+
+    @SubscribeEvent
     public static void onLand(LivingFallEvent event) {
         if (event.getEntity() instanceof LivingEntity livingEntity && !livingEntity.getItemBySlot(EquipmentSlot.LEGS).is(BeyondItems.ANCHOR_LEGGINGS)) {
             return;
@@ -402,6 +429,8 @@ public class ModClientEvents {
         if (event.isCanceled()) return;
 
         if (event.getEntity() instanceof Player player) {
+            if (!(player.getMainHandItem().is(BeyondItems.TOTEM_OF_RESPITE) || player.getOffhandItem().is(BeyondItems.TOTEM_OF_RESPITE))) return;
+
             if (player.level().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY))
                 return;
             if (player.getHealth() > 0)
@@ -412,6 +441,17 @@ public class ModClientEvents {
 
             ListTag itemsList = new ListTag();
             RegistryAccess regAccess = player.registryAccess();
+
+            boolean hasConsumedTotem = false;
+
+            if (player.getMainHandItem().is(BeyondItems.TOTEM_OF_RESPITE)) {
+                player.getMainHandItem().shrink(1);
+                hasConsumedTotem = true;
+            }
+            if (!hasConsumedTotem && player.getOffhandItem().is(BeyondItems.TOTEM_OF_RESPITE)) {
+                player.getOffhandItem().shrink(1);
+                hasConsumedTotem = true;
+            }
 
             for (ItemStack stack : player.getInventory().items) {
                 if (!stack.isEmpty()) {

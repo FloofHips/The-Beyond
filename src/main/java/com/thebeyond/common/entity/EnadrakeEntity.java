@@ -1,13 +1,18 @@
 package com.thebeyond.common.entity;
 
+import com.thebeyond.common.block.EnadrakeHutBlock;
 import com.thebeyond.common.block.EnatiousTotemSeedBlock;
 import com.thebeyond.common.block.ObirootSproutBlock;
+import com.thebeyond.common.block.blockentities.EnadrakeHutBlockEntity;
+import com.thebeyond.common.block.blockstates.HutHeightProperty;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondFeatures;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -29,7 +34,15 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.SlabBlock;
+import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Half;
+import net.minecraft.world.level.block.state.properties.SlabType;
+import net.minecraft.world.level.block.state.properties.StairsShape;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -44,6 +57,9 @@ public class EnadrakeEntity extends PathfinderMob {
     private static final EntityDataAccessor<Byte> DATA_FLAGS_ID = SynchedEntityData.defineId(EnadrakeEntity.class, EntityDataSerializers.BYTE);
     private static final EntityDataAccessor<Boolean> DATA_SCREAM = SynchedEntityData.defineId(EnadrakeEntity.class, EntityDataSerializers.BOOLEAN);
     public int panic;
+    private boolean insideHut = false;
+    private BlockPos hutPosition = null;
+    private int inHutTime = 0;
 
     public EnadrakeEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
@@ -52,6 +68,7 @@ public class EnadrakeEntity extends PathfinderMob {
 
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new EnadrakeSearchForItemsGoal());
+        this.goalSelector.addGoal(0, new EnadrakeAdvanceStairGoal(this, 1.2, 10, 16));
         this.goalSelector.addGoal(1, new EnadrakeHarvestGoal(this, 1.5, 15, 6));
         this.goalSelector.addGoal(2, new RandomStrollGoal(this, 1));
         this.goalSelector.addGoal(3, new RandomLookAroundGoal(this));
@@ -72,9 +89,34 @@ public class EnadrakeEntity extends PathfinderMob {
     public void setDataScream(boolean i) {
         entityData.set(DATA_SCREAM, i);
     }
-
     public boolean getDataScream() {
         return entityData.get(DATA_SCREAM);
+    }
+    public boolean isInsideHut() { return insideHut; }
+    public void setInsideHut(boolean inside) { this.insideHut = inside; }
+    public BlockPos getHutPosition() { return hutPosition; }
+    public void setHutPosition(BlockPos pos) { this.hutPosition = pos; }
+    public int getInHutTime() { return inHutTime; }
+    public void setInHutTime(int time) { this.inHutTime = time; }
+
+    @Override
+    public void addAdditionalSaveData(CompoundTag tag) {
+        super.addAdditionalSaveData(tag);
+        tag.putBoolean("InsideHut", insideHut);
+        if (hutPosition != null) {
+            tag.putLong("HutPosition", hutPosition.asLong());
+        }
+        tag.putInt("InHutTime", inHutTime);
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag tag) {
+        super.readAdditionalSaveData(tag);
+        insideHut = tag.getBoolean("InsideHut");
+        if (tag.contains("HutPosition")) {
+            hutPosition = BlockPos.of(tag.getLong("HutPosition"));
+        }
+        inHutTime = tag.getInt("InHutTime");
     }
 
     @Override
@@ -196,8 +238,8 @@ public class EnadrakeEntity extends PathfinderMob {
             this.onItemPickup(itemEntity);
             this.setItemSlot(EquipmentSlot.MAINHAND, itemstack.split(1));
             this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
-            this.take(itemEntity, itemstack.getCount());
-            itemEntity.discard();
+            this.take(itemEntity, 1);
+            //itemEntity.discard();
             this.setHoldingItem(true);
         }
 
@@ -304,6 +346,7 @@ public class EnadrakeEntity extends PathfinderMob {
                 EnadrakeEntity.this.getNavigation().moveTo((Entity)list.get(0), (double)1.2F);
             }
 
+            if (getNavigation().isStuck()) addDeltaMovement(new Vec3(0, 0.2, 0));
         }
 
         public void start() {
@@ -348,11 +391,185 @@ public class EnadrakeEntity extends PathfinderMob {
         }
     }
 
-    class EnadrakeStoreInHomeGoal extends Goal {
+    class EnadrakeAdvanceStairGoal extends MoveToBlockGoal {
+        EnadrakeEntity entity;
+        boolean reachedTarget;
+        public EnadrakeAdvanceStairGoal(PathfinderMob mob, double speedModifier, int searchRange, int verticalSearchRange) {
+            super(mob, speedModifier, searchRange, verticalSearchRange);
+            this.entity = (EnadrakeEntity) mob;
+        }
 
         @Override
         public boolean canUse() {
+            ItemStack itemstack = entity.getItemBySlot(EquipmentSlot.MAINHAND);
+            if (!itemstack.isEmpty()) return super.canUse();
             return false;
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            ItemStack itemstack = entity.getItemBySlot(EquipmentSlot.MAINHAND);
+            return super.canContinueToUse() && !itemstack.isEmpty();
+        }
+
+        public double acceptedDistance() {
+            return 3.0F;
+        }
+
+        @Override
+        protected boolean isValidTarget(LevelReader levelReader, BlockPos blockPos) {
+            BlockState blockstate = levelReader.getBlockState(blockPos);
+            if (blockstate.is(Blocks.END_STONE_BRICK_STAIRS)) {
+                Direction d = blockstate.getValue(StairBlock.FACING);
+                BlockState state = levelReader.getBlockState(blockPos.offset(d.getStepX(), 0, d.getStepZ()));
+                if (state.is((Blocks.END_STONE_BRICK_STAIRS))) return false;
+                state = levelReader.getBlockState(blockPos.offset(d.getStepX(), 1, d.getStepZ()));
+                if (state.is((Blocks.END_STONE_BRICK_STAIRS))) return false;
+                return true;
+            }
+            return false;
+        }
+
+        protected boolean isReachedTarget() {
+            return this.reachedTarget;
+        }
+
+        @Override
+        public void tick() {
+            if (isReachedTarget()) {
+                BlockPos pos = this.getMoveToTarget().below();
+                BlockState b = mob.level().getBlockState(pos);
+                if (b.is(Blocks.END_STONE_BRICK_STAIRS)) {
+                    Direction d = b.getValue(StairBlock.FACING);
+                    BlockState newState = Blocks.END_STONE_BRICK_STAIRS.defaultBlockState();
+
+                    if (b.getValue(StairBlock.HALF) == Half.TOP) {
+                        if (level().random.nextFloat() > 0.5) {
+                            Direction c = d.getClockWise();
+                            //if (level().random.nextFloat() > 0.5) {
+                                c = d.getClockWise();
+                                newState = newState.setValue(StairBlock.FACING, c);
+                            //} else {
+                            //    c = d.getCounterClockWise();
+                            //    newState = newState.setValue(StairBlock.FACING, c);
+                            //}
+                            mob.getMainHandItem().shrink(1);
+                            mob.level().setBlock(pos.offset(d.getStepX(), 0, d.getStepZ()).offset(c.getStepX(), 1, c.getStepZ()), newState, Block.UPDATE_ALL);
+                            return;
+                        } else {
+                            mob.getMainHandItem().shrink(1);
+                            newState = newState.setValue(StairBlock.FACING, b.getValue(StairBlock.FACING));
+                            mob.level().setBlock(pos.offset(d.getStepX(), 1, d.getStepZ()), newState, Block.UPDATE_ALL);
+                            return;
+                        }
+                    }
+
+                    if (b.getValue(StairBlock.HALF) == Half.BOTTOM) {
+                        newState = newState.setValue(StairBlock.FACING, b.getValue(StairBlock.FACING));
+                        if (level().random.nextBoolean()) {
+                            mob.getMainHandItem().shrink(1);
+                            newState = newState.setValue(StairBlock.HALF, Half.BOTTOM);
+                            mob.level().setBlock(pos.offset(d.getStepX(), 1, d.getStepZ()), newState, Block.UPDATE_ALL);
+                            return;
+                        }
+                        else {
+                            mob.getMainHandItem().shrink(1);
+                            newState = newState.setValue(StairBlock.HALF, Half.TOP);
+                            mob.level().setBlock(pos.offset(d.getStepX(), 0, d.getStepZ()), newState, Block.UPDATE_ALL);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            if (mob.getNavigation().isStuck()) mob.addDeltaMovement(new Vec3(0, 0.2, 0));
+
+            BlockPos blockpos = new BlockPos(this.getMoveToTarget().getX(), this.getMoveToTarget().getY(), this.getMoveToTarget().getZ());
+
+            if (!blockpos.closerToCenterThan(this.mob.position(), this.acceptedDistance())) {
+                this.reachedTarget = false;
+                ++this.tryTicks;
+                if (this.shouldRecalculatePath()) {
+                    this.mob.getNavigation().moveTo((double)blockpos.getX() + (double)0.5F, (double)blockpos.getY(), (double)blockpos.getZ() + (double)0.5F, this.speedModifier);
+                }
+            } else {
+                this.reachedTarget = true;
+                --this.tryTicks;
+            }
+        }
+    }
+
+    class EnadrakeStoreInHomeGoal extends MoveToBlockGoal {
+        EnadrakeEntity entity;
+        boolean reachedTarget;
+        public EnadrakeStoreInHomeGoal(PathfinderMob mob, double speedModifier, int searchRange, int verticalSearchRange) {
+            super(mob, speedModifier, searchRange, verticalSearchRange);
+            this.entity = (EnadrakeEntity) mob;
+        }
+
+        @Override
+        public boolean canUse() {
+            ItemStack itemstack = entity.getItemBySlot(EquipmentSlot.MAINHAND);
+            if (!itemstack.isEmpty()) return super.canUse();
+            return false;
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            ItemStack itemstack = entity.getItemBySlot(EquipmentSlot.MAINHAND);
+            return super.canContinueToUse() && !itemstack.isEmpty();
+        }
+
+        public double acceptedDistance() {
+            return 3.0F;
+        }
+
+        @Override
+        protected boolean isValidTarget(LevelReader levelReader, BlockPos blockPos) {
+            BlockState blockstate = levelReader.getBlockState(blockPos);
+            if (blockstate.is(BeyondBlocks.ENADRAKE_HUT.get())) {
+                BlockEntity hut = entity.level().getBlockEntity(blockPos);
+                if (hut instanceof EnadrakeHutBlockEntity hutblockentity) {
+                    return hutblockentity.getTheItem().isEmpty();
+                }
+            }
+            return false;
+        }
+
+        protected boolean isReachedTarget() {
+            return this.reachedTarget;
+        }
+
+        @Override
+        public void tick() {
+            if (isReachedTarget()) {
+                BlockPos pos = this.getMoveToTarget().below();
+                BlockEntity hut = level().getBlockEntity(pos);
+                if (hut instanceof EnadrakeHutBlockEntity hutblockentity) {
+                    ItemStack itemstack1 = hutblockentity.getTheItem();
+                    if (itemstack1.isEmpty()) {
+                        EnadrakeHutBlock.fillHut(entity.getMainHandItem(), level(), pos, entity, hutblockentity, itemstack1);
+                        entity.panic = 50;
+                    } else {
+                        this.stop();
+                    }
+                }
+            }
+
+            if (mob.getNavigation().isStuck()) mob.addDeltaMovement(new Vec3(0, 0.2, 0));
+
+            BlockPos blockpos = new BlockPos(this.getMoveToTarget().getX(), this.getMoveToTarget().getY(), this.getMoveToTarget().getZ());
+
+            if (!blockpos.closerToCenterThan(this.mob.position(), this.acceptedDistance())) {
+                this.reachedTarget = false;
+                ++this.tryTicks;
+                if (this.shouldRecalculatePath()) {
+                    this.mob.getNavigation().moveTo((double)blockpos.getX() + (double)0.5F, (double)blockpos.getY(), (double)blockpos.getZ() + (double)0.5F, this.speedModifier);
+                }
+            } else {
+                this.reachedTarget = true;
+                --this.tryTicks;
+            }
         }
     }
 

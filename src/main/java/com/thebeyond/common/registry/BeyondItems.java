@@ -29,7 +29,7 @@ public class BeyondItems {
     public static final DeferredItem<Item> MAGNOLILLY = registerItem("magnolilly", () -> new PlaceOnWaterBlockItem(BeyondBlocks.MAGNOLILLY.get(), new Item.Properties()));
 
     public static final DeferredItem<Item> VOID_CRYSTAL = registerItem("void_crystal", () -> new AlsoPlaceableOnFluidBlockItem(BeyondBlocks.VOID_CRYSTAL.get(), new Item.Properties()));
-    public static final DeferredItem<Item> GRAVISTAR = registerItem("gravistar", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> GRAVISTAR = registerItem("gravistar", () -> new GravistarItem(new Item.Properties()));
     public static final DeferredItem<Item> GELLID_VOID_BUCKET = registerItem("gellid_void_bucket", () -> new BucketItem(BeyondFluids.GELLID_VOID.get(), new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
     public static final DeferredItem<Item> ABYSSAL_SHROUD = registerItem("abyssal_shroud", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> LANTERN_SHED = registerItem("lantern_shed", () -> new Item(new Item.Properties()));

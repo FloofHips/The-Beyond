@@ -1,5 +1,8 @@
 package com.thebeyond.common.item;
 
+import com.thebeyond.common.registry.BeyondItems;
+import com.thebeyond.common.registry.BeyondParticleTypes;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Entity;
@@ -29,6 +32,8 @@ public class LiveFlameItem extends Item {
                 damage*=4;
             }
             stack.hurtAndBreak(damage, livingEntity, EquipmentSlot.MAINHAND);
+            if (level.random.nextBoolean())
+                livingEntity.level().addParticle(stack.is(BeyondItems.LIVID_FLAME) ? BeyondParticleTypes.VOID_FLAME.get() : ParticleTypes.SOUL_FIRE_FLAME, livingEntity.getX() + level.random.nextGaussian()*0.2, livingEntity.getY() + 1 + level.random.nextGaussian()*0.2, livingEntity.getZ() + level.random.nextGaussian()*0.2,level.random.nextGaussian()*0.01, 0.02, level.random.nextGaussian()*0.01);
         }
     }
 

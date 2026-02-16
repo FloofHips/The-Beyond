@@ -201,8 +201,17 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
         super.tick();
 
         if (isFlying()) {
-            navigation.stop();
-            navigation.moveTo(this.position().x, 197f, this.getZ()-10, 0.7);
+            if (this.getY() > 190 && this.getY() < 200) {
+                navigation.stop();
+                float x = getSize() == 3 ? (((int)this.getX()/16)-1)*16 : (float) getX();
+                navigation.moveTo(x, 197f, this.getZ()-10, 0.7);
+            } else {
+                if (tickCount % 40 == 0) {
+                    navigation.stop();
+                    float x = getSize() == 3 ? (((int)this.getX()/16)-1)*16 : (float) getX();
+                    navigation.moveTo(x, 197f, this.getZ()-10, 0.7);
+                }
+            }
         }
 
         if (!isFlying() && level().isThundering())
@@ -374,7 +383,7 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
             Vec3 direction = child.position().subtract(this.position()).normalize().scale(0.4f);
             child.setDeltaMovement(direction.x, direction.y, direction.z);
             level.sendParticles(ParticleTypes.PORTAL, child.getX() + 0, child.getY() + 0, child.getZ() + 0, 10, 0.25, 1, 0.25, 0.015);
-            level.playSound(null, BlockPos.containing(child.position()), SoundEvents.ALLAY_DEATH, SoundSource.AMBIENT,5,1);
+            level.playSound(null, BlockPos.containing(child.position()), SoundEvents.ALLAY_DEATH, SoundSource.AMBIENT,1,1);
         }
     }
 

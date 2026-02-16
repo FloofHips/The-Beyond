@@ -29,6 +29,11 @@ public class BeyondEntityTypes {
                     () -> EntityType.Builder.<TotemOfRespiteEntity>of(TotemOfRespiteEntity::new, MobCategory.MISC)
                             .sized(0.5F, 0.7F)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "totem_of_respite").toString()));
+    public static final DeferredHolder<EntityType<?>, EntityType<GravistarEntity>> GRAVISTAR =
+            ENTITY_TYPES.register("gravistar",
+                    () -> EntityType.Builder.<GravistarEntity>of(GravistarEntity::new, MobCategory.MISC)
+                            .sized(0.5F, 0.5F)
+                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "gravistar").toString()));
     public static final DeferredHolder<EntityType<?>, EntityType<EnderglopEntity>> ENDERGLOP =
             ENTITY_TYPES.register("enderglop",
             () -> EntityType.Builder.of(EnderglopEntity::new, MobCategory.MONSTER)

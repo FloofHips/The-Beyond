@@ -7,7 +7,9 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -53,6 +55,11 @@ public class BonfireBlockEntity extends BlockEntity {
             this.birthday = (int) (level.getDayTime() / 24000);
             activationTimer = 200;
             activatingPlayer = player;
+
+            for (int i = 0; i < level.random.nextInt(5, 8); i++) {
+                level.addFreshEntity(new ExperienceOrb(level, this.getBlockPos().getX(), this.getBlockPos().getY() + 1, this.getBlockPos().getZ(), level.getRandom().nextInt(7) + 5));
+            }
+
             setChanged();
         }
     }

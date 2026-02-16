@@ -4,6 +4,7 @@ import com.google.common.base.Suppliers;
 import com.thebeyond.common.entity.RisingBlockEntity;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondParticleTypes;
+import com.thebeyond.util.ColorUtils;
 import com.thebeyond.util.VoronoiNoise;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -45,7 +46,7 @@ public class NacreBlock extends Block {
     public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
         if (level.isRaining()) {
             if (random.nextFloat() < 0.3)
-                spawnParticles(level, pos, random, ParticleTypes.DRIPPING_OBSIDIAN_TEAR);
+                spawnParticles(level, pos, random, ColorUtils.pixelVoidOptions);
         }
     }
 
@@ -103,7 +104,7 @@ public class NacreBlock extends Block {
     protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         if (state.getValue(POWERED)) {
             RisingBlockEntity risingblockentity = RisingBlockEntity.rise(level, pos, state);
-            risingblockentity.disableDrop();
+            risingblockentity.dropItem = false;
         }
 
         super.tick(state, level, pos, random);

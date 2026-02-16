@@ -29,7 +29,8 @@ public class BeyondBlocks {
     public static final DeferredBlock<Block> VOID_FLAME = registerBlockWithoutItem("void_flame",
             () -> new VoidFlameBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_PURPLE)
-                    .sound(SoundType.SHROOMLIGHT))
+                    .sound(SoundType.SHROOMLIGHT)
+                    .mapColor(MapColor.COLOR_PURPLE))
 
     );
     public static final DeferredBlock<Block> VOID_CRYSTAL = registerBlockWithoutItem("void_crystal",
@@ -44,7 +45,7 @@ public class BeyondBlocks {
     );
     public static final DeferredBlock<GellidVoidBlock> GELLID_VOID = registerBlockWithoutItem("gellid_void_block",
             () -> new GellidVoidBlock(BeyondFluids.GELLID_VOID_FLOWING.get(), BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.COLOR_PURPLE)
+                    .mapColor(MapColor.TERRACOTTA_BLUE)
                     .forceSolidOff()
                     .noCollission()
                     .noOcclusion()
@@ -79,19 +80,19 @@ public class BeyondBlocks {
 
     //STRUCTURES
     public static final DeferredBlock<Block> BONFIRE = registerBlock("bonfire", () -> new BonfireBlock(BlockBehaviour.Properties.of()
-            .mapColor(MapColor.TERRACOTTA_PURPLE)
+            .mapColor(MapColor.GLOW_LICHEN)
             .strength(50, 50)
             .noOcclusion()
             .sound(SoundType.LANTERN))
     );
     public static final DeferredBlock<Block> PORTELAIN = registerBlock("portelain", () -> new Block(BlockBehaviour.Properties.of()
-            .mapColor(MapColor.TERRACOTTA_PURPLE)
+            .mapColor(MapColor.ICE)
             .requiresCorrectToolForDrops()
             .strength(1.5F, 6.0F)
             .sound(SoundType.NETHER_BRICKS))
     );
     public static final DeferredBlock<Block> GUSTER = registerBlock("guster", () -> new GusterBlock(BlockBehaviour.Properties.of()
-            .mapColor(MapColor.TERRACOTTA_PURPLE)
+            .mapColor(MapColor.ICE)
             .requiresCorrectToolForDrops()
             .strength(1.5F, 6.0F)
             .sound(SoundType.NETHER_BRICKS))
@@ -122,7 +123,7 @@ public class BeyondBlocks {
     );
     public static final DeferredBlock<Block> STARDUST = registerBlock("stardust",
             () -> new StardustBlock(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.TERRACOTTA_WHITE)
+                    .mapColor(MapColor.SNOW)
                     .sound(SoundType.SMALL_AMETHYST_BUD)
                     .noOcclusion()
                     .noCollission())
@@ -130,21 +131,21 @@ public class BeyondBlocks {
     //Attracta Expanse
     public static final DeferredBlock<Block> POLAR_PILLAR = registerBlock("polar_pillar",
             () -> new PolarPillarBlock(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.DEEPSLATE)
+                    .mapColor(MapColor.COLOR_BLACK)
                     .lightLevel(PolarPillarBlock.STATE_TO_LUMINANCE)
                     .strength(2F, 12.0F)
                     .randomTicks())
     );
     public static final DeferredBlock<Block> POLAR_BULB = registerBlock("polar_bulb",
             () -> new PolarBulbBlock(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.DEEPSLATE)
+                    .mapColor(MapColor.COLOR_BLACK)
                     .lightLevel(PolarBulbBlock.STATE_TO_LUMINANCE)
                     .strength(2F, 12.0F)
                     .randomTicks())
     );
     public static final DeferredBlock<Block> POLAR_ANTENNA = registerBlock("polar_antenna",
             () -> new PolarAntennaBlock(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.DEEPSLATE)
+                    .mapColor(MapColor.COLOR_BLACK)
                     .lightLevel(PolarAntennaBlock.STATE_TO_LUMINANCE)
                     .randomTicks()
                     .forceSolidOff()
@@ -156,12 +157,12 @@ public class BeyondBlocks {
     );
     public static final DeferredBlock<Block> FERROJELLY_BLOCK = registerBlock("ferrojelly_block",
             () -> new FerroJellyBlock(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.DEEPSLATE)
+                    .mapColor(MapColor.COLOR_PURPLE)
                     .sound(SoundType.SLIME_BLOCK))
     );
     public static final DeferredBlock<Block> PLATE_BLOCK = registerBlock("plate_block",
             () -> new Block(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.DEEPSLATE)
+                    .mapColor(MapColor.COLOR_BLACK)
                     .strength(3.5F, 12.0F)
                     .sound(BeyondSoundTypes.PLATE_BLOCK))
     );
@@ -173,7 +174,7 @@ public class BeyondBlocks {
     );
     public static final DeferredBlock<Block> MAGNOLILLY = registerBlockWithoutItem("magnolilly",
             () -> new MagnolillyBlock(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.DEEPSLATE)
+                    .mapColor(MapColor.COLOR_BLACK)
                     .sound(SoundType.ANCIENT_DEBRIS)
                     .forceSolidOff()
                     .noCollission()
@@ -202,17 +203,19 @@ public class BeyondBlocks {
     );
     public static final DeferredBlock<Block> XYLEM = registerBlock("xylem",
             () -> new RotatedPillarBlock(
-            BlockBehaviour.Properties.ofFullCopy(OBIROOT.get()).sound(SoundType.NETHER_WOOD))
+            BlockBehaviour.Properties.ofFullCopy(OBIROOT.get())
+                    .mapColor(MapColor.COLOR_LIGHT_BLUE)
+                    .sound(SoundType.NETHER_WOOD))
     );
     public static final DeferredBlock<Block> ENADRAKE_HUT = registerBlock("enadrake_hut",
             () -> new EnadrakeHutBlock(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.COLOR_YELLOW)
+                    .mapColor(MapColor.SAND)
                     .strength(2.0F, 2.0F)
                     .sound(BeyondSoundTypes.END_STONE))
     );
     public static final DeferredBlock<Block> ENATIOUS_TOTEM_SEED = registerBlock("enatious_totem_seed",
             () -> new EnatiousTotemSeedBlock(Block.Properties.of()
-                    .mapColor(MapColor.COLOR_PURPLE)
+                    .mapColor(MapColor.ICE)
                     .sound(SoundType.METAL)));
 
     public static final DeferredBlock<Block> ZYMOTE = registerBlock("zymote",
