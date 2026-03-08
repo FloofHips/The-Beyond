@@ -8,6 +8,7 @@ import com.thebeyond.common.block.blockstates.HutHeightProperty;
 import com.thebeyond.common.block.blockstates.PillarHeightProperty;
 import com.thebeyond.common.fluid.GellidVoidBlock;
 import com.thebeyond.common.registry.BeyondBlockEntities;
+import com.thebeyond.common.registry.BeyondBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -154,6 +155,9 @@ public class EnadrakeHutBlock extends BaseEntityBlock {
     public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
 
         if (!(level.getBlockState(pos.above()).getBlock() instanceof EnadrakeHutBlock)){
+            if (level.getBlockState(pos.above()).isFaceSturdy(level, pos.above(), Direction.DOWN) || level.getBlockState(pos.above()).is(BeyondBlocks.ENADRAKE_FLARE.get())) {
+                return state.setValue(HEIGHT, HutHeightProperty.CORE);
+            }
             if (level.getBlockState(pos.below()).getBlock() instanceof EnadrakeHutBlock) {
                 return state.setValue(HEIGHT, HutHeightProperty.TOP);
             }

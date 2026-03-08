@@ -5,6 +5,7 @@
   "block.the_beyond.chiseled_memor": "Chiseled Memor",
   "block.the_beyond.creeping_zymote": "Creeping Zymote",
   "block.the_beyond.ectoplasm": "Ectoplasm",
+  "block.the_beyond.enadrake_flare": "Enadrake Flare",
   "block.the_beyond.enadrake_hut": "Enadrake Hut",
   "block.the_beyond.enatious_totem_seed": "Enatious Totem Seed",
   "block.the_beyond.engraved_end_stone": "Engraved End Stone",
@@ -33,6 +34,7 @@
   "block.the_beyond.portelain_stairs": "Portelain Stairs",
   "block.the_beyond.portelain_tiles": "Portelain Tiles",
   "block.the_beyond.reaching_zymote": "Reaching Zymote",
+  "block.the_beyond.refuge": "Refuge",
   "block.the_beyond.stardust": "Stardust",
   "block.the_beyond.void_crystal": "Void Crystal",
   "block.the_beyond.void_flame": "Air",
@@ -79,5 +81,6 @@
   "item.the_beyond.ring_remembrance": "Ring Remembrance",
   "item.the_beyond.spike_remembrance": "Spike Remembrance",
   "item.the_beyond.totem_of_respite": "Totem Of Respite",
-  "itemGroup.the_beyond": "The Beyond"
+  "itemGroup.the_beyond": "The Beyond",
+  "container.refuge": "\"Refuge\""
 }

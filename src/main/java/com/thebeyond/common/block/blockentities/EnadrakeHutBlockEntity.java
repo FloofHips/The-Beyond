@@ -9,7 +9,6 @@ import com.thebeyond.common.registry.BeyondTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -18,12 +17,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.world.Container;
-import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -35,15 +31,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.block.state.properties.StairsShape;
 import net.minecraft.world.ticks.ContainerSingleItem;
-import net.neoforged.neoforge.common.Tags;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
-import static com.thebeyond.common.block.BonfireBlock.LIT;
 
 public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSingleItem.BlockContainerSingleItem {
 
@@ -320,13 +314,17 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         if (level.random.nextDouble() < 0.05) {
             createPlatformAndHouse(level, newPos, facing);
         } else {
-            BlockState newState = BeyondBlocks.ENADRAKE_HUT.get().defaultBlockState()
-                    .setValue(EnadrakeHutBlock.FACING, facing)
-                    .setValue(EnadrakeHutBlock.HEIGHT, HutHeightProperty.CORE);
+            BlockState newState = getBlockState(facing);
             level.setBlock(newPos, newState, Block.UPDATE_ALL);
         }
 
         return true;
+    }
+
+    private static @NotNull BlockState getBlockState(Direction facing) {
+        return BeyondBlocks.ENADRAKE_HUT.get().defaultBlockState()
+                .setValue(EnadrakeHutBlock.FACING, facing)
+                .setValue(EnadrakeHutBlock.HEIGHT, HutHeightProperty.CORE);
     }
 
     private void createPlatformAndHouse(ServerLevel level, BlockPos hutPos, Direction facing) {

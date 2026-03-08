@@ -30,7 +30,7 @@ public class BranchBlock extends PipeBlock {
         BlockState blockstate3 = pLevel.getBlockState(pPos.east());
         BlockState blockstate4 = pLevel.getBlockState(pPos.south());
         BlockState blockstate5 = pLevel.getBlockState(pPos.west());
-        return this.defaultBlockState().setValue(DOWN, Boolean.valueOf(blockstate1.is(this) || blockstate.isSolid())).setValue(UP, Boolean.valueOf(blockstate1.is(this) || blockstate1.isSolid())).setValue(NORTH, Boolean.valueOf(blockstate2.is(this) || blockstate2.isSolid())).setValue(EAST, Boolean.valueOf(blockstate3.is(this) || blockstate3.isSolid())).setValue(SOUTH, Boolean.valueOf(blockstate4.is(this) || blockstate4.isSolid())).setValue(WEST, Boolean.valueOf(blockstate5.is(this) || blockstate5.isSolid()));
+        return this.defaultBlockState().setValue(DOWN, blockstate.is(this) || blockstate.isFaceSturdy(pLevel, pPos.below(), Direction.DOWN)).setValue(UP, blockstate1.is(this) || blockstate1.isFaceSturdy(pLevel, pPos.above(), Direction.UP)).setValue(NORTH, blockstate2.is(this) || blockstate2.isFaceSturdy(pLevel, pPos.north(), Direction.NORTH)).setValue(EAST, blockstate3.is(this) || blockstate3.isFaceSturdy(pLevel, pPos.east(), Direction.EAST)).setValue(SOUTH, blockstate4.is(this) || blockstate4.isFaceSturdy(pLevel, pPos.south(), Direction.SOUTH)).setValue(WEST, blockstate5.is(this) || blockstate5.isFaceSturdy(pLevel, pPos.west(), Direction.WEST));
     }
 
     public BlockState updateShape(BlockState pState, Direction pFacing, BlockState pFacingState, LevelAccessor pLevel, BlockPos pCurrentPos, BlockPos pFacingPos) {

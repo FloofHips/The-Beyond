@@ -4,6 +4,7 @@ import com.thebeyond.TheBeyond;
 import com.thebeyond.common.block.blockentities.BonfireBlockEntity;
 import com.thebeyond.common.block.blockentities.EnadrakeHutBlockEntity;
 import com.thebeyond.common.block.blockentities.MemorFaucetBlockEntity;
+import com.thebeyond.common.block.blockentities.RefugeBlockEntity;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -20,4 +21,8 @@ public class BeyondBlockEntities {
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<EnadrakeHutBlockEntity>> ENADRAKE_HUT = BLOCK_ENTITY_TYPES.
             register("enadrake_hut", () -> BlockEntityType.Builder.of(EnadrakeHutBlockEntity::new, BeyondBlocks.ENADRAKE_HUT.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<RefugeBlockEntity>> REFUGE = BLOCK_ENTITY_TYPES.
+            register("refuge", () -> BlockEntityType.Builder.of(RefugeBlockEntity::new, BeyondBlocks.REFUGE.get()).build(null));
+
 }

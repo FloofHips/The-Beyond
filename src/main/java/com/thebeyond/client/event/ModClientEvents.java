@@ -7,6 +7,7 @@ import com.mojang.math.Axis;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.event.specialeffects.EndSpecialEffects;
 import com.thebeyond.client.gui.NomadsBlessingOverlay;
+import com.thebeyond.client.gui.RefugeScreen;
 import com.thebeyond.client.model.*;
 
 import com.thebeyond.client.model.equipment.ArmorModel;
@@ -18,6 +19,9 @@ import com.thebeyond.client.particle.SmokeParticle;
 import com.thebeyond.client.renderer.*;
 import com.thebeyond.client.renderer.blockentities.BonfireRenderer;
 import com.thebeyond.client.renderer.blockentities.MemorFaucetRenderer;
+import com.thebeyond.client.renderer.blockentities.RefugeRenderer;
+import com.thebeyond.common.block.RefugeBlock;
+import com.thebeyond.common.block.blockentities.RefugeBlockEntity;
 import com.thebeyond.common.entity.AbyssalNomadEntity;
 import com.thebeyond.common.entity.LanternEntity;
 import com.thebeyond.common.entity.TotemOfRespiteEntity;
@@ -27,6 +31,7 @@ import com.thebeyond.common.registry.*;
 import com.thebeyond.mixin.AbstractSoundInstanceAccessor;
 import com.thebeyond.util.AOEManager;
 import com.thebeyond.util.ColorUtils;
+import com.thebeyond.util.RefugeChunkData;
 import com.thebeyond.util.RenderUtils;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -68,6 +73,7 @@ import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.ai.village.poi.PoiManager;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.npc.Villager;
@@ -81,6 +87,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SweetBerryBushBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.synth.PerlinSimplexNoise;
 import net.minecraft.world.level.material.FluidState;
@@ -88,6 +95,7 @@ import net.minecraft.world.level.portal.DimensionTransition;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.Event;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -101,16 +109,14 @@ import net.neoforged.neoforge.common.util.TriState;
 import net.neoforged.neoforge.event.PlayLevelSoundEvent;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
-import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
-import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
-import net.neoforged.neoforge.event.entity.living.LivingEvent;
-import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
+import net.neoforged.neoforge.event.entity.living.*;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.entity.player.UseItemOnBlockEvent;
-import net.neoforged.neoforge.event.level.BlockEvent;
-import net.neoforged.neoforge.event.level.ChunkEvent;
-import net.neoforged.neoforge.event.level.PistonEvent;
+import net.neoforged.neoforge.event.level.*;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
@@ -126,6 +132,8 @@ public class ModClientEvents {
     private static final ResourceLocation AURORA_TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/environment/aurora.png");
     public static final ResourceLocation CLOUD_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/cloud");
     public static final ResourceLocation CLOUD_2_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/cloud_2");
+    public static final ResourceLocation ROOTS_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/roots");
+    public static final ResourceLocation ROOTS_SMALL_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/roots_small");
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath("minecraft", "textures/block/red_concrete.png");
 
     static RandomSource random = RandomSource.create(254572);
@@ -152,11 +160,20 @@ public class ModClientEvents {
 
         BlockEntityRenderers.register(BeyondBlockEntities.BONFIRE.get(), BonfireRenderer::new);
         BlockEntityRenderers.register(BeyondBlockEntities.MEMOR_FAUCET.get(), MemorFaucetRenderer::new);
+        BlockEntityRenderers.register(BeyondBlockEntities.REFUGE.get(), RefugeRenderer::new);
     }
+
+    @SubscribeEvent
+    public static void registerScreens(RegisterMenuScreensEvent event) {
+        event.register(BeyondMenus.REFUGE.get(), RefugeScreen::new);
+    }
+
     @SubscribeEvent
     public static void onAdditional(ModelEvent.RegisterAdditional event) {
         event.register(ModelResourceLocation.standalone(CLOUD_MODEL));
         event.register(ModelResourceLocation.standalone(CLOUD_2_MODEL));
+        event.register(ModelResourceLocation.standalone(ROOTS_MODEL));
+        event.register(ModelResourceLocation.standalone(ROOTS_SMALL_MODEL));
         event.register(ModelResourceLocation.standalone(AuroraBorealisRenderer.AURORA_0_MODEL));
         event.register(ModelResourceLocation.standalone(AuroraBorealisRenderer.AURORA_1_MODEL));
         event.register(ModelResourceLocation.standalone(AuroraBorealisRenderer.AURORA_2_MODEL));
@@ -367,6 +384,56 @@ public class ModClientEvents {
 //        }
 //        return false;
 //    }
+
+//    private static Optional<BlockPos> getRefuge(ServerLevel serverLevel, BlockPos pos) {
+//        return serverLevel.getPoiManager().findClosest(
+//                poiType -> poiType.is(BeyondPoiTypes.REFUGE),
+//                blockPos -> {
+//                    BlockState state = serverLevel.getBlockState(blockPos);
+//                    return state.is(BeyondBlocks.REFUGE.get()) && RefugeBlock.isActive(state);},
+//                pos,
+//                80,
+//                PoiManager.Occupancy.ANY
+//        );
+//    }
+
+    private static RefugeChunkData getChunkData(ServerLevel level, BlockPos pos) {
+        return level.getChunkAt(pos).getData(BeyondAttachments.REFUGE_DATA);
+    }
+
+    @SubscribeEvent
+    public static void onExplosion(ExplosionEvent.Start event) {
+        if (RefugeBlockEntity.ACTIVE_REFUGES.isEmpty()) return;
+        if (event.getLevel() instanceof ServerLevel serverLevel) {
+            BlockPos pos = BlockPos.containing(event.getExplosion().center());
+            RefugeChunkData data = getChunkData(serverLevel, pos);
+            if (data.shouldPreventExplosion()) {
+                event.setCanceled(true);
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onMobSpawn(MobSpawnEvent.SpawnPlacementCheck event) {
+        if (RefugeBlockEntity.ACTIVE_REFUGES.isEmpty()) return;
+        if (event.getLevel() instanceof ServerLevel serverLevel) {
+            RefugeChunkData data = getChunkData(serverLevel, event.getPos());
+            if (data.shouldPreventMobSpawn()) {
+                event.setResult(MobSpawnEvent.SpawnPlacementCheck.Result.FAIL);
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onFall(LivingFallEvent event) {
+        if (RefugeBlockEntity.ACTIVE_REFUGES.isEmpty()) return;
+        if (event.getEntity() != null && event.getEntity().level() instanceof ServerLevel serverLevel) {
+            RefugeChunkData data = getChunkData(serverLevel, event.getEntity().getOnPos());
+            if (data.shouldPreventFallDamage()) {
+                event.setCanceled(true);
+            }
+        }
+    }
 
     @SubscribeEvent
     public static void onRenderNameTag(RenderNameTagEvent event) {
@@ -679,6 +746,8 @@ public class ModClientEvents {
             return;
         }
 
+        //renderRefugeDebug(event);
+
         if (!event.getCamera().getEntity().level().dimensionType().effectsLocation().equals(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"))) return;
 
         Minecraft mc = Minecraft.getInstance();
@@ -719,6 +788,95 @@ public class ModClientEvents {
         bufferSource.endBatch();
         poseStack.popPose();
     }
+
+//    private static void renderRefugeDebug(RenderLevelStageEvent event) {
+//        Minecraft mc = Minecraft.getInstance();
+//        Player player = mc.player;
+//        Level level = player.level();
+//        Frustum frustum = event.getFrustum();
+//        int renderDistance = mc.options.getEffectiveRenderDistance();
+//        ChunkPos playerChunk = player.chunkPosition();
+//        int yLevel = (int) (-50);
+//
+//        for (int x = -renderDistance; x <= renderDistance; x++) {
+//            for (int z = -renderDistance; z <= renderDistance; z++) {
+//                ChunkPos chunkPos = new ChunkPos(playerChunk.x + x, playerChunk.z + z);
+//
+//                double worldX = chunkPos.getMiddleBlockX();
+//                double worldZ = chunkPos.getMiddleBlockZ();
+//
+//                BlockPos centerPos = new BlockPos(
+//                        chunkPos.getMiddleBlockX(),
+//                        yLevel,
+//                        chunkPos.getMiddleBlockZ()
+//                );
+//
+//                RefugeChunkData data = level.getChunkAt(centerPos).getData(BeyondAttachments.REFUGE_DATA);
+//
+//                PoseStack poseStack = event.getPoseStack();
+//                Vec3 camPos = event.getCamera().getPosition();
+//
+//                poseStack.pushPose();
+//                poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
+//
+//                poseStack.translate(centerPos.getX(), centerPos.getY(), centerPos.getZ());
+//
+//                //poseStack.translate(0, yoffset, 0);
+//                poseStack.translate(-0.5f, -0.5f, -0.5f);
+//
+//                poseStack.mulPose(Minecraft.getInstance().gameRenderer.getMainCamera().rotation());
+//
+//                poseStack.translate(0, -0.5f, -0.5f);
+//
+//                double chunkCenterX = chunkPos.getMiddleBlockX();
+//                double chunkCenterZ = chunkPos.getMiddleBlockZ();
+//                double deltaX = chunkCenterX - player.getX();
+//                double deltaZ = chunkCenterZ - player.getZ();
+//                double distanceFromPlayer = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
+//                double maxPlayerDistance = renderDistance * 16 * 0.8;
+//                float l = (float) (1.0 - (distanceFromPlayer / maxPlayerDistance));
+//
+//                MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
+//
+//                if (data.shouldPreventExplosion()) {
+//                    ItemStack itemStack = new ItemStack(Blocks.TNT.asItem());
+//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
+//                } else {
+//                    ItemStack itemStack = new ItemStack(Blocks.BARRIER.asItem());
+//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
+//                }
+//                if (data.shouldPreventHunger()) {
+//                    poseStack.translate(0,1,0);
+//                    ItemStack itemStack = new ItemStack(Items.COOKED_BEEF);
+//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
+//                } else {
+//                    poseStack.translate(0,1,0);
+//                    ItemStack itemStack = new ItemStack(Blocks.BARRIER.asItem());
+//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
+//                }
+//                if (data.shouldPreventFallDamage()) {
+//                    poseStack.translate(0,1,0);
+//                    ItemStack itemStack = new ItemStack(Items.DIAMOND_BOOTS);
+//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
+//                } else {
+//                    poseStack.translate(0,1,0);
+//                    ItemStack itemStack = new ItemStack(Blocks.BARRIER.asItem());
+//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
+//                }
+//                if (data.shouldPreventMobSpawn()) {
+//                    poseStack.translate(0,1,0);
+//                    ItemStack itemStack = new ItemStack(Blocks.SKELETON_SKULL.asItem());
+//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
+//                } else {
+//                    poseStack.translate(0,1,0);
+//                    ItemStack itemStack = new ItemStack(Blocks.BARRIER.asItem());
+//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
+//                }
+//                poseStack.popPose();
+//
+//            }
+//        }
+//    }
 
     public static void renderClouds(PoseStack poseStack, float translate, float scale, float time, ResourceLocation model, MultiBufferSource.BufferSource buffer) {
         poseStack.pushPose();

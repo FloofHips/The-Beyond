@@ -9,7 +9,8 @@
     "BlockBehaviourMixin",
     "FallingBlockEntityAccessor",
     "PistonStructureResolverMixin",
-    "RandomStateMixin"
+    "RandomStateMixin",
+    "RefugeHungerMixin"
   ],
   "server": [],
   "injectors": {

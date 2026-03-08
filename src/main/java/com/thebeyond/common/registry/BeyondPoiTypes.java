@@ -15,6 +15,7 @@ public class BeyondPoiTypes {
     public static final DeferredRegister<PoiType> POI_TYPES = DeferredRegister.create(BuiltInRegistries.POINT_OF_INTEREST_TYPE, TheBeyond.MODID);
 
     public static final DeferredHolder<PoiType, PoiType> BONFIRE = POI_TYPES.register("bonfire", () -> new PoiType(getBlockStates(BeyondBlocks.BONFIRE.get()), 0, 10));
+    public static final DeferredHolder<PoiType, PoiType> REFUGE = POI_TYPES.register("refuge", () -> new PoiType(getBlockStates(BeyondBlocks.REFUGE.get()), 0, 5));
 
     private static Set<BlockState> getBlockStates(Block block) {
         return ImmutableSet.copyOf(block.getStateDefinition().getPossibleStates());

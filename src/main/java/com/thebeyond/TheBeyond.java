@@ -41,6 +41,8 @@ public class TheBeyond {
         BeyondPoiTypes.POI_TYPES.register(modEventBus);
         BeyondBiomeModifiers.BIOME_MODIFIERS.register(modEventBus);
         BeyondProcessors.PROCESSOR_TYPES.register(modEventBus);
+        BeyondAttachments.ATTACHMENT_TYPES.register(modEventBus);
+        BeyondMenus.MENUS.register(modEventBus);
 
         modEventBus.addListener(BeyondTabs::addCreative);
 
