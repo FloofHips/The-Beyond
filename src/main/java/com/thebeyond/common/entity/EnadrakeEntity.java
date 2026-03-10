@@ -68,7 +68,8 @@ public class EnadrakeEntity extends PathfinderMob {
 
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new EnadrakeSearchForItemsGoal());
-        this.goalSelector.addGoal(0, new EnadrakeAdvanceStairGoal(this, 1.2, 10, 16));
+        //this.goalSelector.addGoal(0, new EnadrakeAdvanceStairGoal(this, 1.2, 10, 16));
+        this.goalSelector.addGoal(0, new EnadrakeStoreInHomeGoal(this, 1.2, 10, 16));
         this.goalSelector.addGoal(1, new EnadrakeHarvestGoal(this, 1.5, 15, 6));
         this.goalSelector.addGoal(2, new RandomStrollGoal(this, 1));
         this.goalSelector.addGoal(3, new RandomLookAroundGoal(this));

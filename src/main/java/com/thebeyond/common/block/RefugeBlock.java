@@ -94,24 +94,23 @@ public class RefugeBlock extends BaseEntityBlock {
         //} else {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof RefugeBlockEntity refugeBlockEntity) {
-                if (refugeBlockEntity.getOwnerProfile() == null) {
-                    refugeBlockEntity.setOwner(new ResolvableProfile(player.getGameProfile()));
-                    player.displayClientMessage(Component.literal("added " + player.getGameProfile().getName()), true);
-                } else {
-                    player.displayClientMessage(Component.literal(refugeBlockEntity.getOwnerProfile().gameProfile().getName()), true);
-                }
-
-                if (level.isClientSide){
-                    if (player.isShiftKeyDown()) {
-                        refugeBlockEntity.animating = 80;
-                    }
-
-                        //player.openMenu(refugeBlockEntity);
-                    //else
-                    //    refugeBlockEntity.print();
-                }
-                //refugeBlockEntity.setMode(cycleModes(refugeBlockEntity.getMode()), refugeBlockEntity);
-                //player.displayClientMessage(Component.literal("This area is protected!!! " + refugeBlockEntity.getMode()), true);
+                refugeBlockEntity.animating = 80;
+                //if (refugeBlockEntity.getOwnerProfile() == null) {
+                //    refugeBlockEntity.setOwner(new ResolvableProfile(player.getGameProfile()));
+                //    player.displayClientMessage(Component.literal("added " + player.getGameProfile().getName()), true);
+                //} else {
+                //    player.displayClientMessage(Component.literal(refugeBlockEntity.getOwnerProfile().gameProfile().getName()), true);
+                //}
+//
+                //if (!level.isClientSide){
+                //    if (player.isShiftKeyDown()) {
+                //        player.openMenu(refugeBlockEntity);
+                //    }
+                //    else
+                //        refugeBlockEntity.print();
+                //}
+                refugeBlockEntity.setMode(cycleModes(refugeBlockEntity.getMode()), refugeBlockEntity);
+                player.displayClientMessage(Component.literal("This area is protected!!! " + refugeBlockEntity.getMode()), true);
             }
 
             return InteractionResult.CONSUME;

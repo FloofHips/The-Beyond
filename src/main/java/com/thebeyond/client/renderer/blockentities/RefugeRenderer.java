@@ -56,7 +56,30 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
         renderModel(poseStack, bufferSource, packedLight, packedOverlay, profile);
         poseStack.popPose();
 
-        if (blockEntity.animating > 0) renderRoots(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+        if (blockEntity.animating > 0) renderRootShock(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+    }
+
+    public void renderRootShock(RefugeBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight, int packedOverlay) {
+        poseStack.pushPose();
+
+        float rootHeight = (float)Math.sin((blockEntity.getLevel().getGameTime() + partialTick) * 0.9f) * 0.2f;
+
+        //poseStack.translate(0, rootHeight, 0);
+        poseStack.mulPose(Axis.XP.rotation((float) Math.PI / 2f));
+        poseStack.scale(144, 144, 16);
+        poseStack.translate(-0.5, -0.5, -0.5);
+
+
+        RenderUtils.renderModel(
+                ModClientEvents.ROOT_MODEL,
+                poseStack,
+                buffer.getBuffer(BeyondRenderTypes.cutout()),
+                packedLight,
+                packedOverlay,
+                1, 1, 1, 1
+        );
+
+        poseStack.popPose();
     }
 
     public void renderRoots(RefugeBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight, int packedOverlay) {
@@ -82,7 +105,7 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
 
                 poseStack.translate(0, -0.4, 0);
                 RenderUtils.renderModel(
-                        getRootsModel(i,j),
+                        ModClientEvents.ROOT_MODEL,
                         poseStack,
                         buffer.getBuffer(BeyondRenderTypes.cutout()),
                         packedLight,
@@ -90,17 +113,17 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
                         1, 1, 1, 1
                 );
 
-                poseStack.translate(0, 0, 1);
-                poseStack.mulPose(Axis.YP.rotationDegrees(90));
-
-                RenderUtils.renderModel(
-                        getRootsModel(i,j),
-                        poseStack,
-                        buffer.getBuffer(BeyondRenderTypes.cutout()),
-                        packedLight,
-                        packedOverlay,
-                        1, 1, 1, 1
-                );
+                //poseStack.translate(0, 0, 1);
+                //poseStack.mulPose(Axis.YP.rotationDegrees(90));
+//
+                //RenderUtils.renderModel(
+                //        getRootsModel(i,j),
+                //        poseStack,
+                //        buffer.getBuffer(BeyondRenderTypes.cutout()),
+                //        packedLight,
+                //        packedOverlay,
+                //        1, 1, 1, 1
+                //);
 
                 poseStack.pushPose();
 
@@ -148,9 +171,9 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
         poseStack.popPose();
     }
 
-    private static @NotNull ResourceLocation getRootsModel(int x, int z) {
-        return (Math.abs(x)%2 == Math.abs(z)%2) ? ModClientEvents.ROOTS_MODEL : ModClientEvents.CLOUD_2_MODEL;
-    }
+    //private static @NotNull ResourceLocation getRootsModel(int x, int z) {
+    //    return (Math.abs(x)%2 == Math.abs(z)%2) ? ModClientEvents.ROOTS_MODEL : ModClientEvents.CLOUD_2_MODEL;
+    //}
 
     private void renderModel(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay, ResolvableProfile profile) {
 
@@ -165,12 +188,12 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
         playerModel.hat.y = -1f;
         playerModel.hat.zScale = 2.1f;
 
-        ResourceLocation resourcelocation = (ResourceLocation)SKIN_BY_TYPE.get(SkullBlock.Types.PLAYER);
         SkinManager skinmanager = Minecraft.getInstance().getSkinManager();
 
         if (profile != null) {
             VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.entityTranslucent(skinmanager.getInsecureSkin(profile.gameProfile()).texture()));
-            //playerModel.slim = profile.gameProfile()
+            playerModel.renderEars(poseStack, vertexConsumer, packedLight, packedOverlay);
+
             playerModel.renderToBuffer(poseStack, vertexConsumer, packedLight, packedOverlay, 0xFFFFFFFF);
         } else {
             VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.entityTranslucent(DefaultPlayerSkin.getDefaultTexture()));

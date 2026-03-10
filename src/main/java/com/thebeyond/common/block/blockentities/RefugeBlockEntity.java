@@ -58,7 +58,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
     private static final byte MODE_EXPLOSION = 1;
     private static final byte MODE_MOB_SPAWN = 2;
     private static final byte MODE_FALL_DAMAGE = 3;
-    private static final int PROTECTION_RADIUS = 64;
+    private static final int PROTECTION_RADIUS = 9;
 
     private byte currentMode = -1;;
 
@@ -272,17 +272,20 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         affectedChunks.clear();
         int chunkX = worldPosition.getX() / 16;
         int chunkZ = worldPosition.getZ() / 16;
-        int radiusChunks = (PROTECTION_RADIUS / 16) + 1;
+        int chunkRadius = PROTECTION_RADIUS/2;
 
-        for (int dx = -radiusChunks; dx <= radiusChunks; dx++) {
-            for (int dz = -radiusChunks; dz <= radiusChunks; dz++) {
+        for (int dx = -chunkRadius; dx <= chunkRadius; dx++) {
+            for (int dz = -chunkRadius; dz <= chunkRadius; dz++) {
+
                 int worldX = (chunkX + dx) * 16 + 8;
                 int worldZ = (chunkZ + dz) * 16 + 8;
 
-                if (Math.abs(worldX - worldPosition.getX()) <= PROTECTION_RADIUS && Math.abs(worldZ - worldPosition.getZ()) <= PROTECTION_RADIUS) {
-                    ChunkPos chunkPos = new ChunkPos(chunkX + dx, chunkZ + dz);
+                if (Math.abs(worldX - worldPosition.getX()) <= PROTECTION_RADIUS * 16 && Math.abs(worldZ - worldPosition.getZ()) <= PROTECTION_RADIUS * 16) {
+
+                    ChunkPos chunkPos = new ChunkPos(chunkX + dx - 1, chunkZ + dz);
                     affectedChunks.add(chunkPos);
                     level.setBlock(chunkPos.getMiddleBlockPosition(-52), Blocks.LIME_CONCRETE.defaultBlockState(), 3);
+
                 }
             }
         }

@@ -89,10 +89,10 @@ public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
         MAXY = (int) Mth.lerp(0.05, MAXY, j+117);
 
         guiGraphics.enableScissor(MINX, MINY, MAXX, MAXY);
-        guiGraphics.blit(UP, i-1, j-2,0,0, 98, 98, 98, 98);
-        guiGraphics.blit(LEFT, i-1, j,0,0, 98, 98, 98, 98);
-        guiGraphics.blit(RIGHT, i-1, j,0,0, 98, 98, 98, 98);
-        guiGraphics.blit(DOWN, i-1, j,0,0, 98, 98, 98, 98);
+        //guiGraphics.blit(UP, i-1, j-2,0,0, 98, 98, 98, 98);
+        //guiGraphics.blit(LEFT, i-1, j,0,0, 98, 98, 98, 98);
+        //guiGraphics.blit(RIGHT, i-1, j,0,0, 98, 98, 98, 98);
+        //guiGraphics.blit(DOWN, i-1, j,0,0, 98, 98, 98, 98);
         guiGraphics.disableScissor();
     }
 

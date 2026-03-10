@@ -132,8 +132,9 @@ public class ModClientEvents {
     private static final ResourceLocation AURORA_TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/environment/aurora.png");
     public static final ResourceLocation CLOUD_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/cloud");
     public static final ResourceLocation CLOUD_2_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/cloud_2");
-    public static final ResourceLocation ROOTS_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/roots");
-    public static final ResourceLocation ROOTS_SMALL_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/roots_small");
+    //public static final ResourceLocation ROOTS_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/roots");
+    //public static final ResourceLocation ROOTS_SMALL_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/roots_small");
+    public static final ResourceLocation ROOT_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/root_shockwave");
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath("minecraft", "textures/block/red_concrete.png");
 
     static RandomSource random = RandomSource.create(254572);
@@ -172,8 +173,9 @@ public class ModClientEvents {
     public static void onAdditional(ModelEvent.RegisterAdditional event) {
         event.register(ModelResourceLocation.standalone(CLOUD_MODEL));
         event.register(ModelResourceLocation.standalone(CLOUD_2_MODEL));
-        event.register(ModelResourceLocation.standalone(ROOTS_MODEL));
-        event.register(ModelResourceLocation.standalone(ROOTS_SMALL_MODEL));
+        //event.register(ModelResourceLocation.standalone(ROOTS_MODEL));
+        event.register(ModelResourceLocation.standalone(ROOT_MODEL));
+        //event.register(ModelResourceLocation.standalone(ROOTS_SMALL_MODEL));
         event.register(ModelResourceLocation.standalone(AuroraBorealisRenderer.AURORA_0_MODEL));
         event.register(ModelResourceLocation.standalone(AuroraBorealisRenderer.AURORA_1_MODEL));
         event.register(ModelResourceLocation.standalone(AuroraBorealisRenderer.AURORA_2_MODEL));
