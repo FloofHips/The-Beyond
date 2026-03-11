@@ -23,16 +23,22 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.client.resources.SkinManager;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.SkullBlock;
+import net.minecraft.world.level.block.entity.BeaconBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
+import java.awt.*;
 import java.util.Set;
 
 import static net.minecraft.client.renderer.blockentity.SkullBlockRenderer.SKIN_BY_TYPE;
@@ -50,6 +56,7 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
         ResolvableProfile profile = blockEntity.getOwnerProfile();
 
         poseStack.pushPose();
+
         poseStack.translate(0.5D, 0.0D, 0.5D);
         poseStack.scale(3f, -3.0f, 3f);
         poseStack.translate(0, -1.8, 0);
@@ -64,11 +71,9 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
 
         float rootHeight = (float)Math.sin((blockEntity.getLevel().getGameTime() + partialTick) * 0.9f) * 0.2f;
 
-        //poseStack.translate(0, rootHeight, 0);
         poseStack.mulPose(Axis.XP.rotation((float) Math.PI / 2f));
         poseStack.scale(144, 144, 16);
         poseStack.translate(-0.5, -0.5, -0.5);
-
 
         RenderUtils.renderModel(
                 ModClientEvents.ROOT_MODEL,
@@ -78,102 +83,56 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
                 packedOverlay,
                 1, 1, 1, 1
         );
-
         poseStack.popPose();
-    }
-
-    public void renderRoots(RefugeBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight, int packedOverlay) {
-        //Set<ChunkPos> affectedChunks = blockEntity.getAffectedChunks();
-        //if (affectedChunks == null || affectedChunks.isEmpty()) return;
 
         poseStack.pushPose();
 
-        float rootHeight = (float)Math.sin((blockEntity.getLevel().getGameTime() + partialTick) * 0.1f) * 0.2f;
-        Font font = Minecraft.getInstance().font;
+        int x1 = blockEntity.getBlockPos().getX();
+        int z1 = blockEntity.getBlockPos().getZ();
 
-        for (int i = -4; i <= 4; i++) {
-            for (int j = -4; j <= 4; j++) {
-                poseStack.pushPose();
+        int x = x1 % 16;
+        int z = z1 % 16;
 
-                double xOffset = (blockEntity.getBlockPos().getX() + i * 16 + 128);
-                double zOffset = (blockEntity.getBlockPos().getZ() + j * 16);
+        x = (x < 0 ? Math.abs(x) - 8 : 8 - x);
+        z = (z < 0 ? Math.abs(z) - 8 : 8 - z);
 
-                poseStack.translate(xOffset + 8.0, 0, zOffset + 8.0);
+        poseStack.translate(x, 0, z);
 
-                poseStack.translate(0, rootHeight, 0);
-                poseStack.scale(16,16,16);
+        //renderPart(poseStack, buffer.getBuffer(BeyondRenderTypes.entityTranslucent(ResourceLocation.withDefaultNamespace("block/white_concrete.png"))), 0, 16, -rad, -rad, rad, -rad, -rad, rad, rad, rad, 0.0F, 1.0F, 0.0F, 1.0F);
 
-                poseStack.translate(0, -0.4, 0);
-                RenderUtils.renderModel(
-                        ModClientEvents.ROOT_MODEL,
-                        poseStack,
-                        buffer.getBuffer(BeyondRenderTypes.cutout()),
-                        packedLight,
-                        packedOverlay,
-                        1, 1, 1, 1
-                );
-
-                //poseStack.translate(0, 0, 1);
-                //poseStack.mulPose(Axis.YP.rotationDegrees(90));
-//
-                //RenderUtils.renderModel(
-                //        getRootsModel(i,j),
-                //        poseStack,
-                //        buffer.getBuffer(BeyondRenderTypes.cutout()),
-                //        packedLight,
-                //        packedOverlay,
-                //        1, 1, 1, 1
-                //);
-
-                poseStack.pushPose();
-
-                poseStack.translate(0, 1.0, 0);
-
-                float textScale = 0.025f;
-                poseStack.scale(textScale, -textScale, textScale);
-
-                String text = "i=" + i;
-                String text2 = "j=" + j;
-
-                int width = font.width(text);
-                int width2 = font.width(text2);
-
-                font.drawInBatch(
-                        text,
-                        -width / 2.0f, 0,
-                        0xFFFFFFFF,
-                        false,
-                        poseStack.last().pose(),
-                        buffer,
-                        Font.DisplayMode.NORMAL,
-                        0,
-                        packedLight
-                );
-
-                font.drawInBatch(
-                        text2,
-                        -width2 / 2.0f, 10,
-                        0xFFFFFF00,
-                        false,
-                        poseStack.last().pose(),
-                        buffer,
-                        Font.DisplayMode.NORMAL,
-                        0,
-                        packedLight
-                );
-
-                poseStack.popPose();
-
-                poseStack.popPose();
-            }
+        for (int i = 1; i <= 3; i++) {
+            int rad = 8*i*3;
+            renderPart(poseStack, buffer.getBuffer(BeyondRenderTypes.entityTranslucent(ResourceLocation.withDefaultNamespace("textures/block/white_concrete.png"))), 0, 16, -rad, -rad, rad, -rad, -rad, rad, rad, rad, 0.0F, 1.0F, 0.0F, 1.0F);
         }
-
         poseStack.popPose();
     }
 
-    //private static @NotNull ResourceLocation getRootsModel(int x, int z) {
-    //    return (Math.abs(x)%2 == Math.abs(z)%2) ? ModClientEvents.ROOTS_MODEL : ModClientEvents.CLOUD_2_MODEL;
-    //}
+    private static void renderPart(PoseStack poseStack, VertexConsumer consumer, int minY, int maxY, int x1, int z1, int x2, int z2, int x3, int z3, int x4, int z4, float minU, float maxU, float minV, float maxV) {
+        PoseStack.Pose pose = poseStack.last();
+
+        renderQuad(pose, consumer, minY, maxY, x1, z1, x2, z2, minU, maxU, minV, maxV);
+        renderQuad(pose, consumer, minY, maxY, x4, z4, x3, z3, minU, maxU, minV, maxV);
+        renderQuad(pose, consumer, minY, maxY, x2, z2, x4, z4, minU, maxU, minV, maxV);
+        renderQuad(pose, consumer, minY, maxY, x3, z3, x1, z1, minU, maxU, minV, maxV);
+
+        renderQuad(pose, consumer, minY, -maxY, x1, z1, x2, z2, minU, maxU, minV, maxV);
+        renderQuad(pose, consumer, minY, -maxY, x4, z4, x3, z3, minU, maxU, minV, maxV);
+        renderQuad(pose, consumer, minY, -maxY, x2, z2, x4, z4, minU, maxU, minV, maxV);
+        renderQuad(pose, consumer, minY, -maxY, x3, z3, x1, z1, minU, maxU, minV, maxV);
+
+    }
+
+    private static void renderQuad(PoseStack.Pose pose, VertexConsumer consumer, int minY, int maxY, int minX, int minZ, int maxX, int maxZ, float minU, float maxU, float minV, float maxV) {
+        int rgb = new Color(1,1,1,0).getRGB();
+        addVertex(pose, consumer, rgb, minX, maxY, minZ, maxU, minV);
+        addVertex(pose, consumer, Color.blue.getRGB(), minX, minY, minZ, maxU, maxV);
+        addVertex(pose, consumer, Color.blue.getRGB(), maxX, minY, maxZ, minU, maxV);
+        addVertex(pose, consumer, rgb, maxX, maxY, maxZ, minU, minV);
+    }
+
+    private static void addVertex(PoseStack.Pose pose, VertexConsumer consumer, int color, int x, int y, int z, float u, float v) {
+        consumer.addVertex(pose, x, y, z).setColor(color).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(15728880).setNormal(pose, 0.0F, 1.0F, 0.0F);
+    }
 
     private void renderModel(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay, ResolvableProfile profile) {
 
@@ -216,17 +175,22 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
     }
 
     @Override
-    public int getViewDistance() {
-        return 90;
-    }
-
-    @Override
     public boolean shouldRenderOffScreen(RefugeBlockEntity blockEntity) {
         return true;
     }
 
+    public int getViewDistance() {
+        return 256;
+    }
+
     @Override
     public boolean shouldRender(RefugeBlockEntity blockEntity, Vec3 cameraPos) {
-        return true;
+        return Vec3.atCenterOf(blockEntity.getBlockPos()).multiply((double)1.0F, (double)0.0F, (double)1.0F).closerThan(cameraPos.multiply((double)1.0F, (double)0.0F, (double)1.0F), (double)this.getViewDistance());
+    }
+
+    @Override
+    public AABB getRenderBoundingBox(RefugeBlockEntity blockEntity) {
+        BlockPos pos = blockEntity.getBlockPos();
+        return new AABB(pos.getX() - 145, pos.getY() - 64, pos.getZ() - 145, pos.getX() + 145, pos.getY() + 64, pos.getZ() + 145);
     }
 }

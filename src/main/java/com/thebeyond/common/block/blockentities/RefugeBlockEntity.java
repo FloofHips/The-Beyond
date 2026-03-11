@@ -270,9 +270,14 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
 
     private void makeChunks() {
         affectedChunks.clear();
-        int chunkX = worldPosition.getX() / 16;
-        int chunkZ = worldPosition.getZ() / 16;
+        ChunkPos pos = getLevel().getChunk(worldPosition).getPos();
+        int chunkX = pos.x;
+        int chunkZ = pos.z;
         int chunkRadius = PROTECTION_RADIUS/2;
+
+        BlockPos p = new BlockPos(chunkX*16, -47, chunkZ*16);
+
+        level.setBlock(p, Blocks.GLOWSTONE.defaultBlockState(), 3);
 
         for (int dx = -chunkRadius; dx <= chunkRadius; dx++) {
             for (int dz = -chunkRadius; dz <= chunkRadius; dz++) {
@@ -282,7 +287,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
 
                 if (Math.abs(worldX - worldPosition.getX()) <= PROTECTION_RADIUS * 16 && Math.abs(worldZ - worldPosition.getZ()) <= PROTECTION_RADIUS * 16) {
 
-                    ChunkPos chunkPos = new ChunkPos(chunkX + dx - 1, chunkZ + dz);
+                    ChunkPos chunkPos = new ChunkPos(chunkX + dx, chunkZ + dz);
                     affectedChunks.add(chunkPos);
                     level.setBlock(chunkPos.getMiddleBlockPosition(-52), Blocks.LIME_CONCRETE.defaultBlockState(), 3);
 
