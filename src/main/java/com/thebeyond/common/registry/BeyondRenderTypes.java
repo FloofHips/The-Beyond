@@ -16,6 +16,23 @@ public class BeyondRenderTypes extends RenderType {
     }
     private static final RenderStateShard.ShaderStateShard RENDERTYPE_ENTITY_TRANSLUCENT_UNLIT_SHADER = new RenderStateShard.ShaderStateShard(ClientHooks.ClientEvents::getEntityTranslucentUnlitShader);
     static RenderStateShard.ShaderStateShard DEPTH_SHADER_STATE = new RenderStateShard.ShaderStateShard(BeyondShaders::getRenderTypeDepthOverlay);
+    static RenderStateShard.ShaderStateShard REFUGE_GRADIENT_SHADER_STATE = new RenderStateShard.ShaderStateShard(BeyondShaders::getRefugeGradient);
+
+    public static final Function<ResourceLocation, RenderType> REFUGE_GRADIENT = Util.memoize((location) -> {
+        CompositeState compositeState = CompositeState.builder()
+                .setShaderState(REFUGE_GRADIENT_SHADER_STATE)
+                .setTextureState(new TextureStateShard(location, false, false))
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                .setLightmapState(LIGHTMAP)
+                .setOverlayState(OVERLAY)
+                .createCompositeState(true);
+        return create("refuge_gradient", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536, true, true, compositeState);
+    });
+
+    public static RenderType getRefugeGradient(ResourceLocation location) {
+        return REFUGE_GRADIENT.apply(location);
+    }
 
     public static RenderType unlitTranslucent(ResourceLocation textureLocation) {
         RenderType.CompositeState renderState = CompositeState.builder().setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_UNLIT_SHADER).setTextureState(new RenderStateShard.TextureStateShard(textureLocation, false, false)).setTransparencyState(RenderType.TRANSLUCENT_TRANSPARENCY).setCullState(RenderType.CULL).setLightmapState(RenderType.LIGHTMAP).setOverlayState(RenderType.OVERLAY).createCompositeState(true);

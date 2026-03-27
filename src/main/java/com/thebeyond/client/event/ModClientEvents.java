@@ -198,6 +198,7 @@ public class ModClientEvents {
         event.registerLayerDefinition(BeyondModelLayers.ABYSSAL_NOMAD, () -> AbyssalNomadModel.createBodyLayer(CubeDeformation.NONE));
         event.registerLayerDefinition(BeyondModelLayers.ABYSSAL_NOMAD_GLOW, () -> AbyssalNomadModel.createBodyLayer(new CubeDeformation(-0.1f)));
 
+
         BeyondItems.ITEMS.getEntries().stream()
                 .filter(item -> item.get() instanceof ModelArmorItem)
                 .map(item -> (ModelArmorItem) item.get())
@@ -258,6 +259,9 @@ public class ModClientEvents {
             event.registerShader(new ShaderInstance(event.getResourceProvider(),
                     ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_entity_depth"),
                     DefaultVertexFormat.NEW_ENTITY), BeyondShaders::setRenderTypeDepthOverlay);
+            event.registerShader(new ShaderInstance(event.getResourceProvider(),
+                    ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_refuge_gradient"),
+                    DefaultVertexFormat.NEW_ENTITY), BeyondShaders::setRefugeGradient);
         } catch (Exception exception) {
             TheBeyond.LOGGER.error("The Beyond could not register internal shaders! :(", exception);
         }

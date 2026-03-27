@@ -2,30 +2,39 @@ package com.thebeyond.common.block.blockentities;
 
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondMenus;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.Blocks;
 
 public class RefugeMenu extends AbstractContainerMenu {
     private final Container refuge;
     private final RefugeMenu.PaymentSlot paymentSlot;
     private final ContainerLevelAccess access;
     private final ContainerData refugeData;
+    private final BlockPos blockPos;
 
-
-    public RefugeMenu(int containerId, Container container) {
-        this(containerId, container, new SimpleContainerData(3), ContainerLevelAccess.NULL);
+    // Client-side constructor — called by IMenuTypeExtension with extra data
+    public RefugeMenu(int containerId, Inventory playerInventory, FriendlyByteBuf extraData) {
+        this(containerId, playerInventory, new SimpleContainerData(3), ContainerLevelAccess.NULL, extraData.readBlockPos());
     }
 
-    public RefugeMenu(int containerId, Container container, ContainerData refugeData, ContainerLevelAccess access) {
+    // Server-side constructor
+    public RefugeMenu(int containerId, Inventory playerInventory, ContainerData refugeData, ContainerLevelAccess access) {
+        this(containerId, playerInventory, refugeData, access, access.evaluate((level, pos) -> pos).orElse(BlockPos.ZERO));
+    }
+
+    private RefugeMenu(int containerId, Inventory playerInventory, ContainerData refugeData, ContainerLevelAccess access, BlockPos blockPos) {
         super(BeyondMenus.REFUGE.get(), containerId);
+        this.blockPos = blockPos;
         this.refuge = new SimpleContainer(1) {
-            public boolean canPlaceItem(int p_39066_, ItemStack p_39067_) {
-                return p_39067_.is(ItemTags.BEACON_PAYMENT_ITEMS);
+            public boolean canPlaceItem(int slot, ItemStack stack) {
+                return stack.is(ItemTags.BEACON_PAYMENT_ITEMS);
             }
 
             public int getMaxStackSize() {
@@ -38,19 +47,16 @@ public class RefugeMenu extends AbstractContainerMenu {
         this.paymentSlot = new RefugeMenu.PaymentSlot(this.refuge, 0, 40, 30);
         this.addSlot(this.paymentSlot);
         this.addDataSlots(refugeData);
-        int i = 36;
-        int j = 137;
 
-        for(int k = 0; k < 3; ++k) {
-            for(int l = 0; l < 9; ++l) {
-                this.addSlot(new Slot(container, l + k * 9 + 9, 8 + l * 18, 94 + k * 18));
+        for (int k = 0; k < 3; ++k) {
+            for (int l = 0; l < 9; ++l) {
+                this.addSlot(new Slot(playerInventory, l + k * 9 + 9, 8 + l * 18, 94 + k * 18));
             }
         }
 
-        for(int i1 = 0; i1 < 9; ++i1) {
-            this.addSlot(new Slot(container, i1, 8 + i1 * 18, 152));
+        for (int i1 = 0; i1 < 9; ++i1) {
+            this.addSlot(new Slot(playerInventory, i1, 8 + i1 * 18, 152));
         }
-
     }
 
     public void removed(Player player) {
@@ -61,7 +67,6 @@ public class RefugeMenu extends AbstractContainerMenu {
                 player.drop(itemstack, false);
             }
         }
-
     }
 
     public boolean stillValid(Player player) {
@@ -75,7 +80,7 @@ public class RefugeMenu extends AbstractContainerMenu {
 
     public ItemStack quickMoveStack(Player player, int index) {
         ItemStack itemstack = ItemStack.EMPTY;
-        Slot slot = (Slot)this.slots.get(index);
+        Slot slot = this.slots.get(index);
         if (slot != null && slot.hasItem()) {
             ItemStack itemstack1 = slot.getItem();
             itemstack = itemstack1.copy();
@@ -83,13 +88,11 @@ public class RefugeMenu extends AbstractContainerMenu {
                 if (!this.moveItemStackTo(itemstack1, 1, 37, true)) {
                     return ItemStack.EMPTY;
                 }
-
                 slot.onQuickCraft(itemstack1, itemstack);
             } else {
                 if (this.moveItemStackTo(itemstack1, 0, 1, false)) {
                     return ItemStack.EMPTY;
                 }
-
                 if (index >= 1 && index < 28) {
                     if (!this.moveItemStackTo(itemstack1, 28, 37, false)) {
                         return ItemStack.EMPTY;
@@ -121,6 +124,10 @@ public class RefugeMenu extends AbstractContainerMenu {
 
     public boolean hasPayment() {
         return !this.refuge.getItem(0).isEmpty();
+    }
+
+    public BlockPos getBlockPos() {
+        return this.blockPos;
     }
 
     class PaymentSlot extends Slot {
