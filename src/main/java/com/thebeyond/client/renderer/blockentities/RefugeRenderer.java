@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import com.thebeyond.client.event.ModClientEvents;
 import com.thebeyond.common.block.blockentities.RefugeBlockEntity;
+import com.thebeyond.client.compat.ShaderCompatLib;
 import com.thebeyond.common.registry.BeyondRenderTypes;
 import com.thebeyond.util.RenderUtils;
 import net.minecraft.client.Minecraft;
@@ -13,6 +14,7 @@ import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -194,7 +196,14 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
             skinTexture = DefaultPlayerSkin.getDefaultTexture();
         }
 
-        VertexConsumer vertexConsumer = bufferSource.getBuffer(BeyondRenderTypes.getRefugeGradient(skinTexture));
+        VertexConsumer vertexConsumer;
+        if (ShaderCompatLib.isShaderModLoaded()) {
+            // Shader mods break custom shaders - apply gradient map on CPU and use vanilla RenderType
+            ResourceLocation processedTexture = RefugeGradientTextureManager.getOrCreate(skinTexture);
+            vertexConsumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(processedTexture));
+        } else {
+            vertexConsumer = bufferSource.getBuffer(BeyondRenderTypes.getRefugeGradient(skinTexture));
+        }
         playerModel.renderToBuffer(poseStack, vertexConsumer, packedLight, packedOverlay, 0xFFFFFFFF);
     }
 
