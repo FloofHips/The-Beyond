@@ -7,11 +7,14 @@ import com.thebeyond.common.block.RefugeBlock;
 import com.thebeyond.common.registry.BeyondAttachments;
 import com.thebeyond.common.registry.BeyondBlockEntities;
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.util.ColorUtils;
 import com.thebeyond.util.RefugeChunkData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
@@ -20,6 +23,8 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -43,6 +48,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
     @Nullable
@@ -57,15 +63,15 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
     private ContainerData dataAccess;
 
     private static final Component DEFAULT_NAME = Component.translatable("container.refuge");
-    private static final byte MODE_HUNGER = 0;
-    private static final byte MODE_EXPLOSION = 1;
-    private static final byte MODE_MOB_SPAWN = 2;
-    private static final byte MODE_FALL_DAMAGE = 3;
+    public static final byte MODE_HUNGER = 0;
+    public static final byte MODE_EXPLOSION = 1;
+    public static final byte MODE_MOB_SPAWN = 2;
+    public static final byte MODE_FALL_DAMAGE = 3;
     private static final int PROTECTION_RADIUS = 9;
 
-    private byte currentMode = -1;;
-
+    public byte currentMode = -1;
     public byte animating = 0;
+    public String[][] pattern;
 
     public RefugeBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
         super(type, pos, blockState);
@@ -76,17 +82,24 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         this.dataAccess = new ContainerData() {
             @Override
             public int get(int i) {
+                if (i == 0) return currentMode;
                 return 0;
             }
 
             @Override
             public void set(int i, int i1) {
-
+                if (i == 0) {
+                    currentMode = (byte) i1;
+                    if (level.getBlockEntity(pos) instanceof RefugeBlockEntity be) {
+                        be.updateAllChunks((byte) i1);
+                    }
+                    setChanged();
+                }
             }
 
             @Override
             public int getCount() {
-                return 0;
+                return 1;
             }
         };
     }
@@ -96,7 +109,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         return super.components();
     }
 
-    public void print() {
+    public String[][] createPattern() {
         String[][] pattern = {
                 {"0", "0", "0", "0", "0", "0", "*", "*", "*", "*"},
                 {"0", "0", "0", "0", "0", "0", "*", "*", "*", "*"},
@@ -168,7 +181,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
             }
         }
 
-        printPattern(sanitizePattern(pattern));
+        return sanitizePattern(pattern);
     }
 
     private String[][] sanitizePattern(String[][] pattern) {
@@ -182,22 +195,87 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         return pattern;
     }
 
-    public void printPattern(String[][] pattern) {
+    private String flattenPattern(String[][] pattern) {
+        String singleString = Arrays.stream(pattern)
+                .flatMap(Arrays::stream)
+                .collect(Collectors.joining(""));
+
+        return singleString;
+    }
+
+    private String[][] decode(String string) {
+        char[] chars = string.toCharArray();
+        String[][] pattern = new String[6][10];
+
         for (int i = 0; i < pattern.length; i++) {
             for (int j = 0; j < pattern[i].length; j++) {
-                if (pattern[i][j].equals("X")) {
-
-                    BlockPos pos = this.worldPosition.offset(i, j, 0);
-                    level.setBlock(pos, BeyondBlocks.OBIROOT_ARM.get().defaultBlockState(), 3);
-                    pos = this.worldPosition.offset(-i, j, 0);
-                    level.setBlock(pos, BeyondBlocks.OBIROOT_ARM.get().defaultBlockState(), 3);
-                    pos = this.worldPosition.offset(0, j, i);
-                    level.setBlock(pos, BeyondBlocks.OBIROOT_ARM.get().defaultBlockState(), 3);
-                    pos = this.worldPosition.offset(0, j, -i);
-                    level.setBlock(pos, BeyondBlocks.OBIROOT_ARM.get().defaultBlockState(), 3);
+                int index = i * pattern[i].length + j;
+                if (index < chars.length) {
+                    pattern[i][j] = String.valueOf(chars[index]);
+                } else {
+                    pattern[i][j] = "O";
                 }
             }
         }
+        return pattern;
+    }
+
+    public void printPattern() {
+        if (pattern == null) pattern = createPattern();
+
+        for (int i = 0 ; i < pattern.length ; i++) {
+            for (int j = pattern[i].length - 1; j >= 0 ; j--) {
+                if (pattern[i][j].equals("X")) {
+
+                    BlockPos pos = this.worldPosition.offset(i, j, 0);
+
+                    if (level instanceof ServerLevel serverLevel)
+                        serverLevel.sendParticles(ColorUtils.pixelVoidOptions, this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ(), 10, 1, 1, 1, 0.05);
+
+                    if (level.getBlockState(pos).isAir()) {
+                        placeArm(pos);
+                        return;
+                    }
+                    pos = this.worldPosition.offset(-i, j, 0);
+                    if (level.getBlockState(pos).isAir()) {
+                        placeArm(pos);
+                        return;
+                    }
+
+                    pos = this.worldPosition.offset(0, j, i);
+                    if (level.getBlockState(pos).isAir()) {
+                        placeArm(pos);
+                        return;
+                    }
+
+                    pos = this.worldPosition.offset(0, j, -i);
+                    if (level.getBlockState(pos).isAir()) {
+                        placeArm(pos);
+                        return;
+                    }
+                }
+            }
+        }
+
+        activate();
+    }
+
+    private void placeArm(BlockPos pos) {
+        level.playSound(null, pos, SoundEvents.WOOD_BREAK, SoundSource.BLOCKS);
+        level.playSound(null, this.worldPosition, SoundEvents.AXE_STRIP, SoundSource.BLOCKS);
+        level.setBlock(pos, BeyondBlocks.OBIROOT_ARM.get().defaultBlockState(), 3);
+        if (level instanceof ServerLevel serverLevel)
+            serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.OBIROOT.get().defaultBlockState()), pos.getX(), pos.getY(), pos.getZ(), 10, 0.5, 0.5, 0.5, 0.05);
+    }
+
+    private void activate() {
+        level.playSound(null, this.worldPosition, SoundEvents.AXE_STRIP, SoundSource.BLOCKS);
+        if (level instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.OBIROOT.get().defaultBlockState()), this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ(), 120, 1f, 3, 1f, 0.05);
+            serverLevel.sendParticles(ColorUtils.voidOptions, this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ(), 12, 1f, 3, 1f, 0.05);
+
+        }
+        level.setBlock(this.worldPosition, BeyondBlocks.REFUGE.get().defaultBlockState().setValue(RefugeBlock.POWERED, true), 3);
     }
 
     @Override
@@ -211,6 +289,11 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         } else {
             this.currentMode = -1;
         }
+        if (tag.contains("Pattern")) {
+            this.pattern = decode(tag.getString("Pattern"));
+        } else {
+            this.pattern = createPattern();
+        }
     }
 
     @Override
@@ -221,6 +304,9 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         }
         if (currentMode != -1) {
             tag.putByte("CurrentMode", currentMode);
+        }
+        if (pattern != null) {
+            tag.putString("Pattern", flattenPattern(pattern));
         }
     }
 
@@ -269,6 +355,11 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         this.updateOwnerProfile();
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+
+        level.playSound(null, this.worldPosition, SoundEvents.AXE_STRIP, SoundSource.BLOCKS);
+        if (level instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.OBIROOT.get().defaultBlockState()), this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ(), 120, 1f, 3, 1f, 0.05);
         }
     }
 
@@ -324,10 +415,17 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
             LevelChunk chunk = level.getChunkSource().getChunk(chunkPos.x, chunkPos.z, false);
             if (chunk != null) {
                 RefugeChunkData data = chunk.getData(BeyondAttachments.REFUGE_DATA);
-                if (currentMode > -1 && currentMode < 4) {
-                    data.removeRefuge(currentMode);
+                if (newMode == -1){
+                    if (currentMode > -1 && currentMode < 4) {
+                        data.removeRefuge(currentMode);
+                    }
                 }
-                data.addRefuge(newMode);
+                else {
+                    if (currentMode > -1 && currentMode < 4) {
+                        data.removeRefuge(currentMode);
+                    }
+                    data.addRefuge(newMode);
+                }
             }
         }
 
@@ -358,6 +456,8 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
     private void fill() {
         if (level == null || level.isClientSide) return;
 
+        int y = this.getBlockPos().getY();
+
         for (ChunkPos chunkPos : affectedChunks) {
             LevelChunk chunk = level.getChunkSource().getChunk(chunkPos.x, chunkPos.z, false);
             if (chunk != null) {
@@ -365,24 +465,24 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
                 //if (isActive) {
 
                 if (data.shouldPreventHunger())
-                    level.setBlock(chunkPos.getMiddleBlockPosition(-50), Blocks.BROWN_CONCRETE.defaultBlockState(), 3);
+                    level.setBlock(chunkPos.getMiddleBlockPosition(y + 10), Blocks.BROWN_CONCRETE.defaultBlockState(), 3);
                 if (data.shouldPreventExplosion())
-                    level.setBlock(chunkPos.getMiddleBlockPosition(-49), Blocks.RED_CONCRETE.defaultBlockState(), 3);
+                    level.setBlock(chunkPos.getMiddleBlockPosition(y + 11), Blocks.RED_CONCRETE.defaultBlockState(), 3);
                 if (data.shouldPreventMobSpawn())
-                    level.setBlock(chunkPos.getMiddleBlockPosition(-48), Blocks.WHITE_CONCRETE.defaultBlockState(), 3);
+                    level.setBlock(chunkPos.getMiddleBlockPosition(y + 12), Blocks.WHITE_CONCRETE.defaultBlockState(), 3);
                 if (data.shouldPreventFallDamage())
-                    level.setBlock(chunkPos.getMiddleBlockPosition(-51), Blocks.BLUE_CONCRETE.defaultBlockState(), 3);
+                    level.setBlock(chunkPos.getMiddleBlockPosition(y + 13), Blocks.BLUE_CONCRETE.defaultBlockState(), 3);
 
 
                 //}else {
                 if (!data.shouldPreventHunger())
-                    level.setBlock(chunkPos.getMiddleBlockPosition(-50), Blocks.GLASS.defaultBlockState(), 3);
+                    level.setBlock(chunkPos.getMiddleBlockPosition(y + 10), Blocks.GLASS.defaultBlockState(), 3);
                 if (!data.shouldPreventExplosion())
-                    level.setBlock(chunkPos.getMiddleBlockPosition(-49), Blocks.GLASS.defaultBlockState(), 3);
+                    level.setBlock(chunkPos.getMiddleBlockPosition(y + 11), Blocks.GLASS.defaultBlockState(), 3);
                 if (!data.shouldPreventMobSpawn())
-                    level.setBlock(chunkPos.getMiddleBlockPosition(-48), Blocks.GLASS.defaultBlockState(), 3);
+                    level.setBlock(chunkPos.getMiddleBlockPosition(y + 12), Blocks.GLASS.defaultBlockState(), 3);
                 if (!data.shouldPreventFallDamage())
-                    level.setBlock(chunkPos.getMiddleBlockPosition(-51), Blocks.GLASS.defaultBlockState(), 3);
+                    level.setBlock(chunkPos.getMiddleBlockPosition(y + 13), Blocks.GLASS.defaultBlockState(), 3);
                 //}
             }
         }
@@ -451,7 +551,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         return this.name != null ? this.name : DEFAULT_NAME;
     }
 
-    protected void applyImplicitComponents(BlockEntity.DataComponentInput componentInput) {
+    protected void applyImplicitComponents(DataComponentInput componentInput) {
         super.applyImplicitComponents(componentInput);
         this.name = componentInput.get(DataComponents.CUSTOM_NAME);
         this.owner = componentInput.get(DataComponents.PROFILE);

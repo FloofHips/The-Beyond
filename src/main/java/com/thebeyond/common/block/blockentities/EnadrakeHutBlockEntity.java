@@ -20,11 +20,9 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.MultifaceBlock;
-import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -303,7 +301,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
     private boolean expandUpward(ServerLevel level) {
         BlockPos currentPos = worldPosition;
 
-        while (level.getBlockState(currentPos.above()).getBlock() instanceof EnadrakeHutBlock) {
+        while (!level.getBlockState(currentPos.above()).isAir()) {
             currentPos = currentPos.above();
         }
 
@@ -314,17 +312,47 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         if (level.random.nextDouble() < 0.05) {
             createPlatformAndHouse(level, newPos, facing);
         } else {
-            BlockState newState = getBlockState(facing);
-            level.setBlock(newPos, newState, Block.UPDATE_ALL);
+            placeBlock(level, facing, newPos);
         }
 
         return true;
     }
 
-    private static @NotNull BlockState getBlockState(Direction facing) {
-        return BeyondBlocks.ENADRAKE_HUT.get().defaultBlockState()
-                .setValue(EnadrakeHutBlock.FACING, facing)
-                .setValue(EnadrakeHutBlock.HEIGHT, HutHeightProperty.CORE);
+    private void placeBlock(ServerLevel level, Direction facing, BlockPos newPos) {
+        BlockState newState = getBlockState(facing);
+        boolean placeDefault = true;
+        if (newState == BeyondBlocks.ENGRAVED_END_STONE.get().defaultBlockState() && level.random.nextFloat() < 0.2) {
+            for (Direction dir : Direction.values()) {
+                if (dir.getAxis().isVertical()) continue;
+                BlockPos pos = newPos.below().offset(dir.getStepX(), 0, dir.getStepZ());
+                if (level.getBlockState(pos).isAir()) {
+                    level.setBlock(pos, Blocks.END_ROD.defaultBlockState().setValue(EndRodBlock.FACING, dir), Block.UPDATE_ALL);
+                    placeDefault = false;
+                }
+            }
+            if (placeDefault) level.setBlock(newPos, Blocks.END_ROD.defaultBlockState(), Block.UPDATE_ALL);
+            return;
+        }
+
+        level.setBlock(newPos, newState, Block.UPDATE_ALL);
+    }
+
+    private @NotNull BlockState getBlockState(Direction facing) {
+        Rarity rarity = item.getRarity();
+
+        if (rarity == Rarity.EPIC)
+            return BeyondBlocks.ENADRAKE_FLARE.get().defaultBlockState();
+
+        float hutChance = 0.5f;
+        if (rarity == Rarity.UNCOMMON) hutChance = 0.8F;
+        if (rarity == Rarity.RARE) {
+            hutChance = 0.7F;
+            return level.random.nextFloat() < hutChance ? BeyondBlocks.ENADRAKE_HUT.get().defaultBlockState()
+                    .setValue(EnadrakeHutBlock.FACING, facing) : BeyondBlocks.ENADRAKE_FLARE.get().defaultBlockState();
+        }
+
+        return level.random.nextFloat() < hutChance ? BeyondBlocks.ENADRAKE_HUT.get().defaultBlockState()
+                    .setValue(EnadrakeHutBlock.FACING, facing) : BeyondBlocks.ENGRAVED_END_STONE.get().defaultBlockState();
     }
 
     private void createPlatformAndHouse(ServerLevel level, BlockPos hutPos, Direction facing) {
@@ -338,18 +366,13 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         placeEndStoneStair(level, s1, facing);
         placeEndStoneStair(level, s2, facing.getOpposite());
 
-        BlockState newState = BeyondBlocks.ENADRAKE_HUT.get().defaultBlockState()
-                .setValue(EnadrakeHutBlock.FACING, facing)
-                .setValue(EnadrakeHutBlock.HEIGHT, HutHeightProperty.TIP);
-
-
         if(level.getBlockState(s1.above()).isAir()) {
-            level.setBlock(s1.above(), newState, Block.UPDATE_ALL);
+            placeBlock(level, facing, s1.above());
             return;
         }
 
         if(level.getBlockState(s2.above()).isAir()) {
-            level.setBlock(s2.above(), newState, Block.UPDATE_ALL);
+            placeBlock(level, facing, s2.above());
             return;
         }
     }
@@ -397,11 +420,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
             BlockPos newPos = validPositions.get(level.random.nextInt(validPositions.size()));
             Direction facing = Direction.Plane.HORIZONTAL.getRandomDirection(level.random);
 
-            BlockState newState = BeyondBlocks.ENADRAKE_HUT.get().defaultBlockState()
-                    .setValue(EnadrakeHutBlock.FACING, facing)
-                    .setValue(EnadrakeHutBlock.HEIGHT, HutHeightProperty.TIP);
-
-            level.setBlock(newPos, newState, Block.UPDATE_ALL);
+            placeBlock(level, facing, newPos);
 
             if (!(level.getBlockState(newPos.below()).is(BeyondBlocks.ENGRAVED_END_STONE.get())) && !(level.getBlockState(newPos.below()).is(Blocks.END_STONE_BRICK_STAIRS))){
                 if (level.getBlockState(newPos.below()).is(BeyondTags.END_DECORATOR_REPLACEABLE) || level.getBlockState(newPos.below()).is(BlockTags.MOSS_REPLACEABLE))
@@ -410,7 +429,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
                 for (Direction d : Direction.values()) {
                     if (d.getAxis().isVertical()) continue;
                     BlockPos p = newPos.below().offset(d.getStepX(), 0, d.getStepZ());
-                    if (level.getBlockState(p).is(BeyondTags.END_DECORATOR_REPLACEABLE) || level.getBlockState(p).is(BlockTags.MOSS_REPLACEABLE))
+                    if (!level.getBlockState(p).is(Blocks.END_ROD) && (level.getBlockState(p).is(BeyondTags.END_DECORATOR_REPLACEABLE) || level.getBlockState(p).is(BlockTags.MOSS_REPLACEABLE)))
                         level.setBlock(p, BeyondBlocks.ZYMOTE.get().defaultBlockState(), Block.UPDATE_ALL);
                 }
             }

@@ -44,12 +44,12 @@ public class BeyondNetworking {
             if (be instanceof RefugeBlockEntity refuge) {
                 // Consume the payment item from the player's open menu
                 if (player.containerMenu instanceof RefugeMenu refugeMenu) {
-                    if (!refugeMenu.hasPayment()) return;
+                    if (payload.mode() != -1 && !refugeMenu.hasPayment()) return;
                     refugeMenu.getSlot(0).remove(1);
                 }
 
                 refuge.setMode(payload.mode(), refuge);
-                refuge.animating = 20;
+                refuge.animating = 100;
                 refuge.setChanged();
                 level.sendBlockUpdated(pos, refuge.getBlockState(), refuge.getBlockState(), 3);
 
@@ -64,7 +64,7 @@ public class BeyondNetworking {
             // context.player().level() is safe on client side
             BlockEntity be = context.player().level().getBlockEntity(payload.pos());
             if (be instanceof RefugeBlockEntity refuge) {
-                refuge.animating = 20;
+                refuge.animating = 100;
             }
         });
     }

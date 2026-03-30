@@ -1,6 +1,7 @@
 package com.thebeyond.client.gui;
 
 import com.thebeyond.TheBeyond;
+import com.thebeyond.common.block.blockentities.RefugeBlockEntity;
 import com.thebeyond.common.block.blockentities.RefugeMenu;
 import com.thebeyond.common.network.RefugeSetModePayload;
 import net.minecraft.client.gui.GuiGraphics;
@@ -86,10 +87,14 @@ public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
         MAXY = (int) Mth.lerp(0.05, MAXY, j+117);
 
         guiGraphics.enableScissor(MINX, MINY, MAXX, MAXY);
-        //guiGraphics.blit(UP, i-1, j-2,0,0, 98, 98, 98, 98);
-        //guiGraphics.blit(LEFT, i-1, j,0,0, 98, 98, 98, 98);
-        //guiGraphics.blit(RIGHT, i-1, j,0,0, 98, 98, 98, 98);
-        //guiGraphics.blit(DOWN, i-1, j,0,0, 98, 98, 98, 98);
+        if (menu.getMode() == RefugeBlockEntity.MODE_HUNGER)
+            guiGraphics.blit(UP, i-1, j-2,0,0, 98, 98, 98, 98);
+        if (menu.getMode() == RefugeBlockEntity.MODE_EXPLOSION)
+            guiGraphics.blit(LEFT, i-1, j,0,0, 98, 98, 98, 98);
+        if (menu.getMode() == RefugeBlockEntity.MODE_MOB_SPAWN)
+            guiGraphics.blit(RIGHT, i-1, j,0,0, 98, 98, 98, 98);
+        if (menu.getMode() == RefugeBlockEntity.MODE_FALL_DAMAGE)
+            guiGraphics.blit(DOWN, i-1, j,0,0, 98, 98, 98, 98);
         guiGraphics.disableScissor();
     }
 
@@ -120,7 +125,8 @@ public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
 
         @Override
         public void onPress() {
-            selectedMode = this.mode;
+            if (selectedMode == -1 || selectedMode != menu.getMode())
+                selectedMode = this.mode;
         }
 
         public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
@@ -152,11 +158,12 @@ public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
         public void onPress() {
             if (isConfirm) {
                 if (selectedMode >= 0 && selectedMode <= 3 && menu.hasPayment()) {
-                    PacketDistributor.sendToServer(new RefugeSetModePayload(menu.getBlockPos(), selectedMode));
-                    RefugeScreen.this.onClose();
+                    if (menu.getMode() != selectedMode)
+                        PacketDistributor.sendToServer(new RefugeSetModePayload(menu.getBlockPos(), selectedMode));
                 }
             } else {
-                RefugeScreen.this.onClose();
+                if (menu.getMode() != selectedMode)
+                    PacketDistributor.sendToServer(new RefugeSetModePayload(menu.getBlockPos(), (byte) -1));
             }
         }
 

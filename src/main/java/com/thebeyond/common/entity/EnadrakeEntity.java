@@ -3,7 +3,9 @@ package com.thebeyond.common.entity;
 import com.thebeyond.common.block.EnadrakeHutBlock;
 import com.thebeyond.common.block.EnatiousTotemSeedBlock;
 import com.thebeyond.common.block.ObirootSproutBlock;
+import com.thebeyond.common.block.RefugeBlock;
 import com.thebeyond.common.block.blockentities.EnadrakeHutBlockEntity;
+import com.thebeyond.common.block.blockentities.RefugeBlockEntity;
 import com.thebeyond.common.block.blockstates.HutHeightProperty;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondFeatures;
@@ -70,6 +72,7 @@ public class EnadrakeEntity extends PathfinderMob {
         this.goalSelector.addGoal(0, new EnadrakeSearchForItemsGoal());
         //this.goalSelector.addGoal(0, new EnadrakeAdvanceStairGoal(this, 1.2, 10, 16));
         this.goalSelector.addGoal(0, new EnadrakeStoreInHomeGoal(this, 1.2, 10, 16));
+        this.goalSelector.addGoal(0, new EnadrakeBuildRefugeGoal(this, 1.2, 10, 10));
         this.goalSelector.addGoal(1, new EnadrakeHarvestGoal(this, 1.5, 15, 6));
         this.goalSelector.addGoal(2, new RandomStrollGoal(this, 1));
         this.goalSelector.addGoal(3, new RandomLookAroundGoal(this));
@@ -574,11 +577,72 @@ public class EnadrakeEntity extends PathfinderMob {
         }
     }
 
-    class EnadrakeBuildRefugeGoal extends Goal {
+    class EnadrakeBuildRefugeGoal extends MoveToBlockGoal {
+        EnadrakeEntity entity;
+        boolean reachedTarget;
+
+        public EnadrakeBuildRefugeGoal(PathfinderMob mob, double speedModifier, int searchRange, int verticalSearchRange) {
+            super(mob, speedModifier, searchRange, verticalSearchRange);
+            this.entity = (EnadrakeEntity) mob;
+        }
 
         @Override
         public boolean canUse() {
+            ItemStack itemstack = entity.getItemBySlot(EquipmentSlot.MAINHAND);
+            if (!itemstack.isEmpty() && itemstack.getRarity() != Rarity.EPIC) return super.canUse();
             return false;
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            ItemStack itemstack = entity.getItemBySlot(EquipmentSlot.MAINHAND);
+            return super.canContinueToUse() && !itemstack.isEmpty();
+        }
+
+        public double acceptedDistance() {
+            return 3.0F;
+        }
+
+        @Override
+        protected boolean isValidTarget(LevelReader levelReader, BlockPos blockPos) {
+            BlockState blockstate = levelReader.getBlockState(blockPos);
+            if (blockstate.is(BeyondBlocks.REFUGE.get())) {
+                if (!blockstate.getValue(RefugeBlock.POWERED))
+                    return true;
+            }
+            return false;
+        }
+
+        protected boolean isReachedTarget() {
+            return this.reachedTarget;
+        }
+
+        @Override
+        public void tick() {
+            if (isReachedTarget()) {
+                BlockPos pos = this.getMoveToTarget().below();
+                BlockEntity refuge = level().getBlockEntity(pos);
+                if (refuge instanceof RefugeBlockEntity refugeBlockEntity) {
+                    refugeBlockEntity.printPattern();
+                    entity.getItemBySlot(EquipmentSlot.MAINHAND).shrink(1);
+                    entity.panic = 50;
+                }
+            }
+
+            if (mob.getNavigation().isStuck()) mob.addDeltaMovement(new Vec3(0, 0.2, 0));
+
+            BlockPos blockpos = new BlockPos(this.getMoveToTarget().getX(), this.getMoveToTarget().getY(), this.getMoveToTarget().getZ());
+
+            if (!blockpos.closerToCenterThan(this.mob.position(), this.acceptedDistance())) {
+                this.reachedTarget = false;
+                ++this.tryTicks;
+                if (this.shouldRecalculatePath()) {
+                    this.mob.getNavigation().moveTo((double)blockpos.getX() + (double)0.5F, (double)blockpos.getY(), (double)blockpos.getZ() + (double)0.5F, this.speedModifier);
+                }
+            } else {
+                this.reachedTarget = true;
+                --this.tryTicks;
+            }
         }
     }
 }

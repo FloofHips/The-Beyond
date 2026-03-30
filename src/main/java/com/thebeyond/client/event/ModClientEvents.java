@@ -409,7 +409,7 @@ public class ModClientEvents {
 
     @SubscribeEvent
     public static void onExplosion(ExplosionEvent.Start event) {
-        if (RefugeBlockEntity.ACTIVE_REFUGES.isEmpty()) return;
+        //if (RefugeBlockEntity.ACTIVE_REFUGES.isEmpty()) return;
         if (event.getLevel() instanceof ServerLevel serverLevel) {
             BlockPos pos = BlockPos.containing(event.getExplosion().center());
             RefugeChunkData data = getChunkData(serverLevel, pos);
@@ -421,7 +421,7 @@ public class ModClientEvents {
 
     @SubscribeEvent
     public static void onMobSpawn(MobSpawnEvent.SpawnPlacementCheck event) {
-        if (RefugeBlockEntity.ACTIVE_REFUGES.isEmpty()) return;
+        //if (RefugeBlockEntity.ACTIVE_REFUGES.isEmpty()) return;
         if (event.getLevel() instanceof ServerLevel serverLevel) {
             RefugeChunkData data = getChunkData(serverLevel, event.getPos());
             if (data.shouldPreventMobSpawn()) {
@@ -432,7 +432,7 @@ public class ModClientEvents {
 
     @SubscribeEvent
     public static void onFall(LivingFallEvent event) {
-        if (RefugeBlockEntity.ACTIVE_REFUGES.isEmpty()) return;
+        //if (RefugeBlockEntity.ACTIVE_REFUGES.isEmpty()) return;
         if (event.getEntity() != null && event.getEntity().level() instanceof ServerLevel serverLevel) {
             RefugeChunkData data = getChunkData(serverLevel, event.getEntity().getOnPos());
             if (data.shouldPreventFallDamage()) {

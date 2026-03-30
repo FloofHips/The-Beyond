@@ -2,10 +2,8 @@ package com.thebeyond.common.entity;
 
 import com.thebeyond.client.event.ModClientEvents;
 import com.thebeyond.common.entity.util.SlowRotMoveControl;
-import com.thebeyond.common.registry.BeyondBlocks;
-import com.thebeyond.common.registry.BeyondEffects;
-import com.thebeyond.common.registry.BeyondItems;
-import com.thebeyond.common.registry.BeyondTags;
+import com.thebeyond.common.item.components.Components;
+import com.thebeyond.common.registry.*;
 import com.thebeyond.util.AOEManager;
 import com.thebeyond.util.ColorUtils;
 import com.thebeyond.util.TeleportUtils;
@@ -239,7 +237,13 @@ public class AbyssalNomadEntity extends PathfinderMob {
             }
 
             if (dropCounter == 30) {
-                ItemEntity itementity = new ItemEntity(this.level(), this.getX(), this.getEyeY(), this.getZ(), new ItemStack(BeyondItems.ABYSSAL_SHROUD.get(), 1+random.nextInt(0, 2)));
+
+                ItemStack stack = new ItemStack(BeyondItems.ABYSSAL_SHROUD.get(),1+random.nextInt(0, 2));
+                Components.DynamicColorComponent colors = new Components.DynamicColorComponent(1, 1, 1, 1, 0, 0, 0, 0, 0xF000F0);
+                stack.set(BeyondComponents.COLOR_COMPONENT, colors);
+
+                ItemEntity itementity = new ItemEntity(this.level(), this.getX(), this.getEyeY(), this.getZ(), stack);
+
                 itementity.setNoPickUpDelay();
                 this.level().addFreshEntity(itementity);
                 itementity.setNoGravity(true);

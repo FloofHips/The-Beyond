@@ -3,7 +3,9 @@ package com.thebeyond.client.renderer.blockentities;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import com.thebeyond.TheBeyond;
 import com.thebeyond.client.event.ModClientEvents;
+import com.thebeyond.common.block.RefugeBlock;
 import com.thebeyond.common.block.blockentities.RefugeBlockEntity;
 import com.thebeyond.client.compat.ShaderCompatLib;
 import com.thebeyond.common.registry.BeyondRenderTypes;
@@ -23,6 +25,7 @@ import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.client.resources.SkinManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -41,21 +44,24 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
 
     @Override
     public void render(RefugeBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
-        ResolvableProfile profile = blockEntity.getOwnerProfile();
+        if (blockEntity.getBlockState().getValue(RefugeBlock.POWERED)) {
+            ResolvableProfile profile = blockEntity.getOwnerProfile();
 
-        poseStack.pushPose();
+            poseStack.pushPose();
 
-        poseStack.translate(0.5D, 0.0D, 0.5D);
-        poseStack.scale(3f, -3.0f, 3f);
-        poseStack.translate(0, -1.8, 0);
+            poseStack.translate(0.5D, 0.0D, 0.5D);
+            poseStack.scale(3f, -3.0f, 3f);
+            poseStack.translate(0, -1.8, 0);
 
-        PlayerModel<AbstractClientPlayer> activeModel = getModelForProfile(profile);
-        applyPose(activeModel, blockEntity.getMode());
-        renderModel(activeModel, poseStack, bufferSource, packedLight, packedOverlay, profile);
+            PlayerModel<AbstractClientPlayer> activeModel = getModelForProfile(profile);
+            applyPose(activeModel, blockEntity.getMode());
+            renderModel(activeModel, poseStack, bufferSource, packedLight, packedOverlay, profile);
 
-        poseStack.popPose();
+            poseStack.popPose();
 
-        if (blockEntity.animating > 0) renderRootShock(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+            if (blockEntity.animating > 0)
+                renderRootShock(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+        }
     }
 
     private PlayerModel<AbstractClientPlayer> getModelForProfile(ResolvableProfile profile) {
@@ -111,12 +117,15 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
                 break;
 
             case 1: // MODE_EXPLOSION - one arm forward, one arm back, legs staggered
-                playerModel.rightArm.xRot = -60 * deg;
-                playerModel.rightArm.zRot = -5 * deg;
+                playerModel.head.xRot = 10 * deg;
+                playerModel.rightArm.xRot = -150 * deg;
+                playerModel.rightArm.zRot = 90 * deg;
+                playerModel.rightArm.z = -5.0f;
                 playerModel.leftArm.xRot = 30 * deg;
                 playerModel.leftArm.zRot = 5 * deg;
-                playerModel.rightLeg.xRot = -15 * deg;
-                playerModel.rightLeg.zRot = 5 * deg;
+                //playerModel.rightLeg.xRot = -15 * deg;
+                //playerModel.rightLeg.zRot = 5 * deg;
+                playerModel.rightLeg.z = -2.0f;
                 playerModel.leftLeg.xRot = 15 * deg;
                 playerModel.leftLeg.zRot = -5 * deg;
                 break;
@@ -125,7 +134,7 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
                 playerModel.rightArm.xRot = -180 * deg;
                 playerModel.rightArm.zRot = -15 * deg;
                 playerModel.leftArm.xRot = 20 * deg;
-                playerModel.leftArm.zRot = -15 * deg;
+                playerModel.leftArm.zRot = -30 * deg;
                 playerModel.head.xRot = -20 * deg;
                 playerModel.head.zRot = 8 * deg;
                 playerModel.rightLeg.xRot = -12 * deg;
@@ -135,6 +144,7 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
                 break;
 
             case 3: // MODE_FALL_DAMAGE - both arms up, one leg raised forward
+                playerModel.head.xRot = 20 * deg;
                 playerModel.rightArm.xRot = -150 * deg;
                 playerModel.rightArm.zRot = -15 * deg;
                 playerModel.leftArm.xRot = -140 * deg;
@@ -146,8 +156,8 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
                 break;
 
             default: // No mode selected - neutral standing
-                playerModel.rightArm.zRot = -5 * deg;
-                playerModel.leftArm.zRot = 5 * deg;
+                playerModel.rightArm.zRot = 5 * deg;
+                playerModel.leftArm.zRot = -5 * deg;
                 break;
         }
 
@@ -163,6 +173,7 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
         playerModel.rightSleeve.xRot = playerModel.rightArm.xRot;
         playerModel.rightSleeve.yRot = playerModel.rightArm.yRot;
         playerModel.rightSleeve.zRot = playerModel.rightArm.zRot;
+        playerModel.rightSleeve.z = playerModel.rightArm.z;
 
         playerModel.leftSleeve.xRot = playerModel.leftArm.xRot;
         playerModel.leftSleeve.yRot = playerModel.leftArm.yRot;
@@ -183,18 +194,21 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
     private void renderModel(PlayerModel<AbstractClientPlayer> playerModel, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay, ResolvableProfile profile) {
         playerModel.setAllVisible(true);
 
-        playerModel.head.xScale = 1.5f;
-        playerModel.head.yScale = 1.5f;
-        playerModel.head.zScale = 1.5f;
+        playerModel.hat.xScale = 1.5f;
+        playerModel.hat.yScale = 1.5f;
+        playerModel.hat.zScale = 1.5f;
+
+        playerModel.renderToBuffer(poseStack, getVertexConsumer(bufferSource, profile), packedLight, packedOverlay, 0xFFFFFFFF);
+    }
+
+    private static VertexConsumer getVertexConsumer(MultiBufferSource bufferSource, ResolvableProfile profile) {
+        if (profile == null) {
+            ResourceLocation resourceLocation = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/entity/enadrake/refuge_base.png");
+            return bufferSource.getBuffer(RenderType.entityCutoutNoCull(resourceLocation));
+        }
 
         SkinManager skinmanager = Minecraft.getInstance().getSkinManager();
-
-        ResourceLocation skinTexture;
-        if (profile != null) {
-            skinTexture = skinmanager.getInsecureSkin(profile.gameProfile()).texture();
-        } else {
-            skinTexture = DefaultPlayerSkin.getDefaultTexture();
-        }
+        ResourceLocation skinTexture = skinmanager.getInsecureSkin(profile.gameProfile()).texture();
 
         VertexConsumer vertexConsumer;
         if (ShaderCompatLib.isShaderModLoaded()) {
@@ -204,7 +218,8 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
         } else {
             vertexConsumer = bufferSource.getBuffer(BeyondRenderTypes.getRefugeGradient(skinTexture));
         }
-        playerModel.renderToBuffer(poseStack, vertexConsumer, packedLight, packedOverlay, 0xFFFFFFFF);
+
+        return vertexConsumer;
     }
 
     public void renderRootShock(RefugeBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight, int packedOverlay) {
@@ -239,14 +254,23 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
 
         poseStack.translate(x, 0, z);
 
+
         for (int i = 1; i <= 3; i++) {
+
+            float delayedTime = (float) blockEntity.animating - (20 * (3 - i + 1));
+
+            if (delayedTime <= 0) continue;
+
+            float yi = Math.min(1.0f, delayedTime / 100);
+            float y = Mth.sin((float) (Math.PI * yi));
+
             int rad = 8*i*3;
-            renderPart(poseStack, buffer.getBuffer(BeyondRenderTypes.entityTranslucent(ResourceLocation.withDefaultNamespace("textures/block/white_concrete.png"))), 0, 16, -rad, -rad, rad, -rad, -rad, rad, rad, rad, 0.0F, 1.0F, 0.0F, 1.0F);
+            renderPart(poseStack, buffer.getBuffer(BeyondRenderTypes.eyes(ResourceLocation.withDefaultNamespace("textures/block/white_concrete.png"))), 0, 16*y, -rad, -rad, rad, -rad, -rad, rad, rad, rad, 0.0F, 1.0F, 0.0F, 1.0F);
         }
         poseStack.popPose();
     }
 
-    private static void renderPart(PoseStack poseStack, VertexConsumer consumer, int minY, int maxY, int x1, int z1, int x2, int z2, int x3, int z3, int x4, int z4, float minU, float maxU, float minV, float maxV) {
+    private static void renderPart(PoseStack poseStack, VertexConsumer consumer, int minY, float maxY, int x1, int z1, int x2, int z2, int x3, int z3, int x4, int z4, float minU, float maxU, float minV, float maxV) {
         PoseStack.Pose pose = poseStack.last();
 
         renderQuad(pose, consumer, minY, maxY, x1, z1, x2, z2, minU, maxU, minV, maxV);
@@ -260,15 +284,16 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
         renderQuad(pose, consumer, minY, -maxY, x3, z3, x1, z1, minU, maxU, minV, maxV);
     }
 
-    private static void renderQuad(PoseStack.Pose pose, VertexConsumer consumer, int minY, int maxY, int minX, int minZ, int maxX, int maxZ, float minU, float maxU, float minV, float maxV) {
-        int rgb = new Color(1,1,1,0).getRGB();
+    private static void renderQuad(PoseStack.Pose pose, VertexConsumer consumer, int minY, float maxY, int minX, int minZ, int maxX, int maxZ, float minU, float maxU, float minV, float maxV) {
+        int rgb = new Color(0,0,0,1).getRGB();
+        int color = new Color(0.1f,0.6f,0.8f,1).getRGB();
         addVertex(pose, consumer, rgb, minX, maxY, minZ, maxU, minV);
-        addVertex(pose, consumer, Color.blue.getRGB(), minX, minY, minZ, maxU, maxV);
-        addVertex(pose, consumer, Color.blue.getRGB(), maxX, minY, maxZ, minU, maxV);
+        addVertex(pose, consumer, color, minX, minY, minZ, maxU, maxV);
+        addVertex(pose, consumer, color, maxX, minY, maxZ, minU, maxV);
         addVertex(pose, consumer, rgb, maxX, maxY, maxZ, minU, minV);
     }
 
-    private static void addVertex(PoseStack.Pose pose, VertexConsumer consumer, int color, int x, int y, int z, float u, float v) {
+    private static void addVertex(PoseStack.Pose pose, VertexConsumer consumer, int color, int x, float y, int z, float u, float v) {
         consumer.addVertex(pose, x, y, z).setColor(color).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(15728880).setNormal(pose, 0.0F, 1.0F, 0.0F);
     }
 

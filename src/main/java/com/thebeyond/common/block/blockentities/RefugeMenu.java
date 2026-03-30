@@ -41,7 +41,7 @@ public class RefugeMenu extends AbstractContainerMenu {
                 return 1;
             }
         };
-        checkContainerDataCount(refugeData, 0);
+        checkContainerDataCount(refugeData, 1);
         this.refugeData = refugeData;
         this.access = access;
         this.paymentSlot = new RefugeMenu.PaymentSlot(this.refuge, 0, 40, 30);
@@ -76,6 +76,10 @@ public class RefugeMenu extends AbstractContainerMenu {
     public void setData(int id, int data) {
         super.setData(id, data);
         this.broadcastChanges();
+    }
+
+    public byte getMode() {
+        return (byte) refugeData.get(0);
     }
 
     public ItemStack quickMoveStack(Player player, int index) {

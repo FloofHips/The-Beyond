@@ -78,25 +78,35 @@ public class RefugeBlock extends BaseEntityBlock {
 
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        if (stack.is(Items.PLAYER_HEAD)) {
-            BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (blockEntity instanceof RefugeBlockEntity refugeBlockEntity) {
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (!state.getValue(POWERED)) return ItemInteractionResult.FAIL;
+        if (blockEntity instanceof RefugeBlockEntity refugeBlockEntity) {
+            if (stack.is(Items.PLAYER_HEAD)) {
                 refugeBlockEntity.setOwner(stack);
+                return ItemInteractionResult.CONSUME;
             }
-            return ItemInteractionResult.CONSUME;
+            if (stack.is(Items.BONE_MEAL)) {
+                if (!level.isClientSide)
+                    refugeBlockEntity.printPattern();
+                return ItemInteractionResult.CONSUME;
+            }
         }
+
         return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
     }
 
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (!state.getValue(POWERED)) return InteractionResult.PASS;
         if (blockEntity instanceof RefugeBlockEntity refugeBlockEntity) {
             if (refugeBlockEntity.getOwnerProfile() == null) {
                 refugeBlockEntity.setOwner(new ResolvableProfile(player.getGameProfile()));
+                return InteractionResult.CONSUME;
             }
 
             if (!level.isClientSide) {
                 player.openMenu(refugeBlockEntity, buf -> buf.writeBlockPos(pos));
+                return InteractionResult.CONSUME;
             }
         }
 
