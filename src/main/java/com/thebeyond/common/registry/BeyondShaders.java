@@ -11,6 +11,7 @@ import javax.annotation.Nullable;
 
 public class BeyondShaders {
     private static ShaderInstance ENTITY_DEPTH_SHADER;
+    private static ShaderInstance REFUGE_GRADIENT_SHADER;
 
     @Nullable
     public static ShaderInstance getRenderTypeDepthOverlay() {
@@ -21,6 +22,15 @@ public class BeyondShaders {
         ENTITY_DEPTH_SHADER = instance;
     }
 
+    @Nullable
+    public static ShaderInstance getRefugeGradient() {
+        return REFUGE_GRADIENT_SHADER;
+    }
+
+    public static void setRefugeGradient(ShaderInstance instance) {
+        REFUGE_GRADIENT_SHADER = instance;
+    }
+
     @SubscribeEvent
     public static void onRegisterShaders(RegisterShadersEvent event) {
         try {
@@ -28,6 +38,10 @@ public class BeyondShaders {
                             ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_entity_depth"),
                             DefaultVertexFormat.NEW_ENTITY),
                     BeyondShaders::setRenderTypeDepthOverlay);
+            event.registerShader(new ShaderInstance(event.getResourceProvider(),
+                            ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_refuge_gradient"),
+                            DefaultVertexFormat.NEW_ENTITY),
+                    BeyondShaders::setRefugeGradient);
         } catch (Exception exception) {
             TheBeyond.LOGGER.error("The Beyond could not register internal shaders! :(", exception);
         }

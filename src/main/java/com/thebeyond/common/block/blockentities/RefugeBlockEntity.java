@@ -16,6 +16,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
@@ -228,6 +231,11 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         return tag;
     }
 
+    @Override
+    public Packet<ClientGamePacketListener> getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
+    }
+
     public void setMode(byte i, RefugeBlockEntity be) {
         be.updateAllChunks(i);
     }
@@ -244,6 +252,10 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
             ResolvableProfile resolvableprofile = (ResolvableProfile)stack.get(DataComponents.PROFILE);
             if (resolvableprofile != null && resolvableprofile.name().isPresent()) {
                 this.owner = resolvableprofile;
+                this.updateOwnerProfile();
+                if (level != null && !level.isClientSide) {
+                    level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+                }
             }
         }
     }
@@ -255,6 +267,9 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         }
 
         this.updateOwnerProfile();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
     }
 
     private void updateOwnerProfile() {
@@ -374,12 +389,13 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, RefugeBlockEntity be) {
+        // Decrement animation counter on both sides
+        if (be.animating > 0)
+            be.animating--;
+
         if (level.isClientSide) return;
 
         be.tickCounter++;
-
-        if (be.animating > 0)
-            be.animating--;
 
         boolean shouldBeActive = RefugeBlock.isActive(state);
         if (shouldBeActive != be.isActive) {

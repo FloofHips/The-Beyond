@@ -1,25 +1,20 @@
 package com.thebeyond.client.gui;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.block.blockentities.RefugeMenu;
-import net.minecraft.client.Minecraft;
+import com.thebeyond.common.network.RefugeSetModePayload;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.gui.screens.inventory.BeaconScreen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-
-import java.sql.Ref;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 @OnlyIn(Dist.CLIENT)
 public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
@@ -45,6 +40,8 @@ public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
     int MAXX;
     int MINY;
     int MAXY;
+
+    private byte selectedMode = -1;
 
     public RefugeScreen(RefugeMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -112,26 +109,24 @@ public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
 
     @OnlyIn(Dist.CLIENT)
     class RefugeScreenButton extends AbstractButton {
-        private ResourceLocation resourcelocation;
-        protected RefugeScreenButton(int x, int y, byte value, ResourceLocation resourcelocation) {
+        private final ResourceLocation resourcelocation;
+        private final byte mode;
+
+        protected RefugeScreenButton(int x, int y, byte mode, ResourceLocation resourcelocation) {
             super(x, y, 24, 24, CommonComponents.EMPTY);
             this.resourcelocation = resourcelocation;
-        }
-
-        protected RefugeScreenButton(int x, int y, Component message) {
-            super(x, y, 24, 24, message);
+            this.mode = mode;
         }
 
         @Override
         public void onPress() {
-
+            selectedMode = this.mode;
         }
 
         public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-
             guiGraphics.blit(this.resourcelocation, this.getX(), this.getY(),0,0, 24, 24, 24,24);
 
-            if (this.isHovered()) {
+            if (this.isHovered() || selectedMode == this.mode) {
                 guiGraphics.blit(OUTLINE, this.getX(), this.getY(),0,0, 24, 24, 24,24);
             }
         }
@@ -144,24 +139,29 @@ public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
 
     @OnlyIn(Dist.CLIENT)
     class DecisionScreenButton extends AbstractButton {
-        boolean disabled;
-        private ResourceLocation resourcelocation;
-        protected DecisionScreenButton(int x, int y, boolean value, ResourceLocation resourcelocation) {
+        private final boolean isConfirm;
+        private final ResourceLocation resourcelocation;
+
+        protected DecisionScreenButton(int x, int y, boolean isConfirm, ResourceLocation resourcelocation) {
             super(x, y, 24, 24, CommonComponents.EMPTY);
             this.resourcelocation = resourcelocation;
-        }
-
-        protected DecisionScreenButton(int x, int y, Component message) {
-            super(x, y, 24, 24, message);
+            this.isConfirm = isConfirm;
         }
 
         @Override
         public void onPress() {
-
+            if (isConfirm) {
+                if (selectedMode >= 0 && selectedMode <= 3 && menu.hasPayment()) {
+                    PacketDistributor.sendToServer(new RefugeSetModePayload(menu.getBlockPos(), selectedMode));
+                    RefugeScreen.this.onClose();
+                }
+            } else {
+                RefugeScreen.this.onClose();
+            }
         }
 
         public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-
+            boolean disabled = isConfirm && (selectedMode < 0 || !menu.hasPayment());
             guiGraphics.blit(this.resourcelocation, this.getX(), this.getY(), disabled ? 24 : 0, 0, 24, 24, 48,24);
 
             if (this.isHovered()) {

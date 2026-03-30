@@ -1,5 +1,6 @@
 package com.thebeyond;
 
+import com.thebeyond.common.network.BeyondNetworking;
 import com.thebeyond.common.registry.*;
 import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
@@ -45,6 +46,7 @@ public class TheBeyond {
         BeyondMenus.MENUS.register(modEventBus);
 
         modEventBus.addListener(BeyondTabs::addCreative);
+        modEventBus.addListener(BeyondNetworking::onRegisterPayloads);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, BeyondConfig.COMMON_CONFIG);
         modContainer.registerConfig(ModConfig.Type.CLIENT, BeyondConfig.CLIENT_CONFIG);
