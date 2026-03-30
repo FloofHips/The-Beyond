@@ -1,0 +1,26 @@
+{
+  "parent": "the_beyond:the_beyond/offering_remembered",
+  "criteria": {
+    "ride_nomad": {
+      "trigger": "the_beyond:ride_nomad"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.the_beyond.sacred_passage.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "the_beyond:abyssal_shroud"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.sacred_passage.title"
+    }
+  },
+  "requirements": [
+    [
+      "ride_nomad"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

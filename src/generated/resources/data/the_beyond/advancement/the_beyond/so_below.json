@@ -1,0 +1,27 @@
+{
+  "parent": "the_beyond:the_beyond/root",
+  "criteria": {
+    "walk_void_river": {
+      "trigger": "the_beyond:walk_void_river"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.the_beyond.so_below.description"
+    },
+    "frame": "challenge",
+    "icon": {
+      "count": 1,
+      "id": "the_beyond:pathfinder_boots"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.so_below.title"
+    }
+  },
+  "requirements": [
+    [
+      "walk_void_river"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

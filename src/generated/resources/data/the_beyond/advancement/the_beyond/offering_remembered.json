@@ -1,0 +1,26 @@
+{
+  "parent": "the_beyond:the_beyond/root",
+  "criteria": {
+    "give_remembrance": {
+      "trigger": "the_beyond:give_remembrance"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.the_beyond.offering_remembered.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "the_beyond:idol_remembrance"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.offering_remembered.title"
+    }
+  },
+  "requirements": [
+    [
+      "give_remembrance"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

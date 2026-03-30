@@ -2,9 +2,7 @@ package com.thebeyond.common.entity;
 
 import com.thebeyond.common.block.BonfireBlock;
 import com.thebeyond.common.entity.util.SlowRotFlyingMoveControl;
-import com.thebeyond.common.registry.BeyondBlocks;
-import com.thebeyond.common.registry.BeyondEntityTypes;
-import com.thebeyond.common.registry.BeyondItems;
+import com.thebeyond.common.registry.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -12,6 +10,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -216,6 +215,10 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
 
         if (!isFlying() && level().isThundering())
             setFlying(true);
+
+        if (isFlying() && level().isThundering() && getFirstPassenger() instanceof ServerPlayer serverPlayer) {
+            BeyondCriteriaTriggers.RIDE_LANTERN_THUNDER.get().trigger(serverPlayer);
+        }
 
         if (tickCount == 10) {
             getDefaultDimensions(Pose.STANDING);

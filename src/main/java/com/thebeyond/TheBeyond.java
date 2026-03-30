@@ -44,6 +44,7 @@ public class TheBeyond {
         BeyondProcessors.PROCESSOR_TYPES.register(modEventBus);
         BeyondAttachments.ATTACHMENT_TYPES.register(modEventBus);
         BeyondMenus.MENUS.register(modEventBus);
+        BeyondCriteriaTriggers.TRIGGERS.register(modEventBus);
 
         modEventBus.addListener(BeyondTabs::addCreative);
         modEventBus.addListener(BeyondNetworking::onRegisterPayloads);
