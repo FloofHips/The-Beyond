@@ -4,6 +4,7 @@ import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondItems;
 import com.thebeyond.common.registry.BeyondTags;
 import com.thebeyond.data.tags.BeyondBlockTags;
+import com.thebeyond.data.tags.BeyondItemTags;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.recipes.*;
@@ -40,8 +41,9 @@ public class BeyondRecipes extends RecipeProvider {
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, BeyondItems.ANCHOR_LEGGINGS.get(), 1).define('M', BeyondItems.FERROPETAL).define('N', BeyondBlocks.PLATE_BLOCK.asItem()).define('O', Items.HEAVY_CORE).pattern("NON").pattern("M M").pattern("N N").unlockedBy(getHasName(Items.HEAVY_CORE), has(Items.HEAVY_CORE)).unlockedBy(getHasName(BeyondBlocks.PLATE_BLOCK.asItem()), has(BeyondBlocks.PLATE_BLOCK.asItem())).unlockedBy(getHasName(BeyondItems.FERROPETAL), has(BeyondItems.FERROPETAL)).save(recipeOutput);
 
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, BeyondItems.GRAVISTAR.get(), 2).define('M', BeyondItems.VOID_CRYSTAL).define('N', BeyondItems.FERROJELLY).pattern(" M ").pattern("MNM").pattern(" M ").unlockedBy(getHasName(BeyondItems.VOID_CRYSTAL), has(BeyondItems.VOID_CRYSTAL)).unlockedBy(getHasName(BeyondItems.FERROJELLY), has(BeyondItems.FERROJELLY)).save(recipeOutput);
+        ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, BeyondBlocks.REFUGE.get(), 1).define('R', BeyondTags.OBIROOTS).define('S', Blocks.END_STONE).define('F', BeyondBlocks.ENADRAKE_FLARE).pattern("RRR").pattern("RFR").pattern("SSS").unlockedBy(getHasName(BeyondBlocks.ENADRAKE_FLARE.asItem()), has(BeyondBlocks.ENADRAKE_FLARE.asItem())).save(recipeOutput);
 
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, BeyondBlocks.ECTOPLASM.get(), 4).define('M', BeyondItems.LANTERN_SHED).pattern(" M ").pattern("M M").pattern(" M ").unlockedBy(getHasName(BeyondItems.LANTERN_SHED), has(BeyondItems.LANTERN_SHED)).save(recipeOutput);
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, BeyondBlocks.ECTOPLASM.get(), 4).requires(BeyondItems.LANTERN_SHED.get()).unlockedBy(getHasName(BeyondItems.LANTERN_SHED), has(BeyondItems.LANTERN_SHED)).save(recipeOutput);
         ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, BeyondItems.FERROJELLY.get(), 9).requires(BeyondBlocks.FERROJELLY_BLOCK.get()).unlockedBy(getHasName(BeyondBlocks.FERROJELLY_BLOCK.asItem()), has(BeyondBlocks.FERROJELLY_BLOCK.asItem())).save(recipeOutput);
 
         mosaicBuilder(recipeOutput, RecipeCategory.BUILDING_BLOCKS, BeyondBlocks.PORTELAIN_PILLAR.asItem(), BeyondBlocks.PORTELAIN.asItem());

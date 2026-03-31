@@ -1,5 +1,5 @@
 {
-  "parent": "the_beyond:the_beyond/root",
+  "parent": "the_beyond:the_beyond/befriend_lantern",
   "criteria": {
     "obtain_live_flame": {
       "trigger": "the_beyond:obtain_live_flame"

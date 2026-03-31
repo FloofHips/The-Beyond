@@ -1,5 +1,5 @@
 {
-  "parent": "the_beyond:the_beyond/root",
+  "parent": "minecraft:end/enter_end_gateway",
   "criteria": {
     "give_remembrance": {
       "trigger": "the_beyond:give_remembrance"
@@ -11,7 +11,7 @@
     },
     "icon": {
       "count": 1,
-      "id": "the_beyond:idol_remembrance"
+      "id": "the_beyond:ring_remembrance"
     },
     "title": {
       "translate": "advancements.the_beyond.offering_remembered.title"

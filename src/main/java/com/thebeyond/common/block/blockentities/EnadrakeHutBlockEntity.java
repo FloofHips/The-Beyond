@@ -40,10 +40,6 @@ import java.util.UUID;
 public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSingleItem.BlockContainerSingleItem {
 
     private static final int MAX_HUT_HEIGHT = 4;
-    @Nullable
-    private UUID enadrakeUUID;
-    @Nullable
-    private EnadrakeEntity enadrake;
     private ItemStack item;
     private static final double EXPANSION_CHANCE = 0.001;
 
@@ -63,12 +59,6 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         } else {
             this.item = ItemStack.EMPTY;
         }
-
-        if (tag.hasUUID("EnadrakeUUID")) {
-            this.enadrakeUUID = tag.getUUID("EnadrakeUUID");
-        } else {
-            this.enadrakeUUID = null;
-        }
     }
 
     @Override
@@ -77,9 +67,6 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         if (this.item != null && !this.item.isEmpty())
             tag.put("item", this.item.save(registries));
 
-        if (this.enadrakeUUID != null) {
-            tag.putUUID("EnadrakeUUID", this.enadrakeUUID);
-        }
     }
 
     @Override
@@ -88,9 +75,6 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         if (this.item != null && !this.item.isEmpty())
             tag.put("item", this.item.save(registries));
 
-        if (this.enadrakeUUID != null) {
-            tag.putUUID("EnadrakeUUID", this.enadrakeUUID);
-        }
         return tag;
     }
 
@@ -103,19 +87,9 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         if (!(level instanceof ServerLevel serverLevel)) return;
 
         boolean hasItem = (be.item != null && !be.getItem(0).isEmpty());
-        boolean hasEnadrake = be.hasEnadrake();
 
-        if (!hasItem && !hasEnadrake) {
+        if (!hasItem) {
             return;
-        }
-
-        if (be.enadrake != null) {
-            if (!be.enadrake.isAlive() || be.enadrake.level() != level) {
-                be.enadrake = null;
-                be.enadrakeUUID = null;
-                be.setChanged();
-                hasEnadrake = false;
-            }
         }
 
         if (hasItem) {
@@ -131,65 +105,28 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         }
     }
 
-    public boolean hasEnadrake() {
-        return (enadrake != null && enadrake.isAlive()) || enadrakeUUID != null;
-    }
-
     public boolean tryToEnter(EnadrakeEntity enadrake) {
-        if (this.level == null || this.level.isClientSide) return false;
-        if (this.hasEnadrake()) return false;
+        //TODO
 
-        if (!this.canEnadrakeEnter()) return false;
-
-        this.enadrake = enadrake;
-        this.enadrakeUUID = enadrake.getUUID();
-
-        enadrake.setInsideHut(true);
-        enadrake.setHutPosition(this.worldPosition);
-
-        enadrake.remove(Entity.RemovalReason.DISCARDED);
-
-        this.setChanged();
-        this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
-
-        return true;
+        return false;
     }
 
     public void tryToExit() {
-        if (this.level == null || this.level.isClientSide) return;
-        if (this.enadrake == null) {
-            this.enadrakeUUID = null;
-            this.setChanged();
-            return;
-        }
-
-        BlockPos exitPos = this.findExitPosition();
-
-        this.enadrake.setPos(exitPos.getX() + 0.5, exitPos.getY(), exitPos.getZ() + 0.5);
-        this.enadrake.setInsideHut(false);
-        this.enadrake.setHutPosition(null);
-
-        this.level.addFreshEntity(this.enadrake);
-
-        this.enadrake = null;
-        this.enadrakeUUID = null;
-
-        this.setChanged();
-        this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
+        //TODO
     }
 
     private boolean canEnadrakeEnter() {
+        //TODO
         return true;
     }
 
     private BlockPos findExitPosition() {
         BlockPos pos = this.worldPosition;
 
-        Direction facing = this.getBlockState().getValue(com.thebeyond.common.block.EnadrakeHutBlock.FACING);
+        Direction facing = this.getBlockState().getValue(EnadrakeHutBlock.FACING);
         BlockPos checkPos = pos.relative(facing);
 
-        if (this.level.getBlockState(checkPos).isAir() &&
-                this.level.getBlockState(checkPos.above()).isAir()) {
+        if (this.level.getBlockState(checkPos).isAir()) {
             return checkPos;
         }
 
@@ -202,16 +139,6 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         }
 
         return pos.above();
-    }
-
-    @Nullable
-    public EnadrakeEntity getEnadrake() {
-        return enadrake;
-    }
-
-    @Nullable
-    public UUID getEnadrakeUUID() {
-        return enadrakeUUID;
     }
 
     private boolean canExpandHut() {

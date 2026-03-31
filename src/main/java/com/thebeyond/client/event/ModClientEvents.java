@@ -596,6 +596,10 @@ public class ModClientEvents {
 
             player.level().addFreshEntity(totem);
 
+            if (player != null && player instanceof ServerPlayer serverPlayer) {
+                BeyondCriteriaTriggers.USE_TOTEM.get().trigger(serverPlayer);
+            }
+
             persistent.remove(TAG_PENDING_TOTEM);
             persistent.remove(TAG_TOTEM_ITEMS);
         }

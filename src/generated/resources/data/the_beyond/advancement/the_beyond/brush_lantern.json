@@ -1,0 +1,26 @@
+{
+  "parent": "the_beyond:the_beyond/befriend_lantern",
+  "criteria": {
+    "brush_lantern": {
+      "trigger": "the_beyond:brush_lantern"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.the_beyond.brush_lantern.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:brush"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.brush_lantern.title"
+    }
+  },
+  "requirements": [
+    [
+      "brush_lantern"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

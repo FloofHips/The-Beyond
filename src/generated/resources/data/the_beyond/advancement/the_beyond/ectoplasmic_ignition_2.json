@@ -1,0 +1,28 @@
+{
+  "parent": "the_beyond:the_beyond/ectoplasmic_ignition",
+  "criteria": {
+    "obtain_livid_flame": {
+      "trigger": "the_beyond:obtain_livid_flame"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.the_beyond.ectoplasmic_ignition_2.description"
+    },
+    "frame": "challenge",
+    "hidden": true,
+    "icon": {
+      "count": 1,
+      "id": "the_beyond:livid_flame"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.ectoplasmic_ignition_2.title"
+    }
+  },
+  "requirements": [
+    [
+      "obtain_livid_flame"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

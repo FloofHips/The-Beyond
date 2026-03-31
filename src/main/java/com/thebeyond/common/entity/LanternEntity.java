@@ -247,10 +247,14 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
                 itemstack.shrink(1);
                 player.addItem(new ItemStack(Items.TORCH));
                 this.playSound(SoundEvents.DOLPHIN_EAT);
+                if (player instanceof ServerPlayer serverPlayer)
+                    BeyondCriteriaTriggers.BEFRIEND_LANTERN.get().trigger(serverPlayer);
                 return InteractionResult.SUCCESS;
             }
 
             if (itemstack.is(Items.BRUSH)) {
+                if (player instanceof ServerPlayer serverPlayer)
+                    BeyondCriteriaTriggers.BRUSH_LANTERN.get().trigger(serverPlayer);
                 if (!isTrusting()) {
                     this.spawnAtLocation(new ItemStack(BeyondItems.LANTERN_SHED.get(), 1+random.nextInt(0, getSize()+1)));
                     this.gameEvent(GameEvent.ENTITY_INTERACT);

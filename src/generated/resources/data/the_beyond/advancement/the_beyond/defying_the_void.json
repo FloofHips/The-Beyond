@@ -1,15 +1,8 @@
 {
-  "parent": "the_beyond:the_beyond/root",
+  "parent": "the_beyond:the_beyond/pass_the_torch",
   "criteria": {
-    "has_totem": {
-      "conditions": {
-        "items": [
-          {
-            "items": "the_beyond:totem_of_respite"
-          }
-        ]
-      },
-      "trigger": "minecraft:inventory_changed"
+    "use_totem": {
+      "trigger": "the_beyond:use_totem"
     }
   },
   "display": {
@@ -26,7 +19,7 @@
   },
   "requirements": [
     [
-      "has_totem"
+      "use_totem"
     ]
   ],
   "sends_telemetry_event": true

@@ -1,5 +1,5 @@
 {
-  "parent": "the_beyond:the_beyond/root",
+  "parent": "the_beyond:the_beyond/memories_returned",
   "criteria": {
     "walk_void_river": {
       "trigger": "the_beyond:walk_void_river"

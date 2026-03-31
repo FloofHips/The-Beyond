@@ -10,6 +10,7 @@
       "translate": "advancements.the_beyond.as_above.description"
     },
     "frame": "challenge",
+    "hidden": true,
     "icon": {
       "count": 1,
       "id": "the_beyond:lantern_shed"

@@ -1,0 +1,26 @@
+{
+  "parent": "minecraft:end/enter_end_gateway",
+  "criteria": {
+    "full_power_magnet": {
+      "trigger": "the_beyond:full_power_magnet"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.the_beyond.full_power_magnet.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "the_beyond:magnet"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.full_power_magnet.title"
+    }
+  },
+  "requirements": [
+    [
+      "full_power_magnet"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

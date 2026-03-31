@@ -222,16 +222,19 @@ public class BeyondBlocks {
     public static final DeferredBlock<Block> ENADRAKE_FLARE = registerBlock("enadrake_flare",
             () -> new EnadrakeFlareBlock(Block.Properties.of()
                     .mapColor(MapColor.ICE)
+                    .strength(2.0F, 2.0F)
                     .sound(SoundType.METAL))
     );
     public static final DeferredBlock<Block> ENATIOUS_TOTEM_SEED = registerBlock("enatious_totem_seed",
             () -> new EnatiousTotemSeedBlock(Block.Properties.of()
                     .mapColor(MapColor.ICE)
+                    .strength(2.0F, 2.0F)
                     .sound(SoundType.METAL))
     );
     public static final DeferredBlock<Block> REFUGE = registerBlock("refuge",
             () -> new RefugeBlock(Block.Properties.of()
                     .mapColor(MapColor.ICE)
+                    .strength(4.0F, 32.0F)
                     .sound(SoundType.METAL))
     );
 

@@ -7,6 +7,7 @@ import com.thebeyond.common.block.RefugeBlock;
 import com.thebeyond.common.registry.BeyondAttachments;
 import com.thebeyond.common.registry.BeyondBlockEntities;
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondCriteriaTriggers;
 import com.thebeyond.util.ColorUtils;
 import com.thebeyond.util.RefugeChunkData;
 import net.minecraft.core.BlockPos;
@@ -23,9 +24,11 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -34,6 +37,7 @@ import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.PlayerHeadItem;
+import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -43,6 +47,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.entity.SkullBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -274,6 +279,15 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
             serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.OBIROOT.get().defaultBlockState()), this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ(), 120, 1f, 3, 1f, 0.05);
             serverLevel.sendParticles(ColorUtils.voidOptions, this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ(), 12, 1f, 3, 1f, 0.05);
 
+            TargetingConditions target = TargetingConditions.forNonCombat().range(32.0);
+            AABB aabb = AABB.ofSize(this.worldPosition.getCenter(),32.0, 16.0, 32.0);
+            List<Player> list1 = level.getNearbyPlayers(target, null, aabb);
+
+            for (Player player : list1) {
+                if (player != null && player instanceof ServerPlayer serverPlayer) {
+                    BeyondCriteriaTriggers.COMPLETE_REFUGE.get().trigger(serverPlayer);
+                }
+            }
         }
         level.setBlock(this.worldPosition, BeyondBlocks.REFUGE.get().defaultBlockState().setValue(RefugeBlock.POWERED, true), 3);
     }

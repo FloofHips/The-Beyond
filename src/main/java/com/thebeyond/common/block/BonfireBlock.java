@@ -113,7 +113,11 @@ public class BonfireBlock extends BaseEntityBlock {
                 level.playSound(null, pos, SoundEvents.FIRECHARGE_USE, SoundSource.BLOCKS, 1, 1);
 
                 if (player instanceof ServerPlayer serverPlayer) {
-                    BeyondCriteriaTriggers.OBTAIN_LIVE_FLAME.get().trigger(serverPlayer);
+                    if (level.isRaining()) {
+                        BeyondCriteriaTriggers.OBTAIN_LIVID_FLAME.get().trigger(serverPlayer);
+                    } else {
+                        BeyondCriteriaTriggers.OBTAIN_LIVE_FLAME.get().trigger(serverPlayer);
+                    }
                 }
                 return ItemInteractionResult.CONSUME;
             }

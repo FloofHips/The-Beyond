@@ -2,11 +2,13 @@ package com.thebeyond.common.item;
 
 import com.thebeyond.common.item.components.Components;
 import com.thebeyond.common.registry.BeyondComponents;
+import com.thebeyond.common.registry.BeyondCriteriaTriggers;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.common.registry.BeyondTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
@@ -67,7 +69,8 @@ public class MagnetItem extends Item {
 
                     Vec3 playerPos = player.position();
                     Vec3 blockCenter = Vec3.atCenterOf(pos);
-                    Vec3 direction = blockCenter.subtract(playerPos).normalize();
+                    Vec3 distance = blockCenter.subtract(playerPos);
+                    Vec3 direction = distance.normalize();
 
                     player.setDeltaMovement(direction.scale(1.5));
                     player.hurtMarked = true;
@@ -80,6 +83,8 @@ public class MagnetItem extends Item {
                             Vec3 particlePos = playerPos.lerp(blockCenter, lerp);
                             serverLevel.sendParticles(ParticleTypes.ELECTRIC_SPARK, particlePos.x, particlePos.y + (level.random.nextGaussian()), particlePos.z, 2, 0.1, 0.1, 0.1, 0);
                         }
+
+                        if (distance.length() > 31 && player instanceof ServerPlayer serverPlayer) BeyondCriteriaTriggers.FULL_POWER_MAGNET.get().trigger(serverPlayer);
                     }
 
                     player.awardStat(Stats.ITEM_USED.get(this));

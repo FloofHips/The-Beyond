@@ -42,11 +42,20 @@ public class Lang extends LanguageProvider {
         add("itemGroup.the_beyond", "The Beyond");
 
         // Advancements
-        add("advancements.the_beyond.root.title", "The Beyond");
-        add("advancements.the_beyond.root.description", "");
+        //add("advancements.the_beyond.root.title", "The Beyond");
+        //add("advancements.the_beyond.root.description", "");
 
-        add("advancements.the_beyond.ectoplasmic_ignition.title", "Ectoplasmic Ignition");
+        add("advancements.the_beyond.befriend_lantern.title", "Equivalent Exchange");
+        add("advancements.the_beyond.befriend_lantern.description", "Gain a lantern's trust using a soul torch");
+
+        add("advancements.the_beyond.brush_lantern.title", "Spirit and Away");
+        add("advancements.the_beyond.brush_lantern.description", "Get close enough to a lantern to brush it");
+
+        add("advancements.the_beyond.ectoplasmic_ignition.title", "Let There Be Light");
         add("advancements.the_beyond.ectoplasmic_ignition.description", "Use ectoplasm on a lit bonfire to create a live flame");
+
+        add("advancements.the_beyond.ectoplasmic_ignition_2.title", "Speedrun");
+        add("advancements.the_beyond.ectoplasmic_ignition_2.description", "Use ectoplasm on a purple fire bonfire to create a livid flame");
 
         add("advancements.the_beyond.pass_the_torch.title", "Pass the Torch");
         add("advancements.the_beyond.pass_the_torch.description", "Carry a live flame to an unlit bonfire and light it");
@@ -55,10 +64,10 @@ public class Lang extends LanguageProvider {
         add("advancements.the_beyond.offering_remembered.description", "Give a remembrance to an abyssal nomad");
 
         add("advancements.the_beyond.sacred_passage.title", "Sacred Passage");
-        add("advancements.the_beyond.sacred_passage.description", "Mount a sitting nomad and ride to the beyond");
+        add("advancements.the_beyond.sacred_passage.description", "Mount a sitting nomad and trust the journey");
 
         add("advancements.the_beyond.memories_returned.title", "Memories Returned");
-        add("advancements.the_beyond.memories_returned.description", "Offer a remembrance to a void sea fountain");
+        add("advancements.the_beyond.memories_returned.description", "Offer 5 remembrances to a fountain");
 
         add("advancements.the_beyond.defying_the_void.title", "Defying the Void");
         add("advancements.the_beyond.defying_the_void.description", "Obtain a Totem of Respite - hold it when you die to keep your items");
@@ -67,7 +76,19 @@ public class Lang extends LanguageProvider {
         add("advancements.the_beyond.so_below.description", "Walk on the void river with Pathfinder Boots");
 
         add("advancements.the_beyond.as_above.title", "As Above");
-        add("advancements.the_beyond.as_above.description", "Ride a lantern during a thunderstorm");
+        add("advancements.the_beyond.as_above.description", "Ride a lantern leviathan during a migration storm");
+
+        add("advancements.the_beyond.gift_enadrake.title", "Building Blocks");
+        add("advancements.the_beyond.gift_enadrake.description", "Gift an enadrake an item");
+
+        add("advancements.the_beyond.gift_rare_enadrake.title", "Wealth and Equality");
+        add("advancements.the_beyond.gift_rare_enadrake.description", "Gift an enadrake an item of epic rarity");
+
+        add("advancements.the_beyond.complete_refuge.title", "Growth and Infrastructure");
+        add("advancements.the_beyond.complete_refuge.description", "Place a refuge near an enadrake village and let them activate it for you");
+
+        add("advancements.the_beyond.full_power_magnet.title", "Slingshot");
+        add("advancements.the_beyond.full_power_magnet.description", "Use a magnet to pull yourself somewhere 32 blocks away");
     }
 
     public String getLangName(String id) {

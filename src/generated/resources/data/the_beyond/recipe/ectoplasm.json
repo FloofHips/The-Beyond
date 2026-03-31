@@ -1,15 +1,10 @@
 {
-  "type": "minecraft:crafting_shaped",
+  "type": "minecraft:crafting_shapeless",
   "category": "misc",
-  "key": {
-    "M": {
+  "ingredients": [
+    {
       "item": "the_beyond:lantern_shed"
     }
-  },
-  "pattern": [
-    " M ",
-    "M M",
-    " M "
   ],
   "result": {
     "count": 4,

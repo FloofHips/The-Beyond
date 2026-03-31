@@ -73,6 +73,15 @@ public class EnadrakeHutBlock extends BaseEntityBlock {
     }
 
     @Override
+    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        BlockEntity hut = level.getBlockEntity(pos);
+        if (hut instanceof EnadrakeHutBlockEntity hutblockentity) {
+            hutblockentity.tryToExit();
+        }
+        super.onRemove(state, level, pos, newState, movedByPiston);
+    }
+
+    @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
         BlockEntity hut = level.getBlockEntity(pos);
         if (hut instanceof EnadrakeHutBlockEntity hutblockentity) {

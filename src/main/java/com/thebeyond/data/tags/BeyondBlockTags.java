@@ -24,7 +24,8 @@ public class BeyondBlockTags extends BlockTagsProvider {
 
         tag(BeyondTags.OBIROOT_BLOCKS)
                 .add(BeyondBlocks.OBIROOT.get())
-                .add(BeyondBlocks.PEEPING_OBIROOT.get());
+                .add(BeyondBlocks.PEEPING_OBIROOT.get())
+                .add(BeyondBlocks.OBIROOT_ARM.get());
 
         tag(BeyondTags.PORTELAIN_BLOCKS)
                 .add(BeyondBlocks.PORTELAIN.get())
@@ -51,6 +52,9 @@ public class BeyondBlockTags extends BlockTagsProvider {
                 .add(BeyondBlocks.MAGNOLILLY.get())
                 .add(BeyondBlocks.POLAR_ANTENNA.get())
                 .add(BeyondBlocks.VOID_CRYSTAL.get())
+                .add(BeyondBlocks.ENADRAKE_FLARE.get())
+                .add(BeyondBlocks.REFUGE.get())
+                .add(BeyondBlocks.ENADRAKE_HUT.get())
                 .addTag(BeyondTags.PORTELAIN_BLOCKS)
                 .add(BeyondBlocks.AMPHORA.get());
 
@@ -65,7 +69,11 @@ public class BeyondBlockTags extends BlockTagsProvider {
                 .add(BeyondBlocks.AMPHORA.get());
 
         tag(BlockTags.INCORRECT_FOR_WOODEN_TOOL)
+                .add(BeyondBlocks.ENADRAKE_HUT.get())
                 .add(BeyondBlocks.VOID_CRYSTAL.get());
+
+        tag(BlockTags.INCORRECT_FOR_STONE_TOOL)
+                .add(BeyondBlocks.ENADRAKE_HUT.get());
 
         tag(BlockTags.DRAGON_IMMUNE)
                 .addTag(BeyondTags.PORTELAIN_BLOCKS)

@@ -1,0 +1,26 @@
+{
+  "parent": "minecraft:end/enter_end_gateway",
+  "criteria": {
+    "befriend_lantern": {
+      "trigger": "the_beyond:befriend_lantern"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.the_beyond.befriend_lantern.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:soul_torch"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.befriend_lantern.title"
+    }
+  },
+  "requirements": [
+    [
+      "befriend_lantern"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

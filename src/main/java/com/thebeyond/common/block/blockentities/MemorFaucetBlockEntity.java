@@ -273,12 +273,6 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
                 serverLevel.sendParticles(BeyondParticleTypes.AURORACITE_STEP.get(), itemEntity.position().x, itemEntity.position().y + 0.1, itemEntity.position().z, 1, 0, 0, 0, 0);
             }
 
-            // Award advancement to nearest player
-            Player nearestPlayer = level.getNearestPlayer(pos.getX(), pos.getY(), pos.getZ(), 10, false);
-            if (nearestPlayer instanceof ServerPlayer serverPlayer) {
-                BeyondCriteriaTriggers.FOUNTAIN_OFFERING.get().trigger(serverPlayer);
-            }
-
             increaseAge(level, pos);
             break;
         }
@@ -372,6 +366,11 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
                     serverLevel.sendParticles(BeyondParticleTypes.AURORACITE_STEP.get(), nomad.position().x, nomad.position().y + nomad.getEyeHeight() + 0.1, nomad.position().z, 1, 0, 0, 0, 0);
                 }
                 nomad.dropCounter = 60 + nomad.level().random.nextInt(0, 20);
+            }
+
+            Player nearestPlayer = level.getNearestPlayer(pos.getX(), pos.getY(), pos.getZ(), 16, false);
+            if (nearestPlayer instanceof ServerPlayer serverPlayer) {
+                BeyondCriteriaTriggers.FOUNTAIN_OFFERING.get().trigger(serverPlayer);
             }
         }
     }

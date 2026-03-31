@@ -1,0 +1,26 @@
+{
+  "parent": "minecraft:end/enter_end_gateway",
+  "criteria": {
+    "gift_enadrake": {
+      "trigger": "the_beyond:gift_enadrake"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.the_beyond.gift_enadrake.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:stick"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.gift_enadrake.title"
+    }
+  },
+  "requirements": [
+    [
+      "gift_enadrake"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

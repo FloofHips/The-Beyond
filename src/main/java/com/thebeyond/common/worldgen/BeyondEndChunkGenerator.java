@@ -82,7 +82,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     @Override
     public void createStructures(RegistryAccess registryAccess, ChunkGeneratorStructureState structureState, StructureManager structureManager, ChunkAccess chunk, StructureTemplateManager structureTemplateManager) {
         computeNoisesIfNotPresent(structureState.getLevelSeed());
-        System.out.println(structureState.getLevelSeed());
         super.createStructures(registryAccess, structureState, structureManager, chunk, structureTemplateManager);
     }
 

@@ -7,10 +7,13 @@ import com.thebeyond.common.block.RefugeBlock;
 import com.thebeyond.common.block.blockentities.EnadrakeHutBlockEntity;
 import com.thebeyond.common.block.blockentities.RefugeBlockEntity;
 import com.thebeyond.common.block.blockstates.HutHeightProperty;
+import com.thebeyond.common.item.components.Components;
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondCriteriaTriggers;
 import com.thebeyond.common.registry.BeyondFeatures;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
@@ -19,6 +22,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -48,6 +52,7 @@ import net.minecraft.world.level.block.state.properties.StairsShape;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -71,8 +76,9 @@ public class EnadrakeEntity extends PathfinderMob {
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new EnadrakeSearchForItemsGoal());
         //this.goalSelector.addGoal(0, new EnadrakeAdvanceStairGoal(this, 1.2, 10, 16));
-        this.goalSelector.addGoal(0, new EnadrakeStoreInHomeGoal(this, 1.2, 10, 16));
+        this.goalSelector.addGoal(1, new EnadrakeStoreInHomeGoal(this, 1.2, 10, 16));
         this.goalSelector.addGoal(0, new EnadrakeBuildRefugeGoal(this, 1.2, 10, 10));
+        this.goalSelector.addGoal(2, new EnadrakeEnterHutGoal(this, 1.2, 10, 10));
         this.goalSelector.addGoal(1, new EnadrakeHarvestGoal(this, 1.5, 15, 6));
         this.goalSelector.addGoal(2, new RandomStrollGoal(this, 1));
         this.goalSelector.addGoal(3, new RandomLookAroundGoal(this));
@@ -245,8 +251,12 @@ public class EnadrakeEntity extends PathfinderMob {
             this.take(itemEntity, 1);
             //itemEntity.discard();
             this.setHoldingItem(true);
-        }
+            Player player = level().getNearestPlayer(this, 32);
 
+            if (player != null && player instanceof ServerPlayer serverPlayer) {
+                BeyondCriteriaTriggers.GIFT_ENADRAKE.get().trigger(serverPlayer);
+            }
+        }
     }
 
     private void growUp(ServerLevel level) {
@@ -626,6 +636,69 @@ public class EnadrakeEntity extends PathfinderMob {
                     refugeBlockEntity.printPattern();
                     entity.getItemBySlot(EquipmentSlot.MAINHAND).shrink(1);
                     entity.panic = 50;
+                }
+            }
+
+            if (mob.getNavigation().isStuck()) mob.addDeltaMovement(new Vec3(0, 0.2, 0));
+
+            BlockPos blockpos = new BlockPos(this.getMoveToTarget().getX(), this.getMoveToTarget().getY(), this.getMoveToTarget().getZ());
+
+            if (!blockpos.closerToCenterThan(this.mob.position(), this.acceptedDistance())) {
+                this.reachedTarget = false;
+                ++this.tryTicks;
+                if (this.shouldRecalculatePath()) {
+                    this.mob.getNavigation().moveTo((double)blockpos.getX() + (double)0.5F, (double)blockpos.getY(), (double)blockpos.getZ() + (double)0.5F, this.speedModifier);
+                }
+            } else {
+                this.reachedTarget = true;
+                --this.tryTicks;
+            }
+        }
+    }
+
+    class EnadrakeEnterHutGoal extends MoveToBlockGoal {
+        EnadrakeEntity entity;
+        boolean reachedTarget;
+
+        public EnadrakeEnterHutGoal(PathfinderMob mob, double speedModifier, int searchRange, int verticalSearchRange) {
+            super(mob, speedModifier, searchRange, verticalSearchRange);
+            this.entity = (EnadrakeEntity) mob;
+        }
+
+        @Override
+        public boolean canUse() {
+            ItemStack itemstack = entity.getItemBySlot(EquipmentSlot.MAINHAND);
+            if (itemstack.isEmpty() && !level().isRaining() && level().random.nextFloat() < 0.8) return super.canUse();
+            return false;
+        }
+
+        public double acceptedDistance() {
+            return 1.0F;
+        }
+
+        @Override
+        protected boolean isValidTarget(LevelReader levelReader, BlockPos blockPos) {
+            BlockState blockstate = levelReader.getBlockState(blockPos);
+            if (blockstate.is(BeyondBlocks.ENADRAKE_HUT.get())) {
+                BlockEntity hut = entity.level().getBlockEntity(blockPos);
+                if (hut instanceof EnadrakeHutBlockEntity hutblockentity) {
+                    return !hutblockentity.hasEnadrake();
+                }
+            }
+            return false;
+        }
+
+        protected boolean isReachedTarget() {
+            return this.reachedTarget;
+        }
+
+        @Override
+        public void tick() {
+            if (isReachedTarget()) {
+                BlockPos pos = this.getMoveToTarget().below();
+                BlockEntity hut = level().getBlockEntity(pos);
+                if (hut instanceof EnadrakeHutBlockEntity enadrakeHutBlockEntity) {
+                    enadrakeHutBlockEntity.tryToEnter(this.entity);
                 }
             }
 
