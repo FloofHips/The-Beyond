@@ -6,6 +6,7 @@ import com.thebeyond.common.entity.EnadrakeEntity;
 import com.thebeyond.common.entity.LanternEntity;
 import com.thebeyond.common.item.components.Components;
 import com.thebeyond.common.registry.*;
+import net.minecraft.server.level.ServerPlayer;
 import com.thebeyond.util.ColorUtils;
 import net.minecraft.core.*;
 import net.minecraft.core.particles.ParticleTypes;
@@ -270,6 +271,12 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
                 serverLevel.sendParticles(ParticleTypes.POOF, itemEntity.getX(), itemEntity.getY(), itemEntity.getZ(), 5, 0.2, 0.2, 0.2, 0.05);
                 serverLevel.sendParticles(BeyondParticleTypes.AURORACITE_STEP.get(), pos.getX() + 0.5, pos.getY() - 0.5, pos.getZ() + 0.5, 1, 0, 0, 0, 0);
                 serverLevel.sendParticles(BeyondParticleTypes.AURORACITE_STEP.get(), itemEntity.position().x, itemEntity.position().y + 0.1, itemEntity.position().z, 1, 0, 0, 0, 0);
+            }
+
+            // Award advancement to nearest player
+            Player nearestPlayer = level.getNearestPlayer(pos.getX(), pos.getY(), pos.getZ(), 10, false);
+            if (nearestPlayer instanceof ServerPlayer serverPlayer) {
+                BeyondCriteriaTriggers.FOUNTAIN_OFFERING.get().trigger(serverPlayer);
             }
 
             increaseAge(level, pos);

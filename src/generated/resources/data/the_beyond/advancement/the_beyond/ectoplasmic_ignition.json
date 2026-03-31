@@ -1,0 +1,26 @@
+{
+  "parent": "the_beyond:the_beyond/root",
+  "criteria": {
+    "obtain_live_flame": {
+      "trigger": "the_beyond:obtain_live_flame"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.the_beyond.ectoplasmic_ignition.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "the_beyond:live_flame"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.ectoplasmic_ignition.title"
+    }
+  },
+  "requirements": [
+    [
+      "obtain_live_flame"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

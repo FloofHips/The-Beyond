@@ -40,6 +40,34 @@ public class Lang extends LanguageProvider {
 
 
         add("itemGroup.the_beyond", "The Beyond");
+
+        // Advancements
+        add("advancements.the_beyond.root.title", "The Beyond");
+        add("advancements.the_beyond.root.description", "");
+
+        add("advancements.the_beyond.ectoplasmic_ignition.title", "Ectoplasmic Ignition");
+        add("advancements.the_beyond.ectoplasmic_ignition.description", "Use ectoplasm on a lit bonfire to create a live flame");
+
+        add("advancements.the_beyond.pass_the_torch.title", "Pass the Torch");
+        add("advancements.the_beyond.pass_the_torch.description", "Carry a live flame to an unlit bonfire and light it");
+
+        add("advancements.the_beyond.offering_remembered.title", "An Offering Remembered");
+        add("advancements.the_beyond.offering_remembered.description", "Give a remembrance to an abyssal nomad");
+
+        add("advancements.the_beyond.sacred_passage.title", "Sacred Passage");
+        add("advancements.the_beyond.sacred_passage.description", "Mount a sitting nomad and ride to the beyond");
+
+        add("advancements.the_beyond.memories_returned.title", "Memories Returned");
+        add("advancements.the_beyond.memories_returned.description", "Offer a remembrance to a void sea fountain");
+
+        add("advancements.the_beyond.defying_the_void.title", "Defying the Void");
+        add("advancements.the_beyond.defying_the_void.description", "Obtain a Totem of Respite - hold it when you die to keep your items");
+
+        add("advancements.the_beyond.so_below.title", "So Below");
+        add("advancements.the_beyond.so_below.description", "Walk on the void river with Pathfinder Boots");
+
+        add("advancements.the_beyond.as_above.title", "As Above");
+        add("advancements.the_beyond.as_above.description", "Ride a lantern during a thunderstorm");
     }
 
     public String getLangName(String id) {

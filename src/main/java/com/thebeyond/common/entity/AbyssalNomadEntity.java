@@ -4,6 +4,7 @@ import com.thebeyond.client.event.ModClientEvents;
 import com.thebeyond.common.entity.util.SlowRotMoveControl;
 import com.thebeyond.common.item.components.Components;
 import com.thebeyond.common.registry.*;
+import net.minecraft.server.level.ServerPlayer;
 import com.thebeyond.util.AOEManager;
 import com.thebeyond.util.ColorUtils;
 import com.thebeyond.util.TeleportUtils;
@@ -399,6 +400,9 @@ public class AbyssalNomadEntity extends PathfinderMob {
             sitDownCounter = 60;
             if (!player.isCreative()) itemstack.shrink(1);
             player.addEffect(new MobEffectInstance(BeyondEffects.NOMADS_BLESSING, 6000));
+            if (player instanceof ServerPlayer serverPlayer) {
+                BeyondCriteriaTriggers.GIVE_REMEMBRANCE.get().trigger(serverPlayer);
+            }
             return InteractionResult.SUCCESS;
         }
 
@@ -406,6 +410,9 @@ public class AbyssalNomadEntity extends PathfinderMob {
             level().broadcastEntityEvent(this, STAND_UP);
             setSitting(false);
             player.startRiding(this);
+            if (player instanceof ServerPlayer serverPlayer) {
+                BeyondCriteriaTriggers.RIDE_NOMAD.get().trigger(serverPlayer);
+            }
 
             AABB box = new AABB(this.blockPosition()).inflate(10);
             List<AbyssalNomadEntity> nomads = level().getEntitiesOfClass(AbyssalNomadEntity.class, box);

@@ -2,9 +2,9 @@ package com.thebeyond.common.block;
 
 import com.thebeyond.common.entity.AbyssalNomadEntity;
 import com.thebeyond.common.registry.*;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -112,6 +112,10 @@ public class AuroraciteBlock extends Block {
             level.setBlockAndUpdate(pos, state.setValue(POWERED, true));
             level.scheduleTick(pos, this, 20);
             serverLevel.sendParticles(BeyondParticleTypes.AURORACITE_STEP.get(), pos.getX() + 0.5, pos.getY() + 1.01, pos.getZ() + 0.5, 1, 0, 0.1, 0, 0);
+
+            if (entity instanceof ServerPlayer serverPlayer && serverPlayer.getItemBySlot(EquipmentSlot.FEET).is(BeyondItems.PATHFINDER_BOOTS.get())) {
+                BeyondCriteriaTriggers.WALK_VOID_RIVER.get().trigger(serverPlayer);
+            }
         }
         super.stepOn(level, pos, state, entity);
     }

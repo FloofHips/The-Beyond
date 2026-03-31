@@ -1,0 +1,33 @@
+{
+  "parent": "the_beyond:the_beyond/root",
+  "criteria": {
+    "has_totem": {
+      "conditions": {
+        "items": [
+          {
+            "items": "the_beyond:totem_of_respite"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.the_beyond.defying_the_void.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "the_beyond:totem_of_respite"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.defying_the_void.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_totem"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

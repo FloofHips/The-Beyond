@@ -95,6 +95,9 @@ public class BonfireBlock extends BaseEntityBlock {
                 if (bonfire instanceof BonfireBlockEntity bonfireBlockEntity) {
                     bonfireBlockEntity.activate(player);
                 }
+                if (player instanceof ServerPlayer serverPlayer) {
+                    BeyondCriteriaTriggers.LIGHT_BONFIRE.get().trigger(serverPlayer);
+                }
                 return ItemInteractionResult.CONSUME;
             }
             return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
@@ -109,6 +112,9 @@ public class BonfireBlock extends BaseEntityBlock {
 
                 level.playSound(null, pos, SoundEvents.FIRECHARGE_USE, SoundSource.BLOCKS, 1, 1);
 
+                if (player instanceof ServerPlayer serverPlayer) {
+                    BeyondCriteriaTriggers.OBTAIN_LIVE_FLAME.get().trigger(serverPlayer);
+                }
                 return ItemInteractionResult.CONSUME;
             }
             return super.useItemOn(stack, state, level, pos, player, hand, hitResult);

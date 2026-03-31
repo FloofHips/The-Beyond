@@ -1,4 +1,22 @@
 {
+  "advancements.the_beyond.as_above.description": "Ride a lantern during a thunderstorm",
+  "advancements.the_beyond.as_above.title": "As Above",
+  "advancements.the_beyond.defying_the_void.description": "Obtain a Totem of Respite - hold it when you die to keep your items",
+  "advancements.the_beyond.defying_the_void.title": "Defying the Void",
+  "advancements.the_beyond.ectoplasmic_ignition.description": "Use ectoplasm on a lit bonfire to create a live flame",
+  "advancements.the_beyond.ectoplasmic_ignition.title": "Ectoplasmic Ignition",
+  "advancements.the_beyond.memories_returned.description": "Offer a remembrance to a void sea fountain",
+  "advancements.the_beyond.memories_returned.title": "Memories Returned",
+  "advancements.the_beyond.offering_remembered.description": "Give a remembrance to an abyssal nomad",
+  "advancements.the_beyond.offering_remembered.title": "An Offering Remembered",
+  "advancements.the_beyond.pass_the_torch.description": "Carry a live flame to an unlit bonfire and light it",
+  "advancements.the_beyond.pass_the_torch.title": "Pass the Torch",
+  "advancements.the_beyond.root.description": "",
+  "advancements.the_beyond.root.title": "The Beyond",
+  "advancements.the_beyond.sacred_passage.description": "Mount a sitting nomad and ride to the beyond",
+  "advancements.the_beyond.sacred_passage.title": "Sacred Passage",
+  "advancements.the_beyond.so_below.description": "Walk on the void river with Pathfinder Boots",
+  "advancements.the_beyond.so_below.title": "So Below",
   "block.the_beyond.amphora": "Amphora",
   "block.the_beyond.auroracite": "Auroracite",
   "block.the_beyond.bonfire": "Bonfire",
@@ -19,6 +37,7 @@
   "block.the_beyond.memor_stairs": "Memor Stairs",
   "block.the_beyond.nacre": "Nacre",
   "block.the_beyond.obiroot": "Obiroot",
+  "block.the_beyond.obiroot_arm": "Obiroot Arm",
   "block.the_beyond.obiroot_sprout": "Obiroot Sprout",
   "block.the_beyond.peeping_obiroot": "Peeping Obiroot",
   "block.the_beyond.plate_block": "Plate Block",
@@ -81,6 +100,5 @@
   "item.the_beyond.ring_remembrance": "Ring Remembrance",
   "item.the_beyond.spike_remembrance": "Spike Remembrance",
   "item.the_beyond.totem_of_respite": "Totem Of Respite",
-  "itemGroup.the_beyond": "The Beyond",
-  "container.refuge": "\"Refuge\""
+  "itemGroup.the_beyond": "The Beyond"
 }

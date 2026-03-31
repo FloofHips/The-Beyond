@@ -1,0 +1,26 @@
+{
+  "parent": "the_beyond:the_beyond/ectoplasmic_ignition",
+  "criteria": {
+    "light_bonfire": {
+      "trigger": "the_beyond:light_bonfire"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.the_beyond.pass_the_torch.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "the_beyond:live_flame"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.pass_the_torch.title"
+    }
+  },
+  "requirements": [
+    [
+      "light_bonfire"
+    ]
+  ],
+  "sends_telemetry_event": true
+}
