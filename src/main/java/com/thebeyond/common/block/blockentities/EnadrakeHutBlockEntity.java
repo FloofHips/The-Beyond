@@ -152,7 +152,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
             checkPos = checkPos.above();
             height++;
         }
-        return Math.min(height, MAX_HUT_HEIGHT);
+        return height;
     }
 
     public int getOccupantCount() {
