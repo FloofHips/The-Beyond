@@ -608,15 +608,13 @@ public class EnadrakeEntity extends PathfinderMob {
                 }
             }
 
-            //if (mob.getNavigation().isStuck()) mob.addDeltaMovement(new Vec3(0, 0.2, 0));
-
             BlockPos blockpos = new BlockPos(this.getMoveToTarget().getX(), this.getMoveToTarget().getY(), this.getMoveToTarget().getZ());
 
             if (!blockpos.closerToCenterThan(this.mob.position(), this.acceptedDistance())) {
                 this.reachedTarget = false;
                 ++this.tryTicks;
                 if (this.shouldRecalculatePath()) {
-                    this.mob.getNavigation().moveTo((double)blockpos.getX() + (double)0.5F, (double)blockpos.getY(), (double)blockpos.getZ() + (double)0.5F, this.speedModifier);
+                    this.mob.getNavigation().moveTo((double)blockpos.getX() + 0.5, (double)blockpos.getY(), (double)blockpos.getZ() + 0.5, this.speedModifier);
                 }
             } else {
                 this.reachedTarget = true;
@@ -696,12 +694,16 @@ public class EnadrakeEntity extends PathfinderMob {
 
     class EnadrakeEnterHutGoal extends MoveToBlockGoal {
         EnadrakeEntity entity;
-        boolean reachedTarget;
         int stuckTicks = 0;
 
         public EnadrakeEnterHutGoal(PathfinderMob mob, double speedModifier, int searchRange, int verticalSearchRange) {
             super(mob, speedModifier, searchRange, verticalSearchRange);
             this.entity = (EnadrakeEntity) mob;
+        }
+
+        @Override
+        protected int nextStartTick(PathfinderMob mob) {
+            return reducedTickDelay(20 + mob.getRandom().nextInt(40));
         }
 
         @Override
@@ -737,6 +739,13 @@ public class EnadrakeEntity extends PathfinderMob {
         public void start() {
             super.start();
             this.stuckTicks = 0;
+
+            // Reserve the chosen target hut (if it fails, canContinueToUse will stop it next tick)
+            BlockPos targetPos = this.getMoveToTarget().below();
+            BlockEntity hut = entity.level().getBlockEntity(targetPos);
+            if (hut instanceof EnadrakeHutBlockEntity hutEntity) {
+                hutEntity.reserve(entity.getUUID());
+            }
         }
 
         @Override
@@ -758,7 +767,7 @@ public class EnadrakeEntity extends PathfinderMob {
         }
 
         public double acceptedDistance() {
-            return 2.0F;
+            return 2.0;
         }
 
         @Override
@@ -776,56 +785,44 @@ public class EnadrakeEntity extends PathfinderMob {
             if (!(hut instanceof EnadrakeHutBlockEntity hutblockentity)) return false;
 
             // Not occupied AND not reserved by another enadrake
-            if (!hutblockentity.isAvailable()) return false;
-
-            // Reserve immediately so other enadrakes pick a different hut
-            hutblockentity.reserve(entity.getUUID());
-            return true;
+            return hutblockentity.isAvailable();
         }
 
-        protected boolean isReachedTarget() {
-            return this.reachedTarget;
+        @Override
+        public boolean shouldRecalculatePath() {
+            return this.tryTicks % 10 == 0;
         }
 
         @Override
         public void tick() {
-            if (isReachedTarget()) {
+            super.tick();
+
+            if (this.isReachedTarget()) {
                 BlockPos pos = this.getMoveToTarget().below();
                 BlockEntity hut = level().getBlockEntity(pos);
                 if (hut instanceof EnadrakeHutBlockEntity enadrakeHutBlockEntity) {
                     if (!enadrakeHutBlockEntity.tryToEnter(this.entity)) {
-                        // Entry failed (hut full or broken) — stop and find another
                         this.stop();
-                        return;
                     }
                 } else {
                     this.stop();
-                    return;
                 }
             }
 
-            // Give up if stuck for too long (e.g. blocked by flares/walls)
+            // If stuck, force path recalculation immediately; give up after 3 seconds
             if (mob.getNavigation().isStuck()) {
                 stuckTicks++;
-                if (stuckTicks > 60) { // ~3 seconds stuck → find another hut
+                if (stuckTicks > 60) {
                     this.stop();
-                    return;
+                } else if (stuckTicks % 10 == 0) {
+                    // Force new path calculation when stuck
+                    BlockPos blockpos = this.getMoveToTarget();
+                    this.mob.getNavigation().moveTo(
+                        (double)blockpos.getX() + 0.5, (double)blockpos.getY(), (double)blockpos.getZ() + 0.5,
+                        this.speedModifier);
                 }
             } else {
                 stuckTicks = 0;
-            }
-
-            BlockPos blockpos = new BlockPos(this.getMoveToTarget().getX(), this.getMoveToTarget().getY(), this.getMoveToTarget().getZ());
-
-            if (!blockpos.closerToCenterThan(this.mob.position(), this.acceptedDistance())) {
-                this.reachedTarget = false;
-                ++this.tryTicks;
-                if (this.shouldRecalculatePath()) {
-                    this.mob.getNavigation().moveTo((double)blockpos.getX() + (double)0.5F, (double)blockpos.getY(), (double)blockpos.getZ() + (double)0.5F, this.speedModifier);
-                }
-            } else {
-                this.reachedTarget = true;
-                --this.tryTicks;
             }
         }
     }

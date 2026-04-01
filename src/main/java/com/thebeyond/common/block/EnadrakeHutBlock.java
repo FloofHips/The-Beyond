@@ -74,6 +74,12 @@ public class EnadrakeHutBlock extends BaseEntityBlock {
 
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        // Skip if only blockstate changed (e.g. HEIGHT property) but block is still a hut
+        if (state.is(newState.getBlock())) {
+            super.onRemove(state, level, pos, newState, movedByPiston);
+            return;
+        }
+
         // Find the base block of this stack (lowest hut block)
         BlockPos basePos = pos;
         while (level.getBlockState(basePos.below()).getBlock() instanceof EnadrakeHutBlock) {

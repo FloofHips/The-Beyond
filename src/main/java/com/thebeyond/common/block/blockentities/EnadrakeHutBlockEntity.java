@@ -44,7 +44,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
 
     private static final int MAX_HUT_HEIGHT = 4;
     private static final double EXPANSION_CHANCE = 0.001;
-    private static final int RESERVATION_TIMEOUT = 200; // ~10 seconds
+    private static final int RESERVATION_TIMEOUT = 100; // ~5 seconds
     private ItemStack item;
     private final List<CompoundTag> storedEnadrakes = new ArrayList<>();
     private final java.util.Map<UUID, Integer> reservations = new java.util.HashMap<>();
