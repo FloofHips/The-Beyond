@@ -74,10 +74,31 @@ public class EnadrakeHutBlock extends BaseEntityBlock {
 
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        BlockEntity hut = level.getBlockEntity(pos);
-        if (hut instanceof EnadrakeHutBlockEntity hutblockentity) {
-            hutblockentity.tryToExit();
+        // Find the base block of this stack (lowest hut block)
+        BlockPos basePos = pos;
+        while (level.getBlockState(basePos.below()).getBlock() instanceof EnadrakeHutBlock) {
+            basePos = basePos.below();
         }
+
+        BlockEntity baseBE = level.getBlockEntity(basePos);
+        if (baseBE instanceof EnadrakeHutBlockEntity hutblockentity) {
+            if (basePos.equals(pos)) {
+                // Breaking the base — check if there's a block above to migrate to
+                BlockPos newBasePos = pos.above();
+                BlockEntity newBaseBE = level.getBlockEntity(newBasePos);
+                if (newBaseBE instanceof EnadrakeHutBlockEntity newHut) {
+                    // Migrate enadrakes to the new base (exits 1 for lost capacity)
+                    hutblockentity.migrateOccupantsTo(newHut);
+                } else {
+                    // No block above — exit all
+                    hutblockentity.exitAll();
+                }
+            } else {
+                // Breaking a non-base block — capacity reduced, exit one
+                hutblockentity.tryToExit();
+            }
+        }
+
         super.onRemove(state, level, pos, newState, movedByPiston);
     }
 

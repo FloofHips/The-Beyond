@@ -10,6 +10,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -18,6 +20,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
@@ -40,8 +43,11 @@ import java.util.UUID;
 public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSingleItem.BlockContainerSingleItem {
 
     private static final int MAX_HUT_HEIGHT = 4;
-    private ItemStack item;
     private static final double EXPANSION_CHANCE = 0.001;
+    private static final int RESERVATION_TIMEOUT = 200; // ~10 seconds
+    private ItemStack item;
+    private final List<CompoundTag> storedEnadrakes = new ArrayList<>();
+    private final java.util.Map<UUID, Integer> reservations = new java.util.HashMap<>();
 
     public EnadrakeHutBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
         super(type, pos, blockState);
@@ -59,6 +65,14 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         } else {
             this.item = ItemStack.EMPTY;
         }
+
+        this.storedEnadrakes.clear();
+        if (tag.contains("Occupants", Tag.TAG_LIST)) {
+            ListTag list = tag.getList("Occupants", Tag.TAG_COMPOUND);
+            for (int i = 0; i < list.size(); i++) {
+                this.storedEnadrakes.add(list.getCompound(i));
+            }
+        }
     }
 
     @Override
@@ -67,6 +81,11 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         if (this.item != null && !this.item.isEmpty())
             tag.put("item", this.item.save(registries));
 
+        if (!this.storedEnadrakes.isEmpty()) {
+            ListTag list = new ListTag();
+            list.addAll(this.storedEnadrakes);
+            tag.put("Occupants", list);
+        }
     }
 
     @Override
@@ -75,6 +94,9 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         if (this.item != null && !this.item.isEmpty())
             tag.put("item", this.item.save(registries));
 
+        if (!this.storedEnadrakes.isEmpty()) {
+            tag.putInt("OccupantCount", this.storedEnadrakes.size());
+        }
         return tag;
     }
 
@@ -86,59 +108,233 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
     public static void tick(Level level, BlockPos pos, BlockState state, EnadrakeHutBlockEntity be) {
         if (!(level instanceof ServerLevel serverLevel)) return;
 
-        boolean hasItem = (be.item != null && !be.getItem(0).isEmpty());
+        // Expire stale reservations (per-enadrake timers)
+        if (!be.reservations.isEmpty()) {
+            be.reservations.replaceAll((uuid, timer) -> timer - 1);
+            be.reservations.values().removeIf(timer -> timer <= 0);
+        }
 
+        // Validate capacity: if stack shrunk, exit excess enadrakes
+        be.validateCapacity();
+
+        // Rain exit: all enadrakes leave when it rains to harvest
+        if (!be.storedEnadrakes.isEmpty() && level.isRaining()) {
+            be.exitAll();
+        }
+
+        // POD BEHAVIOR: implemented in EnadrakeEntity (fleeToHut flag + scream signal + EnadrakeEnterHutGoal)
+        // Uncomment the commented sections in EnadrakeEntity.java to enable
+
+        boolean hasItem = (be.item != null && !be.getItem(0).isEmpty());
         if (!hasItem) {
             return;
         }
 
-        if (hasItem) {
-            if (level.random.nextDouble() < 0.05) {
-                if (be.canExpandHut()) {
-                    be.tryExpandHut(serverLevel);
-                    ItemStack stack = be.getItem(0);
-                    stack.shrink(1);
-                    be.setItem(0, stack);
-                    be.setChanged();
-                }
+        if (level.random.nextDouble() < 0.05) {
+            if (be.canExpandHut()) {
+                be.tryExpandHut(serverLevel);
+                ItemStack stack = be.getItem(0);
+                stack.shrink(1);
+                be.setItem(0, stack);
+                be.setChanged();
             }
+        }
+    }
+
+    /**
+     * Counts how many ENADRAKE_HUT blocks are stacked above this one (including this one).
+     */
+    public int getStackHeight() {
+        if (level == null) return 1;
+        int height = 1;
+        BlockPos checkPos = worldPosition;
+        while (level.getBlockState(checkPos.above()).getBlock() instanceof EnadrakeHutBlock) {
+            checkPos = checkPos.above();
+            height++;
+        }
+        return Math.min(height, MAX_HUT_HEIGHT);
+    }
+
+    public int getOccupantCount() {
+        return this.storedEnadrakes.size();
+    }
+
+    public boolean hasEnadrake() {
+        return !this.storedEnadrakes.isEmpty();
+    }
+
+    public boolean isAvailable() {
+        int capacity = getStackHeight();
+        int totalClaimed = this.storedEnadrakes.size() + this.reservations.size();
+        return totalClaimed < capacity;
+    }
+
+    /**
+     * Atomically checks availability and reserves in one call.
+     * Returns true if reservation succeeded.
+     */
+    public boolean reserve(UUID enadrakeUUID) {
+        if (this.reservations.containsKey(enadrakeUUID)) return true;
+        if (!isAvailable()) return false;
+        this.reservations.put(enadrakeUUID, RESERVATION_TIMEOUT);
+        return true;
+    }
+
+    public void clearReservation(UUID enadrakeUUID) {
+        this.reservations.remove(enadrakeUUID);
+    }
+
+    /**
+     * Transfers stored enadrakes to another hut block entity.
+     * Exits one enadrake to account for the lost block, then migrates the rest.
+     */
+    public void migrateOccupantsTo(EnadrakeHutBlockEntity target) {
+        // Exit one enadrake (the broken block reduces capacity by 1)
+        if (!this.storedEnadrakes.isEmpty()) {
+            this.tryToExit();
+        }
+
+        // Move remaining enadrakes to the new base
+        for (CompoundTag nbt : this.storedEnadrakes) {
+            target.storedEnadrakes.add(nbt);
+        }
+        this.storedEnadrakes.clear();
+
+        target.setChanged();
+        if (target.level != null) {
+            target.level.sendBlockUpdated(target.worldPosition, target.getBlockState(), target.getBlockState(), 3);
+        }
+    }
+
+    /**
+     * If stack shrunk (blocks broken), exit excess enadrakes.
+     */
+    public void validateCapacity() {
+        int capacity = getStackHeight();
+        while (this.storedEnadrakes.size() > capacity) {
+            tryToExit();
         }
     }
 
     public boolean tryToEnter(EnadrakeEntity enadrake) {
-        //TODO
+        if (this.level == null || this.level.isClientSide) return false;
 
-        return false;
-    }
+        int capacity = getStackHeight();
+        if (this.storedEnadrakes.size() >= capacity) return false;
 
-    public void tryToExit() {
-        //TODO
-    }
+        CompoundTag nbt = new CompoundTag();
+        enadrake.save(nbt);
+        this.storedEnadrakes.add(nbt);
 
-    private boolean canEnadrakeEnter() {
-        //TODO
+        // Clear this enadrake's reservation
+        this.reservations.remove(enadrake.getUUID());
+
+        enadrake.setInsideHut(true);
+        enadrake.setHutPosition(this.worldPosition);
+        enadrake.remove(Entity.RemovalReason.DISCARDED);
+
+        this.setChanged();
+        this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
         return true;
     }
 
+    /**
+     * Exits one enadrake (first in list). Called when a hut block is broken.
+     */
+    public void tryToExit() {
+        if (this.level == null || this.level.isClientSide) return;
+        if (this.storedEnadrakes.isEmpty()) return;
+        if (!(this.level instanceof ServerLevel serverLevel)) return;
+
+        CompoundTag nbt = this.storedEnadrakes.remove(0);
+        BlockPos exitPos = this.findExitPosition();
+
+        Entity entity = EntityType.loadEntityRecursive(nbt, serverLevel, (e) -> {
+            e.moveTo(exitPos.getX() + 0.5, exitPos.getY(), exitPos.getZ() + 0.5, e.getYRot(), e.getXRot());
+            return e;
+        });
+
+        if (entity instanceof EnadrakeEntity enadrake) {
+            enadrake.setInsideHut(false);
+            enadrake.setHutPosition(null);
+            serverLevel.addFreshEntity(enadrake);
+        }
+
+        this.setChanged();
+        this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
+    }
+
+    /**
+     * Exits all enadrakes. Called when it starts raining or base is broken.
+     */
+    public void exitAll() {
+        if (this.level == null || this.level.isClientSide) return;
+        if (!(this.level instanceof ServerLevel serverLevel)) return;
+
+        List<BlockPos> usedPositions = new ArrayList<>();
+        while (!this.storedEnadrakes.isEmpty()) {
+            CompoundTag nbt = this.storedEnadrakes.remove(0);
+            BlockPos exitPos = this.findExitPosition(usedPositions);
+            usedPositions.add(exitPos);
+
+            Entity entity = EntityType.loadEntityRecursive(nbt, serverLevel, (e) -> {
+                e.moveTo(exitPos.getX() + 0.5, exitPos.getY(), exitPos.getZ() + 0.5, e.getYRot(), e.getXRot());
+                return e;
+            });
+
+            if (entity instanceof EnadrakeEntity enadrake) {
+                enadrake.setInsideHut(false);
+                enadrake.setHutPosition(null);
+                serverLevel.addFreshEntity(enadrake);
+            }
+        }
+
+        this.setChanged();
+        this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
+    }
+
     private BlockPos findExitPosition() {
+        return findExitPosition(List.of());
+    }
+
+    private BlockPos findExitPosition(List<BlockPos> usedPositions) {
         BlockPos pos = this.worldPosition;
 
+        // Try facing direction first
         Direction facing = this.getBlockState().getValue(EnadrakeHutBlock.FACING);
         BlockPos checkPos = pos.relative(facing);
-
-        if (this.level.getBlockState(checkPos).isAir()) {
+        if (isExitValid(checkPos) && !usedPositions.contains(checkPos)) {
             return checkPos;
         }
 
+        // Try all horizontal sides
         for (Direction dir : Direction.Plane.HORIZONTAL) {
             checkPos = pos.relative(dir);
-            if (this.level.getBlockState(checkPos).isAir() &&
-                    this.level.getBlockState(checkPos.above()).isAir()) {
+            if (isExitValid(checkPos) && !usedPositions.contains(checkPos)) {
                 return checkPos;
             }
         }
 
+        // Try above in expanding radius
+        for (int dy = 1; dy <= 3; dy++) {
+            checkPos = pos.above(dy);
+            if (isExitValid(checkPos) && !usedPositions.contains(checkPos)) {
+                return checkPos;
+            }
+            for (Direction dir : Direction.Plane.HORIZONTAL) {
+                checkPos = pos.relative(dir).above(dy);
+                if (isExitValid(checkPos) && !usedPositions.contains(checkPos)) {
+                    return checkPos;
+                }
+            }
+        }
+
+        // Last resort: above the hut (even if used by another)
         return pos.above();
+    }
+
+    private boolean isExitValid(BlockPos exitPos) {
+        return this.level.getBlockState(exitPos).getCollisionShape(this.level, exitPos).isEmpty();
     }
 
     private boolean canExpandHut() {
