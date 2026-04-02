@@ -2,7 +2,7 @@
   "parent": "the_beyond:the_beyond/so_below",
   "criteria": {
     "ride_lantern_thunder": {
-      "trigger": "the_beyond:ride_lantern_thunder"
+      "trigger": "the_beyond:migration_storm"
     }
   },
   "display": {

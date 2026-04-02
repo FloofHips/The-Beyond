@@ -216,10 +216,6 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
         if (!isFlying() && level().isThundering())
             setFlying(true);
 
-        if (isFlying() && level().isThundering() && getFirstPassenger() instanceof ServerPlayer serverPlayer) {
-            BeyondCriteriaTriggers.RIDE_LANTERN_THUNDER.get().trigger(serverPlayer);
-        }
-
         if (tickCount == 10) {
             getDefaultDimensions(Pose.STANDING);
             refreshDimensions();

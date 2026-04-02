@@ -8,9 +8,8 @@ import com.thebeyond.common.block.blockentities.EnadrakeHutBlockEntity;
 import com.thebeyond.common.block.blockentities.RefugeBlockEntity;
 import com.thebeyond.common.block.blockstates.HutHeightProperty;
 import com.thebeyond.common.item.components.Components;
-import com.thebeyond.common.registry.BeyondBlocks;
-import com.thebeyond.common.registry.BeyondCriteriaTriggers;
-import com.thebeyond.common.registry.BeyondFeatures;
+import com.thebeyond.common.registry.*;
+import com.thebeyond.util.ColorUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
@@ -28,6 +27,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -68,11 +68,9 @@ public class EnadrakeEntity extends PathfinderMob {
     private BlockPos hutPosition = null;
     private int inHutTime = 0;
 
-    // --- POD BEHAVIOR: uncomment to enable enadrakes fleeing into huts when one is hit by a player ---
-    // private boolean fleeToHut = false;
-    // public boolean shouldFleeToHut() { return fleeToHut; }
-    // public void setFleeToHut(boolean flee) { this.fleeToHut = flee; }
-    // ---
+     private boolean fleeToHut = false;
+     public boolean shouldFleeToHut() { return fleeToHut; }
+     public void setFleeToHut(boolean flee) { this.fleeToHut = flee; }
 
     public EnadrakeEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
@@ -87,7 +85,7 @@ public class EnadrakeEntity extends PathfinderMob {
         this.goalSelector.addGoal(1, new EnadrakeEnterHutGoal(this, 1.2, 15, 10));
         this.goalSelector.addGoal(1, new EnadrakeHarvestGoal(this, 1.5, 15, 6));
         this.goalSelector.addGoal(2, new RandomStrollGoal(this, 1));
-        this.goalSelector.addGoal(3, new RandomLookAroundGoal(this));
+        this.goalSelector.addGoal(2, new RandomLookAroundGoal(this));
         this.goalSelector.addGoal(0, new EnadrakeHurtGoal(this, 1.5));
         this.goalSelector.addGoal(0, new LookAtPlayerGoal(this, Player.class, 3f));
 
@@ -148,14 +146,21 @@ public class EnadrakeEntity extends PathfinderMob {
         if (panic > 190) this.setYHeadRot(getYHeadRot()+(random.nextInt(-40, 40)));
         if (panic < 190 && panic > 140) this.setYHeadRot(getYHeadRot()+(random.nextInt(-10, 10)));
         if (panic == 190) scream();
+        if (panic == 189) {
+            Player player = this.level().getNearestPlayer(this, 16);
+
+            if (player != null) {
+                this.lookAt(player, 180, 180);
+                player.addEffect(new MobEffectInstance(BeyondEffects.DEAFENED, 1200));
+            }
+        }
         if (panic == 175) setDataScream(false);
+        if (this.navigation.isStuck()) level().addParticle(ColorUtils.dustOptions, this.getX(), this.getY(), this.getZ(), 0,0,0);
     }
 
     public void scream() {
         level().playSound(this, BlockPos.containing(this.position()), SoundEvents.HORSE_DEATH, SoundSource.HOSTILE, 0.5f, 1);
         level().playSound(this, BlockPos.containing(this.position()), SoundEvents.BELL_RESONATE, SoundSource.HOSTILE, 2, 2);
-
-        Player player = this.level().getNearestPlayer(this, 16);
 
         AABB detectionBox = new AABB(getOnPos()).inflate(10);
         TargetingConditions conditions = TargetingConditions.forNonCombat().range(6).ignoreLineOfSight().selector((entity) -> entity instanceof EnadrakeEntity friend && friend.panic == 0);
@@ -176,23 +181,9 @@ public class EnadrakeEntity extends PathfinderMob {
             friend.panic = 192;
         }
 
-        // --- POD BEHAVIOR: uncomment to make all nearby enadrakes flee into huts when one screams ---
-        // if (level() instanceof ServerLevel) {
-        //     AABB podBox = new AABB(getOnPos()).inflate(16);
-        //     List<EnadrakeEntity> nearbyEnadrakes = level().getEntitiesOfClass(EnadrakeEntity.class, podBox,
-        //             e -> e != this && e.isAlive() && !e.isInsideHut());
-        //     for (EnadrakeEntity nearby : nearbyEnadrakes) {
-        //         nearby.setFleeToHut(true);
-        //         nearby.panic = Math.max(nearby.panic, 100);
-        //     }
-        //     this.setFleeToHut(true);
-        // }
-        // ---
-
-        if (player != null) {
-            this.lookAt(player, 180, 180);
-            //player.addEffect(new MobEffectInstance(BeyondEffects.DEAFENED, 250));
-        }
+         if (level() instanceof ServerLevel) {
+             this.setFleeToHut(true);
+         }
     }
 
     protected BlockPos findNearestSeed() {
@@ -225,14 +216,41 @@ public class EnadrakeEntity extends PathfinderMob {
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);
 
-        if (itemstack.is(Items.BONE_MEAL)) {
-            itemstack.consume(1, player);
-            if(this.level() instanceof ServerLevel level)
-                this.growUp(level);
-            return InteractionResult.SUCCESS;
-        } else {
-            return super.mobInteract(player, hand);
+        if (!level().isClientSide) {
+            if (!this.getMainHandItem().isEmpty() && !itemstack.isEmpty()) {
+
+                ItemEntity itementity = new ItemEntity(this.level(), this.getX(), this.getEyeY(), this.getZ(), this.getMainHandItem());
+                itementity.setDeltaMovement(itementity.getDeltaMovement().add(0,0.2,0));
+                this.level().addFreshEntity(itementity);
+
+                this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(itemstack.getItem(), 1));
+                itemstack.consume(1, player);
+
+                if (player instanceof ServerPlayer serverPlayer) {
+                    BeyondCriteriaTriggers.GIFT_ENADRAKE.get().trigger(serverPlayer);
+                }
+
+                return InteractionResult.SUCCESS;
+            }
+
+            if (itemstack.is(Items.BONE_MEAL)) {
+                itemstack.consume(1, player);
+                if(this.level() instanceof ServerLevel level)
+                    this.growUp(level);
+                return InteractionResult.SUCCESS;
+            } else if (!itemstack.isEmpty()) {
+                ItemStack playerItem = new ItemStack(itemstack.getItem(), 1);
+                itemstack.consume(1, player);
+                this.setItemInHand(InteractionHand.MAIN_HAND, playerItem);
+
+                if (player instanceof ServerPlayer serverPlayer) {
+                    BeyondCriteriaTriggers.GIFT_ENADRAKE.get().trigger(serverPlayer);
+                }
+
+                return InteractionResult.SUCCESS;
+            }
         }
+        return InteractionResult.CONSUME_PARTIAL;
     }
 
     public boolean isHoldingItem() {
@@ -578,10 +596,10 @@ public class EnadrakeEntity extends PathfinderMob {
             if (!blockstate.is(BeyondBlocks.ENADRAKE_HUT.get())) return false;
 
             // Only target ground-level huts (not elevated on expansion blocks)
-            Block belowBlock = levelReader.getBlockState(blockPos.below()).getBlock();
-            if (belowBlock instanceof EnadrakeHutBlock
-                || belowBlock == BeyondBlocks.ENADRAKE_FLARE.get()
-                || belowBlock == BeyondBlocks.ENGRAVED_END_STONE.get()) return false;
+            //Block belowBlock = levelReader.getBlockState(blockPos.below()).getBlock();
+            //if (belowBlock instanceof EnadrakeHutBlock
+            //    || belowBlock == BeyondBlocks.ENADRAKE_FLARE.get()
+            //    || belowBlock == BeyondBlocks.ENGRAVED_END_STONE.get()) return false;
 
             BlockEntity hut = entity.level().getBlockEntity(blockPos);
             if (!(hut instanceof EnadrakeHutBlockEntity hutblockentity)) return false;
@@ -696,7 +714,7 @@ public class EnadrakeEntity extends PathfinderMob {
 
     class EnadrakeEnterHutGoal extends MoveToBlockGoal {
         EnadrakeEntity entity;
-        boolean reachedTarget;
+        //boolean reachedTarget;
         int stuckTicks = 0;
 
         public EnadrakeEnterHutGoal(PathfinderMob mob, double speedModifier, int searchRange, int verticalSearchRange) {
@@ -705,14 +723,15 @@ public class EnadrakeEntity extends PathfinderMob {
         }
 
         @Override
+        protected int nextStartTick(PathfinderMob mob) {
+            return reducedTickDelay(20 + mob.getRandom().nextInt(40));
+        }
+
+        @Override
         public boolean canUse() {
+            if (entity.shouldFleeToHut()) return super.canUse();
             ItemStack itemstack = entity.getItemBySlot(EquipmentSlot.MAINHAND);
             if (!itemstack.isEmpty()) return false;
-
-            // --- POD BEHAVIOR: uncomment to allow fleeing into huts when hit ---
-            // if (entity.shouldFleeToHut()) return super.canUse();
-            // ---
-
             if (!level().isRaining()) return super.canUse();
             return false;
         }
@@ -737,6 +756,12 @@ public class EnadrakeEntity extends PathfinderMob {
         public void start() {
             super.start();
             this.stuckTicks = 0;
+
+            BlockPos targetPos = this.getMoveToTarget().below();
+            BlockEntity hut = entity.level().getBlockEntity(targetPos);
+            if (hut instanceof EnadrakeHutBlockEntity hutEntity) {
+                hutEntity.reserve(entity.getUUID());
+            }
         }
 
         @Override
@@ -767,40 +792,35 @@ public class EnadrakeEntity extends PathfinderMob {
             if (!blockstate.is(BeyondBlocks.ENADRAKE_HUT.get())) return false;
 
             // Only target ground-level huts (not elevated on expansion blocks)
-            Block belowBlock = levelReader.getBlockState(blockPos.below()).getBlock();
-            if (belowBlock instanceof EnadrakeHutBlock
-                || belowBlock == BeyondBlocks.ENADRAKE_FLARE.get()
-                || belowBlock == BeyondBlocks.ENGRAVED_END_STONE.get()) return false;
+            //Block belowBlock = levelReader.getBlockState(blockPos.below()).getBlock();
+            //if (belowBlock instanceof EnadrakeHutBlock
+            //    || belowBlock == BeyondBlocks.ENADRAKE_FLARE.get()
+            //    || belowBlock == BeyondBlocks.ENGRAVED_END_STONE.get()) return false;
 
             BlockEntity hut = entity.level().getBlockEntity(blockPos);
             if (!(hut instanceof EnadrakeHutBlockEntity hutblockentity)) return false;
 
             // Not occupied AND not reserved by another enadrake
-            if (!hutblockentity.isAvailable()) return false;
+            return hutblockentity.isAvailable();
 
             // Reserve immediately so other enadrakes pick a different hut
-            hutblockentity.reserve(entity.getUUID());
-            return true;
-        }
-
-        protected boolean isReachedTarget() {
-            return this.reachedTarget;
+            //hutblockentity.reserve(entity.getUUID());
+            //return true;
         }
 
         @Override
         public void tick() {
+            super.tick();
+
             if (isReachedTarget()) {
                 BlockPos pos = this.getMoveToTarget().below();
                 BlockEntity hut = level().getBlockEntity(pos);
                 if (hut instanceof EnadrakeHutBlockEntity enadrakeHutBlockEntity) {
                     if (!enadrakeHutBlockEntity.tryToEnter(this.entity)) {
-                        // Entry failed (hut full or broken) — stop and find another
                         this.stop();
-                        return;
                     }
                 } else {
                     this.stop();
-                    return;
                 }
             }
 
@@ -809,23 +829,14 @@ public class EnadrakeEntity extends PathfinderMob {
                 stuckTicks++;
                 if (stuckTicks > 60) { // ~3 seconds stuck → find another hut
                     this.stop();
-                    return;
+                } else if (stuckTicks % 10 == 0) {
+                    BlockPos blockpos = this.getMoveToTarget();
+                    this.mob.getNavigation().moveTo(
+                            (double)blockpos.getX() + 0.5, (double)blockpos.getY(), (double)blockpos.getZ() + 0.5,
+                            this.speedModifier);
                 }
             } else {
                 stuckTicks = 0;
-            }
-
-            BlockPos blockpos = new BlockPos(this.getMoveToTarget().getX(), this.getMoveToTarget().getY(), this.getMoveToTarget().getZ());
-
-            if (!blockpos.closerToCenterThan(this.mob.position(), this.acceptedDistance())) {
-                this.reachedTarget = false;
-                ++this.tryTicks;
-                if (this.shouldRecalculatePath()) {
-                    this.mob.getNavigation().moveTo((double)blockpos.getX() + (double)0.5F, (double)blockpos.getY(), (double)blockpos.getZ() + (double)0.5F, this.speedModifier);
-                }
-            } else {
-                this.reachedTarget = true;
-                --this.tryTicks;
             }
         }
     }

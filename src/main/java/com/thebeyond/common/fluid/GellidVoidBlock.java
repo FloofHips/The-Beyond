@@ -90,7 +90,7 @@ public class GellidVoidBlock extends LiquidBlock {
             pLevel.playSound(null, pPos, SoundEvents.ALLAY_DEATH, SoundSource.AMBIENT);
 
             if(pLevel.getBlockState(pPos.relative(Direction.UP)).isAir())
-                pLevel.sendParticles(ColorUtils.voidOptions, pPos.getX() + 0.5, pPos.getY() + 0.5, pPos.getZ() + 0.5, 15, 0.25, 0.15, 0.25, 0);
+                pLevel.sendParticles(ColorUtils.voidOptions, pPos.getX() + 0.5, pPos.getY() + 1.5, pPos.getZ() + 0.5, 15, 0.25, 0.15, 0.25, 0.05);
         }
     }
 

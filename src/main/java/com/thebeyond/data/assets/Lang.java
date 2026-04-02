@@ -76,7 +76,7 @@ public class Lang extends LanguageProvider {
         add("advancements.the_beyond.so_below.description", "Walk on the void river with Pathfinder Boots");
 
         add("advancements.the_beyond.as_above.title", "As Above");
-        add("advancements.the_beyond.as_above.description", "Ride a lantern leviathan during a migration storm");
+        add("advancements.the_beyond.as_above.description", "Soar through a migration storm using your elytra");
 
         add("advancements.the_beyond.gift_enadrake.title", "Building Blocks");
         add("advancements.the_beyond.gift_enadrake.description", "Gift an enadrake an item");

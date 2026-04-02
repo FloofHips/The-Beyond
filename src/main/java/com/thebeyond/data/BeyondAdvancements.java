@@ -233,7 +233,7 @@ public class BeyondAdvancements extends AdvancementProvider {
                             true, true, true
                     )
                     .addCriterion("ride_lantern_thunder",
-                            BeyondCriteriaTriggers.RIDE_LANTERN_THUNDER.get().createCriterion(
+                            BeyondCriteriaTriggers.MIGRATION_STORM.get().createCriterion(
                                     new PlayerTrigger.TriggerInstance(Optional.empty())))
                     .save(consumer, "the_beyond:the_beyond/as_above");
 

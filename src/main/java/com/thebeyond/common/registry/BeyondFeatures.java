@@ -1,6 +1,7 @@
 package com.thebeyond.common.registry;
 
 import com.thebeyond.TheBeyond;
+import com.thebeyond.common.worldgen.features.EnadrakeVillageFeature;
 import com.thebeyond.common.worldgen.features.ObirootFeature;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -14,5 +15,6 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public class BeyondFeatures {
     public static final DeferredRegister<Feature<?>> FEATURES = DeferredRegister.create(BuiltInRegistries.FEATURE, TheBeyond.MODID);
     public static final DeferredHolder<Feature<?>, ObirootFeature> OBIROOT = FEATURES.register("obiroot", () -> new ObirootFeature(NoneFeatureConfiguration.CODEC));
+    public static final DeferredHolder<Feature<?>, EnadrakeVillageFeature> ENADRAKE_VILLAGE = FEATURES.register("enadrake_village", () -> new EnadrakeVillageFeature(NoneFeatureConfiguration.CODEC));
 
 }

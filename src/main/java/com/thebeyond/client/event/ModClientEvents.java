@@ -114,6 +114,8 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.entity.player.UseItemOnBlockEvent;
 import net.neoforged.neoforge.event.level.*;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
@@ -492,6 +494,19 @@ public class ModClientEvents {
                 event.setDamageMultiplier(0.3f);
             }
         }
+    }
+
+    @SubscribeEvent
+    public static void onPlayer(PlayerTickEvent.Post event) {
+        Player player = event.getEntity();
+        if (!(player instanceof ServerPlayer serverPlayer)) return;
+        if (player.tickCount % 20 != 0) return;
+        if (!player.level().dimensionType().effectsLocation().equals(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"))) return;
+        if (!player.level().isThundering()) return;
+        if (player.getY() < 192 || player.getY() > 208) return;
+       // if (!player.getAbilities().flying) return;
+
+        BeyondCriteriaTriggers.MIGRATION_STORM.get().trigger(serverPlayer);
     }
 
     private static final String TAG_PENDING_TOTEM = "the_beyond:pendingTotem";

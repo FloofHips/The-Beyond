@@ -1,0 +1,24 @@
+{
+  "feature": "the_beyond:enadrake_village",
+  "placement": [
+    {
+      "type": "minecraft:count_on_every_layer",
+      "count": 1
+    },
+    {
+      "type": "minecraft:biome"
+    },
+    {
+      "type": "minecraft:block_predicate_filter",
+      "predicate": {
+        "type": "minecraft:matching_block_tag",
+        "offset": [
+          0,
+          -1,
+          0
+        ],
+        "tag": "the_beyond:end_floor_blocks"
+      }
+    }
+  ]
+}

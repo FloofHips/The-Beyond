@@ -39,6 +39,7 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -73,6 +74,11 @@ public class EnadrakeHutBlock extends BaseEntityBlock {
     }
 
     @Override
+    protected boolean isPathfindable(BlockState state, PathComputationType pathComputationType) {
+        return false;
+    }
+
+    @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         // Find the base block of this stack (lowest hut block)
         BlockPos basePos = pos;
@@ -91,11 +97,11 @@ public class EnadrakeHutBlock extends BaseEntityBlock {
                     hutblockentity.migrateOccupantsTo(newHut);
                 } else {
                     // No block above — exit all
-                    hutblockentity.exitAll();
+                    hutblockentity.exitAll(true);
                 }
             } else {
                 // Breaking a non-base block — capacity reduced, exit one
-                hutblockentity.tryToExit();
+                hutblockentity.tryToExit(true);
             }
         }
 
@@ -105,21 +111,21 @@ public class EnadrakeHutBlock extends BaseEntityBlock {
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
         BlockEntity hut = level.getBlockEntity(pos);
-        if (hut instanceof EnadrakeHutBlockEntity hutblockentity) {
-            if (level.isClientSide) {
-                return ItemInteractionResult.CONSUME;
-            } else {
-                ItemStack itemstack1 = hutblockentity.getTheItem();
-                if (!stack.isEmpty() && (itemstack1.isEmpty() && itemstack1.getCount() < itemstack1.getMaxStackSize())) {
-                    fillHut(stack, level, pos, player, hutblockentity, itemstack1);
-                    return ItemInteractionResult.SUCCESS;
-                } else {
-                    return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-                }
-            }
-        } else {
+        //if (hut instanceof EnadrakeHutBlockEntity hutblockentity) {
+        //    if (level.isClientSide) {
+        //        return ItemInteractionResult.CONSUME;
+        //    } else {
+        //        ItemStack itemstack1 = hutblockentity.getTheItem();
+        //        if (!stack.isEmpty() && (itemstack1.isEmpty() && itemstack1.getCount() < itemstack1.getMaxStackSize())) {
+        //            fillHut(stack, level, pos, player, hutblockentity, itemstack1);
+        //            return ItemInteractionResult.SUCCESS;
+        //        } else {
+        //            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        //        }
+        //    }
+        //} else {
             return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;
-        }
+        //}
     }
 
     public static void fillHut(ItemStack stack, Level level, BlockPos pos, LivingEntity entity, EnadrakeHutBlockEntity hutblockentity, ItemStack itemstack1) {
@@ -221,7 +227,7 @@ public class EnadrakeHutBlock extends BaseEntityBlock {
     static {
         FACING = BlockStateProperties.HORIZONTAL_FACING;
         HEIGHT = EnumProperty.create("height", HutHeightProperty.class);
-        TIP_SHAPE = Block.box(1.0, 0.0, 1.0, 15.0, 9.0, 15.0);
-        CORE_SHAPE = Block.box(1.0, 0.0, 1.0, 15.0, 16.0, 15.0);
+        TIP_SHAPE = Block.box(2.0, 0.0, 2.0, 14.0, 14.0, 14.0);
+        CORE_SHAPE = Block.box(2.0, 0.0, 2.0, 14.0, 16.0, 14.0);
     }
 }
