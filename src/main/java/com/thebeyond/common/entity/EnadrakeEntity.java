@@ -968,7 +968,7 @@ public class EnadrakeEntity extends PathfinderMob {
                 BlockPos pos = this.getMoveToTarget(); // blockPos.above() = air above floor
                 if (level().getBlockState(pos).isAir()) {
                     this.mob.getMainHandItem().consume(1, this.entity);
-                    level().setBlock(pos, BeyondBlocks.OBIROOT_SPROUT.get().defaultBlockState(), 3);
+                    level().setBlock(pos, BeyondBlocks.OBIROOT_SPROUT.get().defaultBlockState().setValue(ObirootSproutBlock.AGE, 1), 3);
                 }
                 this.stop();
             }
