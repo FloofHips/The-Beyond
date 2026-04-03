@@ -75,11 +75,13 @@ public class EnadrakeEntity extends PathfinderMob {
     public EnadrakeEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
         setCanPickUpLoot(true);
+        this.setPersistenceRequired();
     }
 
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new EnadrakeSearchForItemsGoal());
         //this.goalSelector.addGoal(0, new EnadrakeAdvanceStairGoal(this, 1.2, 10, 16));
+        this.goalSelector.addGoal(0, new EnadrakeReproduceGoal(this, 1.2, 16, 5));
         this.goalSelector.addGoal(1, new EnadrakeStoreInHomeGoal(this, 1.2, 10, 16));
         this.goalSelector.addGoal(0, new EnadrakeBuildRefugeGoal(this, 1.2, 10, 10));
         this.goalSelector.addGoal(1, new EnadrakeEnterHutGoal(this, 1.2, 15, 10));
@@ -714,8 +716,9 @@ public class EnadrakeEntity extends PathfinderMob {
 
     class EnadrakeEnterHutGoal extends MoveToBlockGoal {
         EnadrakeEntity entity;
-        //boolean reachedTarget;
+        boolean reachedTarget;
         int stuckTicks = 0;
+        boolean giveUp;
 
         public EnadrakeEnterHutGoal(PathfinderMob mob, double speedModifier, int searchRange, int verticalSearchRange) {
             super(mob, speedModifier, searchRange, verticalSearchRange);
@@ -738,6 +741,7 @@ public class EnadrakeEntity extends PathfinderMob {
 
         @Override
         public boolean canContinueToUse() {
+            if (giveUp) return false;
             if (level().isRaining()) return false;
             if (this.getMoveToTarget() == null) return false;
 
@@ -757,23 +761,23 @@ public class EnadrakeEntity extends PathfinderMob {
             super.start();
             this.stuckTicks = 0;
 
-            BlockPos targetPos = this.getMoveToTarget().below();
-            BlockEntity hut = entity.level().getBlockEntity(targetPos);
-            if (hut instanceof EnadrakeHutBlockEntity hutEntity) {
-                hutEntity.reserve(entity.getUUID());
-            }
+            //BlockPos targetPos = this.getMoveToTarget().below();
+            //BlockEntity hut = entity.level().getBlockEntity(targetPos);
+            //if (hut instanceof EnadrakeHutBlockEntity hutEntity) {
+            //    hutEntity.reserve(entity.getUUID());
+            //}
         }
 
         @Override
         public void stop() {
             this.stuckTicks = 0;
-            if (this.getMoveToTarget() != null) {
-                BlockPos targetPos = this.getMoveToTarget().below();
-                BlockEntity hut = entity.level().getBlockEntity(targetPos);
-                if (hut instanceof EnadrakeHutBlockEntity hutEntity) {
-                    hutEntity.clearReservation(entity.getUUID());
-                }
-            }
+            //if (this.getMoveToTarget() != null) {
+            //    BlockPos targetPos = this.getMoveToTarget().below();
+            //    BlockEntity hut = entity.level().getBlockEntity(targetPos);
+            //    if (hut instanceof EnadrakeHutBlockEntity hutEntity) {
+            //        hutEntity.clearReservation(entity.getUUID());
+            //    }
+            //}
 
             // --- POD BEHAVIOR: uncomment to reset fleeToHut when enadrake enters hut ---
             // entity.setFleeToHut(false);
@@ -783,7 +787,7 @@ public class EnadrakeEntity extends PathfinderMob {
         }
 
         public double acceptedDistance() {
-            return 2.0F;
+            return 4.0F;
         }
 
         @Override
@@ -808,19 +812,40 @@ public class EnadrakeEntity extends PathfinderMob {
             //return true;
         }
 
+
+        public boolean shouldRecalculatePath() {
+            return this.tryTicks % 40 == 0;
+        }
+
+        protected boolean isReachedTarget() {
+            return this.reachedTarget;
+        }
+
         @Override
         public void tick() {
-            super.tick();
+            BlockPos targetPos = this.getMoveToTarget();
+            Vec3 enadrakePos = new Vec3(this.mob.position().x, targetPos.getY(), this.mob.position().z);
+
+            if (!targetPos.closerToCenterThan(enadrakePos, this.acceptedDistance())) {
+                this.reachedTarget = false;
+                ++this.tryTicks;
+                if (this.shouldRecalculatePath()) {
+                    this.mob.getNavigation().moveTo((double)targetPos.getX() + (double)0.5F, (double)targetPos.getY(), (double)targetPos.getZ() + (double)0.5F, this.speedModifier);
+                }
+            } else {
+                this.reachedTarget = true;
+                --this.tryTicks;
+            }
 
             if (isReachedTarget()) {
                 BlockPos pos = this.getMoveToTarget().below();
                 BlockEntity hut = level().getBlockEntity(pos);
                 if (hut instanceof EnadrakeHutBlockEntity enadrakeHutBlockEntity) {
                     if (!enadrakeHutBlockEntity.tryToEnter(this.entity)) {
-                        this.stop();
+                        giveUp = true;
                     }
                 } else {
-                    this.stop();
+                    giveUp = true;
                 }
             }
 
@@ -828,7 +853,7 @@ public class EnadrakeEntity extends PathfinderMob {
             if (mob.getNavigation().isStuck()) {
                 stuckTicks++;
                 if (stuckTicks > 60) { // ~3 seconds stuck → find another hut
-                    this.stop();
+                    giveUp = true;
                 } else if (stuckTicks % 10 == 0) {
                     BlockPos blockpos = this.getMoveToTarget();
                     this.mob.getNavigation().moveTo(
@@ -838,6 +863,83 @@ public class EnadrakeEntity extends PathfinderMob {
             } else {
                 stuckTicks = 0;
             }
+        }
+    }
+
+    class EnadrakeReproduceGoal extends MoveToBlockGoal {
+        EnadrakeEntity entity;
+        boolean reachedTarget;
+        int stuckTicks = 0;
+        boolean giveUp;
+
+        public EnadrakeReproduceGoal(PathfinderMob mob, double speedModifier, int searchRange, int verticalSearchRange) {
+            super(mob, speedModifier, searchRange, verticalSearchRange);
+            this.entity = (EnadrakeEntity) mob;
+        }
+
+        @Override
+        public boolean canUse() {
+            ItemStack itemstack = entity.getItemBySlot(EquipmentSlot.MAINHAND);
+            if (itemstack.is(BeyondBlocks.OBIROOT_SPROUT.asItem())) return true;
+            return false;
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            if (giveUp) return false;
+            if (this.getMoveToTarget() == null) return false;
+            if (!isValidTarget(level(), this.getMoveToTarget().below())) return false;
+            return super.canContinueToUse();
+        }
+
+        @Override
+        public void start() {
+            super.start();
+            //this.stuckTicks = 0;
+        }
+
+        @Override
+        public void stop() {
+            //this.stuckTicks = 0;
+            super.stop();
+        }
+
+        public double acceptedDistance() {
+            return 3.0F;
+        }
+
+        @Override
+        protected boolean isValidTarget(LevelReader levelReader, BlockPos blockPos) {
+            // BeyondTags.END_FLOOR_BLOCKS
+            return false;
+        }
+
+        @Override
+        public void tick() {
+            //super.tick();
+
+            //if (isReachedTarget()) {
+            //    BlockPos pos = this.getMoveToTarget();
+            //    if (level().getBlockState(pos).isAir()) {
+            //        this.mob.getMainHandItem().consume(1, this.entity);
+            //        level().setBlock(pos, BeyondBlocks.OBIROOT_SPROUT.get().defaultBlockState(), 3);
+            //    }
+            //}
+
+            // Give up if stuck for too long (e.g. blocked by flares/walls)
+            //if (mob.getNavigation().isStuck()) {
+            //    stuckTicks++;
+            //    if (stuckTicks > 60) { // ~3 seconds stuck → find another hut
+            //        giveUp = true;
+            //    } else if (stuckTicks % 10 == 0) {
+            //        BlockPos blockpos = this.getMoveToTarget();
+            //        this.mob.getNavigation().moveTo(
+            //                (double)blockpos.getX() + 0.5, (double)blockpos.getY(), (double)blockpos.getZ() + 0.5,
+            //                this.speedModifier);
+            //    }
+            //} else {
+            //    stuckTicks = 0;
+            //}
         }
     }
 }

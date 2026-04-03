@@ -65,6 +65,11 @@ public class EnatiousTotemEntity extends Mob implements Enemy {
         this.setCooldown(compound.getShort("cooldown"));
     }
 
+    @Override
+    protected boolean shouldDespawnInPeaceful() {
+        return true;
+    }
+
     public int getCooldown() {
         return this.entityData.get(DATA_COOLDOWN);
     }

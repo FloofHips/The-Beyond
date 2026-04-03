@@ -5,6 +5,7 @@ import com.thebeyond.common.block.blockstates.HutHeightProperty;
 import com.thebeyond.common.entity.EnadrakeEntity;
 import com.thebeyond.common.registry.BeyondBlockEntities;
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondEntityTypes;
 import com.thebeyond.common.registry.BeyondTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -46,8 +47,10 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
     private static final double EXPANSION_CHANCE = 0.001;
     private static final int RESERVATION_TIMEOUT = 100; // ~10 seconds
     private ItemStack item;
-    private final List<CompoundTag> storedEnadrakes = new ArrayList<>();
-    private final java.util.Map<UUID, Integer> reservations = new java.util.HashMap<>();
+    //private final List<CompoundTag> storedEnadrakes = new ArrayList<>();
+    //private final java.util.Map<UUID, Integer> reservations = new java.util.HashMap<>();
+    private CompoundTag storedEnadrake = new CompoundTag();
+    private boolean pregnant = false;
 
     public EnadrakeHutBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
         super(type, pos, blockState);
@@ -66,12 +69,9 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
             this.item = ItemStack.EMPTY;
         }
 
-        this.storedEnadrakes.clear();
-        if (tag.contains("Occupants", Tag.TAG_LIST)) {
-            ListTag list = tag.getList("Occupants", Tag.TAG_COMPOUND);
-            for (int i = 0; i < list.size(); i++) {
-                this.storedEnadrakes.add(list.getCompound(i));
-            }
+        if (tag.contains("Occupant")) {
+            CompoundTag occupant = tag.getCompound("Occupant");
+            this.storedEnadrake = occupant;
         }
     }
 
@@ -81,10 +81,8 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         if (this.item != null && !this.item.isEmpty())
             tag.put("item", this.item.save(registries));
 
-        if (!this.storedEnadrakes.isEmpty()) {
-            ListTag list = new ListTag();
-            list.addAll(this.storedEnadrakes);
-            tag.put("Occupants", list);
+        if (!this.storedEnadrake.isEmpty()) {
+            tag.put("Occupant", this.storedEnadrake);
         }
     }
 
@@ -94,9 +92,9 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         if (this.item != null && !this.item.isEmpty())
             tag.put("item", this.item.save(registries));
 
-        if (!this.storedEnadrakes.isEmpty()) {
-            tag.putInt("OccupantCount", this.storedEnadrakes.size());
-        }
+        //if (!this.storedEnadrakes.isEmpty()) {
+        //    tag.putInt("OccupantCount", this.storedEnadrakes.size());
+        //}
         return tag;
     }
 
@@ -105,21 +103,33 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
+    public void setPregnant() {
+        this.pregnant = true;
+    };
+
     public static void tick(Level level, BlockPos pos, BlockState state, EnadrakeHutBlockEntity be) {
         if (!(level instanceof ServerLevel serverLevel)) return;
 
-        // Expire stale reservations (per-enadrake timers)
-        if (!be.reservations.isEmpty()) {
-            be.reservations.replaceAll((uuid, timer) -> timer - 1);
-            be.reservations.values().removeIf(timer -> timer <= 0);
+        if (be.pregnant) {
+            EnadrakeEntity entity = BeyondEntityTypes.ENADRAKE.get().create(level);
+            level.addFreshEntity(entity);
+            be.tryToEnter(entity);
+
+            be.pregnant = false;
         }
 
+        // Expire stale reservations (per-enadrake timers)
+        //if (!be.reservations.isEmpty()) {
+        //    be.reservations.replaceAll((uuid, timer) -> timer - 1);
+        //    be.reservations.values().removeIf(timer -> timer <= 0);
+        //}
+
         // Validate capacity: if stack shrunk, exit excess enadrakes
-        be.validateCapacity();
+        //be.validateCapacity();
 
         // Rain exit: all enadrakes leave when it rains to harvest
-        if (!be.storedEnadrakes.isEmpty() && level.isRaining() && level.random.nextFloat() < 0.7) {
-            be.exitAll(false);
+        if (!be.storedEnadrake.isEmpty() && level.isRaining() && level.random.nextFloat() < 0.7) {
+            be.tryToExit(false);
         }
 
         // POD BEHAVIOR: implemented in EnadrakeEntity (fleeToHut flag + scream signal + EnadrakeEnterHutGoal)
@@ -155,79 +165,76 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         return height;
     }
 
-    public int getOccupantCount() {
-        return this.storedEnadrakes.size();
-    }
+    //public int getOccupantCount() {
+    //    return this.storedEnadrakes.size();
+    //}
 
     public boolean hasEnadrake() {
-        return !this.storedEnadrakes.isEmpty();
+        return !this.storedEnadrake.isEmpty();
     }
 
     public boolean isAvailable() {
-        int capacity = getStackHeight();
-        int totalClaimed = this.storedEnadrakes.size() + this.reservations.size();
-        return totalClaimed < capacity;
+        return this.storedEnadrake.isEmpty();
     }
 
     /**
      * Atomically checks availability and reserves in one call.
      * Returns true if reservation succeeded.
      */
-    public boolean reserve(UUID enadrakeUUID) {
-        if (this.reservations.containsKey(enadrakeUUID)) return true;
-        if (!isAvailable()) return false;
-        this.reservations.put(enadrakeUUID, RESERVATION_TIMEOUT);
-        return true;
-    }
-
-    public void clearReservation(UUID enadrakeUUID) {
-        this.reservations.remove(enadrakeUUID);
-    }
+    //public boolean reserve(UUID enadrakeUUID) {
+    //    if (this.reservations.containsKey(enadrakeUUID)) return true;
+    //    if (!isAvailable()) return false;
+    //    this.reservations.put(enadrakeUUID, RESERVATION_TIMEOUT);
+    //    return true;
+    //}
+//
+    //public void clearReservation(UUID enadrakeUUID) {
+    //    this.reservations.remove(enadrakeUUID);
+    //}
 
     /**
      * Transfers stored enadrakes to another hut block entity.
      * Exits one enadrake to account for the lost block, then migrates the rest.
      */
-    public void migrateOccupantsTo(EnadrakeHutBlockEntity target) {
-        // Exit one enadrake (the broken block reduces capacity by 1)
-        if (!this.storedEnadrakes.isEmpty()) {
-            this.tryToExit(false);
-        }
-
-        // Move remaining enadrakes to the new base
-        for (CompoundTag nbt : this.storedEnadrakes) {
-            target.storedEnadrakes.add(nbt);
-        }
-        this.storedEnadrakes.clear();
-
-        target.setChanged();
-        if (target.level != null) {
-            target.level.sendBlockUpdated(target.worldPosition, target.getBlockState(), target.getBlockState(), 3);
-        }
-    }
+    //public void migrateOccupantsTo(EnadrakeHutBlockEntity target) {
+    //    // Exit one enadrake (the broken block reduces capacity by 1)
+    //    if (!this.storedEnadrakes.isEmpty()) {
+    //        this.tryToExit(false);
+    //    }
+//
+    //    // Move remaining enadrakes to the new base
+    //    for (CompoundTag nbt : this.storedEnadrakes) {
+    //        target.storedEnadrakes.add(nbt);
+    //    }
+    //    this.storedEnadrakes.clear();
+//
+    //    target.setChanged();
+    //    if (target.level != null) {
+    //        target.level.sendBlockUpdated(target.worldPosition, target.getBlockState(), target.getBlockState(), 3);
+    //    }
+    //}
 
     /**
      * If stack shrunk (blocks broken), exit excess enadrakes.
      */
-    public void validateCapacity() {
-        int capacity = getStackHeight();
-        while (this.storedEnadrakes.size() > capacity) {
-            tryToExit(false);
-        }
-    }
+    //public void validateCapacity() {
+    //    int capacity = getStackHeight();
+    //    while (this.storedEnadrakes.size() > capacity) {
+    //        tryToExit(false);
+    //    }
+    //}
 
     public boolean tryToEnter(EnadrakeEntity enadrake) {
         if (this.level == null || this.level.isClientSide) return false;
 
-        int capacity = getStackHeight();
-        if (this.storedEnadrakes.size() >= capacity) return false;
+        if (!this.isAvailable()) return false;
 
         CompoundTag nbt = new CompoundTag();
         enadrake.save(nbt);
-        this.storedEnadrakes.add(nbt);
+        this.storedEnadrake = nbt;
 
         // Clear this enadrake's reservation
-        this.reservations.remove(enadrake.getUUID());
+        //this.reservations.remove(enadrake.getUUID());
 
         enadrake.setInsideHut(true);
         enadrake.setHutPosition(this.worldPosition);
@@ -246,10 +253,11 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
      */
     public void tryToExit(boolean angerOne) {
         if (this.level == null || this.level.isClientSide) return;
-        if (this.storedEnadrakes.isEmpty()) return;
+        if (this.storedEnadrake.isEmpty()) return;
         if (!(this.level instanceof ServerLevel serverLevel)) return;
 
-        CompoundTag nbt = this.storedEnadrakes.remove(0);
+        CompoundTag nbt = this.storedEnadrake;
+        this.storedEnadrake = new CompoundTag();
         BlockPos exitPos = this.findExitPosition();
 
         serverLevel.playSound(null, this.getBlockPos(), SoundEvents.BEEHIVE_EXIT, SoundSource.BLOCKS, 1.0F, 0.7F + 0.5F);
@@ -259,13 +267,12 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
             return e;
         });
 
-        if (angerOne) {
-            if (entity instanceof EnadrakeEntity enadrake) {
-                enadrake.setInsideHut(false);
-                enadrake.setHutPosition(null);
-                serverLevel.addFreshEntity(enadrake);
+        if (entity instanceof EnadrakeEntity enadrake) {
+            enadrake.setInsideHut(false);
+            enadrake.setHutPosition(null);
+            serverLevel.addFreshEntity(enadrake);
+            if (angerOne)
                 enadrake.panic = 220;
-            }
         }
 
         this.setChanged();
@@ -275,40 +282,40 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
     /**
      * Exits all enadrakes. Called when it starts raining or base is broken.
      */
-    public void exitAll(boolean angerOne) {
-        if (this.level == null || this.level.isClientSide) return;
-        if (!(this.level instanceof ServerLevel serverLevel)) return;
-
-        EnadrakeEntity angryEnadrake = null;
-
-        List<BlockPos> usedPositions = new ArrayList<>();
-        while (!this.storedEnadrakes.isEmpty()) {
-            CompoundTag nbt = this.storedEnadrakes.remove(0);
-            BlockPos exitPos = this.findExitPosition(usedPositions);
-            usedPositions.add(exitPos);
-
-            Entity entity = EntityType.loadEntityRecursive(nbt, serverLevel, (e) -> {
-                e.moveTo(exitPos.getX() + 0.5, exitPos.getY(), exitPos.getZ() + 0.5, e.getYRot(), e.getXRot());
-                return e;
-            });
-
-            if (entity instanceof EnadrakeEntity enadrake) {
-                enadrake.setInsideHut(false);
-                enadrake.setHutPosition(null);
-                serverLevel.addFreshEntity(enadrake);
-                if (angryEnadrake == null)
-                    angryEnadrake = enadrake;
-            }
-        }
-
-        if (angerOne) {
-            if (angryEnadrake!=null)
-                angryEnadrake.panic = 220;
-        }
-
-        this.setChanged();
-        this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
-    }
+    //public void exitAll(boolean angerOne) {
+    //    if (this.level == null || this.level.isClientSide) return;
+    //    if (!(this.level instanceof ServerLevel serverLevel)) return;
+//
+    //    EnadrakeEntity angryEnadrake = null;
+//
+    //    List<BlockPos> usedPositions = new ArrayList<>();
+    //    while (!this.storedEnadrakes.isEmpty()) {
+    //        CompoundTag nbt = this.storedEnadrakes.remove(0);
+    //        BlockPos exitPos = this.findExitPosition(usedPositions);
+    //        usedPositions.add(exitPos);
+//
+    //        Entity entity = EntityType.loadEntityRecursive(nbt, serverLevel, (e) -> {
+    //            e.moveTo(exitPos.getX() + 0.5, exitPos.getY(), exitPos.getZ() + 0.5, e.getYRot(), e.getXRot());
+    //            return e;
+    //        });
+//
+    //        if (entity instanceof EnadrakeEntity enadrake) {
+    //            enadrake.setInsideHut(false);
+    //            enadrake.setHutPosition(null);
+    //            serverLevel.addFreshEntity(enadrake);
+    //            if (angryEnadrake == null)
+    //                angryEnadrake = enadrake;
+    //        }
+    //    }
+//
+    //    if (angerOne) {
+    //        if (angryEnadrake!=null)
+    //            angryEnadrake.panic = 220;
+    //    }
+//
+    //    this.setChanged();
+    //    this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
+    //}
 
     private BlockPos findExitPosition() {
         return findExitPosition(List.of());

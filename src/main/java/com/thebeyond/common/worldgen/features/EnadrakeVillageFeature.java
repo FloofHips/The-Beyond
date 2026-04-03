@@ -73,14 +73,8 @@ public class EnadrakeVillageFeature extends Feature<NoneFeatureConfiguration> {
 
                         level.setBlock(pos, states[j], Block.UPDATE_ALL);
 
-                        if (level.getBlockEntity(pos) instanceof EnadrakeHutBlockEntity be) {
-
-                            //EnadrakeEntity entity = BeyondEntityTypes.ENADRAKE.get().create(level.getLevel());
-                            //entity.finalizeSpawn(level.getLevel(), level.getLevel().getCurrentDifficultyAt(groundPos), MobSpawnType.NATURAL, null);
-
-                            //level.getLevel().addFreshEntity(entity);
-
-                            //be.tryToEnter(entity);
+                        if (level.getBlockEntity(pos) instanceof EnadrakeHutBlockEntity be && level.getRandom().nextBoolean()) {
+                            be.setPregnant();
                         }
                     } else break;
                 }
