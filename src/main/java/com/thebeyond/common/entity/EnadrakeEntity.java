@@ -382,35 +382,80 @@ public class EnadrakeEntity extends PathfinderMob {
     }
 
     class EnadrakeSearchForItemsGoal extends Goal {
+        private int searchTicks = 0;
+        private int stuckTicks = 0;
+        private int cooldown = 0;
+
         public EnadrakeSearchForItemsGoal() {
             this.setFlags(EnumSet.of(Flag.MOVE));
         }
 
         public boolean canUse() {
+            if (cooldown > 0) {
+                cooldown--;
+                return false;
+            }
             if (!EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty()) return false;
 
             List<ItemEntity> list = EnadrakeEntity.this.level().getEntitiesOfClass(ItemEntity.class, EnadrakeEntity.this.getBoundingBox().inflate((double)8.0F, (double)8.0F, (double)8.0F), EnadrakeEntity.ALLOWED_ITEMS);
             return !list.isEmpty() && EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty();
         }
 
+        // --- Reda's original canContinueToUse ---
+        //public boolean canContinueToUse() {
+        //    return EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty();
+        //}
+
         public boolean canContinueToUse() {
-            return EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty();
-        }
-
-        public void tick() {
+            if (!EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty()) return false;
+            if (searchTicks > 100) return false;
             List<ItemEntity> list = EnadrakeEntity.this.level().getEntitiesOfClass(ItemEntity.class, EnadrakeEntity.this.getBoundingBox().inflate((double)8.0F, (double)8.0F, (double)8.0F), EnadrakeEntity.ALLOWED_ITEMS);
-            ItemStack itemstack = EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND);
-            if (itemstack.isEmpty() && !list.isEmpty()) {
-                EnadrakeEntity.this.getNavigation().moveTo((Entity)list.get(0), (double)1.2F);
-            }
-
-            //if (getNavigation().isStuck()) addDeltaMovement(new Vec3(0, 0.2, 0));
+            return !list.isEmpty();
         }
 
         public void start() {
+            searchTicks = 0;
+            stuckTicks = 0;
             List<ItemEntity> list = EnadrakeEntity.this.level().getEntitiesOfClass(ItemEntity.class, EnadrakeEntity.this.getBoundingBox().inflate((double)8.0F, (double)8.0F, (double)8.0F), EnadrakeEntity.ALLOWED_ITEMS);
             if (!list.isEmpty()) {
-                EnadrakeEntity.this.getNavigation().moveTo((Entity)list.get(0), (double)1.2F);
+                EnadrakeEntity.this.getNavigation().moveTo(list.get(0), 1.2);
+            }
+        }
+
+        // --- Reda's original tick ---
+        //public void tick() {
+        //    List<ItemEntity> list = EnadrakeEntity.this.level().getEntitiesOfClass(ItemEntity.class, EnadrakeEntity.this.getBoundingBox().inflate((double)8.0F, (double)8.0F, (double)8.0F), EnadrakeEntity.ALLOWED_ITEMS);
+        //    ItemStack itemstack = EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND);
+        //    if (itemstack.isEmpty() && !list.isEmpty()) {
+        //        EnadrakeEntity.this.getNavigation().moveTo((Entity)list.get(0), (double)1.2F);
+        //    }
+        //    //if (getNavigation().isStuck()) addDeltaMovement(new Vec3(0, 0.2, 0));
+        //}
+
+        public void tick() {
+            searchTicks++;
+
+            if (getNavigation().isStuck()) {
+                stuckTicks++;
+                if (stuckTicks > 60) {
+                    searchTicks = 101;
+                    cooldown = 100; // ~5 seconds before retrying
+                } else if (stuckTicks % 10 == 0) {
+                    List<ItemEntity> list = EnadrakeEntity.this.level().getEntitiesOfClass(ItemEntity.class, EnadrakeEntity.this.getBoundingBox().inflate((double)8.0F, (double)8.0F, (double)8.0F), EnadrakeEntity.ALLOWED_ITEMS);
+                    if (!list.isEmpty()) {
+                        EnadrakeEntity.this.getNavigation().moveTo(list.get(0), 1.2);
+                    }
+                }
+            } else {
+                stuckTicks = 0;
+            }
+
+            if (searchTicks % 20 == 0) {
+                List<ItemEntity> list = EnadrakeEntity.this.level().getEntitiesOfClass(ItemEntity.class, EnadrakeEntity.this.getBoundingBox().inflate((double)8.0F, (double)8.0F, (double)8.0F), EnadrakeEntity.ALLOWED_ITEMS);
+                ItemStack itemstack = EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND);
+                if (itemstack.isEmpty() && !list.isEmpty()) {
+                    EnadrakeEntity.this.getNavigation().moveTo(list.get(0), 1.2);
+                }
             }
         }
     }
@@ -760,6 +805,7 @@ public class EnadrakeEntity extends PathfinderMob {
         public void start() {
             super.start();
             this.stuckTicks = 0;
+            this.giveUp = false;
 
             //BlockPos targetPos = this.getMoveToTarget().below();
             //BlockEntity hut = entity.level().getBlockEntity(targetPos);
@@ -880,7 +926,7 @@ public class EnadrakeEntity extends PathfinderMob {
         @Override
         public boolean canUse() {
             ItemStack itemstack = entity.getItemBySlot(EquipmentSlot.MAINHAND);
-            if (itemstack.is(BeyondBlocks.OBIROOT_SPROUT.asItem())) return true;
+            if (itemstack.is(BeyondBlocks.OBIROOT_SPROUT.asItem())) return super.canUse();
             return false;
         }
 
@@ -910,36 +956,32 @@ public class EnadrakeEntity extends PathfinderMob {
 
         @Override
         protected boolean isValidTarget(LevelReader levelReader, BlockPos blockPos) {
-            // BeyondTags.END_FLOOR_BLOCKS
-            return false;
+            if (!levelReader.getBlockState(blockPos).is(BeyondTags.END_FLOOR_BLOCKS)) return false;
+            return levelReader.getBlockState(blockPos.above()).isAir();
         }
 
         @Override
         public void tick() {
-            //super.tick();
+            super.tick();
 
-            //if (isReachedTarget()) {
-            //    BlockPos pos = this.getMoveToTarget();
-            //    if (level().getBlockState(pos).isAir()) {
-            //        this.mob.getMainHandItem().consume(1, this.entity);
-            //        level().setBlock(pos, BeyondBlocks.OBIROOT_SPROUT.get().defaultBlockState(), 3);
-            //    }
-            //}
+            if (this.isReachedTarget()) {
+                BlockPos pos = this.getMoveToTarget(); // blockPos.above() = air above floor
+                if (level().getBlockState(pos).isAir()) {
+                    this.mob.getMainHandItem().consume(1, this.entity);
+                    level().setBlock(pos, BeyondBlocks.OBIROOT_SPROUT.get().defaultBlockState().setValue(ObirootSproutBlock.AGE, 1), 3);
+                }
+                this.stop();
+            }
 
             // Give up if stuck for too long (e.g. blocked by flares/walls)
-            //if (mob.getNavigation().isStuck()) {
-            //    stuckTicks++;
-            //    if (stuckTicks > 60) { // ~3 seconds stuck → find another hut
-            //        giveUp = true;
-            //    } else if (stuckTicks % 10 == 0) {
-            //        BlockPos blockpos = this.getMoveToTarget();
-            //        this.mob.getNavigation().moveTo(
-            //                (double)blockpos.getX() + 0.5, (double)blockpos.getY(), (double)blockpos.getZ() + 0.5,
-            //                this.speedModifier);
-            //    }
-            //} else {
-            //    stuckTicks = 0;
-            //}
+            if (mob.getNavigation().isStuck()) {
+                stuckTicks++;
+                if (stuckTicks > 60) {
+                    giveUp = true;
+                }
+            } else {
+                stuckTicks = 0;
+            }
         }
     }
 }

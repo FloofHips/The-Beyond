@@ -57,11 +57,9 @@ public class ObirootSproutBlock extends Block implements BonemealableBlock, Fall
         if (random.nextFloat() < chance) {
             if (state.getValue(AGE) == 3) {
                 EnadrakeEntity enadrake = new EnadrakeEntity(BeyondEntityTypes.ENADRAKE.get(), level);
-
-                if(level.addFreshEntity(enadrake)){
-                    enadrake.setPos(pos.getX() + 0.5, pos.getY()+ 0.5, pos.getZ() + 0.5);
-                    enadrake.setDeltaMovement(0, 0.3, 0);
-                }
+                enadrake.setPos(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+                enadrake.setDeltaMovement(0, 0.3, 0);
+                level.addFreshEntity(enadrake);
                 level.playSound(null, pos, SoundEvents.BEEHIVE_ENTER, SoundSource.BLOCKS);
                 level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
                 return;

@@ -14,10 +14,10 @@ group = mod_group_id
 
 repositories {
     mavenLocal()
-    //maven {
-    //    url "https://cursemaven.com"
-    //    content { includeGroup "curse.maven" }
-    //}
+    maven {
+        url "https://cursemaven.com"
+        content { includeGroup "curse.maven" }
+    }
 }
 
 base {
@@ -79,8 +79,8 @@ configurations {
 }
 
 dependencies {
-    //implementation "curse.maven:ctm-267602:5587515"
-    //jarJar "curse.maven:ctm-267602:5587515"
+    implementation "curse.maven:ctm-267602:5587515"
+    jarJar "curse.maven:ctm-267602:5587515"
 }
 
 tasks.withType(ProcessResources).configureEach {
