@@ -82,8 +82,8 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
 
         if (mode == (byte) 0) {
             poseStack.scale(0.6f,0.6f,0.6f);
-            poseStack.translate(-0.1,-2,-1.1);
-            poseStack.mulPose(Axis.YP.rotation(-30*deg));
+            poseStack.translate(-0.5,-2,-0.95);
+        //    poseStack.mulPose(Axis.YP.rotation(0*deg));
             RenderUtils.renderModel(
                     item,
                     poseStack,
@@ -110,7 +110,7 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
 
         if (mode == (byte) 2) {
             poseStack.scale(0.5f,0.5f,0.5f);
-            poseStack.translate(-0.3,-1.3,-0.9);
+            poseStack.translate(-0.475,-1.3,-0.5);
             poseStack.mulPose(Axis.ZP.rotation(50*deg));
             RenderUtils.renderModel(
                     item,
