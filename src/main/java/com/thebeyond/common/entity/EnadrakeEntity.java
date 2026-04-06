@@ -10,6 +10,7 @@ import com.thebeyond.common.block.blockstates.HutHeightProperty;
 import com.thebeyond.common.item.components.Components;
 import com.thebeyond.common.registry.*;
 import com.thebeyond.util.ColorUtils;
+import com.thebeyond.util.TeleportUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
@@ -442,6 +443,11 @@ public class EnadrakeEntity extends PathfinderMob {
                     cooldown = 100; // ~5 seconds before retrying
                 } else if (stuckTicks % 10 == 0) {
                     List<ItemEntity> list = EnadrakeEntity.this.level().getEntitiesOfClass(ItemEntity.class, EnadrakeEntity.this.getBoundingBox().inflate((double)8.0F, (double)8.0F, (double)8.0F), EnadrakeEntity.ALLOWED_ITEMS);
+                    if (list.size() == 1) {
+                        ItemEntity item = list.getFirst();
+                        level().playSound(item, BlockPos.containing(item.position()), SoundEvents.CHORUS_FRUIT_TELEPORT, SoundSource.BLOCKS,1,1);
+                        item.moveTo(EnadrakeEntity.this.position());
+                    }
                     if (!list.isEmpty()) {
                         EnadrakeEntity.this.getNavigation().moveTo(list.get(0), 1.2);
                     }
@@ -777,6 +783,7 @@ public class EnadrakeEntity extends PathfinderMob {
 
         @Override
         public boolean canUse() {
+            if (entity.panic > 0) return false;
             if (entity.shouldFleeToHut()) return super.canUse();
             ItemStack itemstack = entity.getItemBySlot(EquipmentSlot.MAINHAND);
             if (!itemstack.isEmpty()) return false;
@@ -926,7 +933,7 @@ public class EnadrakeEntity extends PathfinderMob {
         @Override
         public boolean canUse() {
             ItemStack itemstack = entity.getItemBySlot(EquipmentSlot.MAINHAND);
-            if (itemstack.is(BeyondBlocks.OBIROOT_SPROUT.asItem())) return super.canUse();
+            if (itemstack.is(BeyondBlocks.OBIROOT_SPROUT.asItem()) && level().random.nextBoolean()) return super.canUse();
             return false;
         }
 

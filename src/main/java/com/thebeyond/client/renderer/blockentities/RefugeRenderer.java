@@ -53,15 +53,121 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
             poseStack.scale(3f, -3.0f, 3f);
             poseStack.translate(0, -1.8, 0);
 
-            PlayerModel<AbstractClientPlayer> activeModel = getModelForProfile(profile);
-            applyPose(activeModel, blockEntity.getMode());
-            renderModel(activeModel, poseStack, bufferSource, packedLight, packedOverlay, profile);
+            float deg = (float) Math.PI / 180f;
+
+            poseStack.pushPose();
+                poseStack.mulPose(Axis.YP.rotation((float) (-blockEntity.rot - Math.PI/2f)));
+                renderPlayer(blockEntity.getMode(), poseStack, bufferSource, packedLight, packedOverlay, profile);
+            poseStack.popPose();
 
             poseStack.popPose();
 
             if (blockEntity.animating > 0)
                 renderRootShock(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
         }
+    }
+
+    public void renderPlayer(byte mode, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay, ResolvableProfile profile) {
+        PlayerModel<AbstractClientPlayer> activeModel = getModelForProfile(profile);
+        applyPose(activeModel, mode);
+        renderAdditional(mode, poseStack, bufferSource, packedLight, packedOverlay);
+        renderModel(activeModel, poseStack, bufferSource, packedLight, packedOverlay, profile);
+    }
+
+    private void renderAdditional(byte mode, PoseStack poseStack, MultiBufferSource buffer, int packedLight, int packedOverlay) {
+        ResourceLocation item = getExtraItem(mode);
+        float deg = (float) Math.PI / 180f;
+        poseStack.pushPose();
+        poseStack.scale(1,-1,1);
+
+        if (mode == (byte) 0) {
+            poseStack.scale(0.6f,0.6f,0.6f);
+            poseStack.translate(-0.1,-2,-1.1);
+            poseStack.mulPose(Axis.YP.rotation(-30*deg));
+            RenderUtils.renderModel(
+                    item,
+                    poseStack,
+                    buffer.getBuffer(BeyondRenderTypes.cutout()),
+                    packedLight,
+                    packedOverlay,
+                    1, 1, 1, 1
+            );
+        }
+
+        if (mode == (byte) 1) {
+            poseStack.mulPose(Axis.YP.rotation(30*deg));
+            poseStack.scale(0.5f,0.5f,0.5f);
+            poseStack.translate(-0.5,-2.25,-0.9);
+            RenderUtils.renderModel(
+                    item,
+                    poseStack,
+                    buffer.getBuffer(BeyondRenderTypes.cutout()),
+                    packedLight,
+                    packedOverlay,
+                    1, 1, 1, 1
+            );
+        }
+
+        if (mode == (byte) 2) {
+            poseStack.scale(0.5f,0.5f,0.5f);
+            poseStack.translate(-0.3,-1.3,-0.9);
+            poseStack.mulPose(Axis.ZP.rotation(50*deg));
+            RenderUtils.renderModel(
+                    item,
+                    poseStack,
+                    buffer.getBuffer(BeyondRenderTypes.cutout()),
+                    packedLight,
+                    packedOverlay,
+                    1, 1, 1, 1
+            );
+        }
+
+        if (mode == (byte) 3) {
+            poseStack.scale(0.6f,0.6f,0.6f);
+            poseStack.translate(-0.4,-2.64,-0.38);
+            poseStack.mulPose(Axis.XP.rotation(-10*deg));
+            RenderUtils.renderModel(
+                    item,
+                    poseStack,
+                    buffer.getBuffer(BeyondRenderTypes.cutout()),
+                    packedLight,
+                    packedOverlay,
+                    1, 1, 1, 1
+            );
+            poseStack.translate(-0.2,0.1,-0.02);
+            RenderUtils.renderModel(
+                    item,
+                    poseStack,
+                    buffer.getBuffer(BeyondRenderTypes.cutout()),
+                    packedLight,
+                    packedOverlay,
+                    1, 1, 1, 1
+            );
+        }
+
+
+
+
+        poseStack.popPose();
+    }
+
+    private static ResourceLocation getExtraItem(byte mode) {
+        ResourceLocation item = ModClientEvents.ROOT_FOOD;
+        switch (mode) {
+            case 1 : {
+                item = ModClientEvents.ROOT_SHIELD;
+                break;
+            }
+            case 2 : {
+                item = ModClientEvents.ROOT_SWORD;
+                break;
+            }
+            case 3 : {
+                item = ModClientEvents.ROOT_BOOT;
+                break;
+            }
+        }
+        return item;
     }
 
     private PlayerModel<AbstractClientPlayer> getModelForProfile(ResolvableProfile profile) {
@@ -77,33 +183,13 @@ public class RefugeRenderer implements BlockEntityRenderer<RefugeBlockEntity> {
 
     private void applyPose(PlayerModel<AbstractClientPlayer> playerModel, byte mode) {
         // Reset all rotations
-        playerModel.head.xRot = 0;
-        playerModel.head.yRot = 0;
-        playerModel.head.zRot = 0;
-        playerModel.hat.xRot = 0;
-        playerModel.hat.yRot = 0;
-        playerModel.hat.zRot = 0;
-        playerModel.body.xRot = 0;
-        playerModel.body.yRot = 0;
-        playerModel.body.zRot = 0;
-        playerModel.rightArm.xRot = 0;
-        playerModel.rightArm.yRot = 0;
-        playerModel.rightArm.zRot = 0;
-        playerModel.leftArm.xRot = 0;
-        playerModel.leftArm.yRot = 0;
-        playerModel.leftArm.zRot = 0;
-        playerModel.rightLeg.xRot = 0;
-        playerModel.rightLeg.yRot = 0;
-        playerModel.rightLeg.zRot = 0;
-        playerModel.leftLeg.xRot = 0;
-        playerModel.leftLeg.yRot = 0;
-        playerModel.leftLeg.zRot = 0;
-        playerModel.rightLeg.y = 12.0f;
-        playerModel.rightLeg.z = 0.0f;
-        playerModel.leftLeg.y = 12.0f;
-        playerModel.rightPants.y = 12.0f;
-        playerModel.rightPants.z = 0.0f;
-        playerModel.leftPants.y = 12.0f;
+        playerModel.head.resetPose();
+        playerModel.hat.resetPose();
+        playerModel.body.resetPose();
+        playerModel.rightArm.resetPose();
+        playerModel.leftArm.resetPose();
+        playerModel.rightLeg.resetPose();
+        playerModel.leftLeg.resetPose();
 
         float deg = (float) Math.PI / 180f;
 

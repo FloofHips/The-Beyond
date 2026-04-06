@@ -217,6 +217,7 @@ public class BeyondBlocks {
             () -> new EnadrakeHutBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.SAND)
                     .strength(2.0F, 2.0F)
+                    .requiresCorrectToolForDrops()
                     .sound(BeyondSoundTypes.END_STONE))
     );
     public static final DeferredBlock<Block> ENADRAKE_FLARE = registerBlock("enadrake_flare",

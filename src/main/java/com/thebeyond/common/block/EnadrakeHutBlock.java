@@ -20,6 +20,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
@@ -79,13 +80,16 @@ public class EnadrakeHutBlock extends BaseEntityBlock {
     }
 
     @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        // Find the base block of this stack (lowest hut block)
-        //BlockPos basePos = pos;
-        //while (level.getBlockState(basePos.below()).getBlock() instanceof EnadrakeHutBlock) {
-        //    basePos = basePos.below();
-        //}
+    protected void onProjectileHit(Level level, BlockState state, BlockHitResult hit, Projectile projectile) {
+        super.onProjectileHit(level, state, hit, projectile);
+        BlockEntity baseBE = level.getBlockEntity(hit.getBlockPos());
+        if (baseBE instanceof EnadrakeHutBlockEntity hutblockentity) {
+            hutblockentity.tryToExit(true);
+        }
+    }
 
+    @Override
+    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (state.is(newState.getBlock())) {
             super.onRemove(state, level, pos, newState, movedByPiston);
             return;
@@ -93,45 +97,10 @@ public class EnadrakeHutBlock extends BaseEntityBlock {
 
         BlockEntity baseBE = level.getBlockEntity(pos);
         if (baseBE instanceof EnadrakeHutBlockEntity hutblockentity) {
-            hutblockentity.tryToExit(false);
-        //    if (basePos.equals(pos)) {
-        //        // Breaking the base — check if there's a block above to migrate to
-        //        BlockPos newBasePos = pos.above();
-        //        BlockEntity newBaseBE = level.getBlockEntity(newBasePos);
-        //        if (newBaseBE instanceof EnadrakeHutBlockEntity newHut) {
-        //            // Migrate enadrakes to the new base (exits 1 for lost capacity)
-        //            hutblockentity.migrateOccupantsTo(newHut);
-        //        } else {
-        //            // No block above — exit all
-        //            hutblockentity.exitAll(true);
-        //        }
-        //    } else {
-        //        // Breaking a non-base block — capacity reduced, exit one
-        //        hutblockentity.tryToExit(true);
-        //    }
+            hutblockentity.tryToExit(true);
         }
 
         super.onRemove(state, level, pos, newState, movedByPiston);
-    }
-
-    @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        BlockEntity hut = level.getBlockEntity(pos);
-        //if (hut instanceof EnadrakeHutBlockEntity hutblockentity) {
-        //    if (level.isClientSide) {
-        //        return ItemInteractionResult.CONSUME;
-        //    } else {
-        //        ItemStack itemstack1 = hutblockentity.getTheItem();
-        //        if (!stack.isEmpty() && (itemstack1.isEmpty() && itemstack1.getCount() < itemstack1.getMaxStackSize())) {
-        //            fillHut(stack, level, pos, player, hutblockentity, itemstack1);
-        //            return ItemInteractionResult.SUCCESS;
-        //        } else {
-        //            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-        //        }
-        //    }
-        //} else {
-            return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;
-        //}
     }
 
     public static void fillHut(ItemStack stack, Level level, BlockPos pos, LivingEntity entity, EnadrakeHutBlockEntity hutblockentity, ItemStack itemstack1) {

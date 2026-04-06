@@ -160,7 +160,9 @@ public class EnatiousTotemEntity extends Mob implements Enemy {
     @Override
     public boolean hurt(DamageSource source, float amount) {
         if (this.getTarget() == null && source.getEntity() instanceof LivingEntity living) {
-            setTarget(living);
+            if (!(living instanceof Player player && player.isCreative())) {
+                setTarget(living);
+            }
         }
 
         if (this.getCooldown() == getMaxCooldown()) {

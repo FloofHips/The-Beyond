@@ -3,8 +3,50 @@
         "level=0": {
             "model": "the_beyond:block/gellid_void_caustics"
         },
+      "level=1": {
+        "model": "the_beyond:block/gellid_void_caustics_falling"
+      },
+      "level=2": {
+        "model": "the_beyond:block/gellid_void_caustics_falling"
+      },
+      "level=3": {
+        "model": "the_beyond:block/gellid_void_caustics_falling"
+      },
+      "level=4": {
+        "model": "the_beyond:block/gellid_void_caustics_falling"
+      },
+      "level=5": {
+        "model": "the_beyond:block/gellid_void_caustics_falling"
+      },
+      "level=6": {
+        "model": "the_beyond:block/gellid_void_caustics_falling"
+      },
+      "level=7": {
+        "model": "the_beyond:block/gellid_void_caustics_falling"
+      },
         "level=8": {
             "model": "the_beyond:block/gellid_void_caustics_falling"
-        }
+        },
+      "level=9": {
+        "model": "the_beyond:block/gellid_void_caustics_falling"
+      },
+      "level=10": {
+        "model": "the_beyond:block/gellid_void_caustics_falling"
+      },
+      "level=11": {
+        "model": "the_beyond:block/gellid_void_caustics_falling"
+      },
+      "level=12": {
+        "model": "the_beyond:block/gellid_void_caustics_falling"
+      },
+      "level=13": {
+        "model": "the_beyond:block/gellid_void_caustics_falling"
+      },
+      "level=14": {
+        "model": "the_beyond:block/gellid_void_caustics_falling"
+      },
+      "level=15": {
+        "model": "the_beyond:block/gellid_void_caustics_falling"
+      }
     }
 }

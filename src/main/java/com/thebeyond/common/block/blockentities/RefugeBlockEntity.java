@@ -12,6 +12,7 @@ import com.thebeyond.util.ColorUtils;
 import com.thebeyond.util.RefugeChunkData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.Rotations;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.BlockParticleOption;
@@ -27,6 +28,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.player.Inventory;
@@ -44,10 +46,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.entity.EnchantingTableBlockEntity;
 import net.minecraft.world.level.block.entity.SkullBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -73,6 +77,9 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
     public static final byte MODE_MOB_SPAWN = 2;
     public static final byte MODE_FALL_DAMAGE = 3;
     private static final int PROTECTION_RADIUS = 9;
+    public float oRot = 0;
+    public float tRot = 0;
+    public float rot = 0;
 
     public byte currentMode = -1;
     public byte animating = 0;
@@ -444,7 +451,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         }
 
         currentMode = newMode;
-        fill();
+        //fill();
     }
 
     public void remove() {
@@ -503,10 +510,6 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, RefugeBlockEntity be) {
-        // Decrement animation counter on both sides
-        if (be.animating > 0)
-            be.animating--;
-
         if (level.isClientSide) return;
 
         be.tickCounter++;
@@ -522,6 +525,53 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
             }
         }
     }
+
+
+    public static void rotAnimationTick(Level level, BlockPos pos, BlockState state, RefugeBlockEntity be) {
+        if (!RefugeBlock.isActive(state)) return;
+
+        // Decrement animation counter on both sides
+        if (be.animating > 0)
+            be.animating--;
+
+        be.oRot = be.rot;
+        Player player = level.getNearestPlayer((double)pos.getX() + (double)0.5F, (double)pos.getY() + (double)0.5F, (double)pos.getZ() + (double)0.5F, (double)16.0F, false);
+
+        if (player != null && level.random.nextFloat() < 0.01) {
+            double d0 = player.getX() - ((double)pos.getX() + (double)0.5F);
+            double d1 = player.getZ() - ((double)pos.getZ() + (double)0.5F);
+            be.tRot = (float)Mth.atan2(d1, d0);
+            level.playSound(player, pos, SoundEvents.ROOTS_BREAK, SoundSource.BLOCKS, 1, 1);
+        }
+
+        while(be.rot >= (float)Math.PI) {
+            be.rot -= ((float)Math.PI * 2F);
+        }
+
+        while(be.rot < -(float)Math.PI) {
+            be.rot += ((float)Math.PI * 2F);
+        }
+
+        while(be.tRot >= (float)Math.PI) {
+            be.tRot -= ((float)Math.PI * 2F);
+        }
+
+        while(be.tRot < -(float)Math.PI) {
+            be.tRot += ((float)Math.PI * 2F);
+        }
+
+        float f2;
+        for(f2 = be.tRot - be.rot; f2 >= (float)Math.PI; f2 -= ((float)Math.PI * 2F)) {
+        }
+
+        while(f2 < -(float)Math.PI) {
+            f2 += ((float)Math.PI * 2F);
+        }
+
+        be.rot += f2 * 0.4F;
+        float f3 = 0.2F;
+    }
+
 
     private static void registerRefuge(ServerLevel level, RefugeBlockEntity be) {
         ACTIVE_REFUGES.computeIfAbsent(level, k -> new HashSet<>()).add(be);

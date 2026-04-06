@@ -11,6 +11,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ResolvableProfile;
 
 public class RefugeMenu extends AbstractContainerMenu {
     private final Container refuge;
@@ -21,7 +22,7 @@ public class RefugeMenu extends AbstractContainerMenu {
 
     // Client-side constructor — called by IMenuTypeExtension with extra data
     public RefugeMenu(int containerId, Inventory playerInventory, FriendlyByteBuf extraData) {
-        this(containerId, playerInventory, new SimpleContainerData(3), ContainerLevelAccess.NULL, extraData.readBlockPos());
+        this(containerId, playerInventory, new SimpleContainerData(1), ContainerLevelAccess.NULL, extraData.readBlockPos());
     }
 
     // Server-side constructor
@@ -44,7 +45,7 @@ public class RefugeMenu extends AbstractContainerMenu {
         checkContainerDataCount(refugeData, 1);
         this.refugeData = refugeData;
         this.access = access;
-        this.paymentSlot = new RefugeMenu.PaymentSlot(this.refuge, 0, 40, 30);
+        this.paymentSlot = new RefugeMenu.PaymentSlot(this.refuge, 0, 80, 30);
         this.addSlot(this.paymentSlot);
         this.addDataSlots(refugeData);
 

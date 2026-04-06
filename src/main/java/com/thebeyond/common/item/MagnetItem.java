@@ -106,12 +106,10 @@ public class MagnetItem extends Item {
         double halfRange = range/2;
         level.getEntitiesOfClass(ItemEntity.class, new AABB(entity.position().subtract(halfRange, halfRange, halfRange), entity.position().add(halfRange, halfRange, halfRange)))
                 .forEach(itemEntity -> {
-                            if (!itemEntity.hasPickUpDelay()) {
-                                double factor = 0.01 * range / itemEntity.position().vectorTo(entity.position()).length();
-                                itemEntity.addDeltaMovement(itemEntity.position().vectorTo(entity.position()).multiply(factor, factor, factor));
-                            }
-                        }
+                    if (itemEntity.tickCount > 20) itemEntity.setNoPickUpDelay();
+                    double factor = 0.01 * range / itemEntity.position().vectorTo(entity.position()).length();
+                    itemEntity.addDeltaMovement(itemEntity.position().vectorTo(entity.position()).multiply(factor, factor, factor));
+                }
                 );
-
     }
 }

@@ -10,6 +10,7 @@ import com.thebeyond.common.registry.BeyondTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -32,6 +33,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.block.state.properties.StairsShape;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.ticks.ContainerSingleItem;
 import org.jetbrains.annotations.NotNull;
 
@@ -233,17 +235,18 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         enadrake.save(nbt);
         this.storedEnadrake = nbt;
 
-        // Clear this enadrake's reservation
-        //this.reservations.remove(enadrake.getUUID());
-
         enadrake.setInsideHut(true);
         enadrake.setHutPosition(this.worldPosition);
+
+        if (level instanceof ServerLevel serverLevel) {
+            serverLevel.playSound(null, this.getBlockPos(), SoundEvents.BEEHIVE_ENTER, SoundSource.BLOCKS, 1.0F, 0.7F + 0.5F);
+            serverLevel.sendParticles(ParticleTypes.PORTAL, enadrake.position().x, enadrake.position().y+0.6, enadrake.position().z, 20, 0.3, 0.3, 0.3, 0.05);
+        }
+
         enadrake.remove(Entity.RemovalReason.DISCARDED);
 
         this.setChanged();
         this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
-        if (level instanceof ServerLevel serverLevel)
-            serverLevel.playSound(null, this.getBlockPos(), SoundEvents.BEEHIVE_ENTER, SoundSource.BLOCKS, 1.0F, 0.7F + 0.5F);
 
         return true;
     }
@@ -271,6 +274,9 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
             enadrake.setInsideHut(false);
             enadrake.setHutPosition(null);
             serverLevel.addFreshEntity(enadrake);
+
+            serverLevel.sendParticles(ParticleTypes.PORTAL, enadrake.position().x, enadrake.position().y+0.6, enadrake.position().z, 20, 0.3, 0.3, 0.3, 0.05);
+
             if (angerOne)
                 enadrake.panic = 220;
         }

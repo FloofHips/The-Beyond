@@ -134,9 +134,13 @@ public class ModClientEvents {
     private static final ResourceLocation AURORA_TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/environment/aurora.png");
     public static final ResourceLocation CLOUD_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/cloud");
     public static final ResourceLocation CLOUD_2_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/cloud_2");
-    //public static final ResourceLocation ROOTS_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/roots");
-    //public static final ResourceLocation ROOTS_SMALL_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/roots_small");
+
     public static final ResourceLocation ROOT_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/root_shockwave");
+
+    public static final ResourceLocation ROOT_BOOT = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/root_boot");
+    public static final ResourceLocation ROOT_FOOD = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/root_food");
+    public static final ResourceLocation ROOT_SHIELD = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/root_shield");
+    public static final ResourceLocation ROOT_SWORD = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/root_sword");
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath("minecraft", "textures/block/red_concrete.png");
 
     static RandomSource random = RandomSource.create(254572);
@@ -173,16 +177,9 @@ public class ModClientEvents {
 
     @SubscribeEvent
     public static void onAdditional(ModelEvent.RegisterAdditional event) {
-        event.register(ModelResourceLocation.standalone(CLOUD_MODEL));
-        event.register(ModelResourceLocation.standalone(CLOUD_2_MODEL));
-        //event.register(ModelResourceLocation.standalone(ROOTS_MODEL));
-        event.register(ModelResourceLocation.standalone(ROOT_MODEL));
-        //event.register(ModelResourceLocation.standalone(ROOTS_SMALL_MODEL));
-        event.register(ModelResourceLocation.standalone(AuroraBorealisRenderer.AURORA_0_MODEL));
-        event.register(ModelResourceLocation.standalone(AuroraBorealisRenderer.AURORA_1_MODEL));
-        event.register(ModelResourceLocation.standalone(AuroraBorealisRenderer.AURORA_2_MODEL));
-        event.register(ModelResourceLocation.standalone(AuroraBorealisRenderer.AURORA_3_MODEL));
-        event.register(ModelResourceLocation.standalone(AuroraBorealisRenderer.AURORA_CRUMBLING_MODEL));
+        for (ResourceLocation resourceLocation : Arrays.asList(CLOUD_MODEL, CLOUD_2_MODEL, ROOT_MODEL, ROOT_BOOT, ROOT_FOOD, ROOT_SHIELD, ROOT_SWORD, AuroraBorealisRenderer.AURORA_0_MODEL, AuroraBorealisRenderer.AURORA_1_MODEL, AuroraBorealisRenderer.AURORA_2_MODEL, AuroraBorealisRenderer.AURORA_3_MODEL, AuroraBorealisRenderer.AURORA_CRUMBLING_MODEL)) {
+            event.register(ModelResourceLocation.standalone(resourceLocation));
+        }
     }
     @SubscribeEvent
     public static void registerLayer(EntityRenderersEvent.RegisterLayerDefinitions event){

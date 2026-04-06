@@ -1,13 +1,20 @@
 package com.thebeyond.client.gui;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.thebeyond.TheBeyond;
+import com.thebeyond.client.renderer.blockentities.RefugeRenderer;
 import com.thebeyond.common.block.blockentities.RefugeBlockEntity;
 import com.thebeyond.common.block.blockentities.RefugeMenu;
 import com.thebeyond.common.network.RefugeSetModePayload;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.model.PlayerModel;
+import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -42,6 +49,8 @@ public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
     int MINY;
     int MAXY;
 
+    int offset = 40;
+
     private byte selectedMode = -1;
 
     public RefugeScreen(RefugeMenu menu, Inventory playerInventory, Component title) {
@@ -59,19 +68,35 @@ public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
         int i = (this.width - this.imageWidth) / 2;
         int j = (this.height - this.imageHeight) / 2;
 
-        MINX = i-1 + 49;
-        MAXX = i-1 + 49;
+        MINX = i-1 + 49 + offset;
+        MAXX = i-1 + 49 + offset;
 
         MINY = j-1 + 49;
         MAXY = j-1 + 49;
 
-        addRenderableWidget(new RefugeScreenButton(this.leftPos + 36, this.topPos - 4, (byte) 0, HUNGER_SPRITE));
-        addRenderableWidget(new RefugeScreenButton(this.leftPos + 6,  this.topPos + 26, (byte) 1, EXPLOSION_SPRITE));
-        addRenderableWidget(new RefugeScreenButton(this.leftPos + 66, this.topPos + 26, (byte) 2, MOB_SPAWN_SPRITE));
-        addRenderableWidget(new RefugeScreenButton(this.leftPos + 36, this.topPos + 56, (byte) 3, FALL_DAMAGE_SPRITE));
+        addRenderableWidget(new RefugeScreenButton(this.leftPos + offset + 36, this.topPos - 4, (byte) 0, HUNGER_SPRITE));
+        addRenderableWidget(new RefugeScreenButton(this.leftPos + offset + 6,  this.topPos + 26, (byte) 1, EXPLOSION_SPRITE));
+        addRenderableWidget(new RefugeScreenButton(this.leftPos + offset + 66, this.topPos + 26, (byte) 2, MOB_SPAWN_SPRITE));
+        addRenderableWidget(new RefugeScreenButton(this.leftPos + offset + 36, this.topPos + 56, (byte) 3, FALL_DAMAGE_SPRITE));
 
-        addRenderableWidget(new DecisionScreenButton(this.leftPos + 66, this.topPos + 56, false, CANCEL_SPRITE));
-        addRenderableWidget(new DecisionScreenButton(this.leftPos + 6, this.topPos + 56, true, CONFIRM_SPRITE));
+        addRenderableWidget(new DecisionScreenButton(this.leftPos + offset + 66, this.topPos + 56, false, CANCEL_SPRITE));
+        addRenderableWidget(new DecisionScreenButton(this.leftPos + offset + 6, this.topPos + 56, true, CONFIRM_SPRITE));
+    }
+
+    private void renderPlayerPreview(GuiGraphics guiGraphics) {
+        PoseStack poseStack = guiGraphics.pose();
+        poseStack.pushPose();
+
+        poseStack.translate(this.leftPos + 88, this.topPos + 58, 50);
+        poseStack.scale(20, -20, 20);
+
+        MultiBufferSource.BufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
+
+        //RefugeRenderer tempRenderer = new RefugeRenderer(this.);
+        //tempRenderer.renderPlayer(menu.getMode(), poseStack, bufferSource, 15728880, OverlayTexture.NO_OVERLAY, null);
+
+        bufferSource.endBatch();
+        poseStack.popPose();
     }
 
     @Override
@@ -80,21 +105,23 @@ public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
         int i = (this.width - this.imageWidth) / 2;
         int j = (this.height - this.imageHeight) / 2;
 
-        MINX = (int) Mth.lerp(0.05, MINX, i-1);
-        MAXX = (int) Mth.lerp(0.05, MAXX, i-1+117);
+        MINX = (int) Mth.lerp(0.05, MINX, i-1 + offset);
+        MAXX = (int) Mth.lerp(0.05, MAXX, i-1+117 + offset);
 
         MINY = (int) Mth.lerp(0.05, MINY, j-1);
         MAXY = (int) Mth.lerp(0.05, MAXY, j+117);
 
+        renderPlayerPreview(guiGraphics);
+
         guiGraphics.enableScissor(MINX, MINY, MAXX, MAXY);
         if (menu.getMode() == RefugeBlockEntity.MODE_HUNGER)
-            guiGraphics.blit(UP, i-1, j-2,0,0, 98, 98, 98, 98);
+            guiGraphics.blit(UP, i-1 + offset, j-2,0,0, 98, 98, 98, 98);
         if (menu.getMode() == RefugeBlockEntity.MODE_EXPLOSION)
-            guiGraphics.blit(LEFT, i-1, j,0,0, 98, 98, 98, 98);
+            guiGraphics.blit(LEFT, i-1 + offset, j,0,0, 98, 98, 98, 98);
         if (menu.getMode() == RefugeBlockEntity.MODE_MOB_SPAWN)
-            guiGraphics.blit(RIGHT, i-1, j,0,0, 98, 98, 98, 98);
+            guiGraphics.blit(RIGHT, i-1 + offset, j,0,0, 98, 98, 98, 98);
         if (menu.getMode() == RefugeBlockEntity.MODE_FALL_DAMAGE)
-            guiGraphics.blit(DOWN, i-1, j,0,0, 98, 98, 98, 98);
+            guiGraphics.blit(DOWN, i-1 + offset, j,0,0, 98, 98, 98, 98);
         guiGraphics.disableScissor();
     }
 

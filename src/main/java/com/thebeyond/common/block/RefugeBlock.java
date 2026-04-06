@@ -85,11 +85,11 @@ public class RefugeBlock extends BaseEntityBlock {
                 refugeBlockEntity.setOwner(stack);
                 return ItemInteractionResult.CONSUME;
             }
-            if (stack.is(Items.BONE_MEAL)) {
-                if (!level.isClientSide)
-                    refugeBlockEntity.printPattern();
-                return ItemInteractionResult.CONSUME;
-            }
+            //if (stack.is(Items.BONE_MEAL)) {
+            //    if (!level.isClientSide)
+            //        refugeBlockEntity.printPattern();
+            //    return ItemInteractionResult.CONSUME;
+            //}
         }
 
         return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
@@ -143,8 +143,10 @@ public class RefugeBlock extends BaseEntityBlock {
     public @Nullable BlockEntity newBlockEntity(BlockPos blockPos, BlockState blockState) {
         return new RefugeBlockEntity(blockPos, blockState);
     }
+
+    @Nullable
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return createTickerHelper(type, BeyondBlockEntities.REFUGE.get(), RefugeBlockEntity::tick);
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
+        return level.isClientSide ? createTickerHelper(blockEntityType, BeyondBlockEntities.REFUGE.get(), RefugeBlockEntity::rotAnimationTick) : createTickerHelper(blockEntityType, BeyondBlockEntities.REFUGE.get(), RefugeBlockEntity::tick);
     }
 }
