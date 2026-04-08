@@ -99,7 +99,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     @Override
     public int getBaseHeight(int x, int z, Heightmap.Types heightmapType, LevelHeightAccessor level, RandomState randomState) {
         computeNoisesIfNotPresent(randomState);
-        float distanceFromOrigin = (float) Math.sqrt(x * x + z * z);
+        float distanceFromOrigin = (float) Math.sqrt((double) x * x + (double) z * z);
 
         for (int y = 132; y >= level.getMinBuildHeight(); y--) {
             if (isSolidTerrain(x, y, z, distanceFromOrigin)) {
@@ -153,12 +153,28 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         }
     }
 
+    // The permutation table in Minecraft's SimplexNoise repeats every 256 entries (p[index & 0xFF]).
+    // When scaled coordinates get very large (e.g. 2M * 0.01 * 8 = 160,000), the internal
+    // floor + subtraction operations lose fractional precision, causing adjacent blocks to
+    // produce nearly identical noise values — visible as stretched/flat terrain.
+    //
+    // To fix this, we reduce coordinates modulo a large multiple of the noise period (256)
+    // BEFORE scaling. This keeps noise inputs small while preserving block-to-block variation.
+    // The period is large enough (256 * 256 = 65536 blocks) that tiling is not visible,
+    // and each octave uses a different effective period due to the frequency multiplier.
+    private static final int NOISE_COORD_MASK = 256 * 256 - 1; // 65535, bitmask for fast modulo
+
     public static double getTerrainDensity(int globalX, int globalY, int globalZ) {
         double horizontalBaseScale = getHorizontalBaseScale(globalX, globalZ);
         double verticalBaseScale = getVerticalBaseScale(globalX, globalZ);
         double cycleHeight = getCycleHeight(globalX, globalZ);
 
         int shiftedY = globalY + TERRAIN_Y_OFFSET;
+
+        // Reduce coordinates to prevent precision loss in SimplexNoise at extreme distances.
+        // Using bitwise AND for fast modulo (works because NOISE_COORD_MASK + 1 is a power of 2).
+        int wrappedX = globalX & NOISE_COORD_MASK;
+        int wrappedZ = globalZ & NOISE_COORD_MASK;
 
         double noiseValue = 0.0;
         double amplitude = 1.0;
@@ -169,9 +185,9 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             double hScale = horizontalBaseScale * frequency;
             double vScale = verticalBaseScale * frequency;
 
-            double sampleX = globalX * hScale;
+            double sampleX = wrappedX * hScale;
             double sampleY = shiftedY * vScale;
-            double sampleZ = globalZ * hScale;
+            double sampleZ = wrappedZ * hScale;
 
             double octaveNoise = simplexNoise.getValue(sampleX, sampleY, sampleZ);
             noiseValue += octaveNoise * amplitude;
@@ -212,7 +228,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
                     generateAuroracite(chunk, globalX, globalZ);
 
-                    float distanceFromOrigin = (float) Math.sqrt(globalX * globalX + globalZ * globalZ);
+                    float distanceFromOrigin = (float) Math.sqrt((double) globalX * globalX + (double) globalZ * globalZ);
 
                     if (distanceFromOrigin <= islandRadius + 50) {
                         generateMainIsland(chunk, globalX, globalZ, distanceFromOrigin, islandRadius);
@@ -246,7 +262,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                 threshold = y / 35f;
             }
 
-            if (globalX * globalX + y * y + globalZ * globalZ <= islandRadius * islandRadius * (0.5 + 0.5 * finalNoise) * threshold) {
+            if ((double) globalX * globalX + (double) y * y + (double) globalZ * globalZ <= islandRadius * islandRadius * (0.5 + 0.5 * finalNoise) * threshold) {
                 chunk.setBlockState(new BlockPos(globalX, y + 20 , globalZ), Blocks.END_STONE.defaultBlockState(), false);
             }
         }
@@ -318,7 +334,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
         computeNoisesIfNotPresent(random);
 
-        float distanceFromOrigin = (float) Math.sqrt(globalX * globalX + globalZ * globalZ);
+        float distanceFromOrigin = (float) Math.sqrt((double) globalX * globalX + (double) globalZ * globalZ);
         double horizontalBaseScale = getHorizontalBaseScale(pos.getX(), pos.getZ());
         double verticalBaseScale = getVerticalBaseScale(pos.getX(), pos.getZ());
         double threshold = getThreshold(pos.getX(), pos.getZ(), distanceFromOrigin);

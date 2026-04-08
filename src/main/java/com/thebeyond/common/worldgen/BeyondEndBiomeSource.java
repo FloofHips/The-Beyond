@@ -75,7 +75,7 @@ public class BeyondEndBiomeSource extends BiomeSource {
         int sectionX = SectionPos.blockToSectionCoord(blockX);
         int sectionZ = SectionPos.blockToSectionCoord(blockZ);
 
-        float distanceFromO = (float) Math.sqrt(blockX * blockX + blockZ * blockZ);
+        float distanceFromO = (float) Math.sqrt((double) blockX * blockX + (double) blockZ * blockZ);
 
         if (distanceFromO <= 116)
             return centerBiome;
@@ -86,7 +86,7 @@ public class BeyondEndBiomeSource extends BiomeSource {
         int biomeX = blockX / 64;
         int biomeZ = blockZ / 64;
 
-        float distanceFromOrigin = (float) Math.sqrt(blockX * blockX + biomeZ * biomeZ);
+        float distanceFromOrigin = (float) Math.sqrt((double) blockX * blockX + (double) biomeZ * biomeZ);
 
         double horizontalScale = BeyondEndChunkGenerator.getHorizontalBaseScale(biomeX, biomeZ);
         double threshold = BeyondEndChunkGenerator.getThreshold(biomeX, biomeZ, distanceFromOrigin);

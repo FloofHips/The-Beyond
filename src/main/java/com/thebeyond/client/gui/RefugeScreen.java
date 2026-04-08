@@ -1,5 +1,7 @@
 package com.thebeyond.client.gui;
 
+import com.mojang.blaze3d.platform.Lighting;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.renderer.blockentities.RefugeRenderer;
@@ -11,18 +13,17 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.model.PlayerModel;
-import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.joml.Quaternionf;
 
 @OnlyIn(Dist.CLIENT)
 public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
@@ -52,6 +53,7 @@ public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
     int offset = 40;
 
     private byte selectedMode = -1;
+    private RefugeRenderer refugeRenderer;
 
     public RefugeScreen(RefugeMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -64,6 +66,14 @@ public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
     @Override
     protected void init() {
         super.init();
+
+        Minecraft mc = Minecraft.getInstance();
+        BlockEntityRendererProvider.Context rendererContext = new BlockEntityRendererProvider.Context(
+                mc.getBlockEntityRenderDispatcher(), mc.getBlockRenderer(),
+                mc.getItemRenderer(), mc.getEntityRenderDispatcher(),
+                mc.getEntityModels(), mc.font
+        );
+        this.refugeRenderer = new RefugeRenderer(rendererContext);
 
         int i = (this.width - this.imageWidth) / 2;
         int j = (this.height - this.imageHeight) / 2;
@@ -84,19 +94,30 @@ public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
     }
 
     private void renderPlayerPreview(GuiGraphics guiGraphics) {
-        PoseStack poseStack = guiGraphics.pose();
-        poseStack.pushPose();
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || refugeRenderer == null) return;
 
-        poseStack.translate(this.leftPos + 88, this.topPos + 58, 50);
-        poseStack.scale(20, -20, 20);
+        BlockEntity be = mc.level.getBlockEntity(this.menu.getBlockPos());
+        if (!(be instanceof RefugeBlockEntity refuge)) return;
 
-        MultiBufferSource.BufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
+        byte displayMode = selectedMode >= 0 ? selectedMode : menu.getMode();
 
-        //RefugeRenderer tempRenderer = new RefugeRenderer(this.);
-        //tempRenderer.renderPlayer(menu.getMode(), poseStack, bufferSource, 15728880, OverlayTexture.NO_OVERLAY, null);
+        // Set up transforms for raw PlayerModel rendering in GUI
+        // In GUI space Y goes down, same as PlayerModel, so no Y flip needed
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(this.leftPos + 20, this.topPos + 4, 50.0);
+        guiGraphics.pose().scale(35, 35, 35);
+        guiGraphics.pose().mulPose(new Quaternionf().rotateY((float) Math.PI));
 
-        bufferSource.endBatch();
-        poseStack.popPose();
+        Lighting.setupForEntityInInventory();
+
+        RenderSystem.runAsFancy(() -> {
+            refugeRenderer.renderPlayer(displayMode, guiGraphics.pose(), guiGraphics.bufferSource(), 15728880, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, refuge.getOwnerProfile());
+        });
+
+        guiGraphics.flush();
+        guiGraphics.pose().popPose();
+        Lighting.setupFor3DItems();
     }
 
     @Override
