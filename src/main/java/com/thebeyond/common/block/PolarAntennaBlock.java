@@ -137,13 +137,23 @@ public class PolarAntennaBlock extends Block implements IMagneticReceiver {
             if (RandomUtils.nextFloat() <= STOP_CHANCE) return;
 
             affectedList.forEach((affectedPos) -> {
-                if (level.getBlockState(affectedPos).getBlock() instanceof IMagneticReceiver) {
-                    level.scheduleTick(affectedPos, level.getBlockState(affectedPos).getBlock(), DELAY);
-                    if (level.getBlockState(affectedPos).is(this)) {
-                        if (level.getBlockState(affectedPos).getValue(STABILITY) == StabilityProperty.NONE)
-                            ((IMagneticReceiver) level.getBlockState(affectedPos).getBlock()).receiveSignal(affectedPos, level.getBlockState(affectedPos), level, null);
+                // Cache the block state once per position. The previous implementation called
+                // level.getBlockState(affectedPos) up to five times per iteration, each one a
+                // chunk section + paletted container lookup. With the 12.5% STOP_CHANCE cascade,
+                // a single antenna activation walks through dozens of neighbours in rapid
+                // succession, and those redundant lookups were the bulk of the spike the
+                // playtester observed at the start of a cascade. One fetch, one instanceof
+                // pattern bind, and we reuse the same BlockState/Block/receiver references.
+                BlockState affectedState = level.getBlockState(affectedPos);
+                if (affectedState.getBlock() instanceof IMagneticReceiver receiver) {
+                    Block affectedBlock = affectedState.getBlock();
+                    level.scheduleTick(affectedPos, affectedBlock, DELAY);
+                    if (affectedState.is(this)) {
+                        if (affectedState.getValue(STABILITY) == StabilityProperty.NONE) {
+                            receiver.receiveSignal(affectedPos, affectedState, level, null);
+                        }
                     } else {
-                        ((IMagneticReceiver) level.getBlockState(affectedPos).getBlock()).receiveSignal(affectedPos, level.getBlockState(affectedPos), level, null);
+                        receiver.receiveSignal(affectedPos, affectedState, level, null);
                     }
                 }
             });

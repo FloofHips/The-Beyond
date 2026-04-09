@@ -12,7 +12,6 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.biome.Climate;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -72,15 +71,13 @@ public class BeyondEndBiomeSource extends BiomeSource {
         int blockX = QuartPos.toBlock(x);
         int blockY = QuartPos.toBlock(y);
         int blockZ = QuartPos.toBlock(z);
-        int sectionX = SectionPos.blockToSectionCoord(blockX);
-        int sectionZ = SectionPos.blockToSectionCoord(blockZ);
 
         float distanceFromO = (float) Math.sqrt((double) blockX * blockX + (double) blockZ * blockZ);
 
         if (distanceFromO <= 116)
             return centerBiome;
 
-        if(blockY < 20)
+        if (blockY < 20)
             return bottomBiome;
 
         int biomeX = blockX / 64;
@@ -97,20 +94,30 @@ public class BeyondEndBiomeSource extends BiomeSource {
         );
 
         long seed = (long) (biomeNoise * threshold * 1000000) + biomeX * 31L + biomeZ * 961L;
-        int solid_index = (int) (Math.abs(seed) % endBiomes.size());
-        int inner_void_index = (int) (Math.abs(seed) % innerVoidBiomes.size());
-        int outer_void_index = (int) (Math.abs(seed) % outerVoidBiomes.size());
+        long absSeed = Math.abs(seed);
 
-
-        boolean f = BeyondEndChunkGenerator.getTerrainDensity(blockX, blockY, blockZ) < 0.01f;
-
-        List<Holder<Biome>> endBiomeList = endBiomes.stream().toList();
-        List<Holder<Biome>> innerVoidBiomeList = innerVoidBiomes.stream().toList();
-        List<Holder<Biome>> outerVoidBiomeList = outerVoidBiomes.stream().toList();
-
-        if (distanceFromO <= 690)
+        // Inner void ring: pick directly from innerVoidBiomes without sampling terrain density.
+        // getTerrainDensity() is the most expensive call in this method (4-octave 3D simplex +
+        // 3 Perlin scale/cycle lookups), so skipping it here halves the per-call cost for every
+        // point inside the 690-block radius - a huge portion of a typical End chunk column.
+        if (distanceFromO <= 690) {
+            int inner_void_index = (int) (absSeed % innerVoidBiomes.size());
             return innerVoidBiomes.get(inner_void_index);
+        }
 
-        return f ? outerVoidBiomeList.get(outer_void_index) : endBiomeList.get(solid_index);
+        // Outer region: terrain density decides whether this point lands in a void biome
+        // (empty air column) or in a solid end biome.
+        boolean voidPoint = BeyondEndChunkGenerator.getTerrainDensity(blockX, blockY, blockZ) < 0.01f;
+
+        // HolderSet.get(int) is O(1) - the previous implementation allocated three new
+        // ArrayLists per call via stream().toList() before indexing into one of them, which
+        // was millions of throwaway allocations per chunk batch and dominated GC pressure.
+        if (voidPoint) {
+            int outer_void_index = (int) (absSeed % outerVoidBiomes.size());
+            return outerVoidBiomes.get(outer_void_index);
+        } else {
+            int solid_index = (int) (absSeed % endBiomes.size());
+            return endBiomes.get(solid_index);
+        }
     }
 }
