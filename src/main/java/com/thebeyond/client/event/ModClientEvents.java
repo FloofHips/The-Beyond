@@ -91,6 +91,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SweetBerryBushBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.synth.PerlinSimplexNoise;
@@ -407,7 +408,13 @@ public class ModClientEvents {
 //    }
 
     private static RefugeChunkData getChunkData(ServerLevel level, BlockPos pos) {
-        return level.getChunkAt(pos).getData(BeyondAttachments.REFUGE_DATA);
+        // Do NOT create or load the chunk here. This method is called from mod events that
+        // can fire while the server is already inside DistanceManager.runAllUpdates — a
+        // recursive chunk load in that context causes a ConcurrentModificationException on
+        // chunksToUpdateFutures. If the chunk isn't fully loaded, there is no refuge data
+        // to check anyway, so callers treat null as "no protection".
+        ChunkAccess chunk = level.getChunkSource().getChunk(pos.getX() >> 4, pos.getZ() >> 4, false);
+        return chunk == null ? null : chunk.getData(BeyondAttachments.REFUGE_DATA);
     }
 
     @SubscribeEvent
@@ -416,7 +423,7 @@ public class ModClientEvents {
         if (event.getLevel() instanceof ServerLevel serverLevel) {
             BlockPos pos = BlockPos.containing(event.getExplosion().center());
             RefugeChunkData data = getChunkData(serverLevel, pos);
-            if (data.shouldPreventExplosion()) {
+            if (data != null && data.shouldPreventExplosion()) {
                 event.setCanceled(true);
             }
         }
@@ -427,7 +434,7 @@ public class ModClientEvents {
         //if (RefugeBlockEntity.ACTIVE_REFUGES.isEmpty()) return;
         if (event.getLevel() instanceof ServerLevel serverLevel) {
             RefugeChunkData data = getChunkData(serverLevel, event.getPos());
-            if (data.shouldPreventMobSpawn()) {
+            if (data != null && data.shouldPreventMobSpawn()) {
                 event.setResult(MobSpawnEvent.SpawnPlacementCheck.Result.FAIL);
             }
         }
@@ -438,7 +445,7 @@ public class ModClientEvents {
         //if (RefugeBlockEntity.ACTIVE_REFUGES.isEmpty()) return;
         if (event.getEntity() != null && event.getEntity().level() instanceof ServerLevel serverLevel) {
             RefugeChunkData data = getChunkData(serverLevel, event.getEntity().getOnPos());
-            if (data.shouldPreventFallDamage()) {
+            if (data != null && data.shouldPreventFallDamage()) {
                 event.setCanceled(true);
             }
         }

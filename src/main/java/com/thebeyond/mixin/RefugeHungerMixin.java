@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.ChunkAccess;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -21,7 +22,14 @@ public abstract class RefugeHungerMixin {
         if (level.isClientSide) return;
         if ((level instanceof ServerLevel serverLevel)) {
             BlockPos playerPos = player.blockPosition();
-            RefugeChunkData data = serverLevel.getChunkAt(playerPos).getData(BeyondAttachments.REFUGE_DATA);
+            // Non-creating lookup: calling getChunkAt (create=true) from here can re-enter
+            // chunk loading while DistanceManager.runAllUpdates is iterating, causing a
+            // ConcurrentModificationException. If the player's chunk isn't fully loaded,
+            // there's no refuge data to enforce.
+            ChunkAccess chunk = serverLevel.getChunkSource()
+                    .getChunk(playerPos.getX() >> 4, playerPos.getZ() >> 4, false);
+            if (chunk == null) return;
+            RefugeChunkData data = chunk.getData(BeyondAttachments.REFUGE_DATA);
 
             if (data.shouldPreventHunger()) {
                 ci.cancel();
