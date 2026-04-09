@@ -92,8 +92,8 @@ public class BeyondEndBiomeSource extends BiomeSource {
         double threshold = BeyondEndChunkGenerator.getThreshold(biomeX, biomeZ, distanceFromOrigin);
 
         double biomeNoise = BeyondEndChunkGenerator.simplexNoise.getValue(
-                biomeX * horizontalScale * 0.2,
-                biomeZ * horizontalScale * 0.2
+                biomeX * horizontalScale * 0.1,
+                biomeZ * horizontalScale * 0.1
         );
 
         long seed = (long) (biomeNoise * threshold * 1000000) + biomeX * 31L + biomeZ * 961L;

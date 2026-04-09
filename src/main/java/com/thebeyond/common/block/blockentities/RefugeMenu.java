@@ -45,7 +45,7 @@ public class RefugeMenu extends AbstractContainerMenu {
         checkContainerDataCount(refugeData, 1);
         this.refugeData = refugeData;
         this.access = access;
-        this.paymentSlot = new RefugeMenu.PaymentSlot(this.refuge, 0, 80, 30);
+        this.paymentSlot = new RefugeMenu.PaymentSlot(this.refuge, 0, 40, 30);
         this.addSlot(this.paymentSlot);
         this.addDataSlots(refugeData);
 

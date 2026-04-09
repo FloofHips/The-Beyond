@@ -71,6 +71,7 @@ public class ObirootSproutBlock extends Block implements BonemealableBlock, Fall
 
     @Override
     protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+        if (!canSurvive(state, level, pos)) this.destroy(level, pos, state);
         if (!canSurvive(state, level, pos) && state.getValue(AGE) == 0) level.scheduleTick(pos, this, 2);
 
         return super.updateShape(state, direction, neighborState, level, pos, neighborPos);

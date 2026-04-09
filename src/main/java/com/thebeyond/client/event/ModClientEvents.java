@@ -57,6 +57,7 @@ import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.core.*;
 import net.minecraft.core.particles.ItemParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -82,6 +83,9 @@ import net.minecraft.world.entity.vehicle.ChestBoat;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.*;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RotatedPillarBlock;
@@ -477,18 +481,22 @@ public class ModClientEvents {
 
     @SubscribeEvent
     public static void onLand(LivingFallEvent event) {
-        if (event.getEntity() instanceof LivingEntity livingEntity && !livingEntity.getItemBySlot(EquipmentSlot.LEGS).is(BeyondItems.ANCHOR_LEGGINGS)) {
+        if ((event.getEntity() instanceof LivingEntity livingEntity) && !livingEntity.getItemBySlot(EquipmentSlot.LEGS).is(BeyondItems.ANCHOR_LEGGINGS)) {
             return;
         }
 
         if (event.getEntity() instanceof ServerPlayer serverplayer && serverplayer.isShiftKeyDown() && serverplayer.level() instanceof ServerLevel serverlevel) {
-
             if (serverplayer.fallDistance > 1.5F && !serverplayer.isFallFlying()) {
                 serverplayer.setSpawnExtraParticlesOnFall(true);
                 SoundEvent soundevent = serverplayer.fallDistance > 5.0F ? SoundEvents.MACE_SMASH_GROUND_HEAVY : SoundEvents.MACE_SMASH_GROUND;
                 serverlevel.playSound((Player)null, serverplayer.getX(), serverplayer.getY(), serverplayer.getZ(), soundevent, serverplayer.getSoundSource(), 1.0F, 1.0F);
-                AOEManager.knockback(serverlevel, serverplayer, serverplayer);
-                event.setDamageMultiplier(0.3f);
+
+                Registry<Enchantment> enchantmentRegistry = serverlevel.registryAccess().registryOrThrow(Registries.ENCHANTMENT);
+                Holder<Enchantment> powerHolder = enchantmentRegistry.getHolderOrThrow(Enchantments.POWER);
+                int powerLevel = EnchantmentHelper.getItemEnchantmentLevel(powerHolder, serverplayer.getItemBySlot(EquipmentSlot.LEGS));
+
+                AOEManager.knockback(serverlevel, serverplayer, serverplayer, powerLevel);
+                event.setDamageMultiplier(0.3f / powerLevel);
             }
         }
     }

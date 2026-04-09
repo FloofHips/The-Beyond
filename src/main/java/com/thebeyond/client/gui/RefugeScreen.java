@@ -11,6 +11,7 @@ import com.thebeyond.common.network.RefugeSetModePayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -19,10 +20,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 
 @OnlyIn(Dist.CLIENT)
@@ -50,7 +54,7 @@ public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
     int MINY;
     int MAXY;
 
-    int offset = 40;
+    int offset = 0;
 
     private byte selectedMode = -1;
     private RefugeRenderer refugeRenderer;
@@ -84,10 +88,10 @@ public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
         MINY = j-1 + 49;
         MAXY = j-1 + 49;
 
-        addRenderableWidget(new RefugeScreenButton(this.leftPos + offset + 36, this.topPos - 4, (byte) 0, HUNGER_SPRITE));
-        addRenderableWidget(new RefugeScreenButton(this.leftPos + offset + 6,  this.topPos + 26, (byte) 1, EXPLOSION_SPRITE));
-        addRenderableWidget(new RefugeScreenButton(this.leftPos + offset + 66, this.topPos + 26, (byte) 2, MOB_SPAWN_SPRITE));
-        addRenderableWidget(new RefugeScreenButton(this.leftPos + offset + 36, this.topPos + 56, (byte) 3, FALL_DAMAGE_SPRITE));
+        addRenderableWidget(new RefugeScreenButton(this.leftPos + offset + 36, this.topPos - 4, (byte) 0, HUNGER_SPRITE, "Hunger"));
+        addRenderableWidget(new RefugeScreenButton(this.leftPos + offset + 6,  this.topPos + 26, (byte) 1, EXPLOSION_SPRITE, "Explosions"));
+        addRenderableWidget(new RefugeScreenButton(this.leftPos + offset + 66, this.topPos + 26, (byte) 2, MOB_SPAWN_SPRITE, "Mob spawns"));
+        addRenderableWidget(new RefugeScreenButton(this.leftPos + offset + 36, this.topPos + 56, (byte) 3, FALL_DAMAGE_SPRITE, "Fall damage"));
 
         addRenderableWidget(new DecisionScreenButton(this.leftPos + offset + 66, this.topPos + 56, false, CANCEL_SPRITE));
         addRenderableWidget(new DecisionScreenButton(this.leftPos + offset + 6, this.topPos + 56, true, CONFIRM_SPRITE));
@@ -105,9 +109,9 @@ public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
         // Set up transforms for raw PlayerModel rendering in GUI
         // In GUI space Y goes down, same as PlayerModel, so no Y flip needed
         guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(this.leftPos + 20, this.topPos + 4, 50.0);
-        guiGraphics.pose().scale(35, 35, 35);
-        guiGraphics.pose().mulPose(new Quaternionf().rotateY((float) Math.PI));
+        guiGraphics.pose().translate(this.leftPos + 130, this.topPos - 9, 50.0);
+        guiGraphics.pose().scale(55, 55, 55);
+        guiGraphics.pose().mulPose(new Quaternionf().rotateY((float) Math.PI - 0.3f));
 
         Lighting.setupForEntityInInventory();
 
@@ -144,6 +148,19 @@ public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
         if (menu.getMode() == RefugeBlockEntity.MODE_FALL_DAMAGE)
             guiGraphics.blit(DOWN, i-1 + offset, j,0,0, 98, 98, 98, 98);
         guiGraphics.disableScissor();
+
+        i+= 15;
+        j-= 10;
+
+        guiGraphics.renderItem(new ItemStack(Items.NETHERITE_INGOT), i + 20, j + getYpos(10));
+        guiGraphics.renderItem(new ItemStack(Items.EMERALD), i + 41, j + getYpos(11));
+        guiGraphics.renderItem(new ItemStack(Items.DIAMOND), i + 41 + 22, j + getYpos(12));
+        guiGraphics.renderItem(new ItemStack(Items.GOLD_INGOT), i + 42 + 44, j + getYpos(13));
+        guiGraphics.renderItem(new ItemStack(Items.IRON_INGOT), i + 42 + 66, j + getYpos(14));
+    }
+
+    private static int getYpos(float offset) {
+        return (int) ((Math.sin(System.currentTimeMillis() * 0.001 + offset)) * 5);
     }
 
     @Override
@@ -165,15 +182,16 @@ public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
         private final ResourceLocation resourcelocation;
         private final byte mode;
 
-        protected RefugeScreenButton(int x, int y, byte mode, ResourceLocation resourcelocation) {
+        protected RefugeScreenButton(int x, int y, byte mode, ResourceLocation resourcelocation, String tooltip) {
             super(x, y, 24, 24, CommonComponents.EMPTY);
             this.resourcelocation = resourcelocation;
             this.mode = mode;
+            setTooltip(Tooltip.create(Component.literal("Block " + tooltip)));
         }
 
         @Override
         public void onPress() {
-            if (selectedMode == -1 || selectedMode != menu.getMode())
+            //if (selectedMode == -1)
                 selectedMode = this.mode;
         }
 
@@ -206,12 +224,16 @@ public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
         public void onPress() {
             if (isConfirm) {
                 if (selectedMode >= 0 && selectedMode <= 3 && menu.hasPayment()) {
-                    if (menu.getMode() != selectedMode)
+                    if (menu.getMode() != selectedMode) {
                         PacketDistributor.sendToServer(new RefugeSetModePayload(menu.getBlockPos(), selectedMode));
+                        onClose();
+                    }
                 }
             } else {
-                if (menu.getMode() != selectedMode)
+                if (menu.getMode() != (byte) -1 && menu.getMode() != selectedMode) {
                     PacketDistributor.sendToServer(new RefugeSetModePayload(menu.getBlockPos(), (byte) -1));
+                    onClose();
+                }
             }
         }
 

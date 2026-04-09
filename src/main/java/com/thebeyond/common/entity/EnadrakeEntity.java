@@ -68,10 +68,10 @@ public class EnadrakeEntity extends PathfinderMob {
     private boolean insideHut = false;
     private BlockPos hutPosition = null;
     private int inHutTime = 0;
-
-     private boolean fleeToHut = false;
-     public boolean shouldFleeToHut() { return fleeToHut; }
-     public void setFleeToHut(boolean flee) { this.fleeToHut = flee; }
+    public int onAWalkTimer = 0;
+    private boolean fleeToHut = false;
+    public boolean shouldFleeToHut() { return fleeToHut; }
+    public void setFleeToHut(boolean flee) { this.fleeToHut = flee; }
 
     public EnadrakeEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
@@ -145,11 +145,12 @@ public class EnadrakeEntity extends PathfinderMob {
     @Override
     public void tick() {
         super.tick();
+        if (onAWalkTimer > 0) onAWalkTimer--;
         if (panic > 0) panic--;
         if (panic > 190) this.setYHeadRot(getYHeadRot()+(random.nextInt(-40, 40)));
         if (panic < 190 && panic > 140) this.setYHeadRot(getYHeadRot()+(random.nextInt(-10, 10)));
         if (panic == 190) scream();
-        if (panic == 189) {
+        if (panic == 180) {
             Player player = this.level().getNearestPlayer(this, 16);
 
             if (player != null) {
@@ -162,7 +163,9 @@ public class EnadrakeEntity extends PathfinderMob {
     }
 
     public void scream() {
-        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.HORSE_DEATH, SoundSource.HOSTILE, 0.5f, 1);
+        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.FOX_SCREECH, SoundSource.HOSTILE, 0.5f, 1.5f);
+        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.FOX_SCREECH, SoundSource.HOSTILE, 1, 1);
+        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.FOX_SCREECH, SoundSource.HOSTILE, 0.5f, 0.5f);
         level().playSound(this, BlockPos.containing(this.position()), SoundEvents.BELL_RESONATE, SoundSource.HOSTILE, 2, 2);
 
         AABB detectionBox = new AABB(getOnPos()).inflate(10);
@@ -460,7 +463,13 @@ public class EnadrakeEntity extends PathfinderMob {
                 List<ItemEntity> list = EnadrakeEntity.this.level().getEntitiesOfClass(ItemEntity.class, EnadrakeEntity.this.getBoundingBox().inflate((double)8.0F, (double)8.0F, (double)8.0F), EnadrakeEntity.ALLOWED_ITEMS);
                 ItemStack itemstack = EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND);
                 if (itemstack.isEmpty() && !list.isEmpty()) {
-                    EnadrakeEntity.this.getNavigation().moveTo(list.get(0), 1.2);
+                    if (list.size() == 1) {
+                        ItemEntity item = list.getFirst();
+                        level().playSound(item, BlockPos.containing(item.position()), SoundEvents.CHORUS_FRUIT_TELEPORT, SoundSource.BLOCKS,1,1);
+                        item.moveTo(EnadrakeEntity.this.position());
+                    } else {
+                        EnadrakeEntity.this.getNavigation().moveTo(list.get(0), 1.2);
+                    }
                 }
             }
         }
@@ -783,6 +792,7 @@ public class EnadrakeEntity extends PathfinderMob {
 
         @Override
         public boolean canUse() {
+            if (entity.onAWalkTimer > 0) return false;
             if (entity.panic > 0) return false;
             if (entity.shouldFleeToHut()) return super.canUse();
             ItemStack itemstack = entity.getItemBySlot(EquipmentSlot.MAINHAND);

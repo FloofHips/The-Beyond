@@ -5,8 +5,10 @@ import com.thebeyond.common.registry.BeyondComponents;
 import com.thebeyond.common.registry.BeyondCriteriaTriggers;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.common.registry.BeyondTags;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -22,6 +24,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ThrownPotion;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.ClipBlockStateContext;
 import net.minecraft.world.level.ClipContext;
@@ -33,6 +36,8 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.common.data.BlockTagsProvider;
+
+import java.util.List;
 
 public class MagnetItem extends Item {
     public final double range;
@@ -111,5 +116,15 @@ public class MagnetItem extends Item {
                     itemEntity.addDeltaMovement(itemEntity.position().vectorTo(entity.position()).multiply(factor, factor, factor));
                 }
                 );
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+        super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+        tooltipComponents.add(Component.literal("On Use: ").withStyle(ChatFormatting.GRAY));
+        tooltipComponents.add(Component.literal(" Slingshot to:").withStyle(ChatFormatting.GRAY));
+        tooltipComponents.add(Component.literal(" - Metallic blocks").withStyle(ChatFormatting.DARK_GRAY));
+        tooltipComponents.add(Component.literal(" - Void Crystals").withStyle(ChatFormatting.LIGHT_PURPLE));
+        tooltipComponents.add(Component.literal("Passively Attract Items").withStyle(ChatFormatting.GRAY));
     }
 }

@@ -4,6 +4,7 @@ import com.thebeyond.TheBeyond;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
@@ -36,8 +37,12 @@ public class Lang extends LanguageProvider {
         Set<MobEffect> effects = BuiltInRegistries.MOB_EFFECT.stream().filter(i -> TheBeyond.MODID.equals(BuiltInRegistries.MOB_EFFECT.getKey(i).getNamespace()))
                 .collect(Collectors.toSet());
 
-        effects.forEach(effect -> add(effect, getEffectName(effect.getDescriptionId())));
+        effects.forEach(effect -> add(effect, getName(effect.getDescriptionId())));
 
+        Set<EntityType<?>> mobs = BuiltInRegistries.ENTITY_TYPE.stream().filter(i -> TheBeyond.MODID.equals(BuiltInRegistries.ENTITY_TYPE.getKey(i).getNamespace()))
+                .collect(Collectors.toSet());
+
+        mobs.forEach(mob -> add(mob, getName(mob.getDescriptionId())));
 
         add("itemGroup.the_beyond", "The Beyond");
 
@@ -102,7 +107,7 @@ public class Lang extends LanguageProvider {
         }
         return result.toString().trim();
     }
-    public String getEffectName(String id) {
+    public String getName(String id) {
         String[] words = id.toString().split("\\.")[2].split("_");
 
         StringBuilder result = new StringBuilder();
@@ -113,6 +118,7 @@ public class Lang extends LanguageProvider {
         }
         return result.toString().trim();
     }
+
     public static <T> Collection<T> takeAll(Set<T> src, Predicate<T> pred) {
         List<T> ret = new ArrayList<>();
 

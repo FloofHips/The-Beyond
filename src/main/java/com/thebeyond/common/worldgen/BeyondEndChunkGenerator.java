@@ -226,9 +226,10 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                     int globalX = startX + x;
                     int globalZ = startZ + z;
 
-                    generateAuroracite(chunk, globalX, globalZ);
 
                     float distanceFromOrigin = (float) Math.sqrt((double) globalX * globalX + (double) globalZ * globalZ);
+
+                    generateAuroracite(chunk, globalX, globalZ);
 
                     if (distanceFromOrigin <= islandRadius + 50) {
                         generateMainIsland(chunk, globalX, globalZ, distanceFromOrigin, islandRadius);
@@ -274,6 +275,11 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
     private void generateAuroracite(ChunkAccess chunk, int globalX, int globalZ) {
         double auroraNoise = simplexNoise.getValue(globalX * 0.1, globalZ * 0.1);
+
+        float newRadius = (float) (islandRadius + 100);
+
+        if (((double) globalX * globalX + (double) globalZ * globalZ <= newRadius * newRadius * (0.5 + 0.5 * auroraNoise))) return;
+
         if (auroraNoise > 0.0) {
             chunk.setBlockState(new BlockPos(globalX, 0, globalZ), BeyondBlocks.AURORACITE.get().defaultBlockState(), false);
             chunk.setBlockState(new BlockPos(globalX, 1, globalZ), BeyondBlocks.AURORACITE.get().defaultBlockState(), false);

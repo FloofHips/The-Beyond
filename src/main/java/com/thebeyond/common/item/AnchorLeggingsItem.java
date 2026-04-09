@@ -1,19 +1,23 @@
 package com.thebeyond.common.item;
 
 import com.thebeyond.client.model.equipment.MultipartArmorModel;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 public class AnchorLeggingsItem extends ModelArmorItem {
@@ -47,5 +51,13 @@ public class AnchorLeggingsItem extends ModelArmorItem {
             }
         }
         super.inventoryTick(stack, level, entity, slotId, isSelected);
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+        tooltipComponents.add(Component.literal("When Crouching: ").withStyle(ChatFormatting.GRAY));
+        tooltipComponents.add(Component.literal("Perform Slam Attack").withStyle(ChatFormatting.DARK_PURPLE));
+        tooltipComponents.add(Component.literal("+ Falling Speed").withStyle(ChatFormatting.BLUE));
+        super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
     }
 }

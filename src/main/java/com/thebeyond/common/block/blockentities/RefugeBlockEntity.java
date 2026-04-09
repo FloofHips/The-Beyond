@@ -404,7 +404,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
 
         BlockPos p = new BlockPos(chunkX*16, -47, chunkZ*16);
 
-        level.setBlock(p, Blocks.GLOWSTONE.defaultBlockState(), 3);
+        //level.setBlock(p, Blocks.GLOWSTONE.defaultBlockState(), 3);
 
         for (int dx = -chunkRadius; dx <= chunkRadius; dx++) {
             for (int dz = -chunkRadius; dz <= chunkRadius; dz++) {
@@ -416,7 +416,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
 
                     ChunkPos chunkPos = new ChunkPos(chunkX + dx, chunkZ + dz);
                     affectedChunks.add(chunkPos);
-                    level.setBlock(chunkPos.getMiddleBlockPosition(-52), Blocks.LIME_CONCRETE.defaultBlockState(), 3);
+                    //level.setBlock(chunkPos.getMiddleBlockPosition(-52), Blocks.LIME_CONCRETE.defaultBlockState(), 3);
 
                 }
             }
@@ -464,11 +464,11 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
                 if (currentMode > -1 && currentMode < 4) {
                     data.removeRefuge(currentMode);
                 }
-                level.setBlock(chunkPos.getMiddleBlockPosition(-48), Blocks.RED_CONCRETE.defaultBlockState(), 3);
-                level.setBlock(chunkPos.getMiddleBlockPosition(-49), Blocks.RED_CONCRETE.defaultBlockState(), 3);
-                level.setBlock(chunkPos.getMiddleBlockPosition(-50), Blocks.RED_CONCRETE.defaultBlockState(), 3);
-                level.setBlock(chunkPos.getMiddleBlockPosition(-51), Blocks.RED_CONCRETE.defaultBlockState(), 3);
-                level.setBlock(chunkPos.getMiddleBlockPosition(-52), Blocks.RED_CONCRETE.defaultBlockState(), 3);
+                //level.setBlock(chunkPos.getMiddleBlockPosition(-48), Blocks.RED_CONCRETE.defaultBlockState(), 3);
+                //level.setBlock(chunkPos.getMiddleBlockPosition(-49), Blocks.RED_CONCRETE.defaultBlockState(), 3);
+                //level.setBlock(chunkPos.getMiddleBlockPosition(-50), Blocks.RED_CONCRETE.defaultBlockState(), 3);
+                //level.setBlock(chunkPos.getMiddleBlockPosition(-51), Blocks.RED_CONCRETE.defaultBlockState(), 3);
+                //level.setBlock(chunkPos.getMiddleBlockPosition(-52), Blocks.RED_CONCRETE.defaultBlockState(), 3);
             }
         }
 

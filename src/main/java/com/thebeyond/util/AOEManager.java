@@ -3,6 +3,8 @@ package com.thebeyond.util;
 import com.thebeyond.common.entity.AbyssalNomadEntity;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageSources;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -42,14 +44,15 @@ public class AOEManager {
         };
     }
 
-    public static void knockback(Level level, Player player, Entity entity) {
+    public static void knockback(Level level, Player player, Entity entity, int power) {
         level.levelEvent(2013, entity.getOnPos(), 750);
         level.getEntitiesOfClass(LivingEntity.class, entity.getBoundingBox().inflate((double)3.5F), knockbackPredicate(player, entity)).forEach((p_347296_) -> {
             Vec3 vec3 = p_347296_.position().subtract(entity.position());
             double d0 = getKnockbackPower(player, p_347296_, vec3);
-            Vec3 vec31 = vec3.normalize().scale(d0);
+            Vec3 vec31 = vec3.normalize().scale(d0 * power);
             if (d0 > (double)0.0F) {
                 p_347296_.push(vec31.x, 0.7F, vec31.z);
+                p_347296_.hurt(player.damageSources().thrown(player, player), (float) d0 * power);
                 if (p_347296_ instanceof ServerPlayer) {
                     ServerPlayer serverplayer = (ServerPlayer)p_347296_;
                     serverplayer.connection.send(new ClientboundSetEntityMotionPacket(serverplayer));

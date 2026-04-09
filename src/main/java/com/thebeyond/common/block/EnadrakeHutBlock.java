@@ -17,6 +17,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -72,6 +73,15 @@ public class EnadrakeHutBlock extends BaseEntityBlock {
         super(properties);
         this.registerDefaultState((BlockState)((BlockState)((BlockState)((BlockState)this.stateDefinition.any()).setValue(FACING, Direction.NORTH)).setValue(HEIGHT, HutHeightProperty.TIP)));
 
+    }
+
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+        BlockEntity baseBE = level.getBlockEntity(pos);
+        if (baseBE instanceof EnadrakeHutBlockEntity hutblockentity) {
+            hutblockentity.tryToExit(false);
+        }
+        return super.useWithoutItem(state, level, pos, player, hitResult);
     }
 
     @Override

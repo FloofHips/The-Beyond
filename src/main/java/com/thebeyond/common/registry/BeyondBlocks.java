@@ -5,6 +5,7 @@ import com.thebeyond.common.block.*;
 import com.thebeyond.common.fluid.GellidVoidBlock;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
@@ -76,7 +77,8 @@ public class BeyondBlocks {
             MEMOR.get().defaultBlockState(),
             BlockBehaviour.Properties.ofFullCopy(MEMOR.get()).sound(SoundType.ANCIENT_DEBRIS)));
     public static final DeferredBlock<Block> MEMOR_FAUCET = registerBlock("memor_faucet", () -> new MemorFaucetBlock(
-            BlockBehaviour.Properties.ofFullCopy(MEMOR.get()).noOcclusion().sound(SoundType.NETHER_BRICKS)));
+            BlockBehaviour.Properties.ofFullCopy(MEMOR.get()).noOcclusion().sound(SoundType.NETHER_BRICKS)),
+            Rarity.EPIC);
 
     //STRUCTURES
     public static final DeferredBlock<Block> BONFIRE = registerBlock("bonfire", () -> new BonfireBlock(BlockBehaviour.Properties.of()
@@ -158,6 +160,7 @@ public class BeyondBlocks {
     public static final DeferredBlock<Block> FERROJELLY_BLOCK = registerBlock("ferrojelly_block",
             () -> new FerroJellyBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_PURPLE)
+                    .noOcclusion()
                     .sound(SoundType.SLIME_BLOCK))
     );
     public static final DeferredBlock<Block> PLATE_BLOCK = registerBlock("plate_block",
@@ -224,7 +227,8 @@ public class BeyondBlocks {
             () -> new EnadrakeFlareBlock(Block.Properties.of()
                     .mapColor(MapColor.ICE)
                     .strength(2.0F, 2.0F)
-                    .sound(SoundType.METAL))
+                    .sound(SoundType.METAL)),
+            Rarity.RARE
     );
     public static final DeferredBlock<Block> ENATIOUS_TOTEM_SEED = registerBlock("enatious_totem_seed",
             () -> new EnatiousTotemSeedBlock(Block.Properties.of()
@@ -236,7 +240,9 @@ public class BeyondBlocks {
             () -> new RefugeBlock(Block.Properties.of()
                     .mapColor(MapColor.ICE)
                     .strength(4.0F, 32.0F)
-                    .sound(SoundType.METAL))
+                    .noOcclusion()
+                    .sound(SoundType.METAL)),
+            Rarity.RARE
     );
 
     public static final DeferredBlock<Block> ZYMOTE = registerBlock("zymote",
@@ -303,6 +309,12 @@ public class BeyondBlocks {
         return (DeferredBlock<T>) toReturn;
     }
 
+    private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<? extends Block> block, Rarity rarity) {
+        DeferredBlock<Block> toReturn = BLOCKS.register(name, block);
+        CREATIVE_TAB_ITEMS.add(registerBlockItem(name, toReturn, rarity));
+        return (DeferredBlock<T>) toReturn;
+    }
+
     @SuppressWarnings("unchecked")
     private static <T extends Block> DeferredBlock<T> registerIntegrationBlockWithoutItem(String name, Supplier<? extends Block> block, String modId) {
         if (!ModList.get().isLoaded(modId)) return null;
@@ -322,7 +334,11 @@ public class BeyondBlocks {
 //        CREATIVE_TAB_ITEMS.add(registerBlockItem(name, toReturn));
 //        return toReturn;
 //    }
-        private static DeferredHolder<Item, BlockItem> registerBlockItem(String name, Supplier<? extends Block> block) {
+    private static DeferredHolder<Item, BlockItem> registerBlockItem(String name, Supplier<? extends Block> block, Rarity rarity) {
+        return BeyondItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties().rarity(rarity)));
+    }
+
+    private static DeferredHolder<Item, BlockItem> registerBlockItem(String name, Supplier<? extends Block> block) {
         return BeyondItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties()));
     }
 
