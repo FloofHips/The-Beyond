@@ -1,6 +1,6 @@
 modLoader="javafml"
-loaderVersion="[4,)"
-license="MIT"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
 
 [[mixins]]
 config = "the_beyond.mixins.json"
@@ -9,24 +9,22 @@ config = "the_beyond.client.mixins.json"
 
 [[mods]]
 enumExtensions="META-INF/enumextensions.json"
-modId="the_beyond"
-version="0.1.0"
-displayName="The Beyond"
-authors="YourName"
-description='''
-A cool mod. Replace this with a real description.
-'''
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="${mod_authors}"
+description='''${mod_description}'''
 
-[[dependencies.the_beyond]]
+[[dependencies.${mod_id}]]
 modId="neoforge"
 type="required"
-versionRange="[21.1.0,)"
+versionRange="${neo_version_range}"
 ordering="NONE"
 side="BOTH"
 
-[[dependencies.the_beyond]]
+[[dependencies.${mod_id}]]
 modId="minecraft"
 type="required"
-versionRange="[1.21.1,1.22)"
+versionRange="${minecraft_version_range}"
 ordering="NONE"
 side="BOTH"
