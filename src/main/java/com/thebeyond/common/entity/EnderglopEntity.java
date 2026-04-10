@@ -304,7 +304,13 @@ public class EnderglopEntity extends Mob implements Enemy {
         if (this.getIsCharging() && this.getChargingTicks()==0){
             this.setIsCharging(false);
             this.armorUp();
-            this.goalSelector.getAvailableGoals().forEach(WrappedGoal::start);
+            // Do NOT force-start every available goal here. WrappedGoal::start invokes the
+            // underlying Goal#start() unconditionally, bypassing Goal#canUse(). Many goals
+            // (e.g. hearthandharvest's PungentEffectGoal) populate internal state inside
+            // canUse() and assume start() is only called after canUse() returned true —
+            // calling start() blind throws an NPE on the goal's uninitialised fields and
+            // crashes the entity tick. The vanilla GoalSelector will naturally re-evaluate
+            // canUse() on the next AI step and start whichever goals are appropriate.
         }
 
         if (this.getIsCharging() && !this.onGround()){

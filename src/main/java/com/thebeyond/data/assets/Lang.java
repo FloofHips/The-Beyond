@@ -44,6 +44,16 @@ public class Lang extends LanguageProvider {
 
         mobs.forEach(mob -> add(mob, getName(mob.getDescriptionId())));
 
+        // Biomes are datapack-registered (JSON in data/the_beyond/worldgen/biome/), so they
+        // don't appear in BuiltInRegistries.BIOME at datagen time and can't be iterated like
+        // the registries above. Add them by hand. Without these keys, mods that surface
+        // biome names (Xaero's, EMI, /locate output, F3) show the raw resource path.
+        add("biome.the_beyond.attracta_expanse", "Attracta Expanse");
+        add("biome.the_beyond.pearlescent_planes", "Pearlescent Planes");
+        add("biome.the_beyond.peer_lands", "Peer Lands");
+        add("biome.the_beyond.the_paths", "The Paths");
+        add("biome.the_beyond.true_void", "True Void");
+
         add("itemGroup.the_beyond", "The Beyond");
 
         // Advancements
