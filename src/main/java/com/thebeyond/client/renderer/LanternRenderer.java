@@ -20,7 +20,7 @@ import net.minecraft.util.Mth;
 import net.neoforged.neoforge.client.NeoForgeRenderTypes;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.*;
+// java.awt.Color removed — unavailable on headless server JVMs, replaced with bit math
 
 public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeModel<LanternEntity>> {
     private static final ResourceLocation TEXTURE_LEVIATHAN = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/lantern/leviathan_lantern.png");
@@ -123,7 +123,8 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
         }
 
         int finalAlpha = (int) Math.max(255 * alpha, entity.getAlpha());
-        int color = new Color(255, finalAlpha,255, finalAlpha).getRGB();
+        // Pack ARGB manually: Color(r=255, g=finalAlpha, b=255, a=finalAlpha)
+        int color = (finalAlpha << 24) | (0xFF << 16) | (finalAlpha << 8) | 0xFF;
 
         // Shader fallback: use full brightness to replicate the unlit/emissive appearance
         // of the original ENTITY_DEPTH and unlitTranslucent render types. Without this,
@@ -142,11 +143,16 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
         // shader pack bloom/glow effects. The primary entityTranslucent pass above already
         // established depth, preventing the skybox from rendering over this overlay.
         // Rendered at reduced alpha so bloom is a subtle luminous halo, not a solid duplicate.
+        // Sodium compat: inflated by 0.2% to prevent z-fighting between the two passes — both
+        // render identical geometry, and Sodium's depth-test/sort order differs from vanilla,
+        // causing the "scribbled" flicker artifact on fins and body.
         if (isShaderFallback && finalAlpha > 10) {
             ResourceLocation depthTexture = LanternDepthTextureManager.getOrCreate(getTextureLocation(entity));
             VertexConsumer emissiveConsumer = buffer.getBuffer(RenderType.entityTranslucentEmissive(depthTexture));
             int bloomAlpha = Math.max((int) (finalAlpha * 0.4f), 1);
-            int bloomColor = new Color(255, bloomAlpha, 255, bloomAlpha).getRGB();
+            int bloomColor = (bloomAlpha << 24) | (0xFF << 16) | (bloomAlpha << 8) | 0xFF;
+            poseStack.pushPose();
+            poseStack.scale(1.002f, 1.002f, 1.002f);
             this.getModel(entity).renderToBuffer(
                     poseStack,
                     emissiveConsumer,
@@ -154,6 +160,7 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
                     OverlayTexture.NO_OVERLAY,
                     bloomColor
             );
+            poseStack.popPose();
         }
 
         //this.getModel(entity).prepareMobModel(entity, f5, f4, partialTicks);

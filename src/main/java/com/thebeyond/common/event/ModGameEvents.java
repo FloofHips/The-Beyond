@@ -2,6 +2,7 @@ package com.thebeyond.common.event;
 
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.entity.TotemOfRespiteEntity;
+import com.thebeyond.common.item.AnchorLeggingsItem;
 import com.thebeyond.common.registry.*;
 import com.thebeyond.util.AOEManager;
 import com.thebeyond.util.RefugeChunkData;
@@ -91,23 +92,27 @@ public class ModGameEvents {
                 return;
             }
         }
+    }
 
-        // Anchor Leggings slam
-        if (!(event.getEntity() instanceof LivingEntity livingEntity) || !livingEntity.getItemBySlot(EquipmentSlot.LEGS).is(BeyondItems.ANCHOR_LEGGINGS)) {
+    @SubscribeEvent
+    public static void onLand(LivingFallEvent event) {
+        if (!(event.getEntity() instanceof LivingEntity livingEntity)
+                || !livingEntity.getItemBySlot(EquipmentSlot.LEGS).is(BeyondItems.ANCHOR_LEGGINGS)) {
             return;
         }
 
-        if (event.getEntity() instanceof ServerPlayer serverplayer && serverplayer.isShiftKeyDown() && serverplayer.level() instanceof ServerLevel serverlevel) {
+        if (event.getEntity() instanceof ServerPlayer serverplayer
+                && serverplayer.isShiftKeyDown()
+                && serverplayer.level() instanceof ServerLevel serverlevel) {
             if (serverplayer.fallDistance > 1.5F && !serverplayer.isFallFlying()) {
-                serverplayer.setSpawnExtraParticlesOnFall(true);
-                SoundEvent soundevent = serverplayer.fallDistance > 5.0F ? SoundEvents.MACE_SMASH_GROUND_HEAVY : SoundEvents.MACE_SMASH_GROUND;
-                serverlevel.playSound(null, serverplayer.getX(), serverplayer.getY(), serverplayer.getZ(), soundevent, serverplayer.getSoundSource(), 1.0F, 1.0F);
+                var enchantmentRegistry = serverlevel.registryAccess()
+                        .registryOrThrow(Registries.ENCHANTMENT);
+                Holder<Enchantment> powerHolder = enchantmentRegistry
+                        .getHolderOrThrow(Enchantments.POWER);
+                int powerLevel = EnchantmentHelper.getItemEnchantmentLevel(
+                        powerHolder, serverplayer.getItemBySlot(EquipmentSlot.LEGS));
 
-                var enchantmentRegistry = serverlevel.registryAccess().registryOrThrow(Registries.ENCHANTMENT);
-                Holder<Enchantment> powerHolder = enchantmentRegistry.getHolderOrThrow(Enchantments.POWER);
-                int powerLevel = EnchantmentHelper.getItemEnchantmentLevel(powerHolder, serverplayer.getItemBySlot(EquipmentSlot.LEGS));
-
-                AOEManager.knockback(serverlevel, serverplayer, serverplayer, powerLevel + 1);
+                AnchorLeggingsItem.performSlam(serverplayer, serverplayer.fallDistance, powerLevel);
                 event.setDamageMultiplier(powerLevel > 0 ? 0.3f / powerLevel : 0.3f);
             }
         }

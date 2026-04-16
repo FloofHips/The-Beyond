@@ -1,6 +1,7 @@
 package com.thebeyond.common.event;
 
 import com.thebeyond.TheBeyond;
+import com.thebeyond.common.item.AnchorLeggingsItem;
 import com.thebeyond.common.worldgen.BeyondEndChunkGenerator;
 import com.thebeyond.common.worldgen.BeyondTerrainState;
 import com.thebeyond.common.worldgen.compat.EndBiomeDiscovery;
@@ -70,5 +71,6 @@ public class ServerWorldEvents {
         AuroraciteLayerFeature.resetNoise();
         AuroraciteLayerDTFeature.resetNoise();
         EndBiomeInjector.vanillaEndHolders = null;
+        AnchorLeggingsItem.clearCreativeTracking();
     }
 }

@@ -153,15 +153,24 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     }
 
     public static double getHorizontalBaseScale(int globalX, int globalZ) {
-        return globalNoiseOffset(0.005, 0.015, globalX * 0.000001, globalZ * 0.000001, globalHOffsetNoise);
+        return getHorizontalBaseScale(globalX, globalZ, globalHOffsetNoise);
+    }
+    public static double getHorizontalBaseScale(int globalX, int globalZ, PerlinSimplexNoise noise) {
+        return globalNoiseOffset(0.005, 0.015, globalX * 0.000001, globalZ * 0.000001, noise);
     }
 
     public static double getVerticalBaseScale(int globalX, int globalZ) {
-        return globalNoiseOffset(0.005, 0.015, globalX * 0.00001, globalZ * 0.00001, globalVOffsetNoise);
+        return getVerticalBaseScale(globalX, globalZ, globalVOffsetNoise);
+    }
+    public static double getVerticalBaseScale(int globalX, int globalZ, PerlinSimplexNoise noise) {
+        return globalNoiseOffset(0.005, 0.015, globalX * 0.00001, globalZ * 0.00001, noise);
     }
 
     public static double getCycleHeight(int globalX, int globalZ) {
-        return globalNoiseOffset(10, 100, globalX * 0.0001, globalZ * 0.0001, globalCOffsetNoise);
+        return getCycleHeight(globalX, globalZ, globalCOffsetNoise);
+    }
+    public static double getCycleHeight(int globalX, int globalZ, PerlinSimplexNoise noise) {
+        return globalNoiseOffset(10, 100, globalX * 0.0001, globalZ * 0.0001, noise);
     }
 
     public static double getThreshold(int globalX, int globalZ, float distanceFromOrigin) {
@@ -196,9 +205,14 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
      * 5 PerlinSimplex lookups on every call, which the y-loop cannot afford.</p>
      */
     public static double getTerrainDensity(int globalX, int globalY, int globalZ) {
-        double horizontalBaseScale = getHorizontalBaseScale(globalX, globalZ);
-        double verticalBaseScale = getVerticalBaseScale(globalX, globalZ);
-        double cycleHeight = getCycleHeight(globalX, globalZ);
+        // Cache volatile PerlinSimplexNoise reads into locals — avoids repeated memory
+        // barriers when called from cold paths (isSolidTerrain, heightmap, debug screen).
+        PerlinSimplexNoise hNoise = globalHOffsetNoise;
+        PerlinSimplexNoise vNoise = globalVOffsetNoise;
+        PerlinSimplexNoise cNoise = globalCOffsetNoise;
+        double horizontalBaseScale = getHorizontalBaseScale(globalX, globalZ, hNoise);
+        double verticalBaseScale = getVerticalBaseScale(globalX, globalZ, vNoise);
+        double cycleHeight = getCycleHeight(globalX, globalZ, cNoise);
 
         // Ping-pong wrap the block coordinates before scaling. Keeps noise inputs
         // small enough that SimplexNoise's & 0xFF permutation table doesn't cause
@@ -233,6 +247,11 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             int wrappedZ) {
         int shiftedY = globalY + TERRAIN_Y_OFFSET;
 
+        // Cache volatile read into a local variable — avoids repeated memory-barrier
+        // overhead when multiple chunk-gen threads (e.g. Create contraptions) hammer this
+        // method concurrently. One volatile read per call instead of one per loop iteration.
+        SimplexNoise noise = simplexNoise;
+
         double noiseValue = 0.0;
         double amplitude = 1.0;
         double frequency = 1.0;
@@ -246,7 +265,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             double sampleY = shiftedY * vScale;
             double sampleZ = wrappedZ * hScale;
 
-            double octaveNoise = simplexNoise.getValue(sampleX, sampleY, sampleZ);
+            double octaveNoise = noise.getValue(sampleX, sampleY, sampleZ);
             noiseValue += octaveNoise * amplitude;
             maxAmplitude += amplitude;
 
@@ -353,9 +372,14 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         // column (~40 k extra PerlinSimplexNoise evaluations per chunk in far-terrain).
         // baseThreshold is the same: getThreshold depends only on (globalX, globalZ,
         // distanceFromOrigin), all of which are fixed for this call.
-        double horizontalBaseScale = getHorizontalBaseScale(globalX, globalZ);
-        double verticalBaseScale = getVerticalBaseScale(globalX, globalZ);
-        double cycleHeight = getCycleHeight(globalX, globalZ);
+        // Volatile reads cached into locals once per column — prevents repeated memory
+        // barriers when Create or other mods aggressively load many chunks concurrently.
+        PerlinSimplexNoise hNoise = globalHOffsetNoise;
+        PerlinSimplexNoise vNoise = globalVOffsetNoise;
+        PerlinSimplexNoise cNoise = globalCOffsetNoise;
+        double horizontalBaseScale = getHorizontalBaseScale(globalX, globalZ, hNoise);
+        double verticalBaseScale = getVerticalBaseScale(globalX, globalZ, vNoise);
+        double cycleHeight = getCycleHeight(globalX, globalZ, cNoise);
         int wrappedX = pingPongWrap(globalX, 0, 65536);
         int wrappedZ = pingPongWrap(globalZ, 0, 65536);
         double baseThreshold = getThreshold(globalX, globalZ, distanceFromOrigin);
