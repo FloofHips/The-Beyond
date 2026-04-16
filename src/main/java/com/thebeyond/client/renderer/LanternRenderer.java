@@ -42,11 +42,13 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
     protected RenderType getRenderType(LanternEntity livingEntity, boolean bodyVisible, boolean translucent, boolean glowing) {
         // Iris/Oculus replace the G-Buffer pipeline entirely — BeyondShaders' custom
         // depth overlay shader is silently ignored, making the entity invisible.
-        // Fall back to a CPU-processed "depth" texture + vanilla emissive render type that
-        // replicates the shader's white-to-gray depth mapping. See LanternDepthTextureManager.
+        // Fall back to a CPU-processed "depth" texture + vanilla-compatible render type.
+        // Uses entityTranslucentCulled (CULL enabled) instead of vanilla entityTranslucent
+        // (NO_CULL) because Lantern fins are zero-thickness cubes — without culling, the
+        // two coplanar quads generated for each fin z-fight ("scribbled" artifact).
         if (ShaderCompatLib.isShaderModLoaded()) {
             ResourceLocation depthTexture = LanternDepthTextureManager.getOrCreate(getTextureLocation(livingEntity));
-            return RenderType.entityTranslucent(depthTexture);
+            return BeyondRenderTypes.entityTranslucentCulled(depthTexture);
         }
         return BeyondRenderTypes.getEntityDepth(getTextureLocation(livingEntity));
     }
@@ -96,13 +98,14 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
 
         // Shader mod fallback: BeyondRenderTypes.unlitTranslucent() uses a NeoForge unlit
         // shader that Iris/Oculus strip from the G-Buffer pipeline. Use a CPU-processed
-        // depth texture + vanilla entityTranslucent with full-brightness lighting to replicate
-        // the custom shader's unlit white-to-gray depth mapping while staying shader-compatible.
+        // depth texture + entityTranslucentCulled (CULL enabled) to replicate the custom
+        // shader's unlit white-to-gray depth mapping. CULL is critical — Lantern fins are
+        // zero-thickness cubes whose two coplanar quads z-fight without back-face culling.
         VertexConsumer vertexConsumer;
         boolean isShaderFallback = ShaderCompatLib.isShaderModLoaded();
         if (isShaderFallback) {
             ResourceLocation depthTexture = LanternDepthTextureManager.getOrCreate(getTextureLocation(entity));
-            vertexConsumer = buffer.getBuffer(RenderType.entityTranslucent(depthTexture));
+            vertexConsumer = buffer.getBuffer(BeyondRenderTypes.entityTranslucentCulled(depthTexture));
         } else if (entity.getSize() == 3) {
             vertexConsumer = buffer.getBuffer(NeoForgeRenderTypes.getUnlitTranslucent(getTextureLocation(entity)));
         } else {
@@ -140,19 +143,15 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
         );
 
         // Emissive bloom overlay (shader mod only): entityTranslucentEmissive triggers Iris
-        // shader pack bloom/glow effects. The primary entityTranslucent pass above already
-        // established depth, preventing the skybox from rendering over this overlay.
+        // shader pack bloom/glow effects. The primary pass above already established depth.
         // Rendered at reduced alpha so bloom is a subtle luminous halo, not a solid duplicate.
-        // Sodium compat: inflated by 0.2% to prevent z-fighting between the two passes — both
-        // render identical geometry, and Sodium's depth-test/sort order differs from vanilla,
-        // causing the "scribbled" flicker artifact on fins and body.
+        // Uses CULL-enabled emissive variant — same reason as the base pass: zero-thickness
+        // fin quads generate two coplanar faces that z-fight without back-face culling.
         if (isShaderFallback && finalAlpha > 10) {
             ResourceLocation depthTexture = LanternDepthTextureManager.getOrCreate(getTextureLocation(entity));
-            VertexConsumer emissiveConsumer = buffer.getBuffer(RenderType.entityTranslucentEmissive(depthTexture));
+            VertexConsumer emissiveConsumer = buffer.getBuffer(BeyondRenderTypes.entityTranslucentEmissiveCulled(depthTexture));
             int bloomAlpha = Math.max((int) (finalAlpha * 0.4f), 1);
             int bloomColor = (bloomAlpha << 24) | (0xFF << 16) | (bloomAlpha << 8) | 0xFF;
-            poseStack.pushPose();
-            poseStack.scale(1.002f, 1.002f, 1.002f);
             this.getModel(entity).renderToBuffer(
                     poseStack,
                     emissiveConsumer,
@@ -160,7 +159,6 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
                     OverlayTexture.NO_OVERLAY,
                     bloomColor
             );
-            poseStack.popPose();
         }
 
         //this.getModel(entity).prepareMobModel(entity, f5, f4, partialTicks);

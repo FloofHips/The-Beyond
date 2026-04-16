@@ -60,7 +60,10 @@ public class AnchorLeggingsItem extends ModelArmorItem {
             Holder<Enchantment> powerHolder = enchantmentRegistry.getHolderOrThrow(Enchantments.POWER);
             int powerLevel = EnchantmentHelper.getItemEnchantmentLevel(powerHolder, stack);
 
-            if (player.isShiftKeyDown()) {
+            // Downward velocity boost only while airborne — on the ground, the constant
+            // push + hurtMarked causes the player to micro-fall every tick, making the
+            // client play landing sounds in a rapid loop.
+            if (player.isShiftKeyDown() && !player.onGround()) {
                 player.stopFallFlying();
                 player.setDeltaMovement(player.getDeltaMovement().subtract(0, 0.08 * (1 + 0.5 * powerLevel), 0));
                 player.hurtMarked = true;

@@ -248,8 +248,9 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         int shiftedY = globalY + TERRAIN_Y_OFFSET;
 
         // Cache volatile read into a local variable — avoids repeated memory-barrier
-        // overhead when multiple chunk-gen threads (e.g. Create contraptions) hammer this
-        // method concurrently. One volatile read per call instead of one per loop iteration.
+        // overhead when multiple chunk-gen threads hammer this method concurrently (e.g.
+        // player riding a Create train triggers view-distance chunk loading at speed).
+        // One volatile read per call instead of one per loop iteration.
         SimplexNoise noise = simplexNoise;
 
         double noiseValue = 0.0;
@@ -373,7 +374,8 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         // baseThreshold is the same: getThreshold depends only on (globalX, globalZ,
         // distanceFromOrigin), all of which are fixed for this call.
         // Volatile reads cached into locals once per column — prevents repeated memory
-        // barriers when Create or other mods aggressively load many chunks concurrently.
+        // barriers when many chunks are generated concurrently (e.g. player riding a Create
+        // train causes rapid view-distance chunk loading across the End).
         PerlinSimplexNoise hNoise = globalHOffsetNoise;
         PerlinSimplexNoise vNoise = globalVOffsetNoise;
         PerlinSimplexNoise cNoise = globalCOffsetNoise;
