@@ -23,7 +23,7 @@ import static com.thebeyond.common.block.BonfireBlock.LIT;
 
 public class BonfireBlockEntity extends BlockEntity {
     private int activationTimer = -1;
-    private Player activatingPlayer = null;
+    private java.util.UUID activatingPlayerUUID = null;
     public int birthday = 0;
     public BonfireBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
         super(type, pos, blockState);
@@ -50,11 +50,16 @@ public class BonfireBlockEntity extends BlockEntity {
         }
     }
 
+    private Player getActivatingPlayer() {
+        if (activatingPlayerUUID == null || level == null) return null;
+        return level.getPlayerByUUID(activatingPlayerUUID);
+    }
+
     public void activate(Player player) {
         if (activationTimer == -1 && level != null && !level.isClientSide) {
             this.birthday = (int) (level.getDayTime() / 24000);
             activationTimer = 200;
-            activatingPlayer = player;
+            activatingPlayerUUID = player.getUUID();
 
             for (int i = 0; i < level.random.nextInt(5, 8); i++) {
                 level.addFreshEntity(new ExperienceOrb(level, this.getBlockPos().getX(), this.getBlockPos().getY() + 1, this.getBlockPos().getZ(), level.getRandom().nextInt(7) + 5));
@@ -90,7 +95,9 @@ public class BonfireBlockEntity extends BlockEntity {
     }
 
     private void spawnLanterns() {
-        if (level == null || activatingPlayer == null) return;
+        if (level == null || activatingPlayerUUID == null) return;
+        Player activatingPlayer = getActivatingPlayer();
+        if (activatingPlayer == null) return;
 
         if (!(level instanceof ServerLevel serverLevel)) return;
         BlockPos center = worldPosition;
@@ -127,7 +134,7 @@ public class BonfireBlockEntity extends BlockEntity {
 
     private void finishActivation() {
         activationTimer = -1;
-        activatingPlayer = null;
+        activatingPlayerUUID = null;
         setChanged();
     }
 }

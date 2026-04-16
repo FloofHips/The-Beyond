@@ -62,7 +62,7 @@ import java.util.stream.Collectors;
 public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
     @Nullable
     private Component name;
-    public static final Map<ServerLevel, Set<RefugeBlockEntity>> ACTIVE_REFUGES = new HashMap<>();
+    public static final Map<ServerLevel, Set<RefugeBlockEntity>> ACTIVE_REFUGES = new WeakHashMap<>();
     //private UUID owner;
     @Nullable
     private ResolvableProfile owner;

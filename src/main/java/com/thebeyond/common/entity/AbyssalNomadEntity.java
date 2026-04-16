@@ -127,6 +127,13 @@ public class AbyssalNomadEntity extends PathfinderMob {
         setSitting(compound.getBoolean("Sitting"));
         setCorruption(compound.getInt("Corruption"));
         setPray(compound.getBoolean("toPray"));
+
+        if (compound.contains("PrayerSiteX")) {
+            prayerSite = new BlockPos(compound.getInt("PrayerSiteX"), compound.getInt("PrayerSiteY"), compound.getInt("PrayerSiteZ"));
+        }
+        if (compound.contains("LookAtX")) {
+            lookAt = new BlockPos(compound.getInt("LookAtX"), compound.getInt("LookAtY"), compound.getInt("LookAtZ"));
+        }
     }
 
     @Override
@@ -135,6 +142,17 @@ public class AbyssalNomadEntity extends PathfinderMob {
         compound.putBoolean("Sitting", entityData.get(DATA_SITTING));
         compound.putInt("Corruption", entityData.get(DATA_CORRUPTION));
         compound.putBoolean("toPray", entityData.get(DATA_TO_PRAY));
+
+        if (prayerSite != null) {
+            compound.putInt("PrayerSiteX", prayerSite.getX());
+            compound.putInt("PrayerSiteY", prayerSite.getY());
+            compound.putInt("PrayerSiteZ", prayerSite.getZ());
+        }
+        if (lookAt != null) {
+            compound.putInt("LookAtX", lookAt.getX());
+            compound.putInt("LookAtY", lookAt.getY());
+            compound.putInt("LookAtZ", lookAt.getZ());
+        }
     }
 
     @Override
