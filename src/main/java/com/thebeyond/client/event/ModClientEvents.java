@@ -610,7 +610,19 @@ public class ModClientEvents {
 
         if (!(Math.sqrt(player.getX() * player.getX() + player.getZ() * player.getZ())>300)) {
 
-            if (Minecraft.getInstance().gui.getBossOverlay().shouldCreateWorldFog()) {
+            // Detect any active boss fight. shouldCreateWorldFog() only returns true for
+            // Java ServerBossEvent boss bars (vanilla dragon). Stellarity uses command boss
+            // bars (/bossbar add) which never set that flag. Fall back to checking if the
+            // BossHealthOverlay has any entries at all — this catches both vanilla and
+            // Stellarity boss bars so the 3D cloud rings render during any End boss fight.
+            boolean bossActive = Minecraft.getInstance().gui.getBossOverlay().shouldCreateWorldFog();
+            if (!bossActive) {
+                var overlay = Minecraft.getInstance().gui.getBossOverlay();
+                if (overlay instanceof com.thebeyond.mixin.client.BossHealthOverlayAccessor accessor) {
+                    bossActive = !accessor.the_beyond$getEvents().isEmpty();
+                }
+            }
+            if (bossActive) {
                 bossFog = Mth.lerp(0.05f , bossFog, 1);
             } else {
                 bossFog = Mth.lerp(0.05f , bossFog, 0);

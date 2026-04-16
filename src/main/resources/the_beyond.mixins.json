@@ -26,6 +26,9 @@
     "JigsawStructureMixin",
     "AuroraciteLayerProtectionMixin"
   ],
+  "client": [
+    "client.BossHealthOverlayAccessor"
+  ],
   "server": [],
   "injectors": {
     "defaultRequire": 1
