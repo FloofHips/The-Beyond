@@ -93,7 +93,7 @@ public abstract class SpikeFeaturePlacementStellarityMixin {
         }
 
         int rawHeight = theBeyond$getRawHeight(spike);
-        TheBeyond.LOGGER.info(
+        TheBeyond.LOGGER.debug(
                 "[TheBeyond] Stellarity compat: placing spike at ({}, {}) with vanilla absolute-Y semantics (rawHeight={}, interceptedHeight={}, radius={}, crystal will be at y={})",
                 spike.getCenterX(), spike.getCenterZ(), rawHeight, spike.getHeight(), spike.getRadius(), rawHeight + 1);
 

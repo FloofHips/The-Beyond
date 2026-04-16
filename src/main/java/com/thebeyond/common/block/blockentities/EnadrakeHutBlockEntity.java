@@ -114,9 +114,11 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
 
         if (be.pregnant) {
             EnadrakeEntity entity = BeyondEntityTypes.ENADRAKE.get().create(level);
-            level.addFreshEntity(entity);
-            be.tryToEnter(entity);
-
+            if (entity != null) {
+                entity.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
+                level.addFreshEntity(entity);
+                be.tryToEnter(entity);
+            }
             be.pregnant = false;
         }
 

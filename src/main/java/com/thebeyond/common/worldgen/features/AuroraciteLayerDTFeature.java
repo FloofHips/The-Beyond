@@ -134,6 +134,7 @@ public class AuroraciteLayerDTFeature extends Feature<NoneFeatureConfiguration> 
         int chunkX = origin.getX() & ~15; // align to chunk
         int chunkZ = origin.getZ() & ~15;
         BlockState auroracite = BeyondBlocks.AURORACITE.get().defaultBlockState();
+        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
         boolean placed = false;
 
         for (int x = 0; x < 16; x++) {
@@ -142,18 +143,13 @@ public class AuroraciteLayerDTFeature extends Feature<NoneFeatureConfiguration> 
                 int globalZ = chunkZ + z;
 
                 double auroraNoise = simplex.getValue(globalX * 0.1, globalZ * 0.1);
-                BlockPos pos0 = new BlockPos(globalX, minY, globalZ);
-                BlockPos pos1 = new BlockPos(globalX, minY + 1, globalZ);
 
                 if (auroraNoise > 0.0) {
-                    level.setBlock(pos0, auroracite, 2);
-                    level.setBlock(pos1, auroracite, 2);
+                    level.setBlock(mutable.set(globalX, minY, globalZ), auroracite, 2);
+                    level.setBlock(mutable.set(globalX, minY + 1, globalZ), auroracite, 2);
                     placed = true;
                 } else if (hasDTFluid) {
-                    // Fill the void gaps with DT fluid ONE layer below the auroracite surface.
-                    // Auroracite occupies minY and minY+1; DT fluid only occupies minY, so the
-                    // auroracite "islands" stick up 1 block above the fluid — per Reda's suggestion.
-                    level.setBlock(pos0, dtFluid, 2);
+                    level.setBlock(mutable.set(globalX, minY, globalZ), dtFluid, 2);
                     placed = true;
                 }
             }

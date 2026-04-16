@@ -46,13 +46,18 @@ public abstract class MultiNoiseBiomeSourceMixin {
         }
 
         // Contaminated: find first valid Holder as fallback
+        Holder<Biome> firstValid = null;
         for (Pair<Climate.ParameterPoint, Holder<Biome>> pair : this.parameters().values()) {
             Object val = (Object) pair.getSecond();
             if (val instanceof Holder<?>) {
-                return (Holder<Biome>) val;
+                firstValid = (Holder<Biome>) val;
+                break;
             }
         }
 
-        return null;
+        // Total contamination should never happen in practice (at least one entry is
+        // always a valid Holder), but returning the first pair's value raw is safer
+        // than null — vanilla code never expects null from getNoiseBiome().
+        return firstValid != null ? firstValid : (Holder<Biome>) (Object) this.parameters().values().getFirst().getSecond();
     }
 }

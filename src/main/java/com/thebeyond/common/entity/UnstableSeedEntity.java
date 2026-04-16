@@ -69,7 +69,8 @@ public class UnstableSeedEntity extends AbstractSeedEntity {
         super.onHitEntity(result);
         Entity entity = result.getEntity();
         if (entity instanceof LivingEntity){
-            DamageSource damagesource = this.damageSources().mobProjectile(this, (LivingEntity) getOwner());
+            LivingEntity owner = getOwner() instanceof LivingEntity le ? le : null;
+            DamageSource damagesource = this.damageSources().mobProjectile(this, owner);
             entity.hurt(damagesource,1);
             entity.hurtMarked = true;
             this.playSound(SoundEvents.SHROOMLIGHT_BREAK, 2.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);

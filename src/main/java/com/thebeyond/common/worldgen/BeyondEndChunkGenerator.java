@@ -38,10 +38,10 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     });
 
     private final Holder<NoiseGeneratorSettings> settings;
-    public static SimplexNoise simplexNoise;
-    public static PerlinSimplexNoise globalHOffsetNoise;
-    public static PerlinSimplexNoise globalVOffsetNoise;
-    public static PerlinSimplexNoise globalCOffsetNoise;
+    public static volatile SimplexNoise simplexNoise;
+    public static volatile PerlinSimplexNoise globalHOffsetNoise;
+    public static volatile PerlinSimplexNoise globalVOffsetNoise;
+    public static volatile PerlinSimplexNoise globalCOffsetNoise;
     private double islandRadius = 75.0;
     private double buffer = 700.0;
     private static final double worldHeight = 192;
@@ -85,15 +85,29 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
     public void computeNoisesIfNotPresent(long worldSeed) {
         if (simplexNoise == null || globalHOffsetNoise == null || globalVOffsetNoise == null || globalCOffsetNoise == null) {
-            RandomSource random1 = RandomSource.create(worldSeed);
-            RandomSource random2 = RandomSource.create(worldSeed+1);
-            RandomSource random3 = RandomSource.create(worldSeed+2);
-            RandomSource random4 = RandomSource.create(worldSeed+3);
+            synchronized (BeyondEndChunkGenerator.class) {
+                if (simplexNoise == null || globalHOffsetNoise == null || globalVOffsetNoise == null || globalCOffsetNoise == null) {
+                    RandomSource random1 = RandomSource.create(worldSeed);
+                    RandomSource random2 = RandomSource.create(worldSeed + 1);
+                    RandomSource random3 = RandomSource.create(worldSeed + 2);
+                    RandomSource random4 = RandomSource.create(worldSeed + 3);
 
-            simplexNoise = new SimplexNoise(random1);
-            globalHOffsetNoise = new PerlinSimplexNoise(random2, Collections.singletonList(1));
-            globalVOffsetNoise = new PerlinSimplexNoise(random3, Collections.singletonList(1));
-            globalCOffsetNoise = new PerlinSimplexNoise(random4, Collections.singletonList(1));
+                    simplexNoise = new SimplexNoise(random1);
+                    globalHOffsetNoise = new PerlinSimplexNoise(random2, Collections.singletonList(1));
+                    globalVOffsetNoise = new PerlinSimplexNoise(random3, Collections.singletonList(1));
+                    globalCOffsetNoise = new PerlinSimplexNoise(random4, Collections.singletonList(1));
+                }
+            }
+        }
+    }
+
+    /** Resets static noise fields. Must be called on server stop to avoid seed leaking between worlds. */
+    public static void resetNoises() {
+        synchronized (BeyondEndChunkGenerator.class) {
+            simplexNoise = null;
+            globalHOffsetNoise = null;
+            globalVOffsetNoise = null;
+            globalCOffsetNoise = null;
         }
     }
 
@@ -307,6 +321,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         islandRadius += 50;
         int height = 40;
         float threshold = 1;
+        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
 
         for (int y = 0; y <= 40; y++) {
             double noiseValue = simplexNoise.getValue(globalX * 0.03, y * 0.1, globalZ * 0.03);
@@ -322,7 +337,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             }
 
             if ((double) globalX * globalX + (double) y * y + (double) globalZ * globalZ <= islandRadius * islandRadius * (0.5 + 0.5 * finalNoise) * threshold) {
-                chunk.setBlockState(new BlockPos(globalX, y + 20 , globalZ), Blocks.END_STONE.defaultBlockState(), false);
+                chunk.setBlockState(mutable.set(globalX, y + 20, globalZ), Blocks.END_STONE.defaultBlockState(), false);
             }
         }
     }

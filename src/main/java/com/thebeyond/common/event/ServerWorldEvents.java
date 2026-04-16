@@ -1,10 +1,13 @@
 package com.thebeyond.common.event;
 
 import com.thebeyond.TheBeyond;
+import com.thebeyond.common.worldgen.BeyondEndChunkGenerator;
 import com.thebeyond.common.worldgen.BeyondTerrainState;
 import com.thebeyond.common.worldgen.compat.EndBiomeDiscovery;
 import com.thebeyond.common.worldgen.compat.EndBiomeInjector;
 import com.thebeyond.common.worldgen.compat.SurfaceRuleMerger;
+import com.thebeyond.common.worldgen.features.AuroraciteLayerFeature;
+import com.thebeyond.common.worldgen.features.AuroraciteLayerDTFeature;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -59,9 +62,13 @@ public class ServerWorldEvents {
 
     @SubscribeEvent
     public static void onServerStopped(ServerStoppedEvent event) {
-        // Reset so the next server start re-detects whether Beyond owns the End. Important for
-        // single-player sessions where the JVM survives multiple world loads with possibly
-        // different datapack selections.
+        // Reset all static world-bound state so the next server start re-detects whether
+        // Beyond owns the End and re-seeds noises from the new world seed. Critical for
+        // single-player sessions where the JVM survives multiple world loads.
         BeyondTerrainState.reset();
+        BeyondEndChunkGenerator.resetNoises();
+        AuroraciteLayerFeature.resetNoise();
+        AuroraciteLayerDTFeature.resetNoise();
+        EndBiomeInjector.vanillaEndHolders = null;
     }
 }

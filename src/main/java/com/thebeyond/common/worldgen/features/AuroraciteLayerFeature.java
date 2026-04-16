@@ -70,6 +70,7 @@ public class AuroraciteLayerFeature extends Feature<NoneFeatureConfiguration> {
         int minY = level.getMinBuildHeight();
         int chunkX = origin.getX() & ~15; // align to chunk
         int chunkZ = origin.getZ() & ~15;
+        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
         boolean placed = false;
 
         for (int x = 0; x < 16; x++) {
@@ -79,11 +80,8 @@ public class AuroraciteLayerFeature extends Feature<NoneFeatureConfiguration> {
 
                 double auroraNoise = simplex.getValue(globalX * 0.1, globalZ * 0.1);
                 if (auroraNoise > 0.0) {
-                    BlockPos pos0 = new BlockPos(globalX, minY, globalZ);
-                    BlockPos pos1 = new BlockPos(globalX, minY + 1, globalZ);
-
-                    level.setBlock(pos0, BeyondBlocks.AURORACITE.get().defaultBlockState(), 2);
-                    level.setBlock(pos1, BeyondBlocks.AURORACITE.get().defaultBlockState(), 2);
+                    level.setBlock(mutable.set(globalX, minY, globalZ), BeyondBlocks.AURORACITE.get().defaultBlockState(), 2);
+                    level.setBlock(mutable.set(globalX, minY + 1, globalZ), BeyondBlocks.AURORACITE.get().defaultBlockState(), 2);
                     placed = true;
                 }
             }

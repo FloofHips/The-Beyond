@@ -441,10 +441,6 @@ public class EnadrakeEntity extends PathfinderMob {
         public void tick() {
             searchTicks++;
 
-            // Stuck branch and regular branch are mutually exclusive so the teleport sound +
-            // item.moveTo can't double-fire when stuckTicks%10==0 and searchTicks%20==0 coincide.
-            // Byte-identical to upstream (floofhips/main @ f4ba752) behavior in the non-stuck
-            // path; only fires one teleport per tick in the stuck path.
             if (getNavigation().isStuck()) {
                 stuckTicks++;
                 if (stuckTicks > 60) {

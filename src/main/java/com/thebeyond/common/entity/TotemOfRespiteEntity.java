@@ -155,7 +155,6 @@ public class TotemOfRespiteEntity extends Entity {
             this.hasImpulse = true;
         }
 
-        super.tick();
         this.move(MoverType.SELF, this.getDeltaMovement());
     }
 

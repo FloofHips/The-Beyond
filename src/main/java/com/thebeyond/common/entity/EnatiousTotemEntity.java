@@ -209,7 +209,7 @@ public class EnatiousTotemEntity extends Mob implements Enemy {
         if (getCooldown() == MAX_COOLDOWN / 2) {
             AABB pushArea = getBoundingBox().inflate(5);
             List<Entity> pushableEntities = this.level().getEntities(this, pushArea);
-            pushableEntities.removeIf(entity -> !entity.isPushable() && entity.isPassenger());
+            pushableEntities.removeIf(entity -> !entity.isPushable() || entity.isPassenger());
             Vec3 center = this.position();
             double pushStrength = 3;
 
@@ -324,17 +324,17 @@ public class EnatiousTotemEntity extends Mob implements Enemy {
             if (this.mob.getCountdown()==7){
                 this.mob.level().broadcastEntityEvent(this.mob, SHOOT);
             }
-            if (this.mob.getCountdown()==10){
+            if (this.mob.getCountdown()==10 && this.target instanceof LivingEntity living1){
                 this.mob.playSound(SoundEvents.ITEM_BREAK, 2.0F, 0.5f);
-                this.mob.shoot((LivingEntity) this.target, 1);
+                this.mob.shoot(living1, 1);
             }
-            if (this.mob.getCountdown()==15){
+            if (this.mob.getCountdown()==15 && this.target instanceof LivingEntity living2){
                 this.mob.playSound(SoundEvents.ITEM_BREAK, 2.0F, 1);
-                this.mob.shoot((LivingEntity) this.target, 2);
+                this.mob.shoot(living2, 2);
             }
-            if (this.mob.getCountdown()==20){
+            if (this.mob.getCountdown()==20 && this.target instanceof LivingEntity living3){
                 this.mob.playSound(SoundEvents.ITEM_BREAK, 2.0F, 2);
-                this.mob.shoot((LivingEntity) this.target, 3);
+                this.mob.shoot(living3, 3);
             }
         }
 

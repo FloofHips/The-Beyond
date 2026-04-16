@@ -118,7 +118,7 @@ public class AbyssalNomadEntity extends PathfinderMob {
         super.defineSynchedData(builder);
         builder.define(DATA_SITTING, false);
         builder.define(DATA_TO_PRAY, false);
-        builder.define(DATA_CORRUPTION, level().random.nextInt(100,256));
+        builder.define(DATA_CORRUPTION, java.util.concurrent.ThreadLocalRandom.current().nextInt(100, 256));
     }
 
     @Override
@@ -631,7 +631,7 @@ public class AbyssalNomadEntity extends PathfinderMob {
         for (int x = -1; x <= 1; x++) {
             for (int z = -1; z <= 1; z++) {
                 BlockPos check = pos.offset(x, 0, z);
-                if ((level.getBlockState(check.below()).is(BeyondBlocks.AURORACITE) || level.getBlockState(pos.below()).isSolid()) &&
+                if ((level.getBlockState(check.below()).is(BeyondBlocks.AURORACITE) || level.getBlockState(check.below()).isSolid()) &&
                         level.getBlockState(check).isAir() &&
                         level.getBlockState(check.above()).isAir()) {
                     return check;
