@@ -1,6 +1,8 @@
 package com.thebeyond.common.registry;
 
 import com.thebeyond.TheBeyond;
+import com.thebeyond.common.worldgen.features.AuroraciteLayerDTFeature;
+import com.thebeyond.common.worldgen.features.AuroraciteLayerFeature;
 import com.thebeyond.common.worldgen.features.EnadrakeVillageFeature;
 import com.thebeyond.common.worldgen.features.ObirootFeature;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -16,5 +18,7 @@ public class BeyondFeatures {
     public static final DeferredRegister<Feature<?>> FEATURES = DeferredRegister.create(BuiltInRegistries.FEATURE, TheBeyond.MODID);
     public static final DeferredHolder<Feature<?>, ObirootFeature> OBIROOT = FEATURES.register("obiroot", () -> new ObirootFeature(NoneFeatureConfiguration.CODEC));
     public static final DeferredHolder<Feature<?>, EnadrakeVillageFeature> ENADRAKE_VILLAGE = FEATURES.register("enadrake_village", () -> new EnadrakeVillageFeature(NoneFeatureConfiguration.CODEC));
+    public static final DeferredHolder<Feature<?>, AuroraciteLayerFeature> AURORACITE_LAYER = FEATURES.register("auroracite_layer", () -> new AuroraciteLayerFeature(NoneFeatureConfiguration.CODEC));
+    public static final DeferredHolder<Feature<?>, AuroraciteLayerDTFeature> AURORACITE_LAYER_DT = FEATURES.register("auroracite_layer_dt", () -> new AuroraciteLayerDTFeature(NoneFeatureConfiguration.CODEC));
 
 }

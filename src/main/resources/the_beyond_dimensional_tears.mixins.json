@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "com.thebeyond.mixin.compat.dimensional_tears",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "the_beyond.refmap.json",
+  "mixins": [
+    "DimensionalTearsOceanFeatureMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

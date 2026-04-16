@@ -4,10 +4,12 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.model.*;
+import com.thebeyond.client.compat.ShaderCompatLib;
 import com.thebeyond.common.entity.LanternEntity;
 import com.thebeyond.common.registry.BeyondRenderTypes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.EntityModel;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -38,6 +40,14 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
     @Nullable
     @Override
     protected RenderType getRenderType(LanternEntity livingEntity, boolean bodyVisible, boolean translucent, boolean glowing) {
+        // Iris/Oculus replace the G-Buffer pipeline entirely — BeyondShaders' custom
+        // depth overlay shader is silently ignored, making the entity invisible.
+        // Fall back to a CPU-processed "depth" texture + vanilla emissive render type that
+        // replicates the shader's white-to-gray depth mapping. See LanternDepthTextureManager.
+        if (ShaderCompatLib.isShaderModLoaded()) {
+            ResourceLocation depthTexture = LanternDepthTextureManager.getOrCreate(getTextureLocation(livingEntity));
+            return RenderType.entityTranslucent(depthTexture);
+        }
         return BeyondRenderTypes.getEntityDepth(getTextureLocation(livingEntity));
     }
 
@@ -82,25 +92,69 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
         this.getModel(entity).prepareMobModel(entity, f5, f4, partialTicks);
         this.getModel(entity).setupAnim(entity, f5, f4, f9, f2, f6);
 
-        //VertexConsumer vertexConsumer = buffer.getBuffer(BeyondRenderTypes.unlitTranslucent(getTextureLocation(entity)));
         float distance = Math.clamp(Minecraft.getInstance().cameraEntity.distanceTo(entity), 0, 10);
-        VertexConsumer vertexConsumer = buffer.getBuffer(BeyondRenderTypes.unlitTranslucent(getTextureLocation(entity)));
-        if (entity.getSize()==3)
+
+        // Shader mod fallback: BeyondRenderTypes.unlitTranslucent() uses a NeoForge unlit
+        // shader that Iris/Oculus strip from the G-Buffer pipeline. Use a CPU-processed
+        // depth texture + vanilla entityTranslucent with full-brightness lighting to replicate
+        // the custom shader's unlit white-to-gray depth mapping while staying shader-compatible.
+        VertexConsumer vertexConsumer;
+        boolean isShaderFallback = ShaderCompatLib.isShaderModLoaded();
+        if (isShaderFallback) {
+            ResourceLocation depthTexture = LanternDepthTextureManager.getOrCreate(getTextureLocation(entity));
+            vertexConsumer = buffer.getBuffer(RenderType.entityTranslucent(depthTexture));
+        } else if (entity.getSize() == 3) {
             vertexConsumer = buffer.getBuffer(NeoForgeRenderTypes.getUnlitTranslucent(getTextureLocation(entity)));
+        } else {
+            vertexConsumer = buffer.getBuffer(BeyondRenderTypes.unlitTranslucent(getTextureLocation(entity)));
+        }
         //float distance = 0;
 
         int transMax = 10;
         float alpha = Math.max(((((transMax - distance)/(float) transMax))), entity.level().getRainLevel(partialTicks));
+
+        // Shader fallback uses standard alpha blending (entityTranslucent) instead of the
+        // original multiply blend (CRUMBLING_TRANSPARENCY) used by the ENTITY_DEPTH render
+        // type. Alpha blending makes low-alpha pixels invisible faster, causing the lantern
+        // to abruptly disappear at distance. Square root curve compensates, keeping the
+        // lantern visible longer — closer to the original multiply-blend fade aesthetic.
+        if (isShaderFallback) {
+            alpha = (float) Math.sqrt(alpha);
+        }
+
         int finalAlpha = (int) Math.max(255 * alpha, entity.getAlpha());
         int color = new Color(255, finalAlpha,255, finalAlpha).getRGB();
+
+        // Shader fallback: use full brightness to replicate the unlit/emissive appearance
+        // of the original ENTITY_DEPTH and unlitTranslucent render types. Without this,
+        // ambient lighting darkens the lantern, breaking the ethereal glow aesthetic.
+        int lightLevel = isShaderFallback ? LightTexture.FULL_BRIGHT : packedLight;
 
         this.getModel(entity).renderToBuffer(
                 poseStack,
                 vertexConsumer,
-                packedLight,
+                lightLevel,
                 OverlayTexture.NO_OVERLAY,
                 color
         );
+
+        // Emissive bloom overlay (shader mod only): entityTranslucentEmissive triggers Iris
+        // shader pack bloom/glow effects. The primary entityTranslucent pass above already
+        // established depth, preventing the skybox from rendering over this overlay.
+        // Rendered at reduced alpha so bloom is a subtle luminous halo, not a solid duplicate.
+        if (isShaderFallback && finalAlpha > 10) {
+            ResourceLocation depthTexture = LanternDepthTextureManager.getOrCreate(getTextureLocation(entity));
+            VertexConsumer emissiveConsumer = buffer.getBuffer(RenderType.entityTranslucentEmissive(depthTexture));
+            int bloomAlpha = Math.max((int) (finalAlpha * 0.4f), 1);
+            int bloomColor = new Color(255, bloomAlpha, 255, bloomAlpha).getRGB();
+            this.getModel(entity).renderToBuffer(
+                    poseStack,
+                    emissiveConsumer,
+                    LightTexture.FULL_BRIGHT,
+                    OverlayTexture.NO_OVERLAY,
+                    bloomColor
+            );
+        }
 
         //this.getModel(entity).prepareMobModel(entity, f5, f4, partialTicks);
         //this.getModel(entity).setupAnim(entity, f5, f4, f9, f2, f6);

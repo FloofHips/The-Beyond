@@ -53,7 +53,8 @@ public class GravistarEntity extends ThrowableItemProjectile {
             for(LivingEntity livingentity : this.level().getEntitiesOfClass(LivingEntity.class, aabb, LivingEntity::isAlive)) {
                 int i = 0;
                 if (livingentity.hasEffect(BeyondEffects.WEIGHTLESS)) {
-                    i = livingentity.getEffect(BeyondEffects.WEIGHTLESS).getDuration();
+                    var existing = livingentity.getEffect(BeyondEffects.WEIGHTLESS);
+                    if (existing != null) i = existing.getDuration();
                 }
                 livingentity.addEffect(new MobEffectInstance(BeyondEffects.WEIGHTLESS, i+600, 1));
             }

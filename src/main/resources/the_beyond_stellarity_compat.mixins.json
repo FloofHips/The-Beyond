@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "package": "com.thebeyond.mixin.compat.stellarity",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "the_beyond.refmap.json",
+  "mixins": [
+    "EndSpikeHeightFixMixin",
+    "SpikeFeatureStellarityCompatMixin",
+    "SpikeFeaturePlacementStellarityMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

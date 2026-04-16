@@ -2,10 +2,19 @@ modLoader="javafml"
 loaderVersion="${loader_version_range}"
 license="${mod_license}"
 
+[[accessTransformers]]
+file="META-INF/accesstransformer.cfg"
+
 [[mixins]]
 config = "the_beyond.mixins.json"
 [[mixins]]
 config = "the_beyond.client.mixins.json"
+[[mixins]]
+config = "the_beyond_dimensional_tears.mixins.json"
+[[mixins]]
+config = "the_beyond_betterend_compat.mixins.json"
+[[mixins]]
+config = "the_beyond_stellarity_compat.mixins.json"
 
 [[mods]]
 enumExtensions="META-INF/enumextensions.json"

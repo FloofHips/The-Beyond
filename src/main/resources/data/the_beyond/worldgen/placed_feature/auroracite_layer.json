@@ -1,0 +1,8 @@
+{
+  "feature": "the_beyond:auroracite_layer",
+  "placement": [
+    {
+      "type": "minecraft:biome"
+    }
+  ]
+}

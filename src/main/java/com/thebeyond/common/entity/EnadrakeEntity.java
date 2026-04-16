@@ -65,13 +65,14 @@ public class EnadrakeEntity extends PathfinderMob {
     private static final EntityDataAccessor<Byte> DATA_FLAGS_ID = SynchedEntityData.defineId(EnadrakeEntity.class, EntityDataSerializers.BYTE);
     private static final EntityDataAccessor<Boolean> DATA_SCREAM = SynchedEntityData.defineId(EnadrakeEntity.class, EntityDataSerializers.BOOLEAN);
     public int panic;
+    public int onAWalkTimer = 0;
     private boolean insideHut = false;
     private BlockPos hutPosition = null;
     private int inHutTime = 0;
-    public int onAWalkTimer = 0;
-    private boolean fleeToHut = false;
-    public boolean shouldFleeToHut() { return fleeToHut; }
-    public void setFleeToHut(boolean flee) { this.fleeToHut = flee; }
+
+     private boolean fleeToHut = false;
+     public boolean shouldFleeToHut() { return fleeToHut; }
+     public void setFleeToHut(boolean flee) { this.fleeToHut = flee; }
 
     public EnadrakeEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
@@ -145,8 +146,8 @@ public class EnadrakeEntity extends PathfinderMob {
     @Override
     public void tick() {
         super.tick();
-        if (onAWalkTimer > 0) onAWalkTimer--;
         if (panic > 0) panic--;
+        if (onAWalkTimer > 0) onAWalkTimer--;
         if (panic > 190) this.setYHeadRot(getYHeadRot()+(random.nextInt(-40, 40)));
         if (panic < 190 && panic > 140) this.setYHeadRot(getYHeadRot()+(random.nextInt(-10, 10)));
         if (panic == 190) scream();
@@ -163,9 +164,9 @@ public class EnadrakeEntity extends PathfinderMob {
     }
 
     public void scream() {
-        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.FOX_SCREECH, SoundSource.HOSTILE, 0.5f, 1.5f);
-        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.FOX_SCREECH, SoundSource.HOSTILE, 1, 1);
-        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.FOX_SCREECH, SoundSource.HOSTILE, 0.5f, 0.5f);
+        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.FOX_SCREECH, SoundSource.HOSTILE, 2, 0.4f);
+        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.FOX_SCREECH, SoundSource.HOSTILE, 2, 0.45f);
+        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.FOX_SCREECH, SoundSource.HOSTILE, 2, 0.5f);
         level().playSound(this, BlockPos.containing(this.position()), SoundEvents.BELL_RESONATE, SoundSource.HOSTILE, 2, 2);
 
         AABB detectionBox = new AABB(getOnPos()).inflate(10);
@@ -399,6 +400,7 @@ public class EnadrakeEntity extends PathfinderMob {
                 cooldown--;
                 return false;
             }
+            if (EnadrakeEntity.this.onAWalkTimer > 0) return false;
             if (!EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty()) return false;
 
             List<ItemEntity> list = EnadrakeEntity.this.level().getEntitiesOfClass(ItemEntity.class, EnadrakeEntity.this.getBoundingBox().inflate((double)8.0F, (double)8.0F, (double)8.0F), EnadrakeEntity.ALLOWED_ITEMS);
@@ -439,6 +441,10 @@ public class EnadrakeEntity extends PathfinderMob {
         public void tick() {
             searchTicks++;
 
+            // Stuck branch and regular branch are mutually exclusive so the teleport sound +
+            // item.moveTo can't double-fire when stuckTicks%10==0 and searchTicks%20==0 coincide.
+            // Byte-identical to upstream (floofhips/main @ f4ba752) behavior in the non-stuck
+            // path; only fires one teleport per tick in the stuck path.
             if (getNavigation().isStuck()) {
                 stuckTicks++;
                 if (stuckTicks > 60) {
@@ -457,18 +463,18 @@ public class EnadrakeEntity extends PathfinderMob {
                 }
             } else {
                 stuckTicks = 0;
-            }
 
-            if (searchTicks % 20 == 0) {
-                List<ItemEntity> list = EnadrakeEntity.this.level().getEntitiesOfClass(ItemEntity.class, EnadrakeEntity.this.getBoundingBox().inflate((double)8.0F, (double)8.0F, (double)8.0F), EnadrakeEntity.ALLOWED_ITEMS);
-                ItemStack itemstack = EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND);
-                if (itemstack.isEmpty() && !list.isEmpty()) {
-                    if (list.size() == 1) {
-                        ItemEntity item = list.getFirst();
-                        level().playSound(item, BlockPos.containing(item.position()), SoundEvents.CHORUS_FRUIT_TELEPORT, SoundSource.BLOCKS,1,1);
-                        item.moveTo(EnadrakeEntity.this.position());
-                    } else {
-                        EnadrakeEntity.this.getNavigation().moveTo(list.get(0), 1.2);
+                if (searchTicks % 20 == 0) {
+                    List<ItemEntity> list = EnadrakeEntity.this.level().getEntitiesOfClass(ItemEntity.class, EnadrakeEntity.this.getBoundingBox().inflate((double)8.0F, (double)8.0F, (double)8.0F), EnadrakeEntity.ALLOWED_ITEMS);
+                    ItemStack itemstack = EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND);
+                    if (itemstack.isEmpty() && !list.isEmpty()) {
+                        if (list.size() == 1) {
+                            ItemEntity item = list.getFirst();
+                            level().playSound(item, BlockPos.containing(item.position()), SoundEvents.CHORUS_FRUIT_TELEPORT, SoundSource.BLOCKS, 1, 1);
+                            item.moveTo(EnadrakeEntity.this.position());
+                        } else {
+                            EnadrakeEntity.this.getNavigation().moveTo(list.get(0), 1.2);
+                        }
                     }
                 }
             }
@@ -942,8 +948,13 @@ public class EnadrakeEntity extends PathfinderMob {
 
         @Override
         public boolean canUse() {
+            // Enadrake-seed spam fix (per Reda's decision): the old gate was a flat 50%
+            // (nextBoolean) which, combined with MoveToBlockGoal polling this every tick
+            // and the ParanoiaBlock sprout-spawn reduction in Batch 1, still re-planted
+            // aggressively once an Enadrake picked up a sprout. Lowered to 10% to make
+            // re-planting a noticeable action rather than instant-reflex behavior.
             ItemStack itemstack = entity.getItemBySlot(EquipmentSlot.MAINHAND);
-            if (itemstack.is(BeyondBlocks.OBIROOT_SPROUT.asItem()) && level().random.nextBoolean()) return super.canUse();
+            if (itemstack.is(BeyondBlocks.OBIROOT_SPROUT.asItem()) && level().random.nextFloat() < 0.1f) return super.canUse();
             return false;
         }
 

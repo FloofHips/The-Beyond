@@ -102,7 +102,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
             public void set(int i, int i1) {
                 if (i == 0) {
                     currentMode = (byte) i1;
-                    if (level.getBlockEntity(pos) instanceof RefugeBlockEntity be) {
+                    if (level != null && level.getBlockEntity(pos) instanceof RefugeBlockEntity be) {
                         be.updateAllChunks((byte) i1);
                     }
                     setChanged();
@@ -378,6 +378,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
 
+        if (level == null) return;
         level.playSound(null, this.worldPosition, SoundEvents.AXE_STRIP, SoundSource.BLOCKS);
         if (level instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.OBIROOT.get().defaultBlockState()), this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ(), 120, 1f, 3, 1f, 0.05);
@@ -424,7 +425,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     public Set<ChunkPos> getAffectedChunks() {
-        if (affectedChunks == null) makeChunks();
+        if (affectedChunks.isEmpty() && getLevel() != null) makeChunks();
         return affectedChunks;
     }
 

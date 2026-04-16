@@ -9,8 +9,22 @@
     "BlockBehaviourMixin",
     "FallingBlockEntityAccessor",
     "PistonStructureResolverMixin",
+    "NoiseGeneratorSettingsAccessor",
     "RandomStateMixin",
-    "RefugeHungerMixin"
+    "RefugeHungerMixin",
+    "BiomeSourceSanitizerMixin",
+    "RegistryFileCodecMixin",
+    "MultiNoiseBiomeSourceMixin",
+    "EndWeatherMixin",
+    "EndWeatherSyncMixin",
+    "TheEndBiomeSourceMixin",
+    "PackRepositoryMixin",
+    "MultiPackResourceManagerMixin",
+    "EndPodiumFeatureMixin",
+    "WoverChunkGeneratorMixin",
+    "WoverSurfaceRuleUtilMixin",
+    "JigsawStructureMixin",
+    "AuroraciteLayerProtectionMixin"
   ],
   "server": [],
   "injectors": {

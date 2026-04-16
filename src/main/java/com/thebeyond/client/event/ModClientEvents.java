@@ -302,20 +302,33 @@ public class ModClientEvents {
         //}, BeyondBlocks.PEARL.get(), BeyondBlocks.PEARL_BRICKS.get());
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.LOW)
     public static void dimensionSpecialEffects(RegisterDimensionSpecialEffectsEvent event){
-        event.register(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"), new EndSpecialEffects());
+        EndSpecialEffects effects = new EndSpecialEffects();
+        event.register(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"), effects);
+        // Also register for the vanilla key. When another mod (e.g. BetterEnd) overrides
+        // the End dimension type's effectsLocation back to minecraft:the_end, Beyond's custom
+        // sky, fog color, and lightmap adjustments must still apply. Priority LOW ensures this
+        // handler runs after other mods' NORMAL-priority handlers, so Beyond's registration
+        // takes precedence (last writer wins in the DimensionSpecialEffects map).
+        event.register(ResourceLocation.withDefaultNamespace("the_end"), effects);
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
     public static void onRenderFog(ViewportEvent.RenderFog event) {
-        if (event.getCamera().getEntity().level().dimensionType().effectsLocation().equals(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"))) {
+        Entity cameraEntity = event.getCamera().getEntity();
+        if (cameraEntity == null) return;
+        if (cameraEntity.level().dimension() == Level.END) {
             event.setCanceled(true);
             event.setFogShape(FogShape.SPHERE);
 
             float finalFog = finalEffectFog(event.getCamera());
 
-            event.setFarPlaneDistance((float) (Minecraft.getInstance().cameraEntity.position().y + 30) * finalFog);
+            float y = (float) cameraEntity.position().y;
+            // Clamp minimum fog end to 30 blocks so fog stays valid at negative Y
+            // (Enderscape extends End min height to y=-64)
+            float fogEnd = Math.max((y + 30) * finalFog, 30 * finalFog);
+            event.setFarPlaneDistance(fogEnd);
             event.setNearPlaneDistance(15 * finalFog);
        }
     }
@@ -503,7 +516,7 @@ public class ModClientEvents {
                 int powerLevel = EnchantmentHelper.getItemEnchantmentLevel(powerHolder, serverplayer.getItemBySlot(EquipmentSlot.LEGS));
 
                 AOEManager.knockback(serverlevel, serverplayer, serverplayer, powerLevel);
-                event.setDamageMultiplier(0.3f / powerLevel);
+                event.setDamageMultiplier(powerLevel > 0 ? 0.3f / powerLevel : 0.3f);
             }
         }
     }
@@ -513,7 +526,7 @@ public class ModClientEvents {
         Player player = event.getEntity();
         if (!(player instanceof ServerPlayer serverPlayer)) return;
         if (player.tickCount % 20 != 0) return;
-        if (!player.level().dimensionType().effectsLocation().equals(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"))) return;
+        if (player.level().dimension() != Level.END) return;
         if (!player.level().isThundering()) return;
         if (player.getY() < 192 || player.getY() > 208) return;
        // if (!player.getAbilities().flying) return;
@@ -717,16 +730,19 @@ public class ModClientEvents {
             }
             @Override
             public ResourceLocation getStillTexture(FluidState state, BlockAndTintGetter getter, BlockPos pos) {
+                // Jade and other overlay mods may call this without a valid BlockPos (null)
+                // when rendering fluid icons in tooltips. Return the static base texture as
+                // fallback instead of NPE-ing on pos.getX(). (Reda's fix)
+                if (pos == null) return STILL;
                 int offset = (getVoidWaveOffset(pos.getX(), pos.getY(), pos.getZ())) % 39;
-
-                //System.out.println(offset);
                 return ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_" + Mth.abs(offset));
             }
 
             @Override
             public ResourceLocation getFlowingTexture(FluidState state, BlockAndTintGetter getter, BlockPos pos) {
+                // Same null-safety as getStillTexture — overlay mods may omit BlockPos.
+                if (pos == null) return FLOW;
                 int offset = (getVoidWaveOffset(pos.getX(), pos.getY(), pos.getZ())) % 39;
-                //System.out.println(offset);
                 return ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_flowing_" + Mth.abs(offset));
             }
 
@@ -785,15 +801,13 @@ public class ModClientEvents {
 
         //renderRefugeDebug(event);
 
-        if (!event.getCamera().getEntity().level().dimensionType().effectsLocation().equals(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"))) return;
+        Entity camEntity = event.getCamera().getEntity();
+        if (camEntity == null || camEntity.level().dimension() != Level.END) return;
 
         Minecraft mc = Minecraft.getInstance();
         Player player = mc.player;
+        if (player == null) return;
         Level level = player.level();
-
-        if (player == null || level == null) {
-            return;
-        }
 
         PoseStack poseStack = event.getPoseStack();
         Vec3 camPos = event.getCamera().getPosition();

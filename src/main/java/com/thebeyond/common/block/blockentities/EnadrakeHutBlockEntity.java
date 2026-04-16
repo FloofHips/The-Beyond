@@ -273,10 +273,11 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         if (entity instanceof EnadrakeEntity enadrake) {
             enadrake.setInsideHut(false);
             enadrake.setHutPosition(null);
+            enadrake.onAWalkTimer = 200;
             serverLevel.addFreshEntity(enadrake);
 
             serverLevel.sendParticles(ParticleTypes.PORTAL, enadrake.position().x, enadrake.position().y+0.6, enadrake.position().z, 20, 0.3, 0.3, 0.3, 0.05);
-            enadrake.onAWalkTimer = 200;
+
             if (angerOne)
                 enadrake.panic = 220;
         }

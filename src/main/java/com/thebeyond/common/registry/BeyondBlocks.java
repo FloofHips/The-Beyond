@@ -77,8 +77,7 @@ public class BeyondBlocks {
             MEMOR.get().defaultBlockState(),
             BlockBehaviour.Properties.ofFullCopy(MEMOR.get()).sound(SoundType.ANCIENT_DEBRIS)));
     public static final DeferredBlock<Block> MEMOR_FAUCET = registerBlock("memor_faucet", () -> new MemorFaucetBlock(
-            BlockBehaviour.Properties.ofFullCopy(MEMOR.get()).noOcclusion().sound(SoundType.NETHER_BRICKS)),
-            Rarity.EPIC);
+            BlockBehaviour.Properties.ofFullCopy(MEMOR.get()).noOcclusion().sound(SoundType.NETHER_BRICKS)), Rarity.EPIC);
 
     //STRUCTURES
     public static final DeferredBlock<Block> BONFIRE = registerBlock("bonfire", () -> new BonfireBlock(BlockBehaviour.Properties.of()
@@ -309,6 +308,7 @@ public class BeyondBlocks {
         return (DeferredBlock<T>) toReturn;
     }
 
+    @SuppressWarnings("unchecked")
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<? extends Block> block, Rarity rarity) {
         DeferredBlock<Block> toReturn = BLOCKS.register(name, block);
         CREATIVE_TAB_ITEMS.add(registerBlockItem(name, toReturn, rarity));
@@ -334,12 +334,12 @@ public class BeyondBlocks {
 //        CREATIVE_TAB_ITEMS.add(registerBlockItem(name, toReturn));
 //        return toReturn;
 //    }
-    private static DeferredHolder<Item, BlockItem> registerBlockItem(String name, Supplier<? extends Block> block, Rarity rarity) {
-        return BeyondItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties().rarity(rarity)));
+        private static DeferredHolder<Item, BlockItem> registerBlockItem(String name, Supplier<? extends Block> block) {
+        return BeyondItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties()));
     }
 
-    private static DeferredHolder<Item, BlockItem> registerBlockItem(String name, Supplier<? extends Block> block) {
-        return BeyondItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties()));
+    private static DeferredHolder<Item, BlockItem> registerBlockItem(String name, Supplier<? extends Block> block, Rarity rarity) {
+        return BeyondItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties().rarity(rarity)));
     }
 
     private static DeferredHolder<Item, BlockItem> registerIntegrationBlockItem(String name, Supplier<? extends Block> block) {

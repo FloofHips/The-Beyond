@@ -209,7 +209,11 @@ public class AbyssalNomadEntity extends PathfinderMob {
         handlePray();
         handleLook();
 
-        if (isPraying() && prayerSite == null && level() instanceof ServerLevel serverLevel)
+        // Only search for prayer sites in the End dimension. In non-End dimensions
+        // (e.g. player riding nomad through a portal), the structure tag doesn't exist
+        // and findNearestMapStructure would waste CPU returning null every tick.
+        if (isPraying() && prayerSite == null && level().dimension() == Level.END
+                && level() instanceof ServerLevel serverLevel)
             prayerSite = serverLevel.getLevel().findNearestMapStructure(BeyondTags.NOMAD_PRAYER_SITE, this.getOnPos(), 200, false);
 
         if (this.position().y < this.level().getMinBuildHeight() - 5) TeleportUtils.randomTeleport(this.level(), this);
@@ -472,7 +476,7 @@ public class AbyssalNomadEntity extends PathfinderMob {
                 nomad.playSound(SoundEvents.NOTE_BLOCK_DIDGERIDOO.value(), 1, random.nextFloat()*2);
             //}
 
-            if (nomad.getTarget().position().subtract(nomad.position()).length() < 5) {
+            if (nomad.getTarget() != null && nomad.getTarget().position().subtract(nomad.position()).length() < 5) {
                 if (nomad.attackCounter == 0) {
                     nomad.attackCounter = 51;
                 }
@@ -502,7 +506,11 @@ public class AbyssalNomadEntity extends PathfinderMob {
         @Override
         public void start() {
             super.start();
-            if (nomad.level() instanceof ServerLevel serverLevel) nomad.prayerSite = serverLevel.getLevel().findNearestMapStructure(BeyondTags.NOMAD_PRAYER_SITE, this.nomad.getOnPos(), 200, false);
+            // Only search for prayer site structures in the End dimension. In other
+            // dimensions prayerSite stays null and the goal will stop gracefully via
+            // canContinueToUse()'s null check.
+            if (nomad.level().dimension() == Level.END && nomad.level() instanceof ServerLevel serverLevel)
+                nomad.prayerSite = serverLevel.getLevel().findNearestMapStructure(BeyondTags.NOMAD_PRAYER_SITE, this.nomad.getOnPos(), 200, false);
         }
 
         @Override
@@ -543,7 +551,8 @@ public class AbyssalNomadEntity extends PathfinderMob {
 
         @Override
         public boolean canContinueToUse() {
-            return canUse() && nomad.position().distanceTo(Vec3.atCenterOf(nomad.prayerSite)) > 3;
+            return canUse() && nomad.prayerSite != null
+                    && nomad.position().distanceTo(Vec3.atCenterOf(nomad.prayerSite)) > 3;
         }
 
         @Override

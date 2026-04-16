@@ -10,6 +10,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorMaterial;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -54,10 +55,10 @@ public class AnchorLeggingsItem extends ModelArmorItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-        tooltipComponents.add(Component.literal("When Crouching: ").withStyle(ChatFormatting.GRAY));
-        tooltipComponents.add(Component.literal("Perform Slam Attack").withStyle(ChatFormatting.DARK_PURPLE));
-        tooltipComponents.add(Component.literal("+ Falling Speed").withStyle(ChatFormatting.BLUE));
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+        tooltipComponents.add(Component.literal("When Crouching:").withStyle(ChatFormatting.GRAY));
+        tooltipComponents.add(Component.literal(" Perform Slam Attack").withStyle(ChatFormatting.BLUE));
+        tooltipComponents.add(Component.literal(" + Falling Speed").withStyle(ChatFormatting.BLUE));
     }
 }
