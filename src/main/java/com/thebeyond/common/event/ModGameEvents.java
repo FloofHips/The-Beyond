@@ -107,7 +107,7 @@ public class ModGameEvents {
                 Holder<Enchantment> powerHolder = enchantmentRegistry.getHolderOrThrow(Enchantments.POWER);
                 int powerLevel = EnchantmentHelper.getItemEnchantmentLevel(powerHolder, serverplayer.getItemBySlot(EquipmentSlot.LEGS));
 
-                AOEManager.knockback(serverlevel, serverplayer, serverplayer, powerLevel);
+                AOEManager.knockback(serverlevel, serverplayer, serverplayer, powerLevel + 1);
                 event.setDamageMultiplier(powerLevel > 0 ? 0.3f / powerLevel : 0.3f);
             }
         }
