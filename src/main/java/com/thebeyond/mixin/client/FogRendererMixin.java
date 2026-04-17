@@ -2,6 +2,7 @@ package com.thebeyond.mixin.client;
 
 import com.mojang.blaze3d.shaders.FogShape;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.thebeyond.BeyondConfig;
 import com.thebeyond.client.event.ModClientEvents;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -19,6 +20,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * fog processing runs — no vanilla computation, no NeoForge event dispatch,
  * no other mods' fog mixins or event handlers. The competition is disabled,
  * not outprioritized.
+ *
+ * <p>Gated by the clientside config option {@code enableCustomFog}. When the
+ * config is disabled, vanilla {@code setupFog} runs normally for the End.</p>
  */
 @Mixin(FogRenderer.class)
 public class FogRendererMixin {
@@ -28,7 +32,8 @@ public class FogRendererMixin {
                                                float farPlaneDistance, boolean shouldCreateFog,
                                                float partialTick, CallbackInfo ci) {
         if (camera.getEntity() != null
-                && camera.getEntity().level().dimension() == Level.END) {
+                && camera.getEntity().level().dimension() == Level.END
+                && BeyondConfig.ENABLE_CUSTOM_FOG.get()) {
             float finalFog = (float) Mth.clamp(ModClientEvents.effectFog, 0.05, 1);
             float y = (float) camera.getEntity().position().y;
             // Clamp minimum fog end to 30 blocks so fog stays valid at negative Y

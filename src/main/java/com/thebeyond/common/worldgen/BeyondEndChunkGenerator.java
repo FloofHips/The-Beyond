@@ -382,8 +382,14 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         double horizontalBaseScale = getHorizontalBaseScale(globalX, globalZ, hNoise);
         double verticalBaseScale = getVerticalBaseScale(globalX, globalZ, vNoise);
         double cycleHeight = getCycleHeight(globalX, globalZ, cNoise);
-        int wrappedX = pingPongWrap(globalX, 0, 65536);
-        int wrappedZ = pingPongWrap(globalZ, 0, 65536);
+        // MUST use symmetric range (-65536, 65536) — not (0, 65536).
+        // With min=0, pingPongWrap(-n) == pingPongWrap(n), pivoting at origin and
+        // mirroring all terrain across x=0 and z=0. The symmetric form puts the
+        // pivots at ±65536 (far outside gameplay), making the near-origin behavior
+        // a linear passthrough. Mirror bug manifests as the terrain on the -X/-Z
+        // quadrants being a reflection of the +X/+Z quadrants.
+        int wrappedX = pingPongWrap(globalX, -65536, 65536);
+        int wrappedZ = pingPongWrap(globalZ, -65536, 65536);
         double baseThreshold = getThreshold(globalX, globalZ, distanceFromOrigin);
 
         BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();

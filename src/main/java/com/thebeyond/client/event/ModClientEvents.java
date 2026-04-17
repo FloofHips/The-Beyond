@@ -4,6 +4,7 @@ import com.mojang.blaze3d.shaders.FogShape;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Axis;
+import com.thebeyond.BeyondConfig;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.event.specialeffects.EndSpecialEffects;
 import com.thebeyond.client.gui.NomadsBlessingOverlay;
@@ -318,7 +319,10 @@ public class ModClientEvents {
     public static void onRenderFog(ViewportEvent.RenderFog event) {
         Entity cameraEntity = event.getCamera().getEntity();
         if (cameraEntity == null) return;
-        if (cameraEntity.level().dimension() == Level.END) {
+        // Gated by enableCustomFog clientside config — when disabled, the vanilla
+        // fog for the End runs unchanged. Mirrors FogRendererMixin's gate.
+        if (cameraEntity.level().dimension() == Level.END
+                && BeyondConfig.ENABLE_CUSTOM_FOG.get()) {
             event.setCanceled(true);
             event.setFogShape(FogShape.SPHERE);
 
