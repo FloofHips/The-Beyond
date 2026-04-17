@@ -218,8 +218,8 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         // small enough that SimplexNoise's & 0xFF permutation table doesn't cause
         // precision loss, while avoiding the hard seam of modulo wrapping.
         // Range 0–65536 is large enough that the bounce point is never visible in gameplay.
-        int wrappedX = pingPongWrap(globalX, 0, 65536);
-        int wrappedZ = pingPongWrap(globalZ, 0, 65536);
+        int wrappedX = pingPongWrap(globalX, -65536, 65536);
+        int wrappedZ = pingPongWrap(globalZ, -65536, 65536);
 
         return getTerrainDensity(globalY, horizontalBaseScale, verticalBaseScale, cycleHeight, wrappedX, wrappedZ);
     }
