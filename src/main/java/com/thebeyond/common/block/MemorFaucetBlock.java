@@ -1,7 +1,7 @@
 package com.thebeyond.common.block;
 
 import com.mojang.serialization.MapCodec;
-import com.thebeyond.common.block.blockentities.BonfireBlockEntity;
+
 import com.thebeyond.common.block.blockentities.MemorFaucetBlockEntity;
 import com.thebeyond.common.registry.BeyondBlockEntities;
 import com.thebeyond.common.registry.BeyondParticleTypes;
@@ -135,9 +135,9 @@ public class MemorFaucetBlock extends BaseEntityBlock {
     @Override
     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         super.randomTick(state, level, pos, random);
-        BlockEntity bonfire = level.getBlockEntity(pos);
-        if (bonfire instanceof BonfireBlockEntity bonfireBlockEntity) {
-            if (bonfireBlockEntity.isItMyBirthdayToday()) {
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (blockEntity instanceof MemorFaucetBlockEntity faucetBlockEntity) {
+            if (faucetBlockEntity.isItMyBirthdayToday()) {
                 level.setBlockAndUpdate(pos, state.setValue(AGE, 0));
             }
         }

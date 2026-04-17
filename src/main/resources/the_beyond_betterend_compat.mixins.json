@@ -1,0 +1,13 @@
+{
+  "required": false,
+  "package": "com.thebeyond.mixin.compat.betterend",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "the_beyond.refmap.json",
+  "mixins": [
+    "BetterEndGeneratorOptionsMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

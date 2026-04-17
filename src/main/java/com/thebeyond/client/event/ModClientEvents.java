@@ -302,20 +302,33 @@ public class ModClientEvents {
         //}, BeyondBlocks.PEARL.get(), BeyondBlocks.PEARL_BRICKS.get());
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.LOW)
     public static void dimensionSpecialEffects(RegisterDimensionSpecialEffectsEvent event){
-        event.register(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"), new EndSpecialEffects());
+        EndSpecialEffects effects = new EndSpecialEffects();
+        event.register(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"), effects);
+        // Also register for the vanilla key. When another mod (e.g. BetterEnd) overrides
+        // the End dimension type's effectsLocation back to minecraft:the_end, Beyond's custom
+        // sky, fog color, and lightmap adjustments must still apply. Priority LOW ensures this
+        // handler runs after other mods' NORMAL-priority handlers, so Beyond's registration
+        // takes precedence (last writer wins in the DimensionSpecialEffects map).
+        event.register(ResourceLocation.withDefaultNamespace("the_end"), effects);
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
     public static void onRenderFog(ViewportEvent.RenderFog event) {
-        if (event.getCamera().getEntity().level().dimensionType().effectsLocation().equals(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"))) {
+        Entity cameraEntity = event.getCamera().getEntity();
+        if (cameraEntity == null) return;
+        if (cameraEntity.level().dimension() == Level.END) {
             event.setCanceled(true);
             event.setFogShape(FogShape.SPHERE);
 
             float finalFog = finalEffectFog(event.getCamera());
 
-            event.setFarPlaneDistance((float) (Minecraft.getInstance().cameraEntity.position().y + 30) * finalFog);
+            float y = (float) cameraEntity.position().y;
+            // Clamp minimum fog end to 30 blocks so fog stays valid at negative Y
+            // (Enderscape extends End min height to y=-64)
+            float fogEnd = Math.max((y + 30) * finalFog, 30 * finalFog);
+            event.setFarPlaneDistance(fogEnd);
             event.setNearPlaneDistance(15 * finalFog);
        }
     }
@@ -407,49 +420,8 @@ public class ModClientEvents {
 //        );
 //    }
 
-    private static RefugeChunkData getChunkData(ServerLevel level, BlockPos pos) {
-        // Do NOT create or load the chunk here. This method is called from mod events that
-        // can fire while the server is already inside DistanceManager.runAllUpdates — a
-        // recursive chunk load in that context causes a ConcurrentModificationException on
-        // chunksToUpdateFutures. If the chunk isn't fully loaded, there is no refuge data
-        // to check anyway, so callers treat null as "no protection".
-        ChunkAccess chunk = level.getChunkSource().getChunk(pos.getX() >> 4, pos.getZ() >> 4, false);
-        return chunk == null ? null : chunk.getData(BeyondAttachments.REFUGE_DATA);
-    }
-
-    @SubscribeEvent
-    public static void onExplosion(ExplosionEvent.Start event) {
-        //if (RefugeBlockEntity.ACTIVE_REFUGES.isEmpty()) return;
-        if (event.getLevel() instanceof ServerLevel serverLevel) {
-            BlockPos pos = BlockPos.containing(event.getExplosion().center());
-            RefugeChunkData data = getChunkData(serverLevel, pos);
-            if (data != null && data.shouldPreventExplosion()) {
-                event.setCanceled(true);
-            }
-        }
-    }
-
-    @SubscribeEvent
-    public static void onMobSpawn(MobSpawnEvent.SpawnPlacementCheck event) {
-        //if (RefugeBlockEntity.ACTIVE_REFUGES.isEmpty()) return;
-        if (event.getLevel() instanceof ServerLevel serverLevel) {
-            RefugeChunkData data = getChunkData(serverLevel, event.getPos());
-            if (data != null && data.shouldPreventMobSpawn()) {
-                event.setResult(MobSpawnEvent.SpawnPlacementCheck.Result.FAIL);
-            }
-        }
-    }
-
-    @SubscribeEvent
-    public static void onFall(LivingFallEvent event) {
-        //if (RefugeBlockEntity.ACTIVE_REFUGES.isEmpty()) return;
-        if (event.getEntity() != null && event.getEntity().level() instanceof ServerLevel serverLevel) {
-            RefugeChunkData data = getChunkData(serverLevel, event.getEntity().getOnPos());
-            if (data != null && data.shouldPreventFallDamage()) {
-                event.setCanceled(true);
-            }
-        }
-    }
+    // Server-side Refuge, Totem, and gameplay handlers moved to ModGameEvents.java
+    // so they register on dedicated servers (not just Dist.CLIENT).
 
     @SubscribeEvent
     public static void onRenderNameTag(RenderNameTagEvent event) {
@@ -460,177 +432,6 @@ public class ModClientEvents {
         }
     }
 
-    @SubscribeEvent
-    public static void onLivingVisibility(LivingEvent.LivingVisibilityEvent event) {
-        if (event.getEntity() != null && event.getEntity() instanceof LivingEntity livingEntity) {
-            if (livingEntity.getItemBySlot(EquipmentSlot.HEAD).is(BeyondItems.ETHER_CLOAK.get())) {
-                event.modifyVisibility(0.1f);
-            }
-        }
-    }
-
-    @SubscribeEvent
-    public static void onItemToss(ItemTossEvent event) {
-        ItemStack item = event.getEntity().getItem();
-        if (item.is(BeyondItems.LIVE_FLAME) || item.is(BeyondItems.LIVID_FLAME) ) {
-            boolean flag = item.is(BeyondItems.LIVE_FLAME) ? true : false;
-
-            if (event.getPlayer().level() instanceof ServerLevel serverLevel) {
-                serverLevel.playSound(null, event.getEntity().blockPosition(), SoundEvents.FIRE_EXTINGUISH, SoundSource.NEUTRAL, 1, 0.8f + serverLevel.random.nextFloat());
-                serverLevel.playSound(null, event.getEntity().blockPosition(), SoundEvents.ENDER_EYE_DEATH, SoundSource.NEUTRAL, 1, 0.8f + serverLevel.random.nextFloat());
-                serverLevel.sendParticles(!flag ? BeyondParticleTypes.VOID_FLAME.get() : ParticleTypes.SOUL_FIRE_FLAME, event.getEntity().getX(), event.getEntity().getY(), event.getEntity().getZ(), 10, 0.05,0.1,0.05,0.05);
-                serverLevel.sendParticles(new ItemParticleOption(ParticleTypes.ITEM, item), event.getEntity().getX(), event.getEntity().getY(), event.getEntity().getZ(), 16, 0.02,0.02,0.02,0.1);
-            }
-
-            event.getEntity().discard();
-        }
-    }
-
-    @SubscribeEvent
-    public static void onLand(LivingFallEvent event) {
-        if ((event.getEntity() instanceof LivingEntity livingEntity) && !livingEntity.getItemBySlot(EquipmentSlot.LEGS).is(BeyondItems.ANCHOR_LEGGINGS)) {
-            return;
-        }
-
-        if (event.getEntity() instanceof ServerPlayer serverplayer && serverplayer.isShiftKeyDown() && serverplayer.level() instanceof ServerLevel serverlevel) {
-            if (serverplayer.fallDistance > 1.5F && !serverplayer.isFallFlying()) {
-                serverplayer.setSpawnExtraParticlesOnFall(true);
-                SoundEvent soundevent = serverplayer.fallDistance > 5.0F ? SoundEvents.MACE_SMASH_GROUND_HEAVY : SoundEvents.MACE_SMASH_GROUND;
-                serverlevel.playSound((Player)null, serverplayer.getX(), serverplayer.getY(), serverplayer.getZ(), soundevent, serverplayer.getSoundSource(), 1.0F, 1.0F);
-
-                Registry<Enchantment> enchantmentRegistry = serverlevel.registryAccess().registryOrThrow(Registries.ENCHANTMENT);
-                Holder<Enchantment> powerHolder = enchantmentRegistry.getHolderOrThrow(Enchantments.POWER);
-                int powerLevel = EnchantmentHelper.getItemEnchantmentLevel(powerHolder, serverplayer.getItemBySlot(EquipmentSlot.LEGS));
-
-                AOEManager.knockback(serverlevel, serverplayer, serverplayer, powerLevel);
-                event.setDamageMultiplier(0.3f / powerLevel);
-            }
-        }
-    }
-
-    @SubscribeEvent
-    public static void onPlayer(PlayerTickEvent.Post event) {
-        Player player = event.getEntity();
-        if (!(player instanceof ServerPlayer serverPlayer)) return;
-        if (player.tickCount % 20 != 0) return;
-        if (!player.level().dimensionType().effectsLocation().equals(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"))) return;
-        if (!player.level().isThundering()) return;
-        if (player.getY() < 192 || player.getY() > 208) return;
-       // if (!player.getAbilities().flying) return;
-
-        BeyondCriteriaTriggers.MIGRATION_STORM.get().trigger(serverPlayer);
-    }
-
-    private static final String TAG_PENDING_TOTEM = "the_beyond:pendingTotem";
-    private static final String TAG_TOTEM_ITEMS = "the_beyond:totemItems";
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onDeath(LivingDeathEvent event) {
-        if (event.isCanceled()) return;
-
-        if (event.getEntity() instanceof Player player) {
-            if (!(player.getMainHandItem().is(BeyondItems.TOTEM_OF_RESPITE) || player.getOffhandItem().is(BeyondItems.TOTEM_OF_RESPITE))) return;
-
-            if (player.level().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY))
-                return;
-            if (player.getHealth() > 0)
-                return;
-            CompoundTag persistent = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
-            persistent.remove(TAG_PENDING_TOTEM);
-            persistent.remove(TAG_TOTEM_ITEMS);
-
-            ListTag itemsList = new ListTag();
-            RegistryAccess regAccess = player.registryAccess();
-
-            boolean hasConsumedTotem = false;
-
-            if (player.getMainHandItem().is(BeyondItems.TOTEM_OF_RESPITE)) {
-                player.getMainHandItem().shrink(1);
-                hasConsumedTotem = true;
-            }
-            if (!hasConsumedTotem && player.getOffhandItem().is(BeyondItems.TOTEM_OF_RESPITE)) {
-                player.getOffhandItem().shrink(1);
-                hasConsumedTotem = true;
-            }
-
-            for (ItemStack stack : player.getInventory().items) {
-                if (!stack.isEmpty()) {
-                    Tag itemTag = stack.save(regAccess);
-                    itemsList.add(itemTag);
-                }
-            }
-
-            for (ItemStack stack : player.getInventory().armor) {
-                if (!stack.isEmpty()) {
-                    Tag itemTag = stack.save(regAccess);
-                    itemsList.add(itemTag);
-                }
-            }
-
-            for (ItemStack stack : player.getInventory().offhand) {
-                if (!stack.isEmpty()) {
-                    Tag itemTag = stack.save(regAccess);
-                    itemsList.add(itemTag);
-                }
-            }
-
-            if (!itemsList.isEmpty()) {
-                persistent.put(TAG_TOTEM_ITEMS, itemsList);
-                persistent.putBoolean(TAG_PENDING_TOTEM, true);
-            }
-
-            player.getPersistentData().put(Player.PERSISTED_NBT_TAG, persistent);
-        }
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onDrop(LivingDropsEvent event) {
-        if (event.isCanceled()) return;
-
-        if (event.getEntity() instanceof Player player) {
-            CompoundTag persistent = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
-            if (persistent.getBoolean(TAG_PENDING_TOTEM)) event.setCanceled(true);
-        }
-    }
-
-    @SubscribeEvent
-    public static void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
-        if (event.getEntity() instanceof Player player) {
-            if (player.level().isClientSide) return;
-
-            CompoundTag persistent = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
-
-            if (!persistent.getBoolean(TAG_PENDING_TOTEM)) return;
-
-            ListTag itemsList = persistent.getList(TAG_TOTEM_ITEMS, Tag.TAG_COMPOUND);
-            if (itemsList.isEmpty()) return;
-
-            TotemOfRespiteEntity totem = new TotemOfRespiteEntity(BeyondEntityTypes.TOTEM_OF_RESPITE.get(), player.level());
-            totem.setPos(player.getX(), player.getY() + 1.5, player.getZ());
-            totem.setOwner(player);
-
-            RegistryAccess regAccess = player.registryAccess();
-
-            for (Tag tag : itemsList) {
-                if (tag instanceof CompoundTag itemTag) {
-                    ItemStack stack = ItemStack.parse(regAccess, itemTag).orElse(ItemStack.EMPTY);
-
-                    if (!stack.isEmpty()) {
-                        totem.addItem(stack);
-                    }
-                }
-            }
-
-            player.level().addFreshEntity(totem);
-
-            if (player != null && player instanceof ServerPlayer serverPlayer) {
-                BeyondCriteriaTriggers.USE_TOTEM.get().trigger(serverPlayer);
-            }
-
-            persistent.remove(TAG_PENDING_TOTEM);
-            persistent.remove(TAG_TOTEM_ITEMS);
-        }
-    }
 
     //@SubscribeEvent
     //public static void onChunkLoadEvent(ChunkEvent.Unload event) {
@@ -695,7 +496,7 @@ public class ModClientEvents {
         //MODEL_ARMOR.clear();
 
         event.registerFluidType(new IClientFluidTypeExtensions() {
-            private static final ResourceLocation STILL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void"),
+            private static final ResourceLocation STILL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_0"),
                     STILL_2 = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/plate_block"),
                     FLOW = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/auroracite"),
                     OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/auroracite"),
@@ -717,16 +518,19 @@ public class ModClientEvents {
             }
             @Override
             public ResourceLocation getStillTexture(FluidState state, BlockAndTintGetter getter, BlockPos pos) {
+                // Jade and other overlay mods may call this without a valid BlockPos (null)
+                // when rendering fluid icons in tooltips. Return the static base texture as
+                // fallback instead of NPE-ing on pos.getX(). (Reda's fix)
+                if (pos == null) return STILL;
                 int offset = (getVoidWaveOffset(pos.getX(), pos.getY(), pos.getZ())) % 39;
-
-                //System.out.println(offset);
                 return ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_" + Mth.abs(offset));
             }
 
             @Override
             public ResourceLocation getFlowingTexture(FluidState state, BlockAndTintGetter getter, BlockPos pos) {
+                // Same null-safety as getStillTexture — overlay mods may omit BlockPos.
+                if (pos == null) return FLOW;
                 int offset = (getVoidWaveOffset(pos.getX(), pos.getY(), pos.getZ())) % 39;
-                //System.out.println(offset);
                 return ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_flowing_" + Mth.abs(offset));
             }
 
@@ -785,15 +589,13 @@ public class ModClientEvents {
 
         //renderRefugeDebug(event);
 
-        if (!event.getCamera().getEntity().level().dimensionType().effectsLocation().equals(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"))) return;
+        Entity camEntity = event.getCamera().getEntity();
+        if (camEntity == null || camEntity.level().dimension() != Level.END) return;
 
         Minecraft mc = Minecraft.getInstance();
         Player player = mc.player;
+        if (player == null) return;
         Level level = player.level();
-
-        if (player == null || level == null) {
-            return;
-        }
 
         PoseStack poseStack = event.getPoseStack();
         Vec3 camPos = event.getCamera().getPosition();
@@ -808,7 +610,19 @@ public class ModClientEvents {
 
         if (!(Math.sqrt(player.getX() * player.getX() + player.getZ() * player.getZ())>300)) {
 
-            if (Minecraft.getInstance().gui.getBossOverlay().shouldCreateWorldFog()) {
+            // Detect any active boss fight. shouldCreateWorldFog() only returns true for
+            // Java ServerBossEvent boss bars (vanilla dragon). Stellarity uses command boss
+            // bars (/bossbar add) which never set that flag. Fall back to checking if the
+            // BossHealthOverlay has any entries at all — this catches both vanilla and
+            // Stellarity boss bars so the 3D cloud rings render during any End boss fight.
+            boolean bossActive = Minecraft.getInstance().gui.getBossOverlay().shouldCreateWorldFog();
+            if (!bossActive) {
+                var overlay = Minecraft.getInstance().gui.getBossOverlay();
+                if (overlay instanceof com.thebeyond.mixin.client.BossHealthOverlayAccessor accessor) {
+                    bossActive = !accessor.the_beyond$getEvents().isEmpty();
+                }
+            }
+            if (bossActive) {
                 bossFog = Mth.lerp(0.05f , bossFog, 1);
             } else {
                 bossFog = Mth.lerp(0.05f , bossFog, 0);

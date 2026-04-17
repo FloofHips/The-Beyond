@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.model.AbyssalNomadModel;
 import com.thebeyond.client.model.BeyondModelLayers;
+import com.thebeyond.client.compat.ShaderCompatLib;
 import com.thebeyond.common.entity.AbyssalNomadEntity;
 import com.thebeyond.common.registry.BeyondRenderTypes;
 import net.minecraft.client.model.EntityModel;
@@ -41,7 +42,14 @@ public class AbyssalNomadGlowLayer extends RenderLayer<AbyssalNomadEntity, Abyss
         this.model.setupAnim(entity, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
         this.model.prepareMobModel(entity, limbSwing, limbSwingAmount, partialTick);
 
-        VertexConsumer vertexConsumer = bufferSource.getBuffer(NeoForgeRenderTypes.getUnlitTranslucent(TEXTURE));
+        // Iris/Oculus strip NeoForge's unlit translucent shader from the G-Buffer pipeline,
+        // making the glow layer (eyes + body hole colors) invisible. entityTranslucentEmissive
+        // is a vanilla type that shader mods handle — renders fullbright with proper alpha,
+        // preserving the Nomad's glowing eye/hole aesthetic.
+        RenderType renderType = ShaderCompatLib.isShaderModLoaded()
+                ? RenderType.entityTranslucentEmissive(TEXTURE)
+                : NeoForgeRenderTypes.getUnlitTranslucent(TEXTURE);
+        VertexConsumer vertexConsumer = bufferSource.getBuffer(renderType);
 
         Color color = new Color(1,(255 - entity.getCorruption())/255f,1,1);
 

@@ -124,7 +124,8 @@ public class KnockbackSeedEntity extends AbstractSeedEntity {
             if(livingEntity.level().isClientSide){
                 livingEntity.level().playLocalSound(livingEntity, SoundEvents.BELL_RESONATE, SoundSource.HOSTILE, 2, 2);
             }
-            DamageSource damagesource = this.damageSources().mobProjectile(this, (LivingEntity) getOwner());
+            LivingEntity owner = getOwner() instanceof LivingEntity le ? le : null;
+            DamageSource damagesource = this.damageSources().mobProjectile(this, owner);
             livingEntity.setDeltaMovement(getDeltaMovement().add(0, 0.5, 0).scale(-1));
             livingEntity.hurt(damagesource,1);
             livingEntity.hurtMarked = true;

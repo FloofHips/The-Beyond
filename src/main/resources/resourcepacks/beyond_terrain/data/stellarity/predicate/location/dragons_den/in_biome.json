@@ -1,0 +1,10 @@
+{
+  "__comment": "Overridden by The Beyond's beyond_terrain pack. The original Stellarity predicate only matches entities whose current biome is `stellarity:dragons_den` or `minecraft:the_end`. With Beyond as the End terrain provider, the 10 ring spikes at radius ~63 fall outside Beyond's center_biome and end up in the_beyond:* (inner/outer void), so Stellarity's original filter never matches them and the `remove_crystals` pass in `stellarity:post_gen/initialize` silently skips the ring crystals. That's why, on dragon summoning, the 10 pre-existing ring crystals survive and new respawn crystals get stacked on top. Replacing the biome filter with a position bound of -200..200 on x/z (matching the range of `stellarity:location/dragons_den/in_main_area`) catches every crystal in the central island area regardless of the exact biome Beyond assigned there, without widening beyond the dragons_den arena.",
+  "condition": "minecraft:location_check",
+  "predicate": {
+    "position": {
+      "x": { "min": -200, "max": 200 },
+      "z": { "min": -200, "max": 200 }
+    }
+  }
+}

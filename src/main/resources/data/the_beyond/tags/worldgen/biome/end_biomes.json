@@ -1,10 +1,5 @@
 {
   "values": [
-    "minecraft:end_highlands",
-    "minecraft:end_midlands",
-    "minecraft:end_barrens",
-    "the_beyond:attracta_expanse",
-    "the_beyond:peer_lands",
-    "the_beyond:pearlescent_planes"
+    "#minecraft:is_end"
   ]
 }

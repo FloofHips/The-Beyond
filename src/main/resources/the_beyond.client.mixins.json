@@ -3,7 +3,10 @@
   "package": "com.thebeyond.mixin.client",
   "compatibilityLevel": "JAVA_21",
   "refmap": "the_beyond.refmap.json",
+  "priority": 500,
   "mixins": [
+    "EndDimensionEffectsMixin",
+    "FogRendererMixin",
     "ItemRendererMixin"
   ],
   "server": [],

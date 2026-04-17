@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Axis;
 import com.thebeyond.TheBeyond;
+import com.thebeyond.client.compat.ShaderCompatLib;
 import com.thebeyond.client.event.ModClientEvents;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -19,7 +20,9 @@ import net.minecraft.util.CubicSampler;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeManager;
@@ -98,16 +101,30 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
 //
         if (level == null) return biomeFogColor;
 //
+        Vec3 result;
         if (level.isThundering()) {
-            return biomeFogColor.subtract(0,1 * level.getThunderLevel(0),0);
+            result = biomeFogColor.subtract(0, 1 * level.getThunderLevel(0), 0);
         } else if (level.isRaining()) {
-            return biomeFogColor.subtract(0,0.3 * level.getRainLevel(0),0);
+            result = biomeFogColor.subtract(0, 0.3 * level.getRainLevel(0), 0);
+        } else {
+            result = biomeFogColor.multiply(
+                    Mth.lerp(bossFog, 1, 0.3F),
+                    Mth.lerp(bossFog, 1, 0.4F),
+                    Mth.lerp(bossFog, 1, 0.4F));
         }
 
-        return biomeFogColor.multiply(
-                Mth.lerp(bossFog, 1, 0.3F),
-                Mth.lerp(bossFog, 1, 0.4F),
-                Mth.lerp(bossFog, 1, 0.4F));
+        // Embeddium/Sodium compat: out-of-range float channels wrap modulo-style
+        // instead of clamping like vanilla (e.g. -0.3 -> 0.7, 1.3 -> 0.3), which
+        // tints the fog green. Clamp explicitly before returning so Embeddium/Sodium
+        // never sees a value outside [0, 1]. Only applied when a modded renderer is
+        // present — vanilla handles out-of-range channels gracefully.
+        if (ShaderCompatLib.isModdedRendererLoaded()) {
+            return new Vec3(
+                    Mth.clamp(result.x, 0.0, 1.0),
+                    Mth.clamp(result.y, 0.0, 1.0),
+                    Mth.clamp(result.z, 0.0, 1.0));
+        }
+        return result;
     }
 
     @Nullable
@@ -134,7 +151,10 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         float rain = level.getRainLevel(partialTicks);
         float thunder = level.getThunderLevel(partialTicks);
 //
-        float position = Mth.clamp((float) (((Minecraft.getInstance().player.position().y) - 100) / 100), 0, 1);
+        Player localPlayer = Minecraft.getInstance().player;
+        float position = localPlayer != null
+                ? Mth.clamp((float) (((localPlayer.position().y) - 100) / 100), 0, 1)
+                : 0f;
 //
         if (thunder > 0) {
             float time = (level.getGameTime() + partialTicks) * 0.05f;
@@ -156,22 +176,32 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
                     Mth.lerp(thunder, Mth.clamp(colors.y() * 1.1f, 0, 1), Mth.lerp(position, colors.y() * 0.7f, colors.y())),
                     Mth.lerp(thunder, colors.z() * 0.9f, Mth.lerp(position, colors.z() + skyLight,Mth.clamp(colors.z() + 2 * blue * strength, 0, 1)))
             );
-            return;
         } else if (rain > 0) {
             colors.set(
                     colors.x(),
                     Mth.lerp(rain, Mth.clamp(colors.y() * 1.1f, 0, 1), colors.y() * 0.7f),
                     colors.z()
             );
-            return;
-        }
-        ////i think the skylight is being fucked with by thunderstorms... or ambient light
+        } else {
+            ////i think the skylight is being fucked with by thunderstorms... or ambient light
 //
-        colors.set(
-                Mth.lerp(bossFog, colors.x() * 0.9f, colors.x() * 0.3 + 0.22983016),
-                Mth.lerp(bossFog, Mth.clamp(colors.y() * 1.1f, 0, 1), colors.y() * 0.4),
-                Mth.lerp(bossFog, colors.z() * 0.9f, colors.z() * 0.4 + 0.22983016)
-        );
+            colors.set(
+                    Mth.lerp(bossFog, colors.x() * 0.9f, colors.x() * 0.3 + 0.22983016),
+                    Mth.lerp(bossFog, Mth.clamp(colors.y() * 1.1f, 0, 1), colors.y() * 0.4),
+                    Mth.lerp(bossFog, colors.z() * 0.9f, colors.z() * 0.4 + 0.22983016)
+            );
+        }
+
+        // Embeddium/Sodium compat: out-of-range float channels wrap modulo-style
+        // instead of clamping like vanilla (e.g. -0.3 -> 0.7, 1.3 -> 0.3), which
+        // tints the lightmap green. Clamp explicitly so Embeddium/Sodium never sees
+        // a value outside [0, 1]. Only applied when a modded renderer is present.
+        if (ShaderCompatLib.isModdedRendererLoaded()) {
+            colors.set(
+                    Mth.clamp(colors.x(), 0.0f, 1.0f),
+                    Mth.clamp(colors.y(), 0.0f, 1.0f),
+                    Mth.clamp(colors.z(), 0.0f, 1.0f));
+        }
     }
 
     public Vec3 getBiomeColor(ClientLevel level) {
@@ -182,8 +212,24 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         return color.lerp(new Vec3(0,0,0), 1-ModClientEvents.effectFog);
     }
 
+    /**
+     * Detects whether a boss fight is active. Checks {@code shouldCreateWorldFog()} first
+     * (vanilla dragon), then falls back to checking if the {@link BossHealthOverlay} has any
+     * entries. Stellarity uses command boss bars ({@code /bossbar add}) which don't set the
+     * {@code createWorldFog} flag — without this fallback, the fog/lightmap tinting never
+     * triggers during Stellarity's dragon fight.
+     */
+    private static boolean isBossFightActive() {
+        var overlay = Minecraft.getInstance().gui.getBossOverlay();
+        if (overlay.shouldCreateWorldFog()) return true;
+        if (overlay instanceof com.thebeyond.mixin.client.BossHealthOverlayAccessor accessor) {
+            return !accessor.the_beyond$getEvents().isEmpty();
+        }
+        return false;
+    }
+
     public boolean renderSky(ClientLevel level, int ticks, float partialTick, Matrix4f modelViewMatrix, Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
-        if (Minecraft.getInstance().gui.getBossOverlay().shouldCreateWorldFog()) {
+        if (isBossFightActive()) {
             bossFog = (float) Mth.clamp(bossFog + 0.005, 0, 1);
         } else {
             bossFog = (float) Mth.clamp(bossFog - 0.005, 0, 1);
@@ -237,7 +283,8 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         RenderSystem.disableCull();
         Matrix4f matrix = poseStack.last().pose();
 
-        float offset = (float) Minecraft.getInstance().cameraEntity.position().y;
+        Entity camEntity = Minecraft.getInstance().cameraEntity;
+        float offset = camEntity != null ? (float) camEntity.position().y : 0f;
         float offsetReal = 40 - ((Mth.clamp(offset, 20, 60)) - 20);
         Vector4f skyColorVector = getSkycolor(TS_COLOR);
 

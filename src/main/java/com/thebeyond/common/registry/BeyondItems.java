@@ -36,28 +36,29 @@ public class BeyondItems {
     public static final DeferredItem<Item> GELLID_VOID_BUCKET = registerItem("gellid_void_bucket", () -> new BucketItem(BeyondFluids.GELLID_VOID.get(), new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
     public static final DeferredItem<Item> ABYSSAL_SHROUD = registerItem("abyssal_shroud", () -> new Item(new Item.Properties().rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<Item> LANTERN_SHED = registerItem("lantern_shed", () -> new Item(new Item.Properties()));
-    public static final DeferredItem<Item> TOTEM_OF_RESPITE = registerItem("totem_of_respite", () -> new Item(new Item.Properties().rarity(Rarity.RARE)){
+    public static final DeferredItem<Item> TOTEM_OF_RESPITE = registerItem("totem_of_respite", () -> new Item(new Item.Properties().rarity(Rarity.RARE)) {
         @Override
-        public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+        public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
             super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
-            tooltipComponents.add(Component.literal("When In Hand: ").withStyle(ChatFormatting.GRAY));
-            tooltipComponents.add(Component.literal(" Keep Items on Death").withStyle(ChatFormatting.AQUA));
+            tooltipComponents.add(Component.literal("On Death:").withStyle(ChatFormatting.GRAY));
+            tooltipComponents.add(Component.literal(" Preserve items held").withStyle(ChatFormatting.BLUE));
         }
     });
     public static final DeferredItem<Item> ETHER_CLOAK = registerItem("ether_cloak", () -> new ModelArmorItem(BeyondArmorMaterials.SHROUD_ARMOR, ArmorItem.Type.HELMET, new Item.Properties().durability(ArmorItem.Type.BOOTS.getDurability(10)).stacksTo(1), EtherCloakModel::new) {
         @Override
-        public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+        public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
             super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
-            tooltipComponents.add(Component.literal(" Hide Nametag").withStyle(ChatFormatting.AQUA));
-            tooltipComponents.add(Component.literal(" Lower Aggro Distance").withStyle(ChatFormatting.DARK_AQUA));
+            tooltipComponents.add(Component.literal("Passive:").withStyle(ChatFormatting.GRAY));
+            tooltipComponents.add(Component.literal(" Float when falling").withStyle(ChatFormatting.BLUE));
         }
     });
-    public static final DeferredItem<Item> ANCHOR_LEGGINGS = registerItem("anchor_leggings", () -> new AnchorLeggingsItem(BeyondArmorMaterials.ANCHOR_ARMOR, ArmorItem.Type.LEGGINGS, new Item.Properties().rarity(Rarity.EPIC).durability(ArmorItem.Type.LEGGINGS.getDurability(10)).stacksTo(1), AnchorLeggingsModel::new) {});
+    public static final DeferredItem<Item> ANCHOR_LEGGINGS = registerItem("anchor_leggings", () -> new AnchorLeggingsItem(BeyondArmorMaterials.ANCHOR_ARMOR, ArmorItem.Type.LEGGINGS, new Item.Properties().durability(ArmorItem.Type.LEGGINGS.getDurability(10)).stacksTo(1).rarity(Rarity.EPIC), AnchorLeggingsModel::new) {});
     public static final DeferredItem<Item> PATHFINDER_BOOTS = registerItem("pathfinder_boots", () -> new ModelArmorItem(BeyondArmorMaterials.SHROUD_ARMOR, ArmorItem.Type.BOOTS, new Item.Properties().durability(ArmorItem.Type.BOOTS.getDurability(10)).stacksTo(1), EtherCloakModel::new) {
         @Override
-        public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+        public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
             super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
-            tooltipComponents.add(Component.literal(" Walk on Auroracite").withStyle(ChatFormatting.AQUA));
+            tooltipComponents.add(Component.literal("Passive:").withStyle(ChatFormatting.GRAY));
+            tooltipComponents.add(Component.literal(" Walk on the void river").withStyle(ChatFormatting.BLUE));
         }
     });
     public static final DeferredItem<Item> ECTOPLASM = registerItem("ectoplasm", () -> new AirPlaceableBlockItem(BeyondBlocks.ECTOPLASM.get(), new Item.Properties()));

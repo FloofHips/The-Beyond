@@ -33,6 +33,12 @@ public class AuroraBorealisRenderer {
     public static final ResourceLocation AURORA_3_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/aurora_3");
     public static final ResourceLocation AURORA_CRUMBLING_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/aurora_crumbling");
 
+    private static final ResourceLocation AURORA_CRUMBLING_TEX = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_crumbling.png");
+    private static final ResourceLocation AURORA_0_TEX = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_0.png");
+    private static final ResourceLocation AURORA_1_TEX = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_1.png");
+    private static final ResourceLocation AURORA_2_TEX = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_2.png");
+    private static final ResourceLocation AURORA_3_TEX = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_3.png");
+
     public static void renderAurora(PoseStack poseStack, float yoffset, float time, MultiBufferSource.BufferSource buffer, RenderLevelStageEvent event, Minecraft mc, Player player, Level level) {
         if (!event.getCamera().getEntity().level().isThundering()) return;
         double rainlevel = event.getCamera().getEntity().level().getThunderLevel(time);
@@ -131,19 +137,19 @@ public class AuroraBorealisRenderer {
         double distanceFromCenter = Math.sqrt(worldX * worldX + worldZ * worldZ);
 
         if (distanceFromCenter < renderDistance * 16 * 0.7) {
-            return ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_crumbling.png");
+            return AURORA_CRUMBLING_TEX;
         }
 
         if (Math.abs(relZ) == renderDistance-1 || Math.abs(relZ) == renderDistance+1 || Math.abs(relZ) == renderDistance) {
-            return ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_crumbling.png");
+            return AURORA_CRUMBLING_TEX;
         }
 
         int i = chunkPos.x + chunkPos.z;
         return switch (i % 3) {
-            case 0 -> ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_0.png");
-            case 1 -> ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_1.png");
-            case 2 -> ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_2.png");
-            default -> ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_3.png");
+            case 0 -> AURORA_0_TEX;
+            case 1 -> AURORA_1_TEX;
+            case 2 -> AURORA_2_TEX;
+            default -> AURORA_3_TEX;
         };
     }
 }

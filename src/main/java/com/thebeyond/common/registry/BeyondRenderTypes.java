@@ -53,4 +53,47 @@ public class BeyondRenderTypes extends RenderType {
                 .createCompositeState(true);
         return create("entity_depth", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536, true, true, compositeState);
     });
+
+    // entityTranslucent variant with back-face culling enabled.
+    // Vanilla entityTranslucent uses NO_CULL, rendering both sides of every quad.
+    // Lantern fins are zero-thickness cubes (e.g. 4×0×7) — Minecraft generates two
+    // coplanar quads facing opposite directions for them. Without culling, both quads
+    // render at the exact same depth, causing z-fighting ("scribbled" artifact).
+    // The original ENTITY_DEPTH and unlitTranslucent both use CULL; this variant
+    // preserves that behavior for the Iris/Oculus shader fallback path.
+    public static final Function<ResourceLocation, RenderType> ENTITY_TRANSLUCENT_CULLED = Util.memoize((location) -> {
+        CompositeState compositeState = CompositeState.builder()
+                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+                .setTextureState(new TextureStateShard(location, false, false))
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setCullState(CULL)
+                .setLightmapState(LIGHTMAP)
+                .setOverlayState(OVERLAY)
+                .createCompositeState(true);
+        return create("entity_translucent_culled", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536, true, true, compositeState);
+    });
+
+    public static RenderType entityTranslucentCulled(ResourceLocation location) {
+        return ENTITY_TRANSLUCENT_CULLED.apply(location);
+    }
+
+    // entityTranslucentEmissive variant with back-face culling.
+    // Triggers Iris shader pack bloom/glow effects while preventing z-fighting on
+    // zero-thickness fin quads. Uses COLOR_WRITE (no depth write) like vanilla
+    // entityTranslucentEmissive — the base pass already established depth.
+    public static final Function<ResourceLocation, RenderType> ENTITY_TRANSLUCENT_EMISSIVE_CULLED = Util.memoize((location) -> {
+        CompositeState compositeState = CompositeState.builder()
+                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER)
+                .setTextureState(new TextureStateShard(location, false, false))
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setCullState(CULL)
+                .setWriteMaskState(COLOR_WRITE)
+                .setOverlayState(OVERLAY)
+                .createCompositeState(true);
+        return create("entity_translucent_emissive_culled", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536, true, true, compositeState);
+    });
+
+    public static RenderType entityTranslucentEmissiveCulled(ResourceLocation location) {
+        return ENTITY_TRANSLUCENT_EMISSIVE_CULLED.apply(location);
+    }
 }

@@ -24,8 +24,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import org.joml.Vector3f;
 
-import java.awt.*;
-
 public class GravistarEntity extends ThrowableItemProjectile {
     public GravistarEntity(EntityType<? extends ThrowableItemProjectile> entityType, Level level) {
         super(entityType, level);
@@ -35,12 +33,15 @@ public class GravistarEntity extends ThrowableItemProjectile {
     protected void onHitBlock(BlockHitResult result) {
         super.onHitBlock(result);
         BlockState b = this.level().getBlockState(result.getBlockPos());
-        Color c = new Color(b.getMapColor(this.level(), result.getBlockPos()).col);
+        int col = b.getMapColor(this.level(), result.getBlockPos()).col;
+        float r = ((col >> 16) & 0xFF) / 255f;
+        float g = ((col >> 8) & 0xFF) / 255f;
+        float bl = (col & 0xFF) / 255f;
 
         if (level() instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(new PixelColorTransitionOptions(
-                    new Vector3f(c.getRed()/255f, c.getGreen()/255f, c.getBlue()/255f),
-                    new Vector3f(c.getRed()/255f, c.getGreen()/255f, c.getBlue()/255f),
+                    new Vector3f(r, g, bl),
+                    new Vector3f(r, g, bl),
                     2f
             ), this.getX() + 0.5, this.getY(), this.getZ() + 0.5, level().random.nextInt(10, 20), 0.2,0.2,0.2,0.05);
         }
@@ -53,7 +54,8 @@ public class GravistarEntity extends ThrowableItemProjectile {
             for(LivingEntity livingentity : this.level().getEntitiesOfClass(LivingEntity.class, aabb, LivingEntity::isAlive)) {
                 int i = 0;
                 if (livingentity.hasEffect(BeyondEffects.WEIGHTLESS)) {
-                    i = livingentity.getEffect(BeyondEffects.WEIGHTLESS).getDuration();
+                    var existing = livingentity.getEffect(BeyondEffects.WEIGHTLESS);
+                    if (existing != null) i = existing.getDuration();
                 }
                 livingentity.addEffect(new MobEffectInstance(BeyondEffects.WEIGHTLESS, i+600, 1));
             }
