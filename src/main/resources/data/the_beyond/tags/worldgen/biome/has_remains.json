@@ -3,8 +3,6 @@
     "minecraft:end_highlands",
     "minecraft:end_midlands",
     "minecraft:end_barrens",
-    "the_beyond:peer_lands",
-    "minecraft:the_void",
-    "minecraft:small_end_islands"
+    "the_beyond:peer_lands"
   ]
 }

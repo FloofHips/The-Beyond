@@ -9,6 +9,7 @@ import com.thebeyond.common.entity.LanternEntity;
 import com.thebeyond.common.registry.BeyondRenderTypes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.EntityModel;
+import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -17,7 +18,6 @@ import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.neoforged.neoforge.client.NeoForgeRenderTypes;
 import org.jetbrains.annotations.Nullable;
 
 // java.awt.Color removed — unavailable on headless server JVMs, replaced with bit math
@@ -40,25 +40,15 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
     @Nullable
     @Override
     protected RenderType getRenderType(LanternEntity livingEntity, boolean bodyVisible, boolean translucent, boolean glowing) {
-        // Iris/Oculus replace the G-Buffer pipeline entirely — BeyondShaders' custom
-        // depth overlay shader is silently ignored, making the entity invisible.
-        // Fall back to a CPU-processed "depth" texture + vanilla-compatible render type.
-        // Uses entityTranslucentCulled (CULL enabled) instead of vanilla entityTranslucent
-        // (NO_CULL) because Lantern fins are zero-thickness cubes — without culling, the
-        // two coplanar quads generated for each fin z-fight ("scribbled" artifact).
-        if (ShaderCompatLib.isShaderModLoaded()) {
-            ResourceLocation depthTexture = LanternDepthTextureManager.getOrCreate(getTextureLocation(livingEntity));
-            return BeyondRenderTypes.entityTranslucentCulled(depthTexture);
-        }
-        return BeyondRenderTypes.getEntityDepth(getTextureLocation(livingEntity));
+        // Used by MobRenderer only for secondary effects (leash/outline/shadow) —
+        // the body is rendered via the split-pass in render() below. Returns the
+        // standard entity_translucent shader so visuals stay identical under Iris.
+        return BeyondRenderTypes.entityTranslucentNoCulled(getTextureLocation(livingEntity));
     }
 
     @Override
     public void render(LanternEntity entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         poseStack.pushPose();
-
-        //VertexConsumer vertexConsumer = buffer.getBuffer(BeyondRenderTypes.getEntityDepth(TEXTURE));
-
 
         float f = Mth.rotLerp(partialTicks, entity.yBodyRotO, entity.yBodyRot);
         float f1 = Mth.rotLerp(partialTicks, entity.yHeadRotO, entity.yHeadRot);
@@ -91,68 +81,50 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
         poseStack.scale(-1.0F, -1.0F, 1.0F);
         poseStack.translate(0.0F, -1.501F, 0.0F);
 
-        this.getModel(entity).prepareMobModel(entity, f5, f4, partialTicks);
-        this.getModel(entity).setupAnim(entity, f5, f4, f9, f2, f6);
+        EntityModel<LanternEntity> model = this.getModel(entity);
+        model.prepareMobModel(entity, f5, f4, partialTicks);
+        model.setupAnim(entity, f5, f4, f9, f2, f6);
 
         float distance = Math.clamp(Minecraft.getInstance().cameraEntity.distanceTo(entity), 0, 10);
-
-        // Shader mod fallback: BeyondRenderTypes.unlitTranslucent() uses a NeoForge unlit
-        // shader that Iris/Oculus strip from the G-Buffer pipeline. Use a CPU-processed
-        // depth texture + entityTranslucentCulled (CULL enabled) to replicate the custom
-        // shader's unlit white-to-gray depth mapping. CULL is critical — Lantern fins are
-        // zero-thickness cubes whose two coplanar quads z-fight without back-face culling.
-        VertexConsumer vertexConsumer;
-        boolean isShaderFallback = ShaderCompatLib.isShaderModLoaded();
-        if (isShaderFallback) {
-            ResourceLocation depthTexture = LanternDepthTextureManager.getOrCreate(getTextureLocation(entity));
-            vertexConsumer = buffer.getBuffer(BeyondRenderTypes.entityTranslucentCulled(depthTexture));
-        } else if (entity.getSize() == 3) {
-            vertexConsumer = buffer.getBuffer(NeoForgeRenderTypes.getUnlitTranslucent(getTextureLocation(entity)));
-        } else {
-            vertexConsumer = buffer.getBuffer(BeyondRenderTypes.unlitTranslucent(getTextureLocation(entity)));
-        }
-        //float distance = 0;
-
         int transMax = 10;
-        float alpha = Math.max(((((transMax - distance)/(float) transMax))), entity.level().getRainLevel(partialTicks));
-
-        // Shader fallback uses standard alpha blending (entityTranslucent) instead of the
-        // original multiply blend (CRUMBLING_TRANSPARENCY) used by the ENTITY_DEPTH render
-        // type. Alpha blending makes low-alpha pixels invisible faster, causing the lantern
-        // to abruptly disappear at distance. Square root curve compensates, keeping the
-        // lantern visible longer — closer to the original multiply-blend fade aesthetic.
-        if (isShaderFallback) {
-            alpha = (float) Math.sqrt(alpha);
-        }
+        float alpha = Math.max(((transMax - distance) / (float) transMax), entity.level().getRainLevel(partialTicks));
 
         int finalAlpha = (int) Math.max(255 * alpha, entity.getAlpha());
-        // Pack ARGB manually: Color(r=255, g=finalAlpha, b=255, a=finalAlpha)
+        // Pack ARGB manually: Color(r=255, g=finalAlpha, b=255, a=finalAlpha).
+        // Magenta/pink tint as finalAlpha drops — the ghostly fade aesthetic.
         int color = (finalAlpha << 24) | (0xFF << 16) | (finalAlpha << 8) | 0xFF;
 
-        // Shader fallback: use full brightness to replicate the unlit/emissive appearance
-        // of the original ENTITY_DEPTH and unlitTranslucent render types. Without this,
-        // ambient lighting darkens the lantern, breaking the ethereal glow aesthetic.
-        int lightLevel = isShaderFallback ? LightTexture.FULL_BRIGHT : packedLight;
+        // Lantern is an unlit ethereal entity — FULL_BRIGHT + standard
+        // entity_translucent shader gives identical output in vanilla and Iris.
+        int lightLevel = LightTexture.FULL_BRIGHT;
 
-        this.getModel(entity).renderToBuffer(
-                poseStack,
-                vertexConsumer,
-                lightLevel,
-                OverlayTexture.NO_OVERLAY,
-                color
-        );
+        // Split-pass: body NO_CULL (volumetric translucent — back face then front),
+        // fins CULL (zero-thickness quads z-fight without culling). Selection is
+        // driven by each model's getRoot()/getMainPart().
+        ResourceLocation textureLocation = getTextureLocation(entity);
+        RenderType bodyType = BeyondRenderTypes.entityTranslucentNoCulled(textureLocation);
+        RenderType finsType = BeyondRenderTypes.entityTranslucentCulled(textureLocation);
 
-        // Emissive bloom overlay (shader mod only): entityTranslucentEmissive triggers Iris
-        // shader pack bloom/glow effects. The primary pass above already established depth.
-        // Rendered at reduced alpha so bloom is a subtle luminous halo, not a solid duplicate.
-        // Uses CULL-enabled emissive variant — same reason as the base pass: zero-thickness
-        // fin quads generate two coplanar faces that z-fight without back-face culling.
-        if (isShaderFallback && finalAlpha > 10) {
-            ResourceLocation depthTexture = LanternDepthTextureManager.getOrCreate(getTextureLocation(entity));
-            VertexConsumer emissiveConsumer = buffer.getBuffer(BeyondRenderTypes.entityTranslucentEmissiveCulled(depthTexture));
+        ModelPart root = getModelRoot(model);
+        ModelPart mainPart = getModelMainPart(model);
+
+        if (root != null && mainPart != null) {
+            renderBodyPass(poseStack, root, mainPart, buffer.getBuffer(bodyType), lightLevel, color);
+            renderFinsPass(poseStack, root, mainPart, buffer.getBuffer(finsType), lightLevel, color);
+        } else {
+            // Fallback if a model is missing getRoot()/getMainPart(): single-pass
+            // CULL render — hollow-body look returns, but won't crash.
+            model.renderToBuffer(poseStack, buffer.getBuffer(finsType), lightLevel, OverlayTexture.NO_OVERLAY, color);
+        }
+
+        // Additive bloom halo for shader-mod setups only. Uses the emissive
+        // render type (COLOR_WRITE, CULL) so fin quads don't z-fight and the
+        // glow isn't double-applied to coplanar pairs.
+        if (ShaderCompatLib.isShaderModLoaded() && finalAlpha > 10) {
+            VertexConsumer emissiveConsumer = buffer.getBuffer(BeyondRenderTypes.entityTranslucentEmissiveCulled(textureLocation));
             int bloomAlpha = Math.max((int) (finalAlpha * 0.4f), 1);
             int bloomColor = (bloomAlpha << 24) | (0xFF << 16) | (bloomAlpha << 8) | 0xFF;
-            this.getModel(entity).renderToBuffer(
+            model.renderToBuffer(
                     poseStack,
                     emissiveConsumer,
                     LightTexture.FULL_BRIGHT,
@@ -161,36 +133,6 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
             );
         }
 
-        //this.getModel(entity).prepareMobModel(entity, f5, f4, partialTicks);
-        //this.getModel(entity).setupAnim(entity, f5, f4, f9, f2, f6);
-//
-        //vertexConsumer = buffer.getBuffer(BeyondRenderTypes.getEntityDepth(getTextureLocation(entity)));
-//
-        //int crumbFarthest = 15;
-        //int crumbHalf = 10;
-//
-        //distance = Math.clamp(Minecraft.getInstance().cameraEntity.distanceTo(entity), 0, crumbFarthest);
-//
-//
-        //if (distance < crumbHalf) {
-        //    distance = -1 + (crumbHalf + distance)/(float)crumbHalf;
-        //    distance*=distance;
-        //}
-        //if (distance >= crumbHalf) {
-        //    distance = (crumbFarthest - distance)/(float)(crumbFarthest-crumbHalf);
-        //}
-        //color = new Color(255,255,255, (int) (255*(distance))).getRGB();
-        //poseStack.pushPose();
-        //poseStack.scale(1.05f, 1.05f, 1.05f);
-        //poseStack.translate(0,0.07,0);
-        //this.getModel(entity).renderToBuffer(
-        //        poseStack,
-        //        vertexConsumer,
-        //        packedLight,
-        //        OverlayTexture.NO_OVERLAY,
-        //        color
-        //);
-        //poseStack.popPose();
         poseStack.popPose();
     }
     @Override
@@ -208,5 +150,52 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
         if (size == 1) return medium;
         if (size == 3) return leviathan;
         return super.getModel();
+    }
+
+    // Split-pass helpers — dispatch by instanceof since the Lantern models
+    // don't share a base class. Null return triggers single-pass fallback.
+
+    @Nullable
+    private static ModelPart getModelRoot(EntityModel<LanternEntity> model) {
+        if (model instanceof LanternSmallModel<?> m) return m.getRoot();
+        if (model instanceof LanternMediumModel<?> m) return m.getRoot();
+        if (model instanceof LanternLargeModel<?> m) return m.getRoot();
+        if (model instanceof LanternLeviathanModel<?> m) return m.getRoot();
+        return null;
+    }
+
+    @Nullable
+    private static ModelPart getModelMainPart(EntityModel<LanternEntity> model) {
+        if (model instanceof LanternSmallModel<?> m) return m.getMainPart();
+        if (model instanceof LanternMediumModel<?> m) return m.getMainPart();
+        if (model instanceof LanternLargeModel<?> m) return m.getMainPart();
+        if (model instanceof LanternLeviathanModel<?> m) return m.getMainPart();
+        return null;
+    }
+
+    /** NO_CULL body pass: hides all descendants of mainPart so only its own
+     *  cubes render, then restores visibility. */
+    private static void renderBodyPass(PoseStack poseStack, ModelPart root, ModelPart mainPart,
+                                        VertexConsumer buffer, int lightLevel, int color) {
+        // Hide everything below mainPart (all fins are descendants of it).
+        mainPart.getAllParts().forEach(p -> { if (p != mainPart) p.visible = false; });
+        try {
+            root.render(poseStack, buffer, lightLevel, OverlayTexture.NO_OVERLAY, color);
+        } finally {
+            mainPart.getAllParts().forEach(p -> { if (p != mainPart) p.visible = true; });
+        }
+    }
+
+    /** CULL fins pass: skipDraw on mainPart skips its own cube but still
+     *  recurses into children, preserving transform and animation. */
+    private static void renderFinsPass(PoseStack poseStack, ModelPart root, ModelPart mainPart,
+                                        VertexConsumer buffer, int lightLevel, int color) {
+        boolean prevSkip = mainPart.skipDraw;
+        mainPart.skipDraw = true;
+        try {
+            root.render(poseStack, buffer, lightLevel, OverlayTexture.NO_OVERLAY, color);
+        } finally {
+            mainPart.skipDraw = prevSkip;
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.thebeyond.common.worldgen.features;
 
 import com.mojang.serialization.Codec;
+import com.thebeyond.TheBeyond;
 import com.thebeyond.common.registry.BeyondBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
@@ -11,27 +12,23 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
 import net.minecraft.world.level.levelgen.synth.SimplexNoise;
 
 /**
- * Generates the auroracite layer at the bottom of the End dimension.
- * Replicates the exact behavior of BeyondEndChunkGenerator.generateAuroracite():
- * - Uses SimplexNoise at scale 0.1 (same as the chunk generator)
- * - Places 2 layers of auroracite (bottom + 1 above) where noise > 0
- * - Covers ~50% of the area in organic patches
+ * Generates the auroracite floor layer at the bottom of the End dimension. Places 2 layers
+ * of auroracite where {@code SimplexNoise(x*0.1, z*0.1) > 0}, matching the behavior of
+ * {@code BeyondEndChunkGenerator.generateAuroracite()} and covering roughly half the area
+ * in organic patches.
  *
- * <p>Placement Y is always {@code level.getMinBuildHeight()}, i.e. whatever the active
- * dimension_type declares:
- * <ul>
- *   <li>Beyond-só: Beyond's subpack declares {@code min_y=0}, so auroracite at Y=0.</li>
- *   <li>Enderscape-só: Enderscape declares {@code min_y=-64}, so auroracite at Y=-64
- *       (the original behavior the user confirmed is ideal for Enderscape's terrain).</li>
- *   <li>Combo with Enderscape: Enderscape's {@code min_y=-64} typically wins the load
- *       order even when Beyond's chunk gen runs, so auroracite falls to Y=-64. The
- *       fountain structure is re-anchored to {@code min_y+2} via
- *       {@code JigsawStructureMixin} so it still sits on the auroracite regardless.</li>
- * </ul>
+ * <p>Placement Y is {@code level.getMinBuildHeight()}, so the layer tracks whichever
+ * dim_type the active pack set declares (Beyond's {@code min_y=0}, Enderscape's
+ * {@code min_y=-64}, etc.). The fountain structure is re-anchored via
+ * {@code JigsawStructureMixin} so it still lands on the floor regardless.
  */
 public class AuroraciteLayerFeature extends Feature<NoneFeatureConfiguration> {
 
     private static volatile SimplexNoise noise;
+
+    // Diagnostic: logs the first minY seen per world load to record which dim_type won.
+    // Integer.MIN_VALUE is a safe sentinel (-128 < minY < 320 by worldgen convention).
+    private static volatile int loggedMinY = Integer.MIN_VALUE;
 
     public AuroraciteLayerFeature(Codec<NoneFeatureConfiguration> codec) {
         super(codec);
@@ -48,16 +45,14 @@ public class AuroraciteLayerFeature extends Feature<NoneFeatureConfiguration> {
         return noise;
     }
 
-    /**
-     * Returns the noise instance used for auroracite placement, or {@code null} if not yet
-     * initialized. Used by {@code BeyondEndChunkGenerator} for post-decoration restoration.
-     */
+    /** Returns the noise instance, or {@code null} if not yet initialized. */
     public static SimplexNoise getNoiseInstance() {
         return noise;
     }
 
     public static void resetNoise() {
         noise = null;
+        loggedMinY = Integer.MIN_VALUE;
     }
 
     @Override
@@ -68,6 +63,10 @@ public class AuroraciteLayerFeature extends Feature<NoneFeatureConfiguration> {
         SimplexNoise simplex = getNoise(random);
 
         int minY = level.getMinBuildHeight();
+        if (loggedMinY != minY) {
+            loggedMinY = minY;
+            TheBeyond.LOGGER.info("[AuroraciteLayerFeature] placing at minY={} (level.getMinBuildHeight())", minY);
+        }
         int chunkX = origin.getX() & ~15; // align to chunk
         int chunkZ = origin.getZ() & ~15;
         BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();

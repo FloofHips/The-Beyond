@@ -1,7 +1,9 @@
 package com.thebeyond.common.worldgen;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.thebeyond.util.HashSimplexNoise;
 import com.thebeyond.util.WorldSeedHolder;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectListIterator;
@@ -38,13 +40,31 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     });
 
     private final Holder<NoiseGeneratorSettings> settings;
-    public static volatile SimplexNoise simplexNoise;
+    /** Terrain density field. Sampled by {@link #getTerrainDensity} octaves. */
+    public static volatile HashSimplexNoise simplexNoise;
+    /** Biome-selection noise; decoupled from {@link #simplexNoise} so density tuning doesn't reshuffle biomes. */
+    public static volatile HashSimplexNoise biomeSimplexNoise;
+    /** Z-channel warp noise; independently seeded so warpX and warpZ don't collapse on the x=z diagonal. */
+    public static volatile HashSimplexNoise warpZSimplexNoise;
     public static volatile PerlinSimplexNoise globalHOffsetNoise;
     public static volatile PerlinSimplexNoise globalVOffsetNoise;
     public static volatile PerlinSimplexNoise globalCOffsetNoise;
     private double islandRadius = 75.0;
     private double buffer = 700.0;
-    private static final double worldHeight = 192;
+
+    /** Baseline worldHeight (dim range 256). Always read via {@link #getWorldHeight()} to scale with enlarged dims. */
+    static final double DEFAULT_WORLD_HEIGHT = 192;
+
+    private static final int BASELINE_DIM_RANGE = 256;
+
+    /** Effective worldHeight for the active dim; scales with dim range beyond 256. */
+    public static double getWorldHeight() {
+        int dimMinY = BeyondTerrainState.getDimMinY();
+        int dimMaxY = BeyondTerrainState.getDimMaxY();
+        int dimRange = dimMaxY - dimMinY;
+        if (dimRange <= BASELINE_DIM_RANGE) return DEFAULT_WORLD_HEIGHT;
+        return DEFAULT_WORLD_HEIGHT * ((double) dimRange / BASELINE_DIM_RANGE);
+    }
 
     private static final int NUM_OCTAVES = 4;
     private static final double LACUNARITY = 2.0;
@@ -52,11 +72,14 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     private static final int TERRAIN_Y_OFFSET = 32;
 
     /**
-     * Ping-pong wrap: bounces input between min and max like a triangle wave.
-     * Unlike hard modulo (which has a seam), adjacent inputs always map to
-     * adjacent outputs — no discontinuity at the wrap boundary.
+     * Per-octave wrap-range factors for mirror-seam decorrelation. Octave 0 stays at
+     * 1.00 (F3/diagnostics use it); octaves 1-3 step down so pivot planes separate.
+     * Length MUST equal {@link #NUM_OCTAVES}; factors MUST be ≤ 1.00.
      */
-    private static int pingPongWrap(int input, int min, int max) {
+    private static final double[] OCTAVE_WRAP_FACTORS = {1.00, 0.91, 0.83, 0.77};
+
+    /** Triangle-wave wrap between min/max. External callers go through {@link #computeWrappedCoords}. */
+    static int pingPongWrap(int input, int min, int max) {
         int range = max - min;
         int wrap = range * 2;
 
@@ -70,13 +93,137 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         return x + min;
     }
 
+    /** Runtime terrain-transform params from dim JSON; falls back to {@link BeyondTerrainParams#DEFAULTS}. */
+    public static volatile BeyondTerrainParams activeTerrainParams = BeyondTerrainParams.DEFAULTS;
+
+    /** Default wrap range — test reference only; production uses {@link #activeTerrainParams}. */
+    static final int WRAP_RANGE = BeyondTerrainParams.DEFAULTS.wrapRange();
+
+    /**
+     * Single source of truth for the wrap+warp transform. Packs wrappedX (high 32b)
+     * + wrappedZ (low 32b). All density samplers, biome source, and heightmap queries
+     * MUST route through this — inlining it elsewhere causes structures to float.
+     */
+    public static long computeWrappedCoords(int globalX, int globalZ) {
+        return computeWrappedCoords(globalX, globalZ, activeTerrainParams);
+    }
+
+    /** Parameterized overload for diagnostic tools that need a non-live params snapshot. */
+    public static long computeWrappedCoords(int globalX, int globalZ, BeyondTerrainParams params) {
+        int wrapRange = params.wrapRange();
+
+        HashSimplexNoise snoise = simplexNoise;
+        HashSimplexNoise zsnoise = warpZSimplexNoise;
+        if (snoise == null || zsnoise == null) {
+            // Noise not yet initialized (can happen on cold queries before the
+            // first computeNoisesIfNotPresent). Fall through to a raw wrap so
+            // callers still get deterministic integers instead of NPE.
+            int rawX = pingPongWrap(globalX, -wrapRange, wrapRange);
+            int rawZ = pingPongWrap(globalZ, -wrapRange, wrapRange);
+            return ((long) rawX << 32) | ((long) rawZ & 0xFFFFFFFFL);
+        }
+        int warpedInputX;
+        int warpedInputZ;
+        if (warpDisabled) {
+            // Test-only: skip warp entirely.
+            warpedInputX = globalX;
+            warpedInputZ = globalZ;
+        } else {
+            double warpScale = params.warpScale();
+            double warpAmplitude = params.warpAmplitude();
+            double warpInX = globalX * warpScale;
+            double warpInZ = globalZ * warpScale;
+            // warpX/warpZ use independent noises so the channels don't collapse on x=z.
+            double warpX = snoise.getValue(warpInX, warpInZ) * warpAmplitude;
+            double warpZ = zsnoise.getValue(warpInX, warpInZ) * warpAmplitude;
+            warpedInputX = (int) (globalX + warpX);
+            warpedInputZ = (int) (globalZ + warpZ);
+        }
+        int wrappedX;
+        int wrappedZ;
+        if (wrapDisabled) {
+            wrappedX = warpedInputX;
+            wrappedZ = warpedInputZ;
+        } else {
+            wrappedX = pingPongWrap(warpedInputX, -wrapRange, wrapRange);
+            wrappedZ = pingPongWrap(warpedInputZ, -wrapRange, wrapRange);
+        }
+        return ((long) wrappedX << 32) | ((long) wrappedZ & 0xFFFFFFFFL);
+    }
+
+    public static int unpackWrappedX(long packed) { return (int) (packed >> 32); }
+    public static int unpackWrappedZ(long packed) { return (int) packed; }
+
+    /**
+     * Fills per-octave wrap+scale arrays (length {@link #NUM_OCTAVES}). {@code hScales[k]}
+     * is sampled at {@code (wrappedXs[k], wrappedZs[k])} — mismatched coords break the
+     * per-octave anti-cancellation invariant. Frequency is baked into {@code hScales}/{@code vScales}.
+     */
+    private static void computeOctaveFields(
+            int globalX, int globalZ,
+            BeyondTerrainParams params,
+            double[] hScales, double[] vScales,
+            int[] wrappedXs, int[] wrappedZs,
+            PerlinSimplexNoise hNoise, PerlinSimplexNoise vNoise) {
+        int baseWrapRange = params.wrapRange();
+        double warpScale = params.warpScale();
+        double warpAmplitude = params.warpAmplitude();
+
+        // Warp is (globalX, globalZ)-only — compute once, reuse across octaves.
+        HashSimplexNoise snoise = simplexNoise;
+        HashSimplexNoise zsnoise = warpZSimplexNoise;
+        int warpedInputX;
+        int warpedInputZ;
+        if (snoise == null || zsnoise == null || warpDisabled) {
+            warpedInputX = globalX;
+            warpedInputZ = globalZ;
+        } else {
+            double warpInX = globalX * warpScale;
+            double warpInZ = globalZ * warpScale;
+            double warpX = snoise.getValue(warpInX, warpInZ) * warpAmplitude;
+            double warpZ = zsnoise.getValue(warpInX, warpInZ) * warpAmplitude;
+            warpedInputX = (int) (globalX + warpX);
+            warpedInputZ = (int) (globalZ + warpZ);
+        }
+
+        double frequency = 1.0;
+        for (int k = 0; k < NUM_OCTAVES; k++) {
+            // Floor at MIN_WRAP_RANGE: defends against datapacks pushing wrap_range
+            // to its minimum where factor 0.77 would fall below the validation floor.
+            int wrapRange_k = Math.max(
+                    BeyondTerrainParams.MIN_WRAP_RANGE,
+                    (int) (baseWrapRange * OCTAVE_WRAP_FACTORS[k]));
+
+            int wrappedX;
+            int wrappedZ;
+            if (wrapDisabled) {
+                wrappedX = warpedInputX;
+                wrappedZ = warpedInputZ;
+            } else {
+                wrappedX = pingPongWrap(warpedInputX, -wrapRange_k, wrapRange_k);
+                wrappedZ = pingPongWrap(warpedInputZ, -wrapRange_k, wrapRange_k);
+            }
+            wrappedXs[k] = wrappedX;
+            wrappedZs[k] = wrappedZ;
+
+            Double hOverride = hScaleOverride;
+            Double vOverride = vScaleOverride;
+            double hBase = (hOverride != null) ? hOverride : getHorizontalBaseScale(wrappedX, wrappedZ, hNoise);
+            double vBase = (vOverride != null) ? vOverride : getVerticalBaseScale(wrappedX, wrappedZ, vNoise);
+            hScales[k] = hBase * frequency;
+            vScales[k] = vBase * frequency;
+
+            frequency *= LACUNARITY;
+        }
+    }
+
     public BeyondEndChunkGenerator(BiomeSource biomeSource, Holder<NoiseGeneratorSettings> settings) {
         super(biomeSource, settings);
         this.settings = settings;
     }
 
     public void computeNoisesIfNotPresent(RandomState randomState) {
-        if (simplexNoise == null || globalHOffsetNoise == null || globalVOffsetNoise == null || globalCOffsetNoise == null) {
+        if (simplexNoise == null || biomeSimplexNoise == null || warpZSimplexNoise == null || globalHOffsetNoise == null || globalVOffsetNoise == null || globalCOffsetNoise == null) {
             WorldSeedHolder holder = (WorldSeedHolder) (Object) randomState;
             long worldSeed = holder.the_Beyond$getWorldSeed();
             computeNoisesIfNotPresent(worldSeed);
@@ -84,42 +231,55 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     }
 
     public void computeNoisesIfNotPresent(long worldSeed) {
-        if (simplexNoise == null || globalHOffsetNoise == null || globalVOffsetNoise == null || globalCOffsetNoise == null) {
+        if (simplexNoise == null || biomeSimplexNoise == null || warpZSimplexNoise == null || globalHOffsetNoise == null || globalVOffsetNoise == null || globalCOffsetNoise == null) {
             synchronized (BeyondEndChunkGenerator.class) {
-                if (simplexNoise == null || globalHOffsetNoise == null || globalVOffsetNoise == null || globalCOffsetNoise == null) {
+                if (simplexNoise == null || biomeSimplexNoise == null || warpZSimplexNoise == null || globalHOffsetNoise == null || globalVOffsetNoise == null || globalCOffsetNoise == null) {
+                    // Seed chain: sequential offsets from worldSeed (next free = +6).
+                    // Never reuse a prior offset — separating concerns was intentional.
                     RandomSource random1 = RandomSource.create(worldSeed);
                     RandomSource random2 = RandomSource.create(worldSeed + 1);
                     RandomSource random3 = RandomSource.create(worldSeed + 2);
                     RandomSource random4 = RandomSource.create(worldSeed + 3);
+                    RandomSource random5 = RandomSource.create(worldSeed + 4);
+                    RandomSource random6 = RandomSource.create(worldSeed + 5);
 
-                    simplexNoise = new SimplexNoise(random1);
+                    simplexNoise = new HashSimplexNoise(random1);
                     globalHOffsetNoise = new PerlinSimplexNoise(random2, Collections.singletonList(1));
                     globalVOffsetNoise = new PerlinSimplexNoise(random3, Collections.singletonList(1));
                     globalCOffsetNoise = new PerlinSimplexNoise(random4, Collections.singletonList(1));
+                    biomeSimplexNoise = new HashSimplexNoise(random5);
+                    warpZSimplexNoise = new HashSimplexNoise(random6);
                 }
             }
         }
     }
 
-    /** Resets static noise fields. Must be called on server stop to avoid seed leaking between worlds. */
+    /** Resets static noises + params. Call on server stop to prevent cross-world leakage. */
     public static void resetNoises() {
         synchronized (BeyondEndChunkGenerator.class) {
             simplexNoise = null;
+            biomeSimplexNoise = null;
+            warpZSimplexNoise = null;
             globalHOffsetNoise = null;
             globalVOffsetNoise = null;
             globalCOffsetNoise = null;
+            activeTerrainParams = BeyondTerrainParams.DEFAULTS;
         }
     }
 
     @Override
     public void createStructures(RegistryAccess registryAccess, ChunkGeneratorStructureState structureState, StructureManager structureManager, ChunkAccess chunk, StructureTemplateManager structureTemplateManager) {
         computeNoisesIfNotPresent(structureState.getLevelSeed());
+        BeyondTerrainState.setDimBounds(chunk.getMinBuildHeight(), chunk.getMaxBuildHeight());
         super.createStructures(registryAccess, structureState, structureManager, chunk, structureTemplateManager);
     }
 
     @Override
     public CompletableFuture<ChunkAccess> createBiomes(RandomState randomState, Blender blender, StructureManager structureManager, ChunkAccess chunk) {
         computeNoisesIfNotPresent(randomState);
+        // Publish dim bounds before super triggers biome sampling (BeyondEndBiomeSource consumes
+        // them to anchor the bottom_biome band and scale worldHeight).
+        BeyondTerrainState.setDimBounds(chunk.getMinBuildHeight(), chunk.getMaxBuildHeight());
         return super.createBiomes(randomState, blender, structureManager, chunk);
     }
 
@@ -131,9 +291,15 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     @Override
     public int getBaseHeight(int x, int z, Heightmap.Types heightmapType, LevelHeightAccessor level, RandomState randomState) {
         computeNoisesIfNotPresent(randomState);
+        BeyondTerrainState.setDimBounds(level.getMinBuildHeight(), level.getMaxBuildHeight());
         float distanceFromOrigin = (float) Math.sqrt((double) x * x + (double) z * z);
 
-        for (int y = 132; y >= level.getMinBuildHeight(); y--) {
+        // Scan from just below the dynamic worldHeight (where gradientTop starts ramping down
+        // to 0) down to the dim floor. Beyond-só: worldHeight=192, scan starts at 132 as
+        // before. Combo (bounds pack): worldHeight=288, scan starts at 228 so Beyond-gen
+        // islands that now live up to y~256 are findable by the heightmap query.
+        int scanTop = (int) (getWorldHeight() - 60);
+        for (int y = scanTop; y >= level.getMinBuildHeight(); y--) {
             if (isSolidTerrain(x, y, z, distanceFromOrigin)) {
                 return y;
             }
@@ -152,29 +318,221 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         return 10;
     }
 
-    public static double getHorizontalBaseScale(int globalX, int globalZ) {
-        return getHorizontalBaseScale(globalX, globalZ, globalHOffsetNoise);
+    // Column-invariant scale helpers. Density-path callers MUST pass WRAPPED coords
+    // (mismatch with sampler coords causes streaks at |X| ≥ ~500k). BiomeSource
+    // intentionally passes grid coords — biome field doesn't need wrapping.
+
+    public static double getHorizontalBaseScale(int x, int z) {
+        return getHorizontalBaseScale(x, z, globalHOffsetNoise);
     }
-    public static double getHorizontalBaseScale(int globalX, int globalZ, PerlinSimplexNoise noise) {
-        return globalNoiseOffset(0.005, 0.015, globalX * 0.000001, globalZ * 0.000001, noise);
+    public static double getHorizontalBaseScale(int x, int z, PerlinSimplexNoise noise) {
+        double nx = x * 0.000001;
+        double nz = z * 0.000001;
+        if (hScaleLocalWrap) {
+            return globalNoiseOffsetLocalWrap(0.005, 0.015, HSCALE_LOCAL_WRAP_RANGE, x, z, noise);
+        }
+        if (hScaleDistanceAdaptive) {
+            return globalNoiseOffsetDistanceAdaptive(0.005, 0.015, HSCALE_REF_RADIUS, x, z, noise);
+        }
+        if (hScaleUseHashNoise) {
+            HashSimplexNoise hashNoise = biomeSimplexNoise;
+            if (hashNoise != null) {
+                double v = hashNoise.getValue(nx, nz);
+                return 0.005 + (0.015 - 0.005) * ((v + 1.0) * 0.5);
+            }
+            // Pre-init: fall through to PerlinSimplex.
+        }
+        if (hScaleBlur3x3) {
+            return globalNoiseOffsetBlur3x3(0.005, 0.015, nx, nz, noise);
+        }
+        if (hScaleMultirotation) {
+            return globalNoiseOffsetMultirotation(0.005, 0.015, nx, nz, noise);
+        }
+        return globalNoiseOffset(0.005, 0.015, nx, nz, noise);
     }
 
-    public static double getVerticalBaseScale(int globalX, int globalZ) {
-        return getVerticalBaseScale(globalX, globalZ, globalVOffsetNoise);
+    public static double getVerticalBaseScale(int x, int z) {
+        return getVerticalBaseScale(x, z, globalVOffsetNoise);
     }
-    public static double getVerticalBaseScale(int globalX, int globalZ, PerlinSimplexNoise noise) {
-        return globalNoiseOffset(0.005, 0.015, globalX * 0.00001, globalZ * 0.00001, noise);
-    }
-
-    public static double getCycleHeight(int globalX, int globalZ) {
-        return getCycleHeight(globalX, globalZ, globalCOffsetNoise);
-    }
-    public static double getCycleHeight(int globalX, int globalZ, PerlinSimplexNoise noise) {
-        return globalNoiseOffset(10, 100, globalX * 0.0001, globalZ * 0.0001, noise);
+    public static double getVerticalBaseScale(int x, int z, PerlinSimplexNoise noise) {
+        return globalNoiseOffset(0.005, 0.015, x * 0.00001, z * 0.00001, noise);
     }
 
-    public static double getThreshold(int globalX, int globalZ, float distanceFromOrigin) {
-        double baseThreshold = globalNoiseOffset(0.01, 0.6, globalX * 0.0002, globalZ * 0.0002, globalCOffsetNoise);
+    /** Test-only: when non-null, {@link #getCycleHeight} returns this constant. */
+    @VisibleForTesting
+    static volatile Double cycleHeightOverride = null;
+
+    /** Test-only cycleHeight frequency multiplier (1.0 = production 1 M-block period). */
+    @VisibleForTesting
+    static volatile double cycleHeightFrequencyMultiplier = 1.0;
+
+    /** Test-only: when {@code true}, skips {@link #pingPongWrap} so raw globals feed the sampler. */
+    @VisibleForTesting
+    static volatile boolean wrapDisabled = false;
+
+    /** Test-only: when {@code true}, skips the domain-warp noise; raw (x,z) feeds the wrap. */
+    @VisibleForTesting
+    static volatile boolean warpDisabled = false;
+
+    /** Test-only: when non-null, forces {@code hScales[k]} to this constant (frequency still baked in). */
+    @VisibleForTesting
+    static volatile Double hScaleOverride = null;
+
+    /** Test-only: same mechanism as {@link #hScaleOverride} for {@code vScales[k]}. */
+    @VisibleForTesting
+    static volatile Double vScaleOverride = null;
+
+    /** Prototype: averages hScale at 4 90° rotations to cancel lattice directional bias. */
+    @VisibleForTesting
+    static volatile boolean hScaleMultirotation = false;
+
+    /** Prototype: hScale via HashSimplexNoise instead of PerlinSimplexNoise. */
+    @VisibleForTesting
+    static volatile boolean hScaleUseHashNoise = false;
+
+    /** Prototype: 3x3 blur of hScale noise to smear cell-local gradient bias. */
+    @VisibleForTesting
+    static volatile boolean hScaleBlur3x3 = false;
+
+    /** Reference radius for distance-adaptive hScale (full amplitude inside, 1/r outside). */
+    @VisibleForTesting
+    static final double HSCALE_REF_RADIUS = 100_000.0;
+
+    /** Prototype: 1/r amplitude attenuation of hScale beyond {@link #HSCALE_REF_RADIUS}. */
+    @VisibleForTesting
+    static volatile boolean hScaleDistanceAdaptive = false;
+
+    /** Local-wrap range for hScale (ping-pong every 100 k blocks). */
+    @VisibleForTesting
+    static final int HSCALE_LOCAL_WRAP_RANGE = 50_000;
+
+    /**
+     * Prototype knob: routes {@link #getHorizontalBaseScale} through
+     * {@link #globalNoiseOffsetLocalWrap} (ping-pong wrap range
+     * {@link #HSCALE_LOCAL_WRAP_RANGE}). Bounds the noise input so streak-width stays
+     * small at any distance; amplitude stays full (no 1/r decay like distance-adaptive).
+     */
+    @VisibleForTesting
+    static volatile boolean hScaleLocalWrap = false;
+
+    // Island-envelope sampler: freezes hScale to a global constant (kills the
+    // X*∂h/∂X streak term) and restores regional island-size variance as an
+    // amplitude envelope at ~2 M-block wavelength. Flag-gated; band-blend
+    // below is the preferred sampler (preserves wavelength variation).
+
+    /** Forces constant hScale + amplitude envelope. Mutually exclusive with {@link #useBandBlend}. */
+    @VisibleForTesting
+    static volatile boolean useIslandEnvelope = false;
+
+    /** Constant hScale when {@link #useIslandEnvelope} is active (midpoint of [0.005, 0.015]). */
+    @VisibleForTesting
+    static volatile double islandEnvelopeHScale = 0.010;
+
+    /** Envelope output range; symmetric around 1.0 keeps average density unchanged. */
+    @VisibleForTesting
+    static volatile double envelopeLow  = 0.5;
+    @VisibleForTesting
+    static volatile double envelopeHigh = 1.5;
+
+    /** Envelope spatial scale; 5e-7 ≈ 2 M-block wavelength (constant per plot). */
+    @VisibleForTesting
+    static volatile double envelopeScale = 5e-7;
+
+    /** Envelope sampled at WORLD (x,z); returns scalar in [envelopeLow, envelopeHigh]. */
+    public static double getIslandEnvelope(int x, int z) {
+        PerlinSimplexNoise noise = globalHOffsetNoise;
+        if (noise == null) return 1.0;
+        double nx = x * envelopeScale;
+        double nz = z * envelopeScale;
+        double v = noise.getValue(nx, nz, false);
+        return envelopeLow + (envelopeHigh - envelopeLow) * ((v + 1.0) * 0.5);
+    }
+
+    // Band-blend sampler: replaces the streak-producing `sampleX = X*hScale(X,Z)`
+    // with a 2-sample lerp over adjacent fixed frequencies h_lo, h_hi picked
+    // from BB_BAND_FREQUENCIES by an O(1) log-space lookup on hBase. h_i is a
+    // global constant so the X*∂h/∂X Jacobian term vanishes; C¹ smoothstep blend
+    // avoids band seams. K=17 log-spaced bands give <5% wavelength error vs
+    // continuous hBase. Column-invariant state (bbLoIdx, bbT) is hoisted out of
+    // the y-loop which then runs 2 simplex samples + a lerp per octave.
+
+    /** K=17 log-spaced band frequencies spanning [0.005, 0.015]. O(1) indexed by {@link #computeBBState}. */
+    private static final int BB_BAND_COUNT = 17;
+    private static final double[] BB_BAND_FREQUENCIES = new double[BB_BAND_COUNT];
+    private static final double BB_LOG_H_MIN;
+    private static final double BB_INV_LOG_STEP;
+
+    static {
+        double logMin = Math.log(0.005);
+        double logMax = Math.log(0.015);
+        BB_LOG_H_MIN    = logMin;
+        BB_INV_LOG_STEP = (BB_BAND_COUNT - 1) / (logMax - logMin);
+        double step = (logMax - logMin) / (BB_BAND_COUNT - 1);
+        for (int i = 0; i < BB_BAND_COUNT; i++) {
+            BB_BAND_FREQUENCIES[i] = Math.exp(logMin + i * step);
+        }
+    }
+
+    /** Band-blend terrain sampler. Mutually exclusive with {@link #useIslandEnvelope}. */
+    @VisibleForTesting
+    static volatile boolean useBandBlend = false;
+
+    /**
+     * Column-invariant BB state. Fills {@code bbLoIdx[k]} (low-band index) and
+     * {@code bbT[k]} (pre-smoothstepped blend weight) from {@code hScales[k]}.
+     * Call ONCE per column; y-loop then just samples 2 simplexes + lerps.
+     */
+    static void computeBBState(double[] hScales, int[] bbLoIdx, double[] bbT) {
+        double frequencyMult = 1.0;
+        for (int k = 0; k < NUM_OCTAVES; k++) {
+            // Recover octave k's own hBase — hScales[k] = hBase_k × LACUNARITY^k.
+            double hBaseTarget = hScales[k] / frequencyMult;
+
+            // Closed-form log-space index. Clamped to [0, BB_BAND_COUNT − 1] so
+            // the subsequent 2-sample blend always picks a valid pair (lo, lo+1).
+            double fIdx = (Math.log(hBaseTarget) - BB_LOG_H_MIN) * BB_INV_LOG_STEP;
+            int lo;
+            double t;
+            if (fIdx <= 0.0) {
+                lo = 0;
+                t = 0.0;
+            } else if (fIdx >= BB_BAND_COUNT - 1) {
+                lo = BB_BAND_COUNT - 2;
+                t = 1.0;
+            } else {
+                lo = (int) fIdx;
+                t = fIdx - lo;
+            }
+
+            bbLoIdx[k] = lo;
+            // Smoothstep: C¹ partition-of-unity weight. Bakes the polynomial
+            // once per column so the y-loop is just a lerp.
+            bbT[k] = t * t * (3.0 - 2.0 * t);
+
+            frequencyMult *= LACUNARITY;
+        }
+    }
+
+    public static double getCycleHeight(int x, int z) {
+        Double override = cycleHeightOverride;
+        if (override != null) return override;
+        return getCycleHeight(x, z, globalCOffsetNoise);
+    }
+    public static double getCycleHeight(int x, int z, PerlinSimplexNoise noise) {
+        Double override = cycleHeightOverride;
+        if (override != null) return override;
+        // Period 1 M blocks: keeps in-view cycleHeight variation under one divisor
+        // step so cyclicDensity's divisor discontinuities don't pile up in a scene.
+        double freq = 0.000001 * cycleHeightFrequencyMultiplier;
+        return globalNoiseOffset(10, 100, x * freq, z * freq, noise);
+    }
+
+    /**
+     * Base threshold for density vs void. Pass WRAPPED (x,z) to align with the
+     * density sampler; {@code distanceFromOrigin} stays global (island taper).
+     */
+    public static double getThreshold(int x, int z, float distanceFromOrigin) {
+        double baseThreshold = globalNoiseOffset(0.01, 0.6, x * 0.0002, z * 0.0002, globalCOffsetNoise);
 
         float innerTaperEnd = 100f;
         float outerTaperStart = 700f;
@@ -194,95 +552,146 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         }
     }
 
-    /**
-     * Convenience entry point for callers that don't have the per-column noise values
-     * pre-resolved (one-shot probes like {@link #isSolidTerrain}, heightmap queries, and
-     * {@link #addDebugScreenInfo}). Resolves horizontal/vertical scales, cycle height and
-     * the ping-pong wrapped coordinates, then delegates to the hot-path 6-arg overload.
-     *
-     * <p>Hot-path callers ({@link #generateEndTerrain}) MUST use the 6-arg form directly
-     * and hoist the column-invariant values out of their y-loop — this wrapper re-resolves
-     * 5 PerlinSimplex lookups on every call, which the y-loop cannot afford.</p>
-     */
+    /** Cold-path entry (heightmap / biome source / F3 debug). Allocates; hot path uses the array overload below. */
     public static double getTerrainDensity(int globalX, int globalY, int globalZ) {
-        // Cache volatile PerlinSimplexNoise reads into locals — avoids repeated memory
-        // barriers when called from cold paths (isSolidTerrain, heightmap, debug screen).
+        return getTerrainDensity(globalX, globalY, globalZ, activeTerrainParams);
+    }
+
+    /** Cold-path entry with caller-supplied params (diagnostic tools). */
+    public static double getTerrainDensity(int globalX, int globalY, int globalZ, BeyondTerrainParams paramsOverride) {
         PerlinSimplexNoise hNoise = globalHOffsetNoise;
         PerlinSimplexNoise vNoise = globalVOffsetNoise;
         PerlinSimplexNoise cNoise = globalCOffsetNoise;
-        double horizontalBaseScale = getHorizontalBaseScale(globalX, globalZ, hNoise);
-        double verticalBaseScale = getVerticalBaseScale(globalX, globalZ, vNoise);
-        double cycleHeight = getCycleHeight(globalX, globalZ, cNoise);
 
-        // Ping-pong wrap the block coordinates before scaling. Keeps noise inputs
-        // small enough that SimplexNoise's & 0xFF permutation table doesn't cause
-        // precision loss, while avoiding the hard seam of modulo wrapping.
-        // Range 0–65536 is large enough that the bounce point is never visible in gameplay.
-        int wrappedX = pingPongWrap(globalX, -65536, 65536);
-        int wrappedZ = pingPongWrap(globalZ, -65536, 65536);
+        double[] hScales = new double[NUM_OCTAVES];
+        double[] vScales = new double[NUM_OCTAVES];
+        int[] wrappedXs = new int[NUM_OCTAVES];
+        int[] wrappedZs = new int[NUM_OCTAVES];
+        computeOctaveFields(globalX, globalZ, paramsOverride,
+                hScales, vScales, wrappedXs, wrappedZs, hNoise, vNoise);
 
-        return getTerrainDensity(globalY, horizontalBaseScale, verticalBaseScale, cycleHeight, wrappedX, wrappedZ);
+        // Island-envelope: overwrite hScales with constant (frequency-ramped per octave).
+        if (useIslandEnvelope) {
+            double h = islandEnvelopeHScale;
+            double freq = 1.0;
+            for (int k = 0; k < NUM_OCTAVES; k++) {
+                hScales[k] = h * freq;
+                freq *= LACUNARITY;
+            }
+        }
+
+        // cycleHeight sampled at octave-0's wrap — matches F3 debug readout and getThreshold.
+        double cycleHeight = getCycleHeight(wrappedXs[0], wrappedZs[0], cNoise);
+
+        double density = getTerrainDensity(globalY, hScales, vScales, cycleHeight, wrappedXs, wrappedZs);
+
+        // Island-envelope: multiply by slowly-varying envelope sampled at WORLD coords.
+        if (useIslandEnvelope) {
+            density *= getIslandEnvelope(globalX, globalZ);
+        }
+
+        return density;
     }
 
     /**
-     * Hot-path terrain density sampler. All column-invariant values are passed in by the
-     * caller, which MUST hoist them out of any y-iteration loop. Used by
-     * {@link #generateEndTerrain} where a single column is sampled for 159 y-levels — the
-     * old 3-arg form resolved 3 Perlin scales + 2 pingPongWrap calls per call, costing
-     * 160× more than necessary inside the chunk-gen hot path.
-     *
-     * @param globalY              absolute y coordinate being sampled
-     * @param horizontalBaseScale  pre-resolved {@link #getHorizontalBaseScale} for this column
-     * @param verticalBaseScale    pre-resolved {@link #getVerticalBaseScale} for this column
-     * @param cycleHeight          pre-resolved {@link #getCycleHeight} for this column
-     * @param wrappedX             pre-computed {@link #pingPongWrap} of globalX
-     * @param wrappedZ             pre-computed {@link #pingPongWrap} of globalZ
+     * Hot-path density sampler. Caller MUST hoist the column-invariant arrays out of
+     * the y-loop. {@code hScales[k]}/{@code vScales[k]} have frequency baked in.
      */
     public static double getTerrainDensity(
             int globalY,
-            double horizontalBaseScale,
-            double verticalBaseScale,
+            double[] hScales,
+            double[] vScales,
             double cycleHeight,
-            int wrappedX,
-            int wrappedZ) {
-        int shiftedY = globalY + TERRAIN_Y_OFFSET;
+            int[] wrappedXs,
+            int[] wrappedZs) {
+        // Back-compat wrapper. Hot callers use the 8-arg form with column-hoisted bb state.
+        if (useBandBlend) {
+            int[] bbLoIdx = new int[NUM_OCTAVES];
+            double[] bbT = new double[NUM_OCTAVES];
+            computeBBState(hScales, bbLoIdx, bbT);
+            return getTerrainDensity(globalY, hScales, vScales, cycleHeight,
+                    wrappedXs, wrappedZs, bbLoIdx, bbT);
+        }
+        return getTerrainDensity(globalY, hScales, vScales, cycleHeight,
+                wrappedXs, wrappedZs, null, null);
+    }
 
-        // Cache volatile read into a local variable — avoids repeated memory-barrier
-        // overhead when multiple chunk-gen threads hammer this method concurrently (e.g.
-        // player riding a Create train triggers view-distance chunk loading at speed).
-        // One volatile read per call instead of one per loop iteration.
-        SimplexNoise noise = simplexNoise;
+    /**
+     * Hot-path sampler with column-hoisted BB state. Pass {@code bbLoIdx}/{@code bbT}
+     * populated by {@link #computeBBState} when {@link #useBandBlend} is active, or
+     * {@code null} for both otherwise.
+     */
+    public static double getTerrainDensity(
+            int globalY,
+            double[] hScales,
+            double[] vScales,
+            double cycleHeight,
+            int[] wrappedXs,
+            int[] wrappedZs,
+            int[] bbLoIdx,
+            double[] bbT) {
+        int shiftedY = globalY + TERRAIN_Y_OFFSET;
+        HashSimplexNoise noise = simplexNoise;
 
         double noiseValue = 0.0;
         double amplitude = 1.0;
-        double frequency = 1.0;
         double maxAmplitude = 0.0;
 
-        for (int octave = 0; octave < NUM_OCTAVES; octave++) {
-            double hScale = horizontalBaseScale * frequency;
-            double vScale = verticalBaseScale * frequency;
+        if (useBandBlend) {
+            // Band-blend: 2-sample lerp across adjacent fixed-frequency bands.
+            // h_i * frequencyMult is a constant → no X·∂h/∂X streak term.
+            double frequencyMult = 1.0;
 
-            double sampleX = wrappedX * hScale;
-            double sampleY = shiftedY * vScale;
-            double sampleZ = wrappedZ * hScale;
+            for (int octave = 0; octave < NUM_OCTAVES; octave++) {
+                double vScale = vScales[octave];
+                double sampleY = shiftedY * vScale;
 
-            double octaveNoise = noise.getValue(sampleX, sampleY, sampleZ);
-            noiseValue += octaveNoise * amplitude;
-            maxAmplitude += amplitude;
+                int lo = bbLoIdx[octave];
+                double tSmooth = bbT[octave];
 
-            amplitude *= PERSISTENCE;
-            frequency *= LACUNARITY;
+                double hLo = BB_BAND_FREQUENCIES[lo]     * frequencyMult;
+                double hHi = BB_BAND_FREQUENCIES[lo + 1] * frequencyMult;
+                double wx = wrappedXs[octave];
+                double wz = wrappedZs[octave];
+                double sLo = noise.getValue(wx * hLo, sampleY, wz * hLo);
+                double sHi = noise.getValue(wx * hHi, sampleY, wz * hHi);
+                double octaveNoise = sLo + tSmooth * (sHi - sLo);
+
+                noiseValue += octaveNoise * amplitude;
+                maxAmplitude += amplitude;
+                amplitude *= PERSISTENCE;
+                frequencyMult *= LACUNARITY;
+            }
+        } else {
+            for (int octave = 0; octave < NUM_OCTAVES; octave++) {
+                double hScale = hScales[octave];
+                double vScale = vScales[octave];
+
+                double sampleX = wrappedXs[octave] * hScale;
+                double sampleY = shiftedY * vScale;
+                double sampleZ = wrappedZs[octave] * hScale;
+
+                double octaveNoise = noise.getValue(sampleX, sampleY, sampleZ);
+                noiseValue += octaveNoise * amplitude;
+                maxAmplitude += amplitude;
+
+                amplitude *= PERSISTENCE;
+            }
         }
 
         noiseValue /= maxAmplitude;
         double densityModifier = cyclicDensity(shiftedY, cycleHeight);
         noiseValue *= densityModifier;
 
-        return edgeGradient(shiftedY, worldHeight, noiseValue);
+        return edgeGradient(shiftedY, getWorldHeight(), noiseValue);
     }
 
     public static boolean isSolidTerrain(int globalX, int globalY, int globalZ, float distanceFromOrigin) {
-        double threshold = getThreshold(globalX, globalZ, distanceFromOrigin);
+        // Wrap before threshold to match generateEndTerrain's phase alignment.
+        long packed = computeWrappedCoords(globalX, globalZ);
+        int wrappedX = unpackWrappedX(packed);
+        int wrappedZ = unpackWrappedZ(packed);
+        double threshold = getThreshold(wrappedX, wrappedZ, distanceFromOrigin);
         double density = getTerrainDensity(globalX, globalY, globalZ);
 
         return density > threshold;
@@ -291,16 +700,14 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     @Override
     public CompletableFuture<ChunkAccess> fillFromNoise(Blender blender, RandomState randomState, StructureManager structureManager, ChunkAccess chunk) {
         computeNoisesIfNotPresent(randomState);
+        BeyondTerrainState.setDimBounds(chunk.getMinBuildHeight(), chunk.getMaxBuildHeight());
         return CompletableFuture.supplyAsync(() -> {
             ChunkPos chunkPos = chunk.getPos();
             int startX = chunkPos.getMinBlockX();
             int startZ = chunkPos.getMinBlockZ();
 
-            // Snapshot the valid structure starts ONCE per chunk. Previously the inner
-            // adaptation call re-fetched chunk.getAllStarts() and re-checked isValid() on
-            // every (x, y, z) triple — 40 704 calls per chunk for a pair of trivial lookups
-            // that never change during fillFromNoise. The snapshot also lets the hot path
-            // iterate a plain List (no Map.values() iterator churn).
+            // Snapshot valid structure starts once per chunk (skips ~40k redundant
+            // Map.values() iterations and isValid() checks from the y-loop below).
             List<StructureStart> validStarts = null;
             for (StructureStart start : chunk.getAllStarts().values()) {
                 if (start.isValid()) {
@@ -315,12 +722,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                     int globalX = startX + x;
                     int globalZ = startZ + z;
 
-                    // Auroracite floor is placed by AuroraciteLayerFeature (biome modifier on
-                    // #minecraft:is_end at raw_generation). Generating it here too caused the
-                    // chunk-gen pass and the feature pass to OR two independent simplex noises,
-                    // bumping coverage from ~50% to ~75% and producing a near-solid floor when
-                    // Beyond's chunk gen actually runs (i.e. when BetterX/Wover does not replace it).
-
+                    // Auroracite floor: placed by AuroraciteLayerFeature, not here.
                     float distanceFromOrigin = (float) Math.sqrt((double) globalX * globalX + (double) globalZ * globalZ);
 
                     if (distanceFromOrigin <= islandRadius + 50) {
@@ -367,42 +769,45 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     }
 
     private void generateEndTerrain(ChunkAccess chunk, int globalX, int globalZ, float distanceFromOrigin, List<StructureStart> validStarts) {
-        // Column-invariant values: resolve ONCE per (globalX, globalZ), reuse for all 159
-        // y-levels. Previously these five Perlin lookups + two wrap calls ran inside the
-        // y-loop via getTerrainDensity(int, int, int), paying 160× the necessary cost per
-        // column (~40 k extra PerlinSimplexNoise evaluations per chunk in far-terrain).
-        // baseThreshold is the same: getThreshold depends only on (globalX, globalZ,
-        // distanceFromOrigin), all of which are fixed for this call.
-        // Volatile reads cached into locals once per column — prevents repeated memory
-        // barriers when many chunks are generated concurrently (e.g. player riding a Create
-        // train causes rapid view-distance chunk loading across the End).
+        // Column-invariant values resolved once per (globalX, globalZ); y-loop reuses them.
         PerlinSimplexNoise hNoise = globalHOffsetNoise;
         PerlinSimplexNoise vNoise = globalVOffsetNoise;
         PerlinSimplexNoise cNoise = globalCOffsetNoise;
-        double horizontalBaseScale = getHorizontalBaseScale(globalX, globalZ, hNoise);
-        double verticalBaseScale = getVerticalBaseScale(globalX, globalZ, vNoise);
-        double cycleHeight = getCycleHeight(globalX, globalZ, cNoise);
-        // MUST use symmetric range (-65536, 65536) — not (0, 65536).
-        // With min=0, pingPongWrap(-n) == pingPongWrap(n), pivoting at origin and
-        // mirroring all terrain across x=0 and z=0. The symmetric form puts the
-        // pivots at ±65536 (far outside gameplay), making the near-origin behavior
-        // a linear passthrough. Mirror bug manifests as the terrain on the -X/-Z
-        // quadrants being a reflection of the +X/+Z quadrants.
-        int wrappedX = pingPongWrap(globalX, -65536, 65536);
-        int wrappedZ = pingPongWrap(globalZ, -65536, 65536);
-        double baseThreshold = getThreshold(globalX, globalZ, distanceFromOrigin);
+
+        // Snapshot terrain params once per column (datapack reload safety).
+        BeyondTerrainParams params = activeTerrainParams;
+
+        double[] hScales = new double[NUM_OCTAVES];
+        double[] vScales = new double[NUM_OCTAVES];
+        int[] wrappedXs = new int[NUM_OCTAVES];
+        int[] wrappedZs = new int[NUM_OCTAVES];
+        computeOctaveFields(globalX, globalZ, params,
+                hScales, vScales, wrappedXs, wrappedZs, hNoise, vNoise);
+
+        // cycleHeight + baseThreshold use octave-0's wrap (matches F3 debug + WrappedCoordsContractTest).
+        double cycleHeight = getCycleHeight(wrappedXs[0], wrappedZs[0], cNoise);
+        double baseThreshold = getThreshold(wrappedXs[0], wrappedZs[0], distanceFromOrigin);
+
+        // BB-3a: column-hoisted band state keeps log/divide/smoothstep out of the y-loop.
+        int[] bbLoIdx = null;
+        double[] bbT = null;
+        if (useBandBlend) {
+            bbLoIdx = new int[NUM_OCTAVES];
+            bbT = new double[NUM_OCTAVES];
+            computeBBState(hScales, bbLoIdx, bbT);
+        }
 
         BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
 
-        for (int y = 1; y < 160; y++) {
+        // Loop cap at (worldHeight - 32): edgeGradient zeroes beyond.
+        final int loopEnd = (int) (getWorldHeight() - 32);
+        for (int y = 1; y < loopEnd; y++) {
             double structureAdaptation = calculateStructureAdaptation(validStarts, globalX, y, globalZ);
 
-            double density = getTerrainDensity(y, horizontalBaseScale, verticalBaseScale, cycleHeight, wrappedX, wrappedZ);
+            double density = getTerrainDensity(y, hScales, vScales, cycleHeight, wrappedXs, wrappedZs, bbLoIdx, bbT);
 
-            // Beardification: pull threshold down and push density up near structure bounding
-            // boxes so the noise terrain extends to support them. Without this, structures
-            // spawn floating with isolated patches of end_stone underneath where the un-
-            // adapted noise happened to be solid. Reda referred to this as "beardification".
+            // Beardification: pull threshold down + density up near structure bounds so
+            // terrain extends to support them (prevents floating structures).
             double adaptedThreshold = baseThreshold - structureAdaptation * 0.15;
             double adaptedDensity = density + structureAdaptation * 0.1;
 
@@ -433,7 +838,9 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         }
 
         if (y >= (worldHeight - 64)) {
-            gradientTop = (worldHeight - y) / 64.0;
+            // Clamp to [0, 1]: y > worldHeight would otherwise flip the sign and leak
+            // phantom solid biomes at high y in BeyondEndBiomeSource queries.
+            gradientTop = Math.max(0.0, (worldHeight - y) / 64.0);
         }
 
         return gradientBottom * gradientTop * noiseValue;
@@ -444,6 +851,55 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         return min + (max - min) * ((noiseValue + 1) / 2);
     }
 
+    /** Isotropic variant: averages noise at four 90° rotations to cancel lattice gradient bias. */
+    private static double globalNoiseOffsetMultirotation(double min, double max, double x, double z, PerlinSimplexNoise noise) {
+        double r0 = noise.getValue( x,  z, false);
+        double r1 = noise.getValue(-z,  x, false);
+        double r2 = noise.getValue(-x, -z, false);
+        double r3 = noise.getValue( z, -x, false);
+        double avg = (r0 + r1 + r2 + r3) * 0.25;
+        return min + (max - min) * ((avg + 1) * 0.5);
+    }
+
+    /** 3x3 spatial-blur variant: mixes decorrelated adjacent simplex cells. */
+    private static double globalNoiseOffsetBlur3x3(double min, double max, double x, double z, PerlinSimplexNoise noise) {
+        final double delta = 1.0; // one simplex cell in noise-space
+        double sum = 0.0;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                sum += noise.getValue(x + dx * delta, z + dz * delta, false);
+            }
+        }
+        double avg = sum / 9.0;
+        return min + (max - min) * ((avg + 1) * 0.5);
+    }
+
+    /** Distance-adaptive variant: amplitude decays 1/r beyond {@code refRadius} to bound ∂h/∂x·r. */
+    private static double globalNoiseOffsetDistanceAdaptive(
+            double min, double max, double refRadius,
+            int worldX, int worldZ, PerlinSimplexNoise noise) {
+        double r = Math.sqrt((double) worldX * worldX + (double) worldZ * worldZ);
+        double atten = (r <= refRadius) ? 1.0 : (refRadius / r);
+        double mid = (min + max) * 0.5;
+        double halfRange = (max - min) * 0.5;
+        double nx = worldX * 0.000001;
+        double nz = worldZ * 0.000001;
+        double noiseValue = noise.getValue(nx, nz, false); // in [-1, 1]
+        return mid + halfRange * atten * noiseValue;
+    }
+
+    /** Local-wrap variant: ping-pong-wraps the input to {@code [0, wrapRange]} before sampling. */
+    private static double globalNoiseOffsetLocalWrap(
+            double min, double max, int wrapRange,
+            int worldX, int worldZ, PerlinSimplexNoise noise) {
+        int hx = pingPongWrap(worldX, 0, wrapRange);
+        int hz = pingPongWrap(worldZ, 0, wrapRange);
+        double nx = hx * 0.000001;
+        double nz = hz * 0.000001;
+        double noiseValue = noise.getValue(nx, nz, false);
+        return min + (max - min) * ((noiseValue + 1) * 0.5);
+    }
+
     public void addDebugScreenInfo(List<String> info, RandomState random, BlockPos pos) {
         DecimalFormat decimalformat = new DecimalFormat("0.000");
         int globalX = pos.getX();
@@ -452,10 +908,14 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         computeNoisesIfNotPresent(random);
 
         float distanceFromOrigin = (float) Math.sqrt((double) globalX * globalX + (double) globalZ * globalZ);
-        double horizontalBaseScale = getHorizontalBaseScale(pos.getX(), pos.getZ());
-        double verticalBaseScale = getVerticalBaseScale(pos.getX(), pos.getZ());
-        double threshold = getThreshold(pos.getX(), pos.getZ(), distanceFromOrigin);
-        double cycleHeight = getCycleHeight(pos.getX(), pos.getZ());
+        // Wrap first so F3 matches what chunk gen actually sees at the same coords.
+        long packed = computeWrappedCoords(globalX, globalZ);
+        int wrappedX = unpackWrappedX(packed);
+        int wrappedZ = unpackWrappedZ(packed);
+        double horizontalBaseScale = getHorizontalBaseScale(wrappedX, wrappedZ);
+        double verticalBaseScale = getVerticalBaseScale(wrappedX, wrappedZ);
+        double threshold = getThreshold(wrappedX, wrappedZ, distanceFromOrigin);
+        double cycleHeight = getCycleHeight(wrappedX, wrappedZ);
         double terrainNoise = getTerrainDensity(pos.getX(), pos.getY(), pos.getZ());
         double simplex = simplexNoise.getValue(pos.getX(), pos.getY(), pos.getZ());
 
@@ -475,69 +935,38 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
     @Override
     public void applyCarvers(WorldGenRegion level, long seed, RandomState random, BiomeManager biomeManager, StructureManager structureManager, ChunkAccess chunk, GenerationStep.Carving step) {
+        BeyondTerrainState.setDimBounds(level.getMinBuildHeight(), level.getMaxBuildHeight());
         super.applyCarvers(level, seed, random, biomeManager, structureManager, chunk, step);
     }
 
     @Override
     public NoiseColumn getBaseColumn(int x, int z, LevelHeightAccessor height, RandomState random) {
         computeNoisesIfNotPresent(random);
+        BeyondTerrainState.setDimBounds(height.getMinBuildHeight(), height.getMaxBuildHeight());
         return super.getBaseColumn(x, z, height, random);
     }
 
     @Override
     public void buildSurface(WorldGenRegion level, StructureManager structureManager, RandomState random, ChunkAccess chunk) {
         computeNoisesIfNotPresent(random);
+        BeyondTerrainState.setDimBounds(level.getMinBuildHeight(), level.getMaxBuildHeight());
         super.buildSurface(level, structureManager, random, chunk);
     }
 
     @Override
     public void applyBiomeDecoration(WorldGenLevel level, ChunkAccess chunk, StructureManager structureManager) {
+        BeyondTerrainState.setDimBounds(level.getMinBuildHeight(), level.getMaxBuildHeight());
         super.applyBiomeDecoration(level, chunk, structureManager);
-        // Auroracite floor placement is owned by AuroraciteLayerFeature (NeoForge biome modifier
-        // on #the_beyond:has_auroracite_layer at raw_generation).
-        // Protection from Stellarity's frozen biome ice overwrites is handled by
-        // AuroraciteLayerProtectionMixin (vetoes ice/snow setBlock at minY/minY+1 in the End).
+        // Auroracite floor: owned by AuroraciteLayerFeature + AuroraciteLayerProtectionMixin.
 
-        // --- Exit-portal column exclusivity sweep ---------------------------------
-        //
-        // EndDragonFight.spawnExitPortal calls
-        //   level.getHeightmapPos(MOTION_BLOCKING_NO_LEAVES, END_PODIUM_LOCATION)
-        // with END_PODIUM_LOCATION == (0, 64, 0), then places the obsidian podium
-        // at the returned Y. So the dragon-portal spawn depends entirely on the
-        // MOTION_BLOCKING_NO_LEAVES heightmap at column (0,0) in chunk (0,0).
-        //
-        // Beyond-só (beyond_terrain pack, dim bounds 0..256): foreign End decorators
-        // don't exist, so column (0,0)'s heightmap top is Beyond's END_STONE dome at
-        // y≈59 (placed by generateMainIsland). Portal spawns at y=60 on Beyond's
-        // island. Works correctly.
-        //
-        // Beyond+Enderscape combo (beyond_enderscape_bounds sidecar, dim bounds
-        // -64..320): Beyond's chunk generator is still running and still places the
-        // central island dome, but Enderscape (and other End mods keyed off Beyond's
-        // biome tags on outer biomes which include vanilla End biomes) decorates
-        // features at column (0,0) high-y — celestial islands, clutter, whatever
-        // lands there. Those blocks push MOTION_BLOCKING_NO_LEAVES at (0,0) up to
-        // ~build limit, so EndDragonFight.spawnExitPortal computes a y near 319 and
-        // the obsidian podium plus return portal spawn at the top of the world.
-        // Reported by Reda 2026-04-14.
-        //
-        // The fix: in the one chunk that owns the portal column, after vanilla/
-        // foreign decoration has finished, surgically clear column (0,0) from just
-        // above Beyond's dome (y=60) up to the dim top. ProtoChunk.setBlockState
-        // updates the live heightmaps (POST_FEATURES status includes
-        // MOTION_BLOCKING_NO_LEAVES), so the heightmap re-primes down to Beyond's
-        // END_STONE at y≈59 exactly where EndDragonFight will query it.
-        //
-        // Scoped:
-        //   * Chunk (0,0) only — the exact chunk that owns the portal column.
-        //   * Column (0,0) only (1-block footprint) — Beyond's own
-        //     jump_platform_island structure (absolute y=70..100, max_distance=1)
-        //     spreads platforms across the central chunks but doesn't sit on the
-        //     dead-center column; leaving every other column untouched guarantees
-        //     Beyond's decorative platforms, bridges, bonfires, etc. survive.
-        //   * Gated on BeyondTerrainState.isActive() — soup mode (player disabled
-        //     beyond_terrain) leaves the foreign owner's column alone because in
-        //     soup mode Beyond has no island dome to anchor the portal to.
+        // Exit-portal column sweep: EndDragonFight.spawnExitPortal reads the
+        // MOTION_BLOCKING_NO_LEAVES heightmap at (0,0) to place the obsidian
+        // podium. In enlarged-dim combos foreign decorators push that column's
+        // heightmap to build limit, spawning the portal at y≈319. Clear column
+        // (0,0) from y=60 (just above Beyond's central island dome) to dim top
+        // so the heightmap re-primes onto Beyond's END_STONE at y≈59. Scoped to
+        // one column (platforms survive) and gated on isActive() (soup mode
+        // leaves foreign owners alone).
         if (BeyondTerrainState.isActive()) {
             ChunkPos cp = chunk.getPos();
             if (cp.x == 0 && cp.z == 0) {
@@ -555,24 +984,12 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         }
     }
 
-    /**
-     * Sums the beardification adaptation contribution from every pre-filtered valid
-     * structure start that overlaps the point {@code (x, y, z)}. The list is snapshotted
-     * once per chunk in {@link #fillFromNoise} so the per-call overhead here is just an
-     * array-backed for-loop over a short list (typically 0–4 entries).
-     *
-     * <p>Pre-2026-04-14 this iterated {@code chunk.getAllStarts().values()} with a
-     * per-call {@code isValid()} check, and its caller threaded the result through a
-     * {@code HashMap<Long, Double>} "cache" keyed by {@code (x, y, z)}. Because
-     * {@code generateEndTerrain} visits each {@code (x, y, z)} exactly once per chunk,
-     * every cache lookup was a guaranteed miss — 40 704 useless map ops and a stale
-     * HashMap growing to the same size, per chunk. Removed.</p>
-     */
+    /** Sums beardification from every valid structure start overlapping {@code (x, y, z)}. */
     private double calculateStructureAdaptation(List<StructureStart> validStarts, int x, int y, int z) {
         if (validStarts.isEmpty()) return 0.0;
 
         double adaptation = 0.0;
-        // Indexed loop over an ArrayList avoids Iterator allocation on the hot path.
+        // Indexed loop avoids Iterator allocation.
         for (int i = 0, n = validStarts.size(); i < n; i++) {
             adaptation += calculateStructureInfluence(validStarts.get(i), x, y, z);
         }

@@ -3,6 +3,11 @@ package com.thebeyond.common.event;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.entity.TotemOfRespiteEntity;
 import com.thebeyond.common.item.AnchorLeggingsItem;
+import com.thebeyond.common.knowledge.BeyondKnowledge;
+import com.thebeyond.common.knowledge.KnowledgeMode;
+import com.thebeyond.common.knowledge.PlayerKnowledge;
+import com.thebeyond.common.knowledge.WorldKnowledge;
+import com.thebeyond.common.network.PlayerKnowledgeSyncPayload;
 import com.thebeyond.common.registry.*;
 import com.thebeyond.util.AOEManager;
 import com.thebeyond.util.RefugeChunkData;
@@ -36,14 +41,17 @@ import net.neoforged.neoforge.event.entity.living.*;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.level.ExplosionEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
+
+import net.minecraft.resources.ResourceLocation;
+import java.util.Set;
 
 import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvent;
 
 /**
- * Server-side (BOTH-sided) event handlers for gameplay mechanics like Refuge protection,
- * Totem of Respite, Anchor Leggings, etc. These were previously in ModClientEvents
- * (Dist.CLIENT) which meant they never registered on dedicated servers.
+ * Both-sided event handlers for gameplay mechanics: Refuge protection, Totem of Respite,
+ * Anchor Leggings, etc. Must not be Dist.CLIENT-only or dedicated servers will skip them.
  */
 @EventBusSubscriber(modid = TheBeyond.MODID)
 public class ModGameEvents {
@@ -52,13 +60,32 @@ public class ModGameEvents {
     private static final String TAG_TOTEM_ITEMS = "the_beyond:totemItems";
 
     private static RefugeChunkData getChunkData(ServerLevel level, BlockPos pos) {
-        // Do NOT create or load the chunk here. This method is called from mod events that
-        // can fire while the server is already inside DistanceManager.runAllUpdates — a
-        // recursive chunk load in that context causes a ConcurrentModificationException on
-        // chunksToUpdateFutures. If the chunk isn't fully loaded, there is no refuge data
-        // to check anyway, so callers treat null as "no protection".
+        // Do NOT force-load the chunk: these events can fire while the server is inside
+        // DistanceManager.runAllUpdates, where a recursive load throws CME on
+        // chunksToUpdateFutures. An unloaded chunk has no refuge data anyway, so null
+        // is treated as "no protection".
         ChunkAccess chunk = level.getChunkSource().getChunk(pos.getX() >> 4, pos.getZ() >> 4, false);
         return chunk == null ? null : chunk.getData(BeyondAttachments.REFUGE_DATA);
+    }
+
+    /**
+     * Pushes the authoritative "known" set to the client on login. NeoForge does not
+     * S2C-sync attachments, so the server sends a {@code replace=true} snapshot: the
+     * world set in SHARED_WORLD mode, otherwise the player's attachment.
+     */
+    @SubscribeEvent
+    public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer sp)) return;
+        if (!BeyondKnowledge.gateEnabled()) return;
+
+        Set<ResourceLocation> snapshot;
+        if (BeyondKnowledge.mode() == KnowledgeMode.SHARED_WORLD) {
+            snapshot = Set.copyOf(WorldKnowledge.get(sp.serverLevel()).all());
+        } else {
+            PlayerKnowledge pk = sp.getData(BeyondAttachments.PLAYER_KNOWLEDGE);
+            snapshot = Set.copyOf(pk.all());
+        }
+        PacketDistributor.sendToPlayer(sp, new PlayerKnowledgeSyncPayload(snapshot, true));
     }
 
     @SubscribeEvent

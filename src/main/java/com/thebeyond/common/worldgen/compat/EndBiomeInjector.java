@@ -125,14 +125,16 @@ public class EndBiomeInjector {
                 0
         ));
 
-        // the_paths: Deep void
-        added += tryAdd(merged, biomeRegistry, THE_PATHS, Climate.parameters(
+        // the_paths: Deep void at depth [-1.5, -0.4]. Shares a climate slot with
+        // enderscape:void_depths; prepended so the m<l tie-break in findValueBruteForce
+        // lets the_paths win weirdness >= 0, while void_depths owns weirdness < 0.
+        added += tryAddFirst(merged, biomeRegistry, THE_PATHS, Climate.parameters(
                 Climate.Parameter.span(-1.0F, 1.0F),
                 Climate.Parameter.span(-1.0F, 1.0F),
                 Climate.Parameter.span(-1.0F, 1.0F),
                 Climate.Parameter.span(-1.0F, 2.0F),
                 Climate.Parameter.span(-1.5F, -0.4F),
-                Climate.Parameter.span(-1.0F, 1.0F),
+                Climate.Parameter.span(0.0F, 1.0F),
                 0
         ));
 
@@ -186,6 +188,23 @@ public class EndBiomeInjector {
         Optional<Holder.Reference<Biome>> holder = registry.getHolder(key);
         if (holder.isPresent()) {
             merged.add(Pair.of(params, holder.get()));
+            return 1;
+        }
+        TheBeyond.LOGGER.warn("[TheBeyond] Biome {} not in registry, skipping injection", key.location());
+        return 0;
+    }
+
+    /**
+     * Like {@link #tryAdd} but prepends so this entry wins distance-0 climate ties
+     * against any pre-existing entry.
+     */
+    private static int tryAddFirst(List<Pair<Climate.ParameterPoint, Holder<Biome>>> merged,
+                                    Registry<Biome> registry,
+                                    ResourceKey<Biome> key,
+                                    Climate.ParameterPoint params) {
+        Optional<Holder.Reference<Biome>> holder = registry.getHolder(key);
+        if (holder.isPresent()) {
+            merged.add(0, Pair.of(params, holder.get()));
             return 1;
         }
         TheBeyond.LOGGER.warn("[TheBeyond] Biome {} not in registry, skipping injection", key.location());

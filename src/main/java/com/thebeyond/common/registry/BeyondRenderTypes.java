@@ -77,6 +77,30 @@ public class BeyondRenderTypes extends RenderType {
         return ENTITY_TRANSLUCENT_CULLED.apply(location);
     }
 
+    // entityTranslucent variant WITHOUT back-face culling.
+    // Used for the Lantern body (solid 3D cube) in the two-pass rendering split:
+    // the body needs NO_CULL so both the front and back faces render, giving the
+    // translucent entity a volumetric look (you see the back-inner surface through
+    // the translucent front). Fins keep CULL via entityTranslucentCulled because
+    // they're zero-thickness quads that would z-fight without it.
+    // Same shader/transparency/lightmap/overlay state as ENTITY_TRANSLUCENT_CULLED,
+    // only the cull state differs — keeps both passes visually consistent.
+    public static final Function<ResourceLocation, RenderType> ENTITY_TRANSLUCENT_NO_CULLED = Util.memoize((location) -> {
+        CompositeState compositeState = CompositeState.builder()
+                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+                .setTextureState(new TextureStateShard(location, false, false))
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                .setLightmapState(LIGHTMAP)
+                .setOverlayState(OVERLAY)
+                .createCompositeState(true);
+        return create("entity_translucent_no_culled", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536, true, true, compositeState);
+    });
+
+    public static RenderType entityTranslucentNoCulled(ResourceLocation location) {
+        return ENTITY_TRANSLUCENT_NO_CULLED.apply(location);
+    }
+
     // entityTranslucentEmissive variant with back-face culling.
     // Triggers Iris shader pack bloom/glow effects while preventing z-fighting on
     // zero-thickness fin quads. Uses COLOR_WRITE (no depth write) like vanilla

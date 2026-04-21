@@ -16,11 +16,9 @@ import java.util.List;
 /**
  * Wraps foreign packs in {@link EndDimensionFilteringPackResources} so Beyond's
  * {@code beyond_terrain} pack wins the {@code dimension/the_end.json} and
- * {@code dimension_type/the_end.json} slots. Everything else (biomes, noise settings,
- * features, structures) passes through unchanged.
- *
- * <p>Skips Beyond's own packs and already-wrapped packs. No-ops when Beyond's pack is
- * absent (soup-mode fallback).</p>
+ * {@code dimension_type/the_end.json} slots; other content (biomes, noise, features,
+ * structures) passes through. Skips Beyond's own packs and already-wrapped packs;
+ * no-ops when {@code beyond_terrain} is absent (soup-mode fallback).
  */
 @Mixin(MultiPackResourceManager.class)
 public class MultiPackResourceManagerMixin {
@@ -41,10 +39,20 @@ public class MultiPackResourceManagerMixin {
     )
     private static List<PackResources> the_beyond$filterEndDimensionOverrides(List<PackResources> packs) {
         if (packs == null || packs.isEmpty()) {
+            TheBeyond.LOGGER.info("[MultiPackFilter] construction with {} pack(s) — bailing early (null or empty).",
+                    packs == null ? "null" : "0");
             return packs;
         }
 
-        // Bail if Beyond's main pack isn't present — fall through to "soup mode".
+        // Log every pack ID indexed on every construction; grep tag narrows to server-data builds.
+        List<String> allIds = new ArrayList<>(packs.size());
+        for (PackResources pr : packs) {
+            allIds.add(pr.packId());
+        }
+        TheBeyond.LOGGER.info("[MultiPackFilter] construction with {} pack(s): {}", packs.size(), allIds);
+
+        // Bail into soup-mode when beyond_terrain is absent. Bounds sidecar is a child
+        // of beyond_terrain, so checking the parent is sufficient.
         boolean beyondPresent = false;
         for (PackResources pr : packs) {
             if (BEYOND_MAIN_PACK_ID.equals(pr.packId())) {
@@ -53,17 +61,21 @@ public class MultiPackResourceManagerMixin {
             }
         }
         if (!beyondPresent) {
+            TheBeyond.LOGGER.info("[MultiPackFilter] beyond_terrain NOT present — filter DISABLED, passing packs through unmodified (soup-mode / Enderscape-only / vanilla).");
             return packs;
         }
 
         List<PackResources> filtered = new ArrayList<>(packs.size());
         List<String> wrappedIds = new ArrayList<>();
+        List<String> skippedBeyondIds = new ArrayList<>();
+        List<String> unwrappedForeignIds = new ArrayList<>();
         for (PackResources pr : packs) {
             String id = pr.packId();
 
-            // Don't wrap any Beyond-owned pack (beyond_terrain + compat sidecars).
+            // Skip Beyond-owned packs (main + sidecars).
             if (id != null && id.startsWith(BEYOND_PACK_ID_PREFIX)) {
                 filtered.add(pr);
+                skippedBeyondIds.add(id);
                 continue;
             }
             // Don't double-wrap.
@@ -72,22 +84,29 @@ public class MultiPackResourceManagerMixin {
                 continue;
             }
 
-            // Wrap packs that ship either contested dimension file. Other foreign content
-            // (noise settings, biomes, features) is NOT a trigger and NOT hidden.
+            // Wrap only if the pack ships a contested dimension file; other content passes through.
             boolean hasDimension = pr.getResource(PackType.SERVER_DATA, END_DIMENSION) != null;
             boolean hasDimensionType = pr.getResource(PackType.SERVER_DATA, END_DIMENSION_TYPE) != null;
             if (hasDimension || hasDimensionType) {
                 filtered.add(new EndDimensionFilteringPackResources(pr));
-                wrappedIds.add(id);
+                wrappedIds.add(id + "[dim=" + hasDimension + ",dimType=" + hasDimensionType + "]");
             } else {
                 filtered.add(pr);
+                unwrappedForeignIds.add(id);
             }
         }
 
+        TheBeyond.LOGGER.info(
+                "[MultiPackFilter] beyond_terrain ACTIVE — wrapped {} foreign pack(s), passed {} Beyond pack(s) through, passed {} foreign pack(s) through unmodified.",
+                wrappedIds.size(), skippedBeyondIds.size(), unwrappedForeignIds.size());
         if (!wrappedIds.isEmpty()) {
-            TheBeyond.LOGGER.info(
-                    "[TheBeyond] Beyond terrain owns the End — stripping dimension/the_end.json + dimension_type/the_end.json from {} foreign pack(s): {}",
-                    wrappedIds.size(), wrappedIds);
+            TheBeyond.LOGGER.info("[MultiPackFilter]   wrapped (dim files STRIPPED): {}", wrappedIds);
+        }
+        if (!skippedBeyondIds.isEmpty()) {
+            TheBeyond.LOGGER.info("[MultiPackFilter]   Beyond-owned (passed through): {}", skippedBeyondIds);
+        }
+        if (!unwrappedForeignIds.isEmpty()) {
+            TheBeyond.LOGGER.info("[MultiPackFilter]   foreign, no End dim files (passed through): {}", unwrappedForeignIds);
         }
         return filtered;
     }

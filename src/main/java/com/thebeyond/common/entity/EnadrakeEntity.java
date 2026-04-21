@@ -407,11 +407,6 @@ public class EnadrakeEntity extends PathfinderMob {
             return !list.isEmpty() && EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty();
         }
 
-        // --- Reda's original canContinueToUse ---
-        //public boolean canContinueToUse() {
-        //    return EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty();
-        //}
-
         public boolean canContinueToUse() {
             if (!EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty()) return false;
             if (searchTicks > 100) return false;
@@ -427,16 +422,6 @@ public class EnadrakeEntity extends PathfinderMob {
                 EnadrakeEntity.this.getNavigation().moveTo(list.get(0), 1.2);
             }
         }
-
-        // --- Reda's original tick ---
-        //public void tick() {
-        //    List<ItemEntity> list = EnadrakeEntity.this.level().getEntitiesOfClass(ItemEntity.class, EnadrakeEntity.this.getBoundingBox().inflate((double)8.0F, (double)8.0F, (double)8.0F), EnadrakeEntity.ALLOWED_ITEMS);
-        //    ItemStack itemstack = EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND);
-        //    if (itemstack.isEmpty() && !list.isEmpty()) {
-        //        EnadrakeEntity.this.getNavigation().moveTo((Entity)list.get(0), (double)1.2F);
-        //    }
-        //    //if (getNavigation().isStuck()) addDeltaMovement(new Vec3(0, 0.2, 0));
-        //}
 
         public void tick() {
             searchTicks++;
@@ -944,11 +929,9 @@ public class EnadrakeEntity extends PathfinderMob {
 
         @Override
         public boolean canUse() {
-            // Enadrake-seed spam fix (per Reda's decision): the old gate was a flat 50%
-            // (nextBoolean) which, combined with MoveToBlockGoal polling this every tick
-            // and the ParanoiaBlock sprout-spawn reduction in Batch 1, still re-planted
-            // aggressively once an Enadrake picked up a sprout. Lowered to 10% to make
-            // re-planting a noticeable action rather than instant-reflex behavior.
+            // Gate re-planting to ~10% per tick. MoveToBlockGoal polls canUse every tick,
+            // so a higher probability combined with the ParanoiaBlock sprout cadence
+            // produces near-instant re-planting on pickup.
             ItemStack itemstack = entity.getItemBySlot(EquipmentSlot.MAINHAND);
             if (itemstack.is(BeyondBlocks.OBIROOT_SPROUT.asItem()) && level().random.nextFloat() < 0.1f) return super.canUse();
             return false;

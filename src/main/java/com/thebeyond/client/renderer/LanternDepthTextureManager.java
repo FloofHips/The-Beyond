@@ -86,12 +86,33 @@ public class LanternDepthTextureManager {
 
             NativeImage result = new NativeImage(width, height, true);
 
+            // DIAGNOSTIC: alpha histogram. If shader-mod users report missing interior
+            // lantern rendering and the interior pixels fall in a narrow alpha band,
+            // Iris/Oculus's stricter alpha cutoff is likely discarding them. Compare
+            // the band distribution to what's visible/invisible to confirm.
+            int fullyTransparent = 0;
+            int ourDiscards = 0; // alpha in [1, 24]
+            int[] buckets = new int[8]; // 0:[25-63], 1:[64-95], ..., 7:[224-255]
+            final int[] bucketLo = {25, 64, 96, 128, 160, 192, 224, 240};
+            final int[] bucketHi = {63, 95, 127, 159, 191, 223, 239, 255};
+
             for (int y = 0; y < height; y++) {
                 for (int x = 0; x < width; x++) {
                     int pixel = source.getPixelRGBA(x, y);
 
                     // NativeImage stores ABGR: [A:31-24][B:23-16][G:15-8][R:7-0]
                     int a = (pixel >> 24) & 0xFF;
+
+                    // Tally for the histogram.
+                    if (a == 0) {
+                        fullyTransparent++;
+                    } else if (a < 25) {
+                        ourDiscards++;
+                    } else {
+                        for (int b = 0; b < buckets.length; b++) {
+                            if (a >= bucketLo[b] && a <= bucketHi[b]) { buckets[b]++; break; }
+                        }
+                    }
 
                     // Discard transparent pixels (matching shader: alpha < 0.1)
                     if (a < 25) {
@@ -111,6 +132,17 @@ public class LanternDepthTextureManager {
                     result.setPixelRGBA(x, y, newPixel);
                 }
             }
+
+            int total = width * height;
+            int totalOpaqueEnough = 0;
+            for (int b : buckets) totalOpaqueEnough += b;
+            TheBeyond.LOGGER.info(
+                    "[LanternDepthTextureManager] alpha histogram for {} ({}x{}, {} px): fully_transparent={}, our_discards[1-24]={}, " +
+                    "[25-63]={}, [64-95]={}, [96-127]={}, [128-159]={}, [160-191]={}, [192-223]={}, [224-239]={}, [240-255]={}, kept_total={}",
+                    sourceTexture, width, height, total,
+                    fullyTransparent, ourDiscards,
+                    buckets[0], buckets[1], buckets[2], buckets[3], buckets[4], buckets[5], buckets[6], buckets[7],
+                    totalOpaqueEnough);
 
             source.close();
 
