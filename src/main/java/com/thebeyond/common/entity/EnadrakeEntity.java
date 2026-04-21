@@ -407,7 +407,7 @@ public class EnadrakeEntity extends PathfinderMob {
             return !list.isEmpty() && EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty();
         }
 
-        // --- Reda's original canContinueToUse ---
+        // --- previous simpler canContinueToUse, retained for reference ---
         //public boolean canContinueToUse() {
         //    return EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty();
         //}
@@ -428,7 +428,7 @@ public class EnadrakeEntity extends PathfinderMob {
             }
         }
 
-        // --- Reda's original tick ---
+        // --- previous simpler tick, retained for reference ---
         //public void tick() {
         //    List<ItemEntity> list = EnadrakeEntity.this.level().getEntitiesOfClass(ItemEntity.class, EnadrakeEntity.this.getBoundingBox().inflate((double)8.0F, (double)8.0F, (double)8.0F), EnadrakeEntity.ALLOWED_ITEMS);
         //    ItemStack itemstack = EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND);
@@ -944,11 +944,10 @@ public class EnadrakeEntity extends PathfinderMob {
 
         @Override
         public boolean canUse() {
-            // Enadrake-seed spam fix (per Reda's decision): the old gate was a flat 50%
-            // (nextBoolean) which, combined with MoveToBlockGoal polling this every tick
-            // and the ParanoiaBlock sprout-spawn reduction in Batch 1, still re-planted
-            // aggressively once an Enadrake picked up a sprout. Lowered to 10% to make
-            // re-planting a noticeable action rather than instant-reflex behavior.
+            // Gate re-planting to ~10% per tick instead of 50%. MoveToBlockGoal polls this
+            // every tick, so combined with the ParanoiaBlock sprout-spawn cadence a higher
+            // probability led to near-instant re-planting once an Enadrake picked up a
+            // sprout. 10% makes re-planting a noticeable action rather than a reflex.
             ItemStack itemstack = entity.getItemBySlot(EquipmentSlot.MAINHAND);
             if (itemstack.is(BeyondBlocks.OBIROOT_SPROUT.asItem()) && level().random.nextFloat() < 0.1f) return super.canUse();
             return false;

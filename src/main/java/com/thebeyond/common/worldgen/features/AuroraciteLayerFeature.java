@@ -1,6 +1,7 @@
 package com.thebeyond.common.worldgen.features;
 
 import com.mojang.serialization.Codec;
+import com.thebeyond.TheBeyond;
 import com.thebeyond.common.registry.BeyondBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
@@ -20,9 +21,8 @@ import net.minecraft.world.level.levelgen.synth.SimplexNoise;
  * <p>Placement Y is always {@code level.getMinBuildHeight()}, i.e. whatever the active
  * dimension_type declares:
  * <ul>
- *   <li>Beyond-só: Beyond's subpack declares {@code min_y=0}, so auroracite at Y=0.</li>
- *   <li>Enderscape-só: Enderscape declares {@code min_y=-64}, so auroracite at Y=-64
- *       (the original behavior the user confirmed is ideal for Enderscape's terrain).</li>
+ *   <li>Beyond alone: Beyond's subpack declares {@code min_y=0}, so auroracite at Y=0.</li>
+ *   <li>Enderscape alone: Enderscape declares {@code min_y=-64}, so auroracite at Y=-64.</li>
  *   <li>Combo with Enderscape: Enderscape's {@code min_y=-64} typically wins the load
  *       order even when Beyond's chunk gen runs, so auroracite falls to Y=-64. The
  *       fountain structure is re-anchored to {@code min_y+2} via
@@ -32,6 +32,12 @@ import net.minecraft.world.level.levelgen.synth.SimplexNoise;
 public class AuroraciteLayerFeature extends Feature<NoneFeatureConfiguration> {
 
     private static volatile SimplexNoise noise;
+
+    // One-shot diagnostic: logs the first minY observed in each world load to record
+    // which dim_type won. Resets in resetNoise() alongside the noise field, so every
+    // fresh server start gets its own log line.
+    //   -128 < minY < 320 by worldgen convention, so Integer.MIN_VALUE is a safe sentinel.
+    private static volatile int loggedMinY = Integer.MIN_VALUE;
 
     public AuroraciteLayerFeature(Codec<NoneFeatureConfiguration> codec) {
         super(codec);
@@ -58,6 +64,7 @@ public class AuroraciteLayerFeature extends Feature<NoneFeatureConfiguration> {
 
     public static void resetNoise() {
         noise = null;
+        loggedMinY = Integer.MIN_VALUE;
     }
 
     @Override
@@ -68,6 +75,15 @@ public class AuroraciteLayerFeature extends Feature<NoneFeatureConfiguration> {
         SimplexNoise simplex = getNoise(random);
 
         int minY = level.getMinBuildHeight();
+        // First-placement diagnostic: confirms which dim_type's min_y is active.
+        // Expected:
+        //   - Beyond terrain only → minY = 0 (Beyond's subpack dim_type)
+        //   - Enderscape only (Beyond disabled) → minY = -64 (Enderscape wins, filter bypassed)
+        //   - Both active → -64 if beyond_enderscape_bounds compat pack wins, else 0
+        if (loggedMinY != minY) {
+            loggedMinY = minY;
+            TheBeyond.LOGGER.info("[AuroraciteLayerFeature] placing at minY={} (level.getMinBuildHeight())", minY);
+        }
         int chunkX = origin.getX() & ~15; // align to chunk
         int chunkZ = origin.getZ() & ~15;
         BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();

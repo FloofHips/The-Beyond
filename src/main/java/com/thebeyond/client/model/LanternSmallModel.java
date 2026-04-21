@@ -82,4 +82,15 @@ public class LanternSmallModel<T extends LanternEntity> extends EntityModel<Lant
     public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int i, int i1, int i2) {
         root.render(poseStack, vertexConsumer, i, i1, i2);
     }
+
+    /** Root part — used by the split-pass rendering in {@code LanternRenderer}. */
+    public ModelPart getRoot() { return root; }
+
+    /**
+     * The solid "body" part (the actual 3D cube of the lantern). Its children are
+     * all zero-thickness fin quads. {@code LanternRenderer} uses this to render
+     * body (NO_CULL, volumetric) and fins (CULL, no z-fight) with different
+     * render types — see the two-pass logic in {@code LanternRenderer.render}.
+     */
+    public ModelPart getMainPart() { return body; }
 }

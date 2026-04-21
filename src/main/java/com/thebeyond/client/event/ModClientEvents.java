@@ -23,8 +23,6 @@ import com.thebeyond.client.renderer.blockentities.MemorFaucetRenderer;
 import com.thebeyond.client.renderer.blockentities.RefugeRenderer;
 import com.thebeyond.common.block.RefugeBlock;
 import com.thebeyond.common.block.blockentities.RefugeBlockEntity;
-import com.thebeyond.common.entity.AbyssalNomadEntity;
-import com.thebeyond.common.entity.LanternEntity;
 import com.thebeyond.common.entity.TotemOfRespiteEntity;
 import com.thebeyond.common.item.LiveFlameItem;
 import com.thebeyond.common.item.ModelArmorItem;
@@ -94,7 +92,6 @@ import net.minecraft.world.level.block.SweetBerryBushBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.synth.PerlinSimplexNoise;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.portal.DimensionTransition;
@@ -113,7 +110,6 @@ import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.common.util.TriState;
 import net.neoforged.neoforge.event.PlayLevelSoundEvent;
-import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
 import net.neoforged.neoforge.event.entity.living.*;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -216,24 +212,8 @@ public class ModClientEvents {
                 });
     }
 
-    @SubscribeEvent
-    public static void registerSpawnPlacements(RegisterSpawnPlacementsEvent event){
-        event.register(
-                BeyondEntityTypes.LANTERN.get(),
-                SpawnPlacementTypes.NO_RESTRICTIONS,
-                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-                LanternEntity::checkMonsterSpawnRules,
-                RegisterSpawnPlacementsEvent.Operation.OR
-        );
-
-        event.register(
-                BeyondEntityTypes.ABYSSAL_NOMAD.get(),
-                SpawnPlacementTypes.NO_RESTRICTIONS,
-                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-                AbyssalNomadEntity::checkMonsterSpawnRules,
-                RegisterSpawnPlacementsEvent.Operation.OR
-        );
-    }
+    // Spawn placements moved to com.thebeyond.common.event.ModEvents — RegisterSpawnPlacementsEvent
+    // must fire on BOTH sides (mod event bus) or the dedicated server never registers them.
 
     @SubscribeEvent
     public static void registerParticleProviders(RegisterParticleProvidersEvent event) {
@@ -524,7 +504,7 @@ public class ModClientEvents {
             public ResourceLocation getStillTexture(FluidState state, BlockAndTintGetter getter, BlockPos pos) {
                 // Jade and other overlay mods may call this without a valid BlockPos (null)
                 // when rendering fluid icons in tooltips. Return the static base texture as
-                // fallback instead of NPE-ing on pos.getX(). (Reda's fix)
+                // fallback instead of NPE-ing on pos.getX().
                 if (pos == null) return STILL;
                 int offset = (getVoidWaveOffset(pos.getX(), pos.getY(), pos.getZ())) % 39;
                 return ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_" + Mth.abs(offset));

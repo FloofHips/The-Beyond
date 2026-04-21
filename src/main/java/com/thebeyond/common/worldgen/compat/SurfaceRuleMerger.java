@@ -3,12 +3,14 @@ package com.thebeyond.common.worldgen.compat;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.mixin.NoiseGeneratorSettingsAccessor;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
 import net.minecraft.world.level.block.state.BlockState;
@@ -20,7 +22,9 @@ import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
 import net.minecraft.world.level.levelgen.SurfaceRules;
 import net.minecraft.world.level.levelgen.placement.CaveSurface;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -65,7 +69,8 @@ public class SurfaceRuleMerger {
         }
 
         NoiseGeneratorSettings activeSettings = noiseGen.generatorSettings().value();
-        boolean externalTerrain = endStem.generator().getBiomeSource() instanceof MultiNoiseBiomeSource;
+        BiomeSource endBiomeSource = endStem.generator().getBiomeSource();
+        boolean externalTerrain = endBiomeSource instanceof MultiNoiseBiomeSource;
 
         SurfaceRules.RuleSource beyondRule;
         if (externalTerrain) {
@@ -82,13 +87,16 @@ public class SurfaceRuleMerger {
             TheBeyond.LOGGER.info("[TheBeyond] Using default surface rule thresholds for Beyond/vanilla terrain");
         }
 
-        // Collect rules: Beyond first (highest priority), then foreign mods, then existing
+        // SurfaceRules.sequence short-circuits on first non-null — so biome-guarded
+        // rules MUST precede any unconditional terminator (e.g. vanilla's END_STONE).
+        // Order: beyond biome-guarded → Wover per-biome → foreign whole-settings blobs
+        // (may terminate) → active settings' rule (may contain vanilla terminator).
         List<SurfaceRules.RuleSource> allRules = new ArrayList<>();
         allRules.add(beyondRule);
 
         if (beyondActive) {
-            List<SurfaceRules.RuleSource> foreignRules = collectForeignSurfaceRules(registryAccess);
-            allRules.addAll(foreignRules);
+            allRules.addAll(collectWoverBiomeSurfaceRules(registryAccess, endBiomeSource));
+            allRules.addAll(collectForeignNoiseSettingsRules(registryAccess));
         }
 
         allRules.add(activeSettings.surfaceRule());
@@ -104,18 +112,14 @@ public class SurfaceRuleMerger {
     }
 
     /**
-     * Scans the noise settings registry for entries from foreign mods that might contain
-     * End-related surface rules. Extracts and returns them for merging.
-     *
-     * <p>Checks two sources:</p>
-     * <ol>
-     *   <li>{@code minecraft:end} — vanilla's End noise settings, which mods may override
-     *       via datapack to add their own surface rules (e.g. Stellarity)</li>
-     *   <li>Any noise settings entry whose namespace matches a known End mod — some mods
-     *       define their own settings key (e.g. {@code modid:the_end})</li>
-     * </ol>
+     * Collects surface rules from foreign {@link NoiseGeneratorSettings}:
+     * {@code minecraft:end} (where datapack overrides like Stellarity inject their
+     * rules) and any non-Beyond namespace whose key path contains {@code "end"}.
+     * These are whole-settings blobs that may contain terminators, so the caller
+     * must place them AFTER biome-guarded rules in the sequence.
      */
-    private static List<SurfaceRules.RuleSource> collectForeignSurfaceRules(RegistryAccess registryAccess) {
+    private static List<SurfaceRules.RuleSource> collectForeignNoiseSettingsRules(
+            RegistryAccess registryAccess) {
         Registry<NoiseGeneratorSettings> noiseRegistry = registryAccess.registryOrThrow(Registries.NOISE_SETTINGS);
         List<SurfaceRules.RuleSource> foreignRules = new ArrayList<>();
 
@@ -156,6 +160,114 @@ public class SurfaceRuleMerger {
         }
 
         return foreignRules;
+    }
+
+    /**
+     * Collects per-biome rules from Wover's {@code SURFACE_RULES_REGISTRY} and
+     * wraps each with {@code ifTrue(isBiome(key), ...)}. Mirrors Wover's own
+     * {@code SurfaceRuleUtil.getRulesForBiome}; reflective because Wover is not
+     * a compile-time dependency. Silent empty return when Wover is absent.
+     */
+    private static List<SurfaceRules.RuleSource> collectWoverBiomeSurfaceRules(
+            RegistryAccess registryAccess, BiomeSource biomeSource) {
+        WoverRegistryAccess access = WoverRegistryAccess.INSTANCE;
+        if (access == null) return List.of();
+
+        @SuppressWarnings("unchecked")
+        ResourceKey<Registry<Object>> key = (ResourceKey<Registry<Object>>) access.registryKey;
+        Registry<Object> registry = registryAccess.registry(key).orElse(null);
+        if (registry == null) return List.of();
+
+        // Bucket all AssignedSurfaceRule entries by biomeID once, so the per-biome
+        // query below is O(1) instead of O(registry) per biome.
+        Map<ResourceLocation, List<Entry>> byBiome = new HashMap<>();
+        try {
+            for (Object assigned : registry) {
+                if (assigned == null) continue;
+                ResourceLocation id = (ResourceLocation) access.biomeIdField.get(assigned);
+                if (id == null) continue;
+                SurfaceRules.RuleSource rule = (SurfaceRules.RuleSource) access.ruleSourceField.get(assigned);
+                if (rule == null) continue;
+                int priority = access.priorityField.getInt(assigned);
+                byBiome.computeIfAbsent(id, k -> new ArrayList<>()).add(new Entry(rule, priority));
+            }
+        } catch (IllegalAccessException e) {
+            TheBeyond.LOGGER.warn("[TheBeyond] Failed to read Wover AssignedSurfaceRule fields; per-biome rules skipped", e);
+            return List.of();
+        }
+        if (byBiome.isEmpty()) return List.of();
+
+        List<SurfaceRules.RuleSource> out = new ArrayList<>();
+        int ruleCount = 0;
+        for (Holder<Biome> holder : biomeSource.possibleBiomes()) {
+            ResourceKey<Biome> biomeKey = holder.unwrapKey().orElse(null);
+            if (biomeKey == null) continue;
+            List<Entry> matches = byBiome.get(biomeKey.location());
+            if (matches == null || matches.isEmpty()) continue;
+            // Sort high priority first — same order Wover uses when building its
+            // SequenceRuleSource, so a datapack that overrides a BetterEnd biome
+            // with a higher-priority rule still wins under our collection.
+            matches.sort((a, b) -> b.priority - a.priority);
+            SurfaceRules.RuleSource[] perBiome = new SurfaceRules.RuleSource[matches.size()];
+            for (int i = 0; i < matches.size(); i++) perBiome[i] = matches.get(i).rule;
+            // Use sequence(...) (public factory) — SequenceRuleSource's ctor is
+            // package-private and we don't ship ATs for it.
+            out.add(SurfaceRules.ifTrue(
+                    SurfaceRules.isBiome(biomeKey),
+                    SurfaceRules.sequence(perBiome)));
+            ruleCount += perBiome.length;
+        }
+        if (ruleCount > 0) {
+            TheBeyond.LOGGER.info(
+                    "[TheBeyond] Collected {} per-biome surface rules from Wover SURFACE_RULES_REGISTRY across {} biomes",
+                    ruleCount, out.size());
+        }
+        return out;
+    }
+
+    /** Simple tuple for the biomeID → rules bucket in {@link #collectWoverBiomeSurfaceRules}. */
+    private record Entry(SurfaceRules.RuleSource rule, int priority) {}
+
+    /** Reflective handle to Wover's SurfaceRuleRegistry / AssignedSurfaceRule,
+     *  resolved once at class init. INSTANCE is null when Wover is absent. */
+    private static final class WoverRegistryAccess {
+        static final WoverRegistryAccess INSTANCE = tryCreate();
+
+        final ResourceKey<? extends Registry<?>> registryKey;
+        final Field biomeIdField;
+        final Field ruleSourceField;
+        final Field priorityField;
+
+        private WoverRegistryAccess(ResourceKey<? extends Registry<?>> registryKey,
+                                     Field biomeIdField, Field ruleSourceField, Field priorityField) {
+            this.registryKey = registryKey;
+            this.biomeIdField = biomeIdField;
+            this.ruleSourceField = ruleSourceField;
+            this.priorityField = priorityField;
+        }
+
+        private static WoverRegistryAccess tryCreate() {
+            try {
+                Class<?> registryApi = Class.forName("org.betterx.wover.surface.api.SurfaceRuleRegistry");
+                ResourceKey<? extends Registry<?>> key =
+                        (ResourceKey<? extends Registry<?>>) registryApi.getField("SURFACE_RULES_REGISTRY").get(null);
+                Class<?> ruleClass = Class.forName("org.betterx.wover.surface.api.AssignedSurfaceRule");
+                Field biomeIdField = ruleClass.getField("biomeID");
+                Field ruleSourceField = ruleClass.getField("ruleSource");
+                Field priorityField = ruleClass.getField("priority");
+                TheBeyond.LOGGER.info("[TheBeyond] Wover surface rule reflection bound — per-biome collection enabled");
+                return new WoverRegistryAccess(key, biomeIdField, ruleSourceField, priorityField);
+            } catch (ClassNotFoundException e) {
+                TheBeyond.LOGGER.debug("[TheBeyond] Wover not present on classpath; per-biome surface rule collection disabled");
+                return null;
+            } catch (Throwable t) {
+                // Widened from ReflectiveOperationException so unexpected NoClassDefFoundError
+                // / LinkageError while loading Wover classes (e.g. Wover present but broken)
+                // degrades to "skip collection" instead of bringing the server start down.
+                TheBeyond.LOGGER.warn("[TheBeyond] Failed to bind Wover surface rule reflection; per-biome collection disabled", t);
+                return null;
+            }
+        }
     }
 
     /**

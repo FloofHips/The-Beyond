@@ -5,6 +5,7 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.*;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.thebeyond.TheBeyond;
+import com.thebeyond.util.HashSimplexNoise;
 import net.minecraft.core.*;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.RegistryOps;
@@ -132,10 +133,6 @@ public class BeyondEndBiomeSource extends BiomeSource {
      *   inner_void_biomes   (required) — void biomes used in the inner void ring
      *   center_biome        (required) — single biome for the central island
      *   bottom_biome        (required) — single biome below y=20
-     *
-     * Field rename note: pre-2026-04-10 the main pool was called `end_biomes`. It is now
-     * `tainted_end_biomes` to make the duo-region intent obvious. Existing dimension JSONs must be
-     * updated when upgrading.
      */
     public static final MapCodec<BeyondEndBiomeSource> CODEC = RecordCodecBuilder.mapCodec(instance ->
             instance.group(
@@ -145,7 +142,14 @@ public class BeyondEndBiomeSource extends BiomeSource {
                     LENIENT_BIOME_LIST.fieldOf("outer_void_biomes").forGetter(source -> source.outerVoidBiomeList),
                     LENIENT_BIOME_LIST.fieldOf("inner_void_biomes").forGetter(source -> source.innerVoidBiomeList),
                     LENIENT_BIOME.fieldOf("center_biome").forGetter(source -> source.centerBiome),
-                    LENIENT_BIOME.fieldOf("bottom_biome").forGetter(source -> source.bottomBiome)
+                    LENIENT_BIOME.fieldOf("bottom_biome").forGetter(source -> source.bottomBiome),
+                    // Optional — datapacks that don't specify this get the calibrated
+                    // DEFAULTS. Conceptually the field lives on the biome source for
+                    // the same reason farlands_z_boundary does: both are generation
+                    // knobs the biome source already owns and passes to the chunk
+                    // generator via static state.
+                    BeyondTerrainParams.FULL_CODEC.optionalFieldOf("terrain_params", BeyondTerrainParams.DEFAULTS)
+                            .forGetter(source -> source.terrainParams)
             ).apply(instance, BeyondEndBiomeSource::new)
     );
 
@@ -164,15 +168,79 @@ public class BeyondEndBiomeSource extends BiomeSource {
     private final List<Holder<Biome>> innerVoidBiomeList;
     private final Holder<Biome> centerBiome;
     private final Holder<Biome> bottomBiome;
+    /** Retained for round-trip codec encoding. The chunk generator reads the effective
+     *  values from {@link BeyondEndChunkGenerator#activeTerrainParams}, which this
+     *  constructor writes into. Keeping the field here means a save→reload round-trip
+     *  serializes back the same JSON the author wrote. */
+    private final BeyondTerrainParams terrainParams;
     private Set<Holder<Biome>> allBiomes;
     private final boolean farlandsGateActive;
+
+    /**
+     * Per-thread column cache: memoizes the expensive y-invariant biome
+     * computation (two Perlin lookups + one Simplex lookup) across the ~80
+     * y-samples Mojang issues per (quartX, quartZ). ThreadLocal because chunk
+     * generation is multi-threaded.
+     */
+    private static final class ColumnCache {
+        /** Sentinel value meaning "no column cached yet". */
+        int blockX = Integer.MIN_VALUE;
+        int blockZ = Integer.MIN_VALUE;
+        /** {@code absSeed} — incorporates biomeNoise × threshold × 1M plus biome-grid hash. */
+        long absSeed;
+    }
+
+    private final ThreadLocal<ColumnCache> columnCacheTL = ThreadLocal.withInitial(ColumnCache::new);
+
+    /**
+     * Baseline pool size the default {@code 0.02} frequency is calibrated for
+     * (~Beyond native + vanilla End). Larger pools (mod combos push tainted past
+     * 50) lose biome coherence because {@code absSeed % poolSize} jumps too far
+     * per step — {@link #getBiomeNoiseScale()} widens the simplex patches to
+     * compensate.
+     */
+    private static final int BASELINE_POOL_SIZE = 12;
+
+    /**
+     * Cached per-instance biome noise frequency. Invalidated to {@code -1} on
+     * {@link #injectBiomesIntoTaintedPool} since pool growth changes the computed value.
+     * Volatile because inject happens on the server-start thread and reads happen on
+     * chunk-gen worker threads.
+     */
+    private volatile double cachedBiomeNoiseScale = -1.0;
+
+    /**
+     * Simplex frequency for biome selection, scaled by {@code sqrt(BASELINE / poolSize)}
+     * so patch area grows with pool size (biome patches are 2D — linear scaling would
+     * over-correct). Clamped to {@code [0.35 * 0.02, 1.0 * 0.02]}.
+     */
+    private double getBiomeNoiseScale() {
+        double cached = cachedBiomeNoiseScale;
+        if (cached > 0) return cached;
+        // Recompute. Only the tainted pool is scaled against — inner/outer void pools are
+        // typically small and hand-curated in the dimension JSON, they don't dynamically grow.
+        // If the tainted pool shrank below baseline (custom datapacks), keep the default 0.02.
+        int poolSize = Math.max(taintedEndBiomeList.size(), 1);
+        double factor;
+        if (poolSize <= BASELINE_POOL_SIZE) {
+            factor = 1.0;
+        } else {
+            factor = Math.sqrt((double) BASELINE_POOL_SIZE / poolSize);
+            // Clamp the lower bound so continents don't get absurd at pool sizes >100.
+            if (factor < 0.35) factor = 0.35;
+        }
+        double scale = 0.02 * factor;
+        cachedBiomeNoiseScale = scale;
+        return scale;
+    }
 
     public BeyondEndBiomeSource(List<Holder<Biome>> taintedEndBiomes,
                                 List<Holder<Biome>> farlandsBiomes,
                                 Optional<Integer> farlandsZBoundary,
                                 List<Holder<Biome>> outerVoidBiomes,
                                 List<Holder<Biome>> innerVoidBiomes,
-                                Holder<Biome> centerBiome, Holder<Biome> bottomBiome) {
+                                Holder<Biome> centerBiome, Holder<Biome> bottomBiome,
+                                BeyondTerrainParams terrainParams) {
         super();
         this.taintedEndBiomeList = new ArrayList<>(taintedEndBiomes);
         this.farlandsBiomeList = farlandsBiomes;
@@ -181,10 +249,11 @@ public class BeyondEndBiomeSource extends BiomeSource {
         this.innerVoidBiomeList = innerVoidBiomes;
         this.centerBiome = centerBiome;
         this.bottomBiome = bottomBiome;
+        this.terrainParams = terrainParams;
 
         // Gate is active only when BOTH a boundary and a non-empty Farlands pool are provided.
         // This makes the schema scaffolding-friendly: omit either field and the duo-region is silently
-        // disabled, falling back to the pre-refactor single-pool behavior.
+        // disabled, falling back to a single-pool (Tainted End only) biome layout.
         this.farlandsGateActive = farlandsZBoundary.isPresent() && !farlandsBiomeList.isEmpty();
 
         this.allBiomes = ImmutableSet.<Holder<Biome>>builder()
@@ -196,6 +265,13 @@ public class BeyondEndBiomeSource extends BiomeSource {
                 .add(bottomBiome)
                 .build();
 
+        // Publish the datapack-configured terrain params to the chunk generator.
+        // Static mutable state is the established communication channel between
+        // these two objects (see the volatile noise fields). Done here rather than
+        // lazily so a misconfigured value trips the IllegalArgumentException at
+        // world-load time, not hundreds of chunks in.
+        BeyondEndChunkGenerator.activeTerrainParams = terrainParams;
+
         if (farlandsGateActive) {
             TheBeyond.LOGGER.info("[TheBeyond] BiomeSource initialized: {} tainted, {} farlands (gate at z<{}), {} innerVoid, {} outerVoid biomes",
                     taintedEndBiomeList.size(), farlandsBiomeList.size(), farlandsZBoundary.get(),
@@ -204,10 +280,23 @@ public class BeyondEndBiomeSource extends BiomeSource {
             TheBeyond.LOGGER.info("[TheBeyond] BiomeSource initialized: {} tainted (Farlands gate inactive), {} innerVoid, {} outerVoid biomes",
                     taintedEndBiomeList.size(), innerVoidBiomeList.size(), outerVoidBiomeList.size());
         }
+        // Log the terrain params at startup so debugging an unexpected generator
+        // behavior (mirrored world, extra-wavy features) has a breadcrumb.
+        if (!terrainParams.equals(BeyondTerrainParams.DEFAULTS)) {
+            TheBeyond.LOGGER.info("[TheBeyond] Custom terrain_params: wrap_range={} warp_amplitude={} warp_scale={}",
+                    terrainParams.wrapRange(), terrainParams.warpAmplitude(), terrainParams.warpScale());
+        }
+        // Biome-noise frequency breadcrumb — helps correlate "striped mosaic" complaints
+        // with runtime pool size. Scale == 0.02 in the default 12-biome calibration.
+        TheBeyond.LOGGER.info("[TheBeyond] Biome noise scale (patch frequency): {} (pool-size-adjusted from baseline 0.02; tainted pool size {})",
+                getBiomeNoiseScale(), taintedEndBiomeList.size());
 
-        // Mark Beyond's terrain as the active End provider for this server session.
-        // ServerWorldEvents reads this to skip fallback biome injection paths.
-        BeyondTerrainState.markActive();
+        // NOTE: BeyondTerrainState.active is NOT set here. Constructor side-effects leak:
+        // CreateWorldScreen.openFresh decodes WorldDataConfiguration.DEFAULT which auto-adds
+        // beyond_terrain and runs this constructor — if the pack is then deselected in
+        // the UI before clicking Create, the flag would remain true even though the real
+        // server uses vanilla TheEndBiomeSource. The flag is derived authoritatively in
+        // ServerWorldEvents.onServerAboutToStart from the server's LEVEL_STEM registry.
     }
 
     @Override
@@ -244,6 +333,10 @@ public class BeyondEndBiomeSource extends BiomeSource {
 
         taintedEndBiomeList.addAll(toAdd);
 
+        // Invalidate the biome-noise frequency cache: pool size just changed, so
+        // getBiomeNoiseScale() must recompute. Next getNoiseBiome call reseeds the cache.
+        cachedBiomeNoiseScale = -1.0;
+
         // Rebuild the combined set and update the memoized possibleBiomes supplier
         // so /locate and structure placement see the new biomes.
         allBiomes = ImmutableSet.<Holder<Biome>>builder()
@@ -267,42 +360,70 @@ public class BeyondEndBiomeSource extends BiomeSource {
         int blockY = QuartPos.toBlock(y);
         int blockZ = QuartPos.toBlock(z);
 
+        // distanceFromO is cheap (one sqrt). Compute always; don't cache.
         float distanceFromO = (float) Math.sqrt((double) blockX * blockX + (double) blockZ * blockZ);
 
+        // centerBiome FIRST — applyBiomeDecoration runs BiomeFilter at sectionPos.origin()
+        // (y=min_y). END_SPIKE is registered only in minecraft:the_end; if bottomBiome wins
+        // here, the filter rejects every spike in the ring (radius ~42, all inside this disk)
+        // and the central island generates without pillars.
         if (distanceFromO <= 116)
             return centerBiome;
 
-        // bottom_biome (the_paths) is the auroracite floor at y=0,1 — restrict it to the very
-        // bottom of the dimension. The previous y<20 check assigned the_paths to any low-y
-        // sample, including raised end_stone terrain in the y=1-20 band, which let creatures
-        // from the_paths spawners (Abyssal Nomads) appear on solid terrain far above the
-        // actual paths layer. Quart pos 0 is blockY 0-3, which covers the auroracite row plus
-        // a small buffer.
-        if (blockY < 4)
+        // bottom_biome (the_paths): restrict to the auroracite row + a small buffer.
+        // dimMinY comes from BeyondTerrainState so the band follows the dim floor —
+        // [0,3] in Beyond-só, [-64,-61] with beyond_enderscape_bounds.
+        int dimMinY = BeyondTerrainState.getDimMinY();
+        if (blockY < dimMinY + 4)
             return bottomBiome;
 
-        int biomeX = blockX / 64;
-        int biomeZ = blockZ / 64;
+        // ----- Column cache for EXPENSIVE invariants -----
+        // absSeed requires two Perlin lookups + one Simplex lookup, all of which depend on
+        // (blockX, blockZ) only — not y. Cache it per column.
+        ColumnCache cache = columnCacheTL.get();
+        final long absSeed;
+        if (cache.blockX == blockX && cache.blockZ == blockZ) {
+            absSeed = cache.absSeed;
+        } else {
+            int biomeX = blockX / 64;
+            int biomeZ = blockZ / 64;
+            // NOTE: this distance mixes units — blockX (block-space) with biomeZ (biome-space,
+            // = blockZ/64). This looks like a bug but is load-bearing: the threshold curve
+            // downstream is tuned against this exact asymmetric magnitude. Do NOT "fix" to
+            // blockZ without recalibrating the threshold function, or biome selection at the
+            // center/edges will shift.
+            float distanceFromOrigin = (float) Math.sqrt((double) blockX * blockX + (double) biomeZ * biomeZ);
 
-        float distanceFromOrigin = (float) Math.sqrt((double) blockX * blockX + (double) biomeZ * biomeZ);
+            // Intentionally NOT wrapped: these feed the absSeed biome-hash, not a
+            // density sampler, so the chunk-gen wrap isn't needed — and wrapping
+            // here would inject a 2*wrapRange periodic repetition into biome layout.
+            // See BeyondEndChunkGenerator's helper contract block for derivation.
+            double horizontalScale = BeyondEndChunkGenerator.getHorizontalBaseScale(biomeX, biomeZ);
+            double threshold = BeyondEndChunkGenerator.getThreshold(biomeX, biomeZ, distanceFromOrigin);
 
-        double horizontalScale = BeyondEndChunkGenerator.getHorizontalBaseScale(biomeX, biomeZ);
-        double threshold = BeyondEndChunkGenerator.getThreshold(biomeX, biomeZ, distanceFromOrigin);
+            // Dedicated biome simplex field (separate from terrain simplex) so
+            // terrain retuning can't silently reshuffle biome placement.
+            HashSimplexNoise biomeNoiseField = BeyondEndChunkGenerator.biomeSimplexNoise;
+            if (biomeNoiseField == null) {
+                return centerBiome;
+            }
+            double biomeFreq = getBiomeNoiseScale();
+            double biomeNoise = biomeNoiseField.getValue(
+                    biomeX * horizontalScale * biomeFreq,
+                    biomeZ * horizontalScale * biomeFreq
+            );
 
-        // f4ba752 "Tweaks and Tweaks": halved horizontal noise frequency (0.2 -> 0.1) so
-        // biome patches are ~2x larger and don't look shredded at default render distance.
-        if (BeyondEndChunkGenerator.simplexNoise == null) {
-            return centerBiome;
+            long seed = (long) (biomeNoise * threshold * 1000000) + biomeX * 31L + biomeZ * 961L;
+            absSeed = Math.abs(seed);
+
+            // Store for future y-samples of the same column.
+            cache.blockX = blockX;
+            cache.blockZ = blockZ;
+            cache.absSeed = absSeed;
         }
-        double biomeNoise = BeyondEndChunkGenerator.simplexNoise.getValue(
-                biomeX * horizontalScale * 0.1,
-                biomeZ * horizontalScale * 0.1
-        );
+        // ----- End column cache -----
 
-        long seed = (long) (biomeNoise * threshold * 1000000) + biomeX * 31L + biomeZ * 961L;
-        long absSeed = Math.abs(seed);
-
-        // d985d68 "Even more bug fixes!": pick directly from innerVoidBiomes without sampling
+        // Pick directly from innerVoidBiomes without sampling
         // terrain density. getTerrainDensity() is the most expensive call in this method
         // (4-octave 3D simplex + 3 Perlin scale/cycle lookups), so skipping it for every
         // point inside the 690-block radius halves per-call cost across a huge portion of
@@ -314,7 +435,8 @@ public class BeyondEndBiomeSource extends BiomeSource {
         }
 
         // Outer region: terrain density decides whether this point lands in a void biome
-        // (empty air column) or in a solid end biome.
+        // (empty air column) or in a solid end biome. This call DOES depend on y so it
+        // cannot be hoisted into the column cache.
         boolean isVoid = BeyondEndChunkGenerator.getTerrainDensity(blockX, blockY, blockZ) < 0.01f;
 
         if (isVoid) {

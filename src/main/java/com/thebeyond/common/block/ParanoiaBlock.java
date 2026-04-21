@@ -43,19 +43,18 @@ public class ParanoiaBlock extends Block {
     @Override
     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         BlockState block = level.getBlockState(pos.below());
-        // Enadrake-seed spam fix (per Reda's decision): the old gate was an unconditional
-        // `isRaining() && isAir()` which placed a sprout on 100% of random ticks during any
-        // rain. With 10 Obiroot trees per chunk (count_on_every_layer=10 in peer_lands) and
-        // ~30 Paranoia blocks per tree, that was spawning dozens of sprouts per chunk per
-        // minute, each of which grew into an Enadrake at 0.5 chance/rtick via
-        // ObirootSproutBlock.randomTick -> mass Enadrake swarms + void-crystal glass-break
-        // cascades when the mobs collided with Fallable crystals.
+        // Sprout-spawn probability per random tick. An unconditional
+        // `isRaining() && isAir()` gate placed a sprout on 100% of random ticks during any
+        // rain — with ~10 Obiroot trees per chunk and ~30 Paranoia blocks per tree that
+        // produced dozens of sprouts per chunk per minute, each of which grew into an
+        // Enadrake via {@link ObirootSproutBlock#randomTick}, leading to mass Enadrake
+        // swarms and cascading void-crystal glass-break effects on mob collisions.
         //
-        // Reda's call: "much lower during rain, and a little higher than that during thunder"
+        // Current gates:
         //   rain     ->  2% per random tick
         //   thunder  ->  5% per random tick (thunder is a superset of rain in vanilla,
-        //               so we check it first)
-        //   dry      ->  no spawn (matches old behavior)
+        //                so it is checked first)
+        //   dry      ->  no spawn
         if (block.isAir()) {
             float chance;
             if (level.isThundering()) {

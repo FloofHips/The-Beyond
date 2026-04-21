@@ -3,6 +3,11 @@ package com.thebeyond.common.event;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.entity.TotemOfRespiteEntity;
 import com.thebeyond.common.item.AnchorLeggingsItem;
+import com.thebeyond.common.knowledge.BeyondKnowledge;
+import com.thebeyond.common.knowledge.KnowledgeMode;
+import com.thebeyond.common.knowledge.PlayerKnowledge;
+import com.thebeyond.common.knowledge.WorldKnowledge;
+import com.thebeyond.common.network.PlayerKnowledgeSyncPayload;
 import com.thebeyond.common.registry.*;
 import com.thebeyond.util.AOEManager;
 import com.thebeyond.util.RefugeChunkData;
@@ -36,6 +41,10 @@ import net.neoforged.neoforge.event.entity.living.*;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.level.ExplosionEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
+
+import net.minecraft.resources.ResourceLocation;
+import java.util.Set;
 
 import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvent;
@@ -59,6 +68,28 @@ public class ModGameEvents {
         // to check anyway, so callers treat null as "no protection".
         ChunkAccess chunk = level.getChunkSource().getChunk(pos.getX() >> 4, pos.getZ() >> 4, false);
         return chunk == null ? null : chunk.getData(BeyondAttachments.REFUGE_DATA);
+    }
+
+    /**
+     * Login snapshot: attachments aren't S2C-synced by NeoForge, so the client needs an
+     * explicit push of whatever the server considers "known" for this player. In
+     * SHARED_WORLD mode that's the world set; in per-player modes it's the player's
+     * attachment. Sends {@code replace=true} so the client starts from a clean slate even
+     * if it had stale state from a previous session on a different world.
+     */
+    @SubscribeEvent
+    public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer sp)) return;
+        if (!BeyondKnowledge.gateEnabled()) return;
+
+        Set<ResourceLocation> snapshot;
+        if (BeyondKnowledge.mode() == KnowledgeMode.SHARED_WORLD) {
+            snapshot = Set.copyOf(WorldKnowledge.get(sp.serverLevel()).all());
+        } else {
+            PlayerKnowledge pk = sp.getData(BeyondAttachments.PLAYER_KNOWLEDGE);
+            snapshot = Set.copyOf(pk.all());
+        }
+        PacketDistributor.sendToPlayer(sp, new PlayerKnowledgeSyncPayload(snapshot, true));
     }
 
     @SubscribeEvent

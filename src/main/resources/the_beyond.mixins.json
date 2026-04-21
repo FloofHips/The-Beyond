@@ -18,13 +18,13 @@
     "EndWeatherMixin",
     "EndWeatherSyncMixin",
     "TheEndBiomeSourceMixin",
-    "PackRepositoryMixin",
     "MultiPackResourceManagerMixin",
     "EndPodiumFeatureMixin",
     "WoverChunkGeneratorMixin",
     "WoverSurfaceRuleUtilMixin",
     "JigsawStructureMixin",
-    "AuroraciteLayerProtectionMixin"
+    "AuroraciteLayerProtectionMixin",
+    "AuroraciteLayerFillMixin"
   ],
   "client": [
     "client.BossHealthOverlayAccessor"

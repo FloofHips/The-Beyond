@@ -1,6 +1,7 @@
 package com.thebeyond.common.worldgen.features;
 
 import com.mojang.serialization.Codec;
+import com.thebeyond.TheBeyond;
 import com.thebeyond.common.registry.BeyondBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -60,6 +61,11 @@ public class AuroraciteLayerDTFeature extends Feature<NoneFeatureConfiguration> 
     private static volatile SimplexNoise noise;
     private static volatile BlockState cachedDTFluid;
 
+    // One-shot diagnostic: logs the first minY observed in each world load to record
+    // which dim_type won. Resets in resetNoise() alongside the noise field, so every
+    // fresh server start gets its own log line.
+    private static volatile int loggedMinY = Integer.MIN_VALUE;
+
     public AuroraciteLayerDTFeature(Codec<NoneFeatureConfiguration> codec) {
         super(codec);
     }
@@ -86,6 +92,7 @@ public class AuroraciteLayerDTFeature extends Feature<NoneFeatureConfiguration> 
     public static void resetNoise() {
         noise = null;
         cachedDTFluid = null;
+        loggedMinY = Integer.MIN_VALUE;
     }
 
     private static BlockState getDTFluidState() {
@@ -131,6 +138,11 @@ public class AuroraciteLayerDTFeature extends Feature<NoneFeatureConfiguration> 
         boolean hasDTFluid = !dtFluid.isAir();
 
         int minY = level.getMinBuildHeight();
+        // First-placement diagnostic: confirms which dim_type's min_y is active.
+        if (loggedMinY != minY) {
+            loggedMinY = minY;
+            TheBeyond.LOGGER.info("[AuroraciteLayerDTFeature] placing at minY={} (level.getMinBuildHeight())", minY);
+        }
         int chunkX = origin.getX() & ~15; // align to chunk
         int chunkZ = origin.getZ() & ~15;
         BlockState auroracite = BeyondBlocks.AURORACITE.get().defaultBlockState();

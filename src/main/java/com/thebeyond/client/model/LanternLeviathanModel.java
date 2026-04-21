@@ -42,7 +42,22 @@ public class LanternLeviathanModel<T extends LanternEntity> extends EntityModel<
 
         PartDefinition root = partdefinition.addOrReplaceChild("root", CubeListBuilder.create(), PartPose.offset(0.0F, 24.0F, 0.0F));
 
-        PartDefinition bone = root.addOrReplaceChild("bone", CubeListBuilder.create().texOffs(0, 0).addBox(-15.0769F, -13.9615F, -6.4615F, 32.0F, 27.0F, 80.0F, new CubeDeformation(0.0F))
+        // Main solid body cube ONLY — the zero-thickness decoration boxes that
+        // used to live inline on this part have been moved to the child
+        // "bone_decorations" below so the Lantern split-pass renderer
+        // (body=NO_CULL, fins=CULL) can route them through the CULL pass and
+        // avoid scribble z-fight on their coplanar quad twins.
+        PartDefinition bone = root.addOrReplaceChild("bone", CubeListBuilder.create()
+                .texOffs(0, 0).addBox(-15.0769F, -13.9615F, -6.4615F, 32.0F, 27.0F, 80.0F, new CubeDeformation(0.0F)),
+                PartPose.offset(-0.9231F, -13.0385F, -25.5385F));
+
+        // Zero-thickness decoration quads (originally inline addBox calls on
+        // "bone"). Moved into this child so the split-pass renderer routes them
+        // through the CULL pass — their original world-space positions are
+        // preserved because PartPose.ZERO keeps the same local origin as "bone"
+        // and the addBox offsets are unchanged. Animation follows automatically
+        // because this part is a child of "bone".
+        bone.addOrReplaceChild("bone_decorations", CubeListBuilder.create()
                 .texOffs(138, 52).addBox(-5.0769F, 9.0385F, -6.4615F, 6.0F, 0.0F, 6.0F, new CubeDeformation(0.0F))
                 .texOffs(138, 58).addBox(-5.0769F, 3.0385F, -6.4615F, 6.0F, 0.0F, 6.0F, new CubeDeformation(0.0F))
                 .texOffs(144, 58).addBox(0.9231F, 3.0385F, -6.4615F, 0.0F, 6.0F, 6.0F, new CubeDeformation(0.0F))
@@ -54,7 +69,8 @@ public class LanternLeviathanModel<T extends LanternEntity> extends EntityModel<
                 .texOffs(136, 36).addBox(3.9231F, 3.0385F, -6.4615F, 8.0F, 0.0F, 8.0F, new CubeDeformation(0.0F))
                 .texOffs(160, 28).addBox(3.9231F, -4.9615F, -6.4615F, 0.0F, 8.0F, 8.0F, new CubeDeformation(0.0F))
                 .texOffs(160, 36).addBox(11.9231F, -4.9615F, -6.4615F, 0.0F, 8.0F, 8.0F, new CubeDeformation(0.0F))
-                .texOffs(136, 44).addBox(3.9231F, -4.9615F, -6.4615F, 8.0F, 0.0F, 8.0F, new CubeDeformation(0.0F)), PartPose.offset(-0.9231F, -13.0385F, -25.5385F));
+                .texOffs(136, 44).addBox(3.9231F, -4.9615F, -6.4615F, 8.0F, 0.0F, 8.0F, new CubeDeformation(0.0F)),
+                PartPose.ZERO);
 
         PartDefinition left_fin = bone.addOrReplaceChild("left_fin", CubeListBuilder.create().texOffs(132, 24).mirror().addBox(-8.0F, 0.0F, -4.0F, 16.0F, 0.0F, 12.0F, new CubeDeformation(0.0F)).mirror(false), PartPose.offset(-23.0769F, 7.0385F, 15.5385F));
 
@@ -111,4 +127,22 @@ public class LanternLeviathanModel<T extends LanternEntity> extends EntityModel<
     public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int i, int i1, int i2) {
         root.render(poseStack, vertexConsumer, i, i1, i2);
     }
+
+    /** Root part — used by the split-pass rendering in {@code LanternRenderer}. */
+    public ModelPart getRoot() { return root; }
+
+    /**
+     * The Leviathan's main part is called {@code bone} (not {@code body} like the
+     * smaller sizes). It carries the solid 32×27×80 cube plus a handful of small
+     * zero-thickness decoration boxes baked directly into the same part. Children
+     * of {@code bone} are the independent fin/tail chains.
+     *
+     * <p>{@code LanternRenderer} uses this for the split-pass: body (NO_CULL,
+     * volumetric) + fins (CULL, no z-fight). The inline zero-thickness decorations
+     * on {@code bone} go into the NO_CULL pass and may exhibit mild scribble —
+     * this is a deliberate trade-off; moving them to CULL would require model
+     * surgery and would re-introduce the hollow-body symptom that was the primary
+     * complaint.
+     */
+    public ModelPart getMainPart() { return bone; }
 }

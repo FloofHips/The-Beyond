@@ -15,6 +15,8 @@ config = "the_beyond_dimensional_tears.mixins.json"
 config = "the_beyond_betterend_compat.mixins.json"
 [[mixins]]
 config = "the_beyond_stellarity_compat.mixins.json"
+[[mixins]]
+config = "the_beyond_compass_compat.mixins.json"
 
 [[mods]]
 enumExtensions="META-INF/enumextensions.json"

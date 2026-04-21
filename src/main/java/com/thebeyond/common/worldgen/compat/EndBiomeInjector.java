@@ -125,14 +125,30 @@ public class EndBiomeInjector {
                 0
         ));
 
-        // the_paths: Deep void
-        added += tryAdd(merged, biomeRegistry, THE_PATHS, Climate.parameters(
+        // the_paths: Deep void (weirdness >= 0 half — coexists with enderscape:void_depths)
+        //
+        // Enderscape's terrain.json defines `enderscape:void_depths` with essentially the
+        // same climate slot the_paths would otherwise want (depth [-1.5, -0.4], other
+        // dimensions full-range). Two entries with identical slots in
+        // Climate.ParameterList tie at distance 0 for every sample inside the slot, and
+        // the strict m<l tie-break in findValueBruteForce lets the FIRST entry win.
+        // Appending the_paths at the end would therefore make it unreachable under
+        // Enderscape terrain ("Could not find a biome of type 'the_beyond:the_paths'").
+        //
+        // The deep-void zone is partitioned into disjoint weirdness halves:
+        //   - the_paths   → weirdness ∈ [0.0, 1.0]  (this entry, prepended)
+        //   - void_depths → weirdness ∈ [-1.0, 1.0] (unchanged, in `existing`)
+        // For weirdness ∈ [0, 1] both slots are distance 0 and prepending makes the_paths
+        // win the tie. For weirdness ∈ [-1, 0) the_paths is at positive distance while
+        // void_depths stays at 0, so void_depths wins uncontested. Neither biome is
+        // shadowed — each owns half the weirdness axis at depth [-1.5, -0.4].
+        added += tryAddFirst(merged, biomeRegistry, THE_PATHS, Climate.parameters(
                 Climate.Parameter.span(-1.0F, 1.0F),
                 Climate.Parameter.span(-1.0F, 1.0F),
                 Climate.Parameter.span(-1.0F, 1.0F),
                 Climate.Parameter.span(-1.0F, 2.0F),
                 Climate.Parameter.span(-1.5F, -0.4F),
-                Climate.Parameter.span(-1.0F, 1.0F),
+                Climate.Parameter.span(0.0F, 1.0F),
                 0
         ));
 
@@ -186,6 +202,25 @@ public class EndBiomeInjector {
         Optional<Holder.Reference<Biome>> holder = registry.getHolder(key);
         if (holder.isPresent()) {
             merged.add(Pair.of(params, holder.get()));
+            return 1;
+        }
+        TheBeyond.LOGGER.warn("[TheBeyond] Biome {} not in registry, skipping injection", key.location());
+        return 0;
+    }
+
+    /**
+     * Like {@link #tryAdd} but inserts at position 0 so this entry wins distance-0 ties
+     * against any pre-existing entry in {@code merged}. Used when a Beyond biome shares
+     * a climate slot with a foreign biome already in the list (e.g. the_paths ↔
+     * enderscape:void_depths) and the Beyond biome must claim the overlap half.
+     */
+    private static int tryAddFirst(List<Pair<Climate.ParameterPoint, Holder<Biome>>> merged,
+                                    Registry<Biome> registry,
+                                    ResourceKey<Biome> key,
+                                    Climate.ParameterPoint params) {
+        Optional<Holder.Reference<Biome>> holder = registry.getHolder(key);
+        if (holder.isPresent()) {
+            merged.add(0, Pair.of(params, holder.get()));
             return 1;
         }
         TheBeyond.LOGGER.warn("[TheBeyond] Biome {} not in registry, skipping injection", key.location());
