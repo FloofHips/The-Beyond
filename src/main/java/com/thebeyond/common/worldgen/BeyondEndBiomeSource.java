@@ -1,11 +1,13 @@
 package com.thebeyond.common.worldgen;
 
+import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.*;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.util.HashSimplexNoise;
+import com.thebeyond.util.VoronoiNoise;
 import net.minecraft.core.*;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.RegistryOps;
@@ -32,7 +34,7 @@ import java.util.stream.Stream;
  * to gracefully handle missing biome entries.
  */
 public class BeyondEndBiomeSource extends BiomeSource {
-
+    private Supplier<VoronoiNoise> voronoiNoise;
     /**
      * A lenient biome list codec that:
      * - Decode: reads ResourceLocation strings, resolves each against the biome registry,
@@ -330,6 +332,11 @@ public class BeyondEndBiomeSource extends BiomeSource {
 
     @Override
     public Holder<Biome> getNoiseBiome(int x, int y, int z, Climate.Sampler sampler) {
+        if (true) return getVoronoiNoiseBiome(x, y, z, sampler);
+        else return getSimplexNoiseBiome(x, y, z, sampler);
+    }
+
+    public Holder<Biome> getSimplexNoiseBiome(int x, int y, int z, Climate.Sampler sampler) {
         int blockX = QuartPos.toBlock(x);
         int blockY = QuartPos.toBlock(y);
         int blockZ = QuartPos.toBlock(z);
@@ -411,5 +418,121 @@ public class BeyondEndBiomeSource extends BiomeSource {
         if (solidPool.isEmpty()) return centerBiome;
         int solid_index = (int) (absSeed % solidPool.size());
         return solidPool.get(solid_index);
+    }
+
+    public Holder<Biome> getVoronoiNoiseBiome(int x, int y, int z, Climate.Sampler sampler) {
+        int blockX = QuartPos.toBlock(x);
+        int blockY = QuartPos.toBlock(y);
+        int blockZ = QuartPos.toBlock(z);
+
+        // distanceFromO is cheap (one sqrt). Compute always; don't cache.
+        float distanceFromO = (float) Math.sqrt((double) blockX * blockX + (double) blockZ * blockZ);
+
+        // centerBiome FIRST — applyBiomeDecoration runs BiomeFilter at sectionPos.origin()
+        // (y=min_y). END_SPIKE is registered only in minecraft:the_end; if bottomBiome wins
+        // here, the filter rejects every spike in the ring (radius ~42, all inside this disk)
+        // and the central island generates without pillars.
+        if (distanceFromO <= 116)
+            return centerBiome;
+
+        // bottom_biome (the_paths): restrict to the auroracite row + a small buffer.
+        // dimMinY comes from BeyondTerrainState so the band follows the dim floor —
+        // [0,3] in Beyond-só, [-64,-61] with beyond_enderscape_bounds.
+        int dimMinY = BeyondTerrainState.getDimMinY();
+        if (blockY < dimMinY + 4)
+            return bottomBiome;
+
+        // ----- Column cache for EXPENSIVE invariants -----
+        // absSeed requires two Perlin lookups + one Simplex lookup, all of which depend on
+        // (blockX, blockZ) only — not y. Cache it per column.
+        ColumnCache cache = columnCacheTL.get();
+        final long absSeed;
+        if (cache.blockX == blockX && cache.blockZ == blockZ) {
+            absSeed = cache.absSeed;
+        } else {
+            int biomeX = blockX / 64;
+            int biomeZ = blockZ / 64;
+            // NOTE: this distance mixes units — blockX (block-space) with biomeZ (biome-space,
+            // = blockZ/64). This looks like a bug but is load-bearing: the threshold curve
+            // downstream is tuned against this exact asymmetric magnitude. Do NOT "fix" to
+            // blockZ without recalibrating the threshold function, or biome selection at the
+            // center/edges will shift.
+            float distanceFromOrigin = (float) Math.sqrt((double) blockX * blockX + (double) biomeZ * biomeZ);
+
+            // Intentionally NOT wrapped: these feed the absSeed biome-hash, not a
+            // density sampler, so the chunk-gen wrap isn't needed — and wrapping
+            // here would inject a 2*wrapRange periodic repetition into biome layout.
+            // See BeyondEndChunkGenerator's helper contract block for derivation.
+            double horizontalScale = BeyondEndChunkGenerator.getHorizontalBaseScale(biomeX, biomeZ);
+            double threshold = BeyondEndChunkGenerator.getThreshold(biomeX, biomeZ, distanceFromOrigin);
+
+            // Dedicated biome simplex field (separate from terrain simplex) so
+            // terrain retuning can't silently reshuffle biome placement.
+            HashSimplexNoise biomeNoiseField = BeyondEndChunkGenerator.biomeSimplexNoise;
+            if (biomeNoiseField == null) {
+                return centerBiome;
+            }
+            double biomeFreq = getBiomeNoiseScale();
+            double biomeNoise = biomeNoiseField.getValue(
+                    biomeX * horizontalScale * biomeFreq,
+                    biomeZ * horizontalScale * biomeFreq
+            );
+
+            if (voronoiNoise == null) voronoiNoise = Suppliers.memoize(() -> new VoronoiNoise(BeyondEndChunkGenerator.seed, (short) 0));
+
+            long seed = (long) (biomeNoise * threshold * 1000000) + biomeX * 31L + biomeZ * 961L;
+            absSeed = Math.abs(seed);
+
+            // Store for future y-samples of the same column.
+            cache.blockX = blockX;
+            cache.blockZ = blockZ;
+            cache.absSeed = absSeed;
+        }
+        // ----- End column cache -----
+
+        // Pick directly from innerVoidBiomes without sampling
+        // terrain density. getTerrainDensity() is the most expensive call in this method
+        // (4-octave 3D simplex + 3 Perlin scale/cycle lookups), so skipping it for every
+        // point inside the 690-block radius halves per-call cost across a huge portion of
+        // each End chunk column.
+        if (distanceFromO <= 690) {
+            if (innerVoidBiomeList.isEmpty()) return centerBiome;
+            int inner_void_index = selectBiome(x, y, z, innerVoidBiomeList);
+            return innerVoidBiomeList.get(inner_void_index);
+        }
+
+        // Outer region: terrain density decides whether this point lands in a void biome
+        // (empty air column) or in a solid end biome. This call DOES depend on y so it
+        // cannot be hoisted into the column cache.
+        boolean isVoid = BeyondEndChunkGenerator.getTerrainDensity(blockX, blockY, blockZ) < 0.01f;
+
+        if (isVoid) {
+            if (outerVoidBiomeList.isEmpty()) return centerBiome;
+            int outer_void_index = selectBiome(x, y, z, outerVoidBiomeList);
+            return outerVoidBiomeList.get(outer_void_index);
+        }
+
+        // Pick the solid-land pool: Farlands when north of the boundary AND the gate is active,
+        // Tainted End everywhere else. Gate stays inactive (and Farlands pool is empty) until the
+        // dimension JSON populates `farlands_biomes` and `farlands_z_boundary`.
+        List<Holder<Biome>> solidPool = (farlandsGateActive && blockZ < farlandsZBoundary.get())
+                ? farlandsBiomeList
+                : taintedEndBiomeList;
+
+        if (solidPool.isEmpty()) return centerBiome;
+        int solid_index = selectBiome(x, y, z, solidPool);
+        return solidPool.get(solid_index);
+    }
+
+    private int selectBiome(int x, int y, int z, List<Holder<Biome>> biomePool) {
+        double cellSize = 50.0;
+        VoronoiNoise.CellResult3D cell = voronoiNoise.get().getCell(
+                x,
+                y,
+                z,
+                1.0 / cellSize
+        );
+
+        return (int)(Math.abs(cell.cellId()) % biomePool.size());
     }
 }

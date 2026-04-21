@@ -51,6 +51,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     public static volatile PerlinSimplexNoise globalCOffsetNoise;
     private double islandRadius = 75.0;
     private double buffer = 700.0;
+    public static long seed = 1;
 
     /** Baseline worldHeight (dim range 256). Always read via {@link #getWorldHeight()} to scale with enlarged dims. */
     static final double DEFAULT_WORLD_HEIGHT = 192;
@@ -224,9 +225,11 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
     public void computeNoisesIfNotPresent(RandomState randomState) {
         if (simplexNoise == null || biomeSimplexNoise == null || warpZSimplexNoise == null || globalHOffsetNoise == null || globalVOffsetNoise == null || globalCOffsetNoise == null) {
-            WorldSeedHolder holder = (WorldSeedHolder) (Object) randomState;
-            long worldSeed = holder.the_Beyond$getWorldSeed();
-            computeNoisesIfNotPresent(worldSeed);
+            if (seed == 1) {
+                WorldSeedHolder holder = (WorldSeedHolder) (Object) randomState;
+                seed = holder.the_Beyond$getWorldSeed();
+            }
+            computeNoisesIfNotPresent(seed);
         }
     }
 
@@ -475,7 +478,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
     /** Band-blend terrain sampler. Mutually exclusive with {@link #useIslandEnvelope}. */
     @VisibleForTesting
-    static volatile boolean useBandBlend = false;
+    static volatile boolean useBandBlend = true;
 
     /**
      * Column-invariant BB state. Fills {@code bbLoIdx[k]} (low-band index) and
@@ -802,16 +805,16 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         // Loop cap at (worldHeight - 32): edgeGradient zeroes beyond.
         final int loopEnd = (int) (getWorldHeight() - 32);
         for (int y = 1; y < loopEnd; y++) {
-            double structureAdaptation = calculateStructureAdaptation(validStarts, globalX, y, globalZ);
+            //double structureAdaptation = calculateStructureAdaptation(validStarts, globalX, y, globalZ);
 
             double density = getTerrainDensity(y, hScales, vScales, cycleHeight, wrappedXs, wrappedZs, bbLoIdx, bbT);
-
+            //// REMOVED BEARDIFICATION AS IT DID NOT WORK AS EXPECTED
             // Beardification: pull threshold down + density up near structure bounds so
             // terrain extends to support them (prevents floating structures).
-            double adaptedThreshold = baseThreshold - structureAdaptation * 0.15;
-            double adaptedDensity = density + structureAdaptation * 0.1;
+            //double adaptedThreshold = baseThreshold - structureAdaptation * 0.15;
+            //double adaptedDensity = density + structureAdaptation * 0.1;
 
-            if (adaptedDensity > adaptedThreshold) {
+            if (density > baseThreshold) {
                 chunk.setBlockState(mutable.set(globalX, y, globalZ), Blocks.END_STONE.defaultBlockState(), false);
             }
         }

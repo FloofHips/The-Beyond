@@ -102,20 +102,11 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
         // fins CULL (zero-thickness quads z-fight without culling). Selection is
         // driven by each model's getRoot()/getMainPart().
         ResourceLocation textureLocation = getTextureLocation(entity);
-        RenderType bodyType = BeyondRenderTypes.entityTranslucentNoCulled(textureLocation);
-        RenderType finsType = BeyondRenderTypes.entityTranslucentCulled(textureLocation);
 
-        ModelPart root = getModelRoot(model);
-        ModelPart mainPart = getModelMainPart(model);
+        RenderType leviathanRenderType = BeyondRenderTypes.entityTranslucentNoCulled(textureLocation);
+        RenderType smallRenderType = BeyondRenderTypes.entityTranslucentCulled(textureLocation);
 
-        if (root != null && mainPart != null) {
-            renderBodyPass(poseStack, root, mainPart, buffer.getBuffer(bodyType), lightLevel, color);
-            renderFinsPass(poseStack, root, mainPart, buffer.getBuffer(finsType), lightLevel, color);
-        } else {
-            // Fallback if a model is missing getRoot()/getMainPart(): single-pass
-            // CULL render — hollow-body look returns, but won't crash.
-            model.renderToBuffer(poseStack, buffer.getBuffer(finsType), lightLevel, OverlayTexture.NO_OVERLAY, color);
-        }
+        model.renderToBuffer(poseStack, buffer.getBuffer(entity.getSize()==3 ? leviathanRenderType : smallRenderType), lightLevel, OverlayTexture.NO_OVERLAY, color);
 
         // Additive bloom halo for shader-mod setups only. Uses the emissive
         // render type (COLOR_WRITE, CULL) so fin quads don't z-fight and the
