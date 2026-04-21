@@ -79,23 +79,18 @@ public class TheBeyond {
             PackSelectionConfig selection = new PackSelectionConfig(false, Pack.Position.TOP, false);
 
             // Enderscape compat: override Beyond's dimension_type/the_end.json with a merged
-            // version that preserves Beyond's effects/fixed_time/has_skylight but takes its
+            // version that keeps Beyond's effects/fixed_time/has_skylight but takes its
             // y-bounds from Enderscape (min_y=-64, height=384). Attached as a CHILD pack of
-            // beyond_terrain (via Pack.withChildren), which means:
-            //   (1) It's automatically hidden from the datapack UI (NeoForge auto-hides
-            //       children — see Pack.<init>(List<Pack>) flattening logic), so it
-            //       never surfaces in the datapack UI.
-            //   (2) Its lifecycle is bound to beyond_terrain: enabling/disabling the parent
-            //       enables/disables the child. This avoids a "bounds active while
-            //       beyond_terrain is off" state in which the bounds pack would override
-            //       foreign mods' dim_types.
-            //   (3) Children are placed AFTER the parent in the selected pack list (see
-            //       ResourcePackLoader.expandAndRemoveRootChildren), and FallbackResourceManager
-            //       scans packs end-to-start, so the child STILL wins the dimension_type
-            //       resolution against its parent — exactly what we need for the min_y=-64 override.
-            // Only ships one file (dimension_type/the_end.json) — everything else still comes
-            // from beyond_terrain. If Enderscape is not loaded, no child is attached and
-            // Beyond's own 0..256 dimension_type stays authoritative.
+            // beyond_terrain (via Pack.withChildren):
+            //   (1) Children are hidden from the datapack UI by NeoForge.
+            //   (2) Lifecycle is bound to the parent — enabling/disabling beyond_terrain
+            //       enables/disables the child, so the bounds override cannot be active
+            //       while beyond_terrain is off.
+            //   (3) Children are placed after the parent in the selected pack list and
+            //       FallbackResourceManager scans end-to-start, so the child wins
+            //       dimension_type resolution — giving us the min_y=-64 override.
+            // Only ships dimension_type/the_end.json. If Enderscape is not loaded, no
+            // child is attached and Beyond's own 0..256 dimension_type stays authoritative.
             List<Pack> children = List.of();
             if (ModList.get().isLoaded("enderscape")) {
                 Path compatPath = ModList.get().getModFileById(MODID)

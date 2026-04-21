@@ -9,32 +9,23 @@ public class BeyondConfig {
     public static ModConfigSpec CLIENT_CONFIG;
 
     /**
-     * Whether Beyond overrides the End dimension's fog distances with its custom
-     * Y-dependent atmospheric fog. When disabled, vanilla End fog behavior is used.
-     * <p>Consumed by {@link com.thebeyond.mixin.client.FogRendererMixin} and the
-     * {@code onRenderFog} handler in {@code ModClientEvents}.
+     * When true, Beyond overrides the End dimension's fog distances with its custom
+     * Y-dependent atmospheric fog. When false, vanilla End fog is used.
+     * Consumed by {@link com.thebeyond.mixin.client.FogRendererMixin} and {@code ModClientEvents}.
      */
     public static ModConfigSpec.BooleanValue ENABLE_CUSTOM_FOG;
 
     /**
-     * Master toggle for the "hide undiscovered content" system — Farlands
-     * biomes, structures, items, and creative-tab entries are invisible
-     * until the player reaches the corresponding region.
-     * <p>When {@code false}, everything is shown to every player (vanilla-
-     * behaviour fallback). Default {@code true}; the intended behaviour is
-     * "hide until reached".
-     * <p>Consumed by {@link com.thebeyond.common.knowledge.BeyondKnowledge#gateEnabled()}.
+     * Master toggle for progressive discovery: Farlands biomes, structures, items and
+     * creative-tab entries are hidden until the player reaches the corresponding region.
+     * When false, all content is visible regardless of progression.
+     * Consumed by {@link com.thebeyond.common.knowledge.BeyondKnowledge#gateEnabled()}.
      */
     public static ModConfigSpec.BooleanValue HIDE_UNDISCOVERED_CONTENT;
 
     /**
-     * Which players share knowledge with whom. See
-     * {@link com.thebeyond.common.knowledge.KnowledgeMode} for the three
-     * modes. Default {@code PER_PLAYER} — on a dedicated server each player
-     * has their own progression. Admins can switch to {@code SHARED_WORLD}
-     * to make all players see everything the moment anyone discovers it,
-     * or {@code PER_PLAYER_WITH_IMPORT} to let players carry over knowledge
-     * from past single-player worlds.
+     * Scope of knowledge sharing between players on a server. See
+     * {@link com.thebeyond.common.knowledge.KnowledgeMode} for the available modes.
      */
     public static ModConfigSpec.EnumValue<KnowledgeMode> KNOWLEDGE_MODE;
 

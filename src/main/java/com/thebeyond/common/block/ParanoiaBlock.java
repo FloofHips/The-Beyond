@@ -43,18 +43,11 @@ public class ParanoiaBlock extends Block {
     @Override
     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         BlockState block = level.getBlockState(pos.below());
-        // Sprout-spawn probability per random tick. An unconditional
-        // `isRaining() && isAir()` gate placed a sprout on 100% of random ticks during any
-        // rain — with ~10 Obiroot trees per chunk and ~30 Paranoia blocks per tree that
-        // produced dozens of sprouts per chunk per minute, each of which grew into an
-        // Enadrake via {@link ObirootSproutBlock#randomTick}, leading to mass Enadrake
-        // swarms and cascading void-crystal glass-break effects on mob collisions.
-        //
-        // Current gates:
-        //   rain     ->  2% per random tick
-        //   thunder  ->  5% per random tick (thunder is a superset of rain in vanilla,
-        //                so it is checked first)
-        //   dry      ->  no spawn
+        // Sprout-spawn probability per random tick:
+        //   thunder -> 5% (checked first; thunder is a superset of rain in vanilla)
+        //   rain    -> 2%
+        //   dry     -> no spawn
+        // An unconditional rain-only gate produced Enadrake swarms at scale.
         if (block.isAir()) {
             float chance;
             if (level.isThundering()) {

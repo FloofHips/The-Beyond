@@ -30,62 +30,33 @@ import java.time.format.DateTimeFormatter;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * In-game command: {@code /beyond_noise_dump}.
+ * {@code /beyond_noise_dump} — samples {@link BeyondEndChunkGenerator#getTerrainDensity}
+ * on a grid around a center point and writes a PNG to {@code <world>/beyond_noise_dumps/}
+ * for diagnosing stretching/streaking artifacts at large {@code |X|} coordinates.
  *
- * <p>Samples {@link BeyondEndChunkGenerator#getTerrainDensity} on a grid around a center
- * point and writes a PNG visualization to {@code <world>/beyond_noise_dumps/}. Used to
- * diagnose stretching/streaking artifacts at large {@code |X|} coordinates without
- * running the full JUnit harness. Mirrors {@code TerrainDensityGridDumpTest} but runs
- * inside the live server so real {@code activeTerrainParams} / world-seeded noise are
- * used instead of fixed test seeds.
+ * <p>Syntax: {@code /beyond_noise_dump (here|at <pos>) [<size> [<stride>]] [normal|no_warp|no_wrap]}.
+ * Defaults: size=200 samples per side, stride=2 blocks. Permission level 2.
  *
- * <h2>Syntax</h2>
- * <pre>
- *   /beyond_noise_dump here [&lt;size&gt; [&lt;stride&gt;]] [normal|no_warp|no_wrap]
- *   /beyond_noise_dump at &lt;pos&gt; [&lt;size&gt; [&lt;stride&gt;]] [normal|no_warp|no_wrap]
- * </pre>
+ * <p>Modes: {@code normal} uses live params; {@code no_warp} zeroes warp amplitude to
+ * isolate domain warp; {@code no_wrap} also raises wrap range to
+ * {@link BeyondTerrainParams#MAX_WRAP_RANGE} so the coordinate transform is identity.
  *
- * <p>{@code here} centers on the executor (must be an entity). {@code at} takes an
- * explicit {@link BlockPosArgument}. {@code size} is the grid side length in samples
- * (default 200 → 200×200 = 40 000 samples). {@code stride} is the spacing between
- * samples in blocks (default 2 → 400-block-wide window).
- *
- * <h2>Diagnostic modes</h2>
- * <ul>
- *   <li>{@code normal} — live params; what the world actually generates.
- *   <li>{@code no_warp} — zero {@code warp_amplitude}; keep live {@code wrap_range}.
- *       Isolates domain warp as a contributor: if the artifact persists under
- *       {@code no_warp}, warp is not its source.
- *   <li>{@code no_wrap} — raise {@code wrap_range} to
- *       {@link BeyondTerrainParams#MAX_WRAP_RANGE} (1 000 000) so any
- *       {@code |globalX| &lt; 1 M} never reflects, and zero {@code warp_amplitude}
- *       so the coordinate transform becomes identity. If the artifact disappears
- *       here, the wrap pivot is its source.
- * </ul>
- *
- * <h2>Permission</h2>
- * Level 2 (opped). The dump is cheap enough (~40k samples) but still not something
- * unopped players should be able to trigger — it writes to the save folder.
- *
- * <h2>Thread-safety</h2>
- * The sample loop + PNG write runs on {@link CompletableFuture#runAsync} off the
- * server thread. Feedback to the source is dispatched back to the main thread via
- * {@code server.execute(...)}. Uses the parameterized
- * {@code getTerrainDensity(x,y,z,params)} overload so the diagnostic params do NOT
- * globally swap {@link BeyondEndChunkGenerator#activeTerrainParams} — which would
- * race with concurrent chunk-gen workers and corrupt actively-generating chunks.
+ * <p>The sample loop and PNG write run off-thread via {@link CompletableFuture#runAsync};
+ * chat feedback is dispatched back via {@code server.execute(...)}. The parameterized
+ * {@code getTerrainDensity(x,y,z,params)} overload is used so diagnostic params do not
+ * swap {@link BeyondEndChunkGenerator#activeTerrainParams}, which would race with
+ * concurrent chunk-gen workers.
  */
 @EventBusSubscriber(modid = TheBeyond.MODID)
 public final class BeyondNoiseDumpCommand {
 
     private BeyondNoiseDumpCommand() {}
 
-    /** Default grid side in samples (200 → 200×200 = 40 000 density evaluations). */
+    /** Default grid side in samples (200 -> 40 000 density evaluations). */
     private static final int DEFAULT_SIZE = 200;
-    /** Default spacing in blocks between samples (2 → 400-block-wide window at size=200). */
+    /** Default spacing in blocks between samples. */
     private static final int DEFAULT_STRIDE = 2;
-    /** Threshold used to tint "solid" cells red. Distance-from-origin of 1500 is arbitrary
-     *  but consistent with {@code TerrainDensityGridDumpTest} so PNGs are comparable. */
+    /** Distance-from-origin used when tinting "solid" cells; matches {@code TerrainDensityGridDumpTest}. */
     private static final float DISPLAY_DISTANCE_FROM_ORIGIN = 1500f;
 
     /** Subfolder under {@code <world>/} where dumps are written. */
@@ -93,21 +64,13 @@ public final class BeyondNoiseDumpCommand {
 
     private static final DateTimeFormatter TS = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
-    /**
-     * Diagnostic transform mode. Each mode derives a {@link BeyondTerrainParams} from
-     * the current live params — the modifications are targeted so {@code no_warp} and
-     * {@code no_wrap} only toggle the thing they claim to toggle.
-     */
+    /** Diagnostic transform mode. Derives a {@link BeyondTerrainParams} from live params. */
     private enum Mode {
-        /** Live params. Matches what the world actually generates. */
+        /** Live params. */
         NORMAL,
-        /** Zero warp amplitude, keep live wrap range. Tests if warp is the artifact cause. */
+        /** Zero warp amplitude, keep live wrap range. */
         NO_WARP,
-        /**
-         * Lift {@code wrap_range} to {@link BeyondTerrainParams#MAX_WRAP_RANGE} so any
-         * {@code |globalX|<1M} never reflects, and zero warp. Confirms whether the
-         * ping-pong pivot is the sole cause of the far-x artifact.
-         */
+        /** Zero warp and lift wrap range to {@link BeyondTerrainParams#MAX_WRAP_RANGE} (identity transform). */
         NO_WRAP;
 
         BeyondTerrainParams derive(BeyondTerrainParams live) {
@@ -125,9 +88,8 @@ public final class BeyondNoiseDumpCommand {
     public static void register(RegisterCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
 
-        // Build the two leaf-execution paths (here / at) with optional size/stride/mode
-        // chains. Brigadier requires every terminal node to call `.executes(...)`; the
-        // .then() chain is optional-arg simulation. The result is a small but wide tree.
+        // Brigadier requires every terminal node to call .executes(...); the .then() chain
+        // simulates optional args, producing a small but wide tree.
         LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal("beyond_noise_dump")
                 .requires(src -> src.hasPermission(2));
 
@@ -213,8 +175,8 @@ public final class BeyondNoiseDumpCommand {
                                 int size, int stride, Mode mode) {
         MinecraftServer server = src.getServer();
 
-        // Resolve effective params up front (main thread) so worker sees a single snapshot
-        // regardless of any datapack reload mid-dump.
+        // Resolve effective params on the main thread so the worker sees a single snapshot
+        // even if a datapack reload happens mid-dump.
         BeyondTerrainParams liveParams = BeyondEndChunkGenerator.activeTerrainParams;
         BeyondTerrainParams effective = mode.derive(liveParams);
 
@@ -238,8 +200,7 @@ public final class BeyondNoiseDumpCommand {
         CompletableFuture.runAsync(() -> {
             try {
                 Result result = sampleAndWrite(cx, cy, cz, size, stride, effective, outFile);
-                // Dispatch chat feedback back onto the server thread — CommandSourceStack
-                // is not safe to touch from worker threads.
+                // CommandSourceStack is not safe to touch from worker threads.
                 server.execute(() -> src.sendSuccess(() -> Component.literal(String.format(
                         "[beyond_noise_dump] Done → %s  density=[%.3f, %.3f]  solid=%d/%d (%.1f%%)",
                         outFile.getName(), result.minDensity, result.maxDensity,
@@ -270,11 +231,10 @@ public final class BeyondNoiseDumpCommand {
             for (int ix = 0; ix < size; ix++) {
                 int sampleX = cx + (ix - half) * stride;
                 double density = BeyondEndChunkGenerator.getTerrainDensity(sampleX, cy, sampleZ, params);
-                // Sample threshold at WRAPPED coords to match the chunk generator's
-                // actual behavior — getTerrainDensity() wraps internally, and the
-                // generator's isSolidTerrain / generateEndTerrain both wrap before
-                // calling getThreshold. Using the diagnostic params override so the
-                // dump reflects whatever mode (normal/no_warp/no_wrap) was requested.
+                // Threshold must be sampled at WRAPPED coords to match the chunk generator:
+                // getTerrainDensity wraps internally, and isSolidTerrain / generateEndTerrain
+                // both wrap before calling getThreshold. Diagnostic params apply so the dump
+                // reflects the requested mode.
                 long packed = BeyondEndChunkGenerator.computeWrappedCoords(sampleX, sampleZ, params);
                 int wrappedSampleX = BeyondEndChunkGenerator.unpackWrappedX(packed);
                 int wrappedSampleZ = BeyondEndChunkGenerator.unpackWrappedZ(packed);
@@ -290,8 +250,8 @@ public final class BeyondNoiseDumpCommand {
             }
         }
 
-        // Normalize & write image. Grayscale for density, red tint for solid cells (matches
-        // TerrainDensityGridDumpTest color scheme so both outputs can be overlaid visually).
+        // Grayscale for density, red tint for solid cells — matches TerrainDensityGridDumpTest
+        // so outputs can be overlaid visually.
         double range = Math.max(1e-9, max - min);
         BufferedImage img = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
         for (int iz = 0; iz < size; iz++) {
@@ -305,7 +265,7 @@ public final class BeyondNoiseDumpCommand {
                 } else {
                     rgb = (v << 16) | (v << 8) | v;
                 }
-                // Flip z axis on write so +z points down in the image, matching JourneyMap orientation.
+                // Flip z so +z points down in the image, matching JourneyMap orientation.
                 img.setRGB(ix, size - 1 - iz, rgb);
             }
         }

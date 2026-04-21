@@ -2,9 +2,7 @@ package com.thebeyond.common.knowledge;
 
 import net.minecraft.resources.ResourceLocation;
 
-/**
- * Core knowledge keys. Strings (not enum) so addons can declare their own.
- */
+/** Core knowledge keys. ResourceLocations (not an enum) so addons can declare their own. */
 public final class BeyondKnowledgeKeys {
     private BeyondKnowledgeKeys() {}
 
@@ -18,6 +16,6 @@ public final class BeyondKnowledgeKeys {
     /** Granted when the player gets within visual range of the north wall (z ≈ 10000). */
     public static final ResourceLocation WALL_PROXIMITY = rl("wall_proximity");
 
-    /** Reserved for the deferred Beyond-dimension gate (post Life Itself's gift). */
+    /** Gates Beyond-dimension content. */
     public static final ResourceLocation BEYOND_ACCESS = rl("beyond_access");
 }

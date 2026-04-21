@@ -4,50 +4,35 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 
 /**
- * SimplexNoise variant that replaces the permutation TABLE with a permutation
- * FUNCTION — a seeded 64-bit hash. Drop-in replacement for
+ * SimplexNoise variant that replaces the permutation table with a seeded 64-bit hash
+ * function. Drop-in replacement for
  * {@link net.minecraft.world.level.levelgen.synth.SimplexNoise}.
  *
- * <h2>Motivation</h2>
- * Mojang's SimplexNoise uses a 256-entry array with {@code & 0xFF} lookup,
- * giving a period of 256 scaled units. A wider 16-bit table (65 536 entries)
- * would extend the period to 65 536 scaled units — still bounded; at some
- * distance, the noise <em>will</em> repeat.
+ * <p>Mojang's SimplexNoise uses a 256-entry array with {@code & 0xFF} lookup, giving a
+ * period of 256 scaled units. This class eliminates the table entirely: each call to
+ * {@code p(index)} is a pure function of {@code index} and a per-instance 64-bit seed,
+ * computed via <a href="https://nullprogram.com/blog/2018/07/31/">SplitMix64-style
+ * mixing</a>. The effective period is {@code 2^64} — larger than any coordinate a
+ * {@code double} can represent without losing integer precision.
  *
- * <p>This class eliminates the table entirely. Each call to {@code p(index)}
- * is a pure function of {@code index} and a per-instance 64-bit seed, computed
- * via <a href="https://nullprogram.com/blog/2018/07/31/">SplitMix64-style
- * mixing</a>. The effective period is {@code 2^64} — larger than any
- * coordinate a {@code double} can represent without losing integer precision.
- *
- * <h2>Note on double precision</h2>
- * Eliminating the permutation period does NOT eliminate the {@code double}
+ * <p>Eliminating the permutation period does NOT eliminate the {@code double}
  * precision issue inside the Simplex skew/unskew math. Expressions like
- * {@code x - (floor(x + d0) - (i + j) * G2)} subtract two large values to
- * obtain a small fractional — when {@code x} is in the millions, the
- * subtraction loses ~7 digits of precision, quantizing cell-local coordinates
- * and producing visible directional stretching. For this reason, callers
- * should still apply a wrap (e.g. ping-pong) to keep raw inputs within, say,
- * ±500 k blocks. This class guarantees the noise itself never repeats within
- * that range; the wrap guarantees the MATH stays accurate.
+ * {@code x - (floor(x + d0) - (i + j) * G2)} subtract two large values to obtain a
+ * small fractional — when {@code x} is in the millions, the subtraction loses ~7
+ * digits of precision, quantizing cell-local coordinates and producing visible
+ * directional stretching. Callers should still apply a wrap (e.g. ping-pong) to keep
+ * raw inputs within, say, ±500k blocks. This class guarantees the noise itself never
+ * repeats within that range; the wrap guarantees the math stays accurate.
  *
- * <h2>Cost vs table-based Simplex</h2>
- * <ul>
- *   <li>Memory: <strong>0 bytes</strong> of permutation storage (vs 2 KB for
- *       vanilla's 8-bit table, or 256 KB for a hypothetical 16-bit table).</li>
- *   <li>Init: negligible — no Fisher-Yates, just three double reads for the
- *       coordinate offsets and two int reads for the seed.</li>
- *   <li>Sample: ~5 ALU ops per permutation lookup (multiply + xor-shift + xor-
- *       shift + multiply + xor-shift) instead of a single array index. On
- *       modern out-of-order CPUs the hash path is comparable in cycles because
- *       the operations chain tightly and avoid any possibility of L2/L3 cache
- *       misses that a large table can incur under memory pressure.</li>
- * </ul>
+ * <p>Cost vs a table-based Simplex: zero bytes of permutation storage (vs 2 KB for
+ * vanilla's 8-bit table, or 256 KB for a hypothetical 16-bit table); negligible init
+ * (no Fisher-Yates); ~5 ALU ops per permutation lookup instead of a single array
+ * index — comparable in cycles on modern out-of-order CPUs and immune to L2/L3 misses
+ * a large table can incur under memory pressure.
  *
- * <h2>Determinism</h2>
- * Given the same {@link RandomSource}, the output is deterministic. The noise
- * values differ from vanilla SimplexNoise — worlds generated with this class
- * use a different sampling of the infinite noise field.
+ * <p>Given the same {@link RandomSource} the output is deterministic. Noise values
+ * differ from vanilla SimplexNoise — this is a different sampling of the infinite
+ * noise field.
  */
 public class HashSimplexNoise {
     protected static final int[][] GRADIENT = new int[][]{
@@ -83,8 +68,8 @@ public class HashSimplexNoise {
         this.xo = random.nextDouble() * 256.0;
         this.yo = random.nextDouble() * 256.0;
         this.zo = random.nextDouble() * 256.0;
-        // Full 64-bit seed from two nextInt() calls — RandomSource doesn't
-        // expose nextLong() directly in the reduced API Minecraft uses here.
+        // Full 64-bit seed from two nextInt() calls; RandomSource does not expose
+        // nextLong() in the reduced API Minecraft uses here.
         long hi = ((long) random.nextInt()) << 32;
         long lo = ((long) random.nextInt()) & 0xFFFFFFFFL;
         this.seed = hi | lo;
@@ -148,9 +133,8 @@ public class HashSimplexNoise {
         double d7 = d5 - (double) l + G2;
         double d8 = d4 - 1.0 + 2.0 * G2;
         double d9 = d5 - 1.0 + 2.0 * G2;
-        // No mask needed — p() is a hash over the full 32-bit int range and
-        // returns a 16-bit result. Indices can be any int (including very
-        // negative) and still produce a deterministic permutation.
+        // No mask needed: p() hashes over the full 32-bit int range and returns a
+        // 16-bit result, so any int index produces a deterministic permutation.
         int k1 = this.p(i + this.p(j)) % 12;
         int l1 = this.p(i + k + this.p(j + l)) % 12;
         int i2 = this.p(i + 1 + this.p(j + 1)) % 12;
@@ -233,7 +217,7 @@ public class HashSimplexNoise {
         double d16 = d7 - 1.0 + 0.5;
         double d17 = d8 - 1.0 + 0.5;
         double d18 = d9 - 1.0 + 0.5;
-        // Same reasoning as 2D: hash accepts any int, no masking required.
+        // Same reasoning as the 2D variant: hash accepts any int, no masking needed.
         int i3 = this.p(i + this.p(j + this.p(k))) % 12;
         int j3 = this.p(i + l + this.p(j + i1 + this.p(k + j1))) % 12;
         int k3 = this.p(i + k1 + this.p(j + l1 + this.p(k + i2))) % 12;

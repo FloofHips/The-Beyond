@@ -1,15 +1,11 @@
 package com.thebeyond.common.knowledge;
 
-/**
- * Knowledge-sharing scope, selected via {@code BeyondConfig}.
- * <ul>
- *   <li>{@link #PER_PLAYER} — discovery unlocks content only for the discovering player (default).</li>
- *   <li>{@link #SHARED_WORLD} — any player's discovery unlocks content for everyone.</li>
- *   <li>{@link #PER_PLAYER_WITH_IMPORT} — per-player, with an opt-in import from past worlds (import flow TODO).</li>
- * </ul>
- */
+/** Knowledge-sharing scope, selected via {@code BeyondConfig}. */
 public enum KnowledgeMode {
+    /** Discovery unlocks content only for the discovering player (default). */
     PER_PLAYER,
+    /** Any player's discovery unlocks content for everyone on the server. */
     SHARED_WORLD,
+    /** Per-player, with an opt-in import from past worlds. */
     PER_PLAYER_WITH_IMPORT
 }

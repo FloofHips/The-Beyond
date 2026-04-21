@@ -10,18 +10,11 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Filter hidden items out of the creative inventory search results.
+ * Filters hidden items out of the creative inventory search. The search tab populates via
+ * {@code NonNullList#addAll}, so {@code menu.items} is filtered after that call.
+ * {@code require = 0} so a target-signature change silently skips rather than crashes.
  *
- * <p>Adapted from Sammy Semicolon's Malum mod
- * ({@code com.sammy.malum.mixin.client.CreativeModeInventoryScreenMixin}).
- * The search tab is populated differently from regular tabs — it calls
- * {@code NonNullList#addAll} to collect every item, so we filter
- * {@code menu.items} after that call.
- *
- * <p><b>Safety</b>: {@code require = 0} — if the MC patch changes the
- * injection target, the mixin silently skips instead of crashing mod load.
- *
- * <p>No effect in scaffolding (empty hidden-until tags).
+ * <p>Adapted from Malum ({@code com.sammy.malum.mixin.client.CreativeModeInventoryScreenMixin}).
  */
 @Mixin(CreativeModeInventoryScreen.class)
 public class CreativeModeInventoryScreenMixin {

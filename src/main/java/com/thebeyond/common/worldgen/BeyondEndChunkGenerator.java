@@ -417,9 +417,8 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
     // Island-envelope sampler: freezes hScale to a global constant (kills the
     // X*∂h/∂X streak term) and restores regional island-size variance as an
-    // amplitude envelope at ~2 M-block wavelength. Superseded by the band-blend
-    // sampler (preserves wavelength variation, not just amplitude). Kept flag-
-    // gated for comparison dumps.
+    // amplitude envelope at ~2 M-block wavelength. Flag-gated; band-blend
+    // below is the preferred sampler (preserves wavelength variation).
 
     /** Forces constant hScale + amplitude envelope. Mutually exclusive with {@link #useBandBlend}. */
     @VisibleForTesting
@@ -451,11 +450,11 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
     // Band-blend sampler: replaces the streak-producing `sampleX = X*hScale(X,Z)`
     // with a 2-sample lerp over adjacent fixed frequencies h_lo, h_hi picked
-    // from BB_BAND_FREQUENCIES by an O(1) log-space lookup on hBase. h_i*2^k is
-    // a global constant, so the X*∂h/∂X Jacobian term vanishes; C¹ smoothstep
-    // blend avoids band seams. K=17 log-spaced bands give <5% wavelength error
-    // vs continuous hBase. Column-invariant state (bbLoIdx, bbT) is computed
-    // once per column; y-loop does 2 simplex samples + a lerp per octave (~2x baseline).
+    // from BB_BAND_FREQUENCIES by an O(1) log-space lookup on hBase. h_i is a
+    // global constant so the X*∂h/∂X Jacobian term vanishes; C¹ smoothstep blend
+    // avoids band seams. K=17 log-spaced bands give <5% wavelength error vs
+    // continuous hBase. Column-invariant state (bbLoIdx, bbT) is hoisted out of
+    // the y-loop which then runs 2 simplex samples + a lerp per octave.
 
     /** K=17 log-spaced band frequencies spanning [0.005, 0.015]. O(1) indexed by {@link #computeBBState}. */
     private static final int BB_BAND_COUNT = 17;
@@ -524,7 +523,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         if (override != null) return override;
         // Period 1 M blocks: keeps in-view cycleHeight variation under one divisor
         // step so cyclicDensity's divisor discontinuities don't pile up in a scene.
-        // (Semantic fix tracked as Level 2 in BB_RESEARCH_NOTES §4.7.)
         double freq = 0.000001 * cycleHeightFrequencyMultiplier;
         return globalNoiseOffset(10, 100, x * freq, z * freq, noise);
     }
@@ -962,13 +960,13 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         // Auroracite floor: owned by AuroraciteLayerFeature + AuroraciteLayerProtectionMixin.
 
         // Exit-portal column sweep: EndDragonFight.spawnExitPortal reads the
-        // MOTION_BLOCKING_NO_LEAVES heightmap at (0,0) to place the obsidian podium.
-        // In enlarged-dim combos (e.g. Enderscape), foreign decorators push that
-        // column's heightmap up to build limit and the portal spawns at y≈319.
-        // Fix: on chunk (0,0), clear column (0,0) from y=60 (just above Beyond's
-        // central island dome) up to dim top so the heightmap re-primes onto
-        // Beyond's END_STONE at y≈59. Scoped to one column only (platforms survive)
-        // and gated on isActive() (soup mode leaves foreign owners alone).
+        // MOTION_BLOCKING_NO_LEAVES heightmap at (0,0) to place the obsidian
+        // podium. In enlarged-dim combos foreign decorators push that column's
+        // heightmap to build limit, spawning the portal at y≈319. Clear column
+        // (0,0) from y=60 (just above Beyond's central island dome) to dim top
+        // so the heightmap re-primes onto Beyond's END_STONE at y≈59. Scoped to
+        // one column (platforms survive) and gated on isActive() (soup mode
+        // leaves foreign owners alone).
         if (BeyondTerrainState.isActive()) {
             ChunkPos cp = chunk.getPos();
             if (cp.x == 0 && cp.z == 0) {

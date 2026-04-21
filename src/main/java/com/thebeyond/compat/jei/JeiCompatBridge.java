@@ -1,9 +1,9 @@
 package com.thebeyond.compat.jei;
 
 /**
- * Class-load firewall between the mod and the JEI plugin. Holds only a {@code Runnable} —
- * safe to call from anywhere without dragging JEI onto the classloader. When JEI is absent
- * the hook never gets installed and {@link #refresh()} is a no-op. Invoked from the
+ * Class-load firewall between the mod and the JEI plugin. Holds only a {@code Runnable},
+ * so callers can invoke {@link #refresh()} without JEI on the classloader. When JEI is
+ * absent the hook is never installed and {@link #refresh()} is a no-op. Invoked from the
  * client-side knowledge sync handler in {@code BeyondNetworking}.
  */
 public final class JeiCompatBridge {

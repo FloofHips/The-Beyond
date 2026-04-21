@@ -12,10 +12,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Contract tests for {@link BeyondTerrainParams} construction and codec
- * validation. The validation rules here exist specifically to prevent
- * datapack authors from silently producing a broken dimension — the test
- * suite locks the bounds so a loosening refactor has to explicitly update
- * both the class and the tests.
+ * validation. Locks the validation bounds so datapack authors can't silently
+ * produce a broken dimension; a loosening refactor must explicitly update
+ * both the class and these tests.
  */
 class BeyondTerrainParamsTest {
 
@@ -23,8 +22,7 @@ class BeyondTerrainParamsTest {
 
     @Test
     void defaultsAreValid() {
-        // Record compact-constructor validation runs on DEFAULTS at class init.
-        // If DEFAULTS ever drifts outside its own bounds, class loading fails.
+        // If DEFAULTS ever drifts outside its own validation bounds, class loading fails.
         assertDoesNotThrow(() -> new BeyondTerrainParams(
                 BeyondTerrainParams.DEFAULTS.wrapRange(),
                 BeyondTerrainParams.DEFAULTS.warpAmplitude(),
@@ -49,15 +47,14 @@ class BeyondTerrainParamsTest {
 
     @Test
     void warpAmplitudeZeroIsAllowed() {
-        // Explicit "disable warp" is a valid configuration — the pivot seam
-        // will be visible at the wrap boundary, but that's the author's call.
+        // amplitude=0 is a valid "disable warp" configuration (pivot seam will
+        // be visible at the wrap boundary).
         assertDoesNotThrow(() -> new BeyondTerrainParams(250000, 0.0, 0.001));
     }
 
     @Test
     void amplitudeMustBeStrictlyLessThanWrap() {
-        // Boundary: amplitude == wrap_range would mean a sample could be
-        // pushed into the next wrap cycle. Reject.
+        // amplitude == wrap_range could push a sample into the next wrap cycle.
         assertThrows(IllegalArgumentException.class,
                 () -> new BeyondTerrainParams(400, 400.0, 0.001));
     }

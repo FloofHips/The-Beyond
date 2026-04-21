@@ -22,11 +22,7 @@ public class ModEvents {
         event.put(BeyondEntityTypes.ABYSSAL_NOMAD.get(), AbyssalNomadEntity.createAttributes().build());
     }
 
-    /**
-     * Both-sides registration. Previously lived in {@code ModClientEvents}
-     * (Dist.CLIENT), which silently skipped dedicated servers — natural spawns
-     * for Lantern and Abyssal Nomad never fired there.
-     */
+    /** Registered on both sides; a Dist.CLIENT-only registration would skip dedicated servers. */
     @SubscribeEvent
     public static void registerSpawnPlacements(RegisterSpawnPlacementsEvent event) {
         event.register(

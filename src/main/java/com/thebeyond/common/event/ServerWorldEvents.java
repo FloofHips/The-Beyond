@@ -30,15 +30,12 @@ public class ServerWorldEvents {
 
     @SubscribeEvent
     public static void onServerAboutToStart(ServerAboutToStartEvent event) {
-        // Authoritative recompute of BeyondTerrainState.active from the server's actual
-        // End LevelStem. The flag can be polluted by CreateWorldScreen's UI phase:
-        // openFresh decodes WorldDataConfiguration.DEFAULT (which auto-adds beyond_terrain
-        // since PackSource.DEFAULT.shouldAddAutomatically() == true) and constructs a
-        // BeyondEndBiomeSource. If beyond_terrain is then deselected in the UI before
-        // clicking Create, the real server's End dimension uses vanilla TheEndBiomeSource
-        // but the static flag is stale from UI construction. Reset and re-derive from
-        // the one source of truth: the server's LEVEL_STEM registry, which reflects the
-        // datapack selection the world was actually created/loaded with.
+        // Recompute BeyondTerrainState.active from the server's actual End LevelStem.
+        // The flag can be stale from CreateWorldScreen's UI phase, which decodes
+        // WorldDataConfiguration.DEFAULT (auto-adding beyond_terrain) and constructs a
+        // BeyondEndBiomeSource — if the pack is then deselected before clicking Create,
+        // the real server's End uses vanilla TheEndBiomeSource but the static flag still
+        // says active. The LEVEL_STEM registry is the one source of truth here.
         BeyondTerrainState.reset();
         Registry<LevelStem> levelStems = event.getServer().registryAccess()
                 .registryOrThrow(Registries.LEVEL_STEM);
@@ -47,13 +44,9 @@ public class ServerWorldEvents {
             BeyondTerrainState.markActive();
         }
 
-        // When Beyond's biome source decoded successfully (BeyondTerrainState.isActive() == true)
-        // the End is owned by Beyond's native terrain — there is nothing to inject and the fallback
-        // paths would only confuse things. Skip them entirely.
-        //
-        // When Beyond is NOT the active End provider (player disabled the beyond_terrain datapack
-        // or it was overridden), run the fallback compat paths so Beyond biomes still appear in the
-        // foreign terrain — "soup mode".
+        // Beyond active: its native terrain owns the End, skip fallback injection.
+        // Beyond inactive ("soup mode"): run compat paths so Beyond biomes still appear
+        // in foreign End terrain.
         if (BeyondTerrainState.isActive()) {
             TheBeyond.LOGGER.info("[TheBeyond] Beyond terrain is active — running auto-discovery for foreign End biomes");
             EndBiomeDiscovery.discoverAndInject(event.getServer());
@@ -61,11 +54,9 @@ public class ServerWorldEvents {
             return;
         }
 
-        // Soup mode diagnostic: identify which pack actually provided the_end.json so debugging
-        // unexpected biome/lighting/structure-loss reports doesn't require log archaeology.
-        // With the dimension-JSON wrapper mixin installed, this stack should contain at most
-        // one entry (the foreign pack that won when Beyond was disabled); multiple entries
-        // would indicate a wrapping bypass.
+        // Log which pack provided the_end.json. With the dimension-JSON wrapper mixin
+        // installed this stack should have at most one entry (the foreign pack that won);
+        // multiple entries indicate a wrapping bypass.
         try {
             List<Resource> stack = event.getServer().getResourceManager().getResourceStack(END_DIMENSION);
             if (stack.isEmpty()) {
@@ -86,8 +77,8 @@ public class ServerWorldEvents {
     @SubscribeEvent
     public static void onServerStopped(ServerStoppedEvent event) {
         // Reset all static world-bound state so the next server start re-detects whether
-        // Beyond owns the End and re-seeds noises from the new world seed. Critical for
-        // single-player sessions where the JVM survives multiple world loads.
+        // Beyond owns the End and re-seeds noises from the new world seed. Required for
+        // single-player where the JVM survives multiple world loads.
         BeyondTerrainState.reset();
         BeyondEndChunkGenerator.resetNoises();
         AuroraciteLayerFeature.resetNoise();

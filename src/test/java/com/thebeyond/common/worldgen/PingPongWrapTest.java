@@ -36,10 +36,9 @@ class PingPongWrapTest {
     }
 
     /**
-     * The "no seam" property — crossing the pivot at ±R must yield adjacent
-     * output values. Vanilla modulo wrap would jump from +R to -R here, which
-     * is exactly the visual seam we eliminated by choosing ping-pong. If this
-     * test starts failing, terrain has regained a visible reflection line.
+     * No-seam property: crossing the pivot at ±R must yield adjacent output
+     * values. A modulo wrap would jump from +R to -R here, producing a visible
+     * reflection line in terrain. Regression test for that seam.
      */
     @Test
     void continuityAcrossPivot() {

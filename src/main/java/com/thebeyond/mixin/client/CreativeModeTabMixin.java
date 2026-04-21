@@ -14,22 +14,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * Filter hidden items out of the creative inventory tab display.
+ * Filters hidden items out of creative inventory tab display. Wired to per-player
+ * {@link HiddenContentFilter}; search-bar tab is skipped (handled by
+ * {@link CreativeModeInventoryScreenMixin}). {@code require = 0} so a target-signature
+ * change silently skips rather than crashes mod load.
  *
- * <p>Adapted from Sammy Semicolon's Malum mod
- * ({@code com.sammy.malum.mixin.client.CreativeModeTabMixin}) — same idea,
- * wired to our per-player {@link HiddenContentFilter} instead of a global
- * tag config.
- *
- * <p><b>Safety</b>: {@code require = 0} means a Mixin failure (e.g. the
- * method signature changed in a future MC version) is a silent skip rather
- * than a mod-load crash. The search-bar tab is skipped because its display
- * is handled by {@link CreativeModeInventoryScreenMixin} instead.
- *
- * <p><b>No effect without configured tags</b>: when all {@code hidden_until/*}
- * item tags are empty, {@link HiddenContentFilter#hide} is a no-op. The mixin
- * is registered unconditionally so populating a tag is sufficient to activate
- * the filter — no further infrastructure changes required.
+ * <p>Adapted from Malum ({@code com.sammy.malum.mixin.client.CreativeModeTabMixin}).
  */
 @Mixin(CreativeModeTab.class)
 public class CreativeModeTabMixin {
@@ -50,8 +40,7 @@ public class CreativeModeTabMixin {
         Collection<ItemStack> items = new ArrayList<>(cir.getReturnValue());
         int sizeBefore = items.size();
         HiddenContentFilter.hide(items, player);
-        // Avoid touching the return value when nothing changed — reduces
-        // ops cost for the common case (feature disabled or tags empty).
+        // Skip the setReturnValue when no items were filtered.
         if (items.size() != sizeBefore) {
             cir.setReturnValue(items);
         }

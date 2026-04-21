@@ -12,14 +12,14 @@ import java.util.Set;
 
 /**
  * S2C sync for {@link com.thebeyond.common.knowledge.PlayerKnowledge}. Attachments don't auto-sync
- * across sides, so the client-side {@link com.thebeyond.common.knowledge.HiddenContentFilter}
- * would read an empty set without this packet.
+ * across sides, so without this packet {@link com.thebeyond.common.knowledge.HiddenContentFilter}
+ * would read an empty set on the client.
  *
- * <p>{@link #replace} {@code true} → client overwrites its local set with {@link #keys}. Used for
- * the login snapshot and for revokes (delta can't express subtraction).
- * <p>{@link #replace} {@code false} → client unions {@link #keys} into its local set. Used for
- * per-grant deltas. {@link #keys} is typically a single element but the wire format is a set so
- * batched grants stay cheap.
+ * <p>{@code replace=true} overwrites the client's local set with {@link #keys} — used for the
+ * login snapshot and for revokes (the delta form can't express subtraction).
+ * {@code replace=false} unions {@link #keys} into the local set for per-grant deltas;
+ * {@link #keys} is typically a single element but the wire format is a set so batched grants
+ * stay cheap.
  */
 public record PlayerKnowledgeSyncPayload(Set<ResourceLocation> keys, boolean replace) implements CustomPacketPayload {
     public static final Type<PlayerKnowledgeSyncPayload> TYPE = new Type<>(

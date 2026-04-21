@@ -16,110 +16,50 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Diagnostic dump of {@link BeyondEndChunkGenerator#getTerrainDensity(int, int, int)}
- * over a 2D slice at fixed {@code y}, rendered as PNG for visual inspection of
- * directional anisotropy (stretching).
+ * Diagnostic PNG dumps of {@link BeyondEndChunkGenerator#getTerrainDensity(int, int, int)}
+ * over a 2D slice at fixed {@code y}, for visual inspection of directional
+ * anisotropy ("stretching") in the density field.
  *
- * <h2>Why this test exists</h2>
- * <p>Diagnoses directional anisotropy ("stretching") in the terrain density
- * field at arbitrary coordinates. The wrap+warp transform's documented
- * precision-safe zone is {@code ≤wrapRange} post-wrap (default 500 000) and
- * {@code <100 k} in warp sample space (the warp sample input
- * {@code globalX × warpScale} stays well below that). This test renders the
- * actual density function over a grid so any anisotropy is directly visible,
- * whether it originates at a geometric pivot or at an interior point.
+ * <p>NOT a contract test: assertions only guard against NaN/Infinity. The
+ * value is in the PNG artifacts under {@code build/terrain-grid-dumps/}.
+ * Kept as {@code @Test} so it runs under {@code ./gradlew test} without
+ * extra wiring.
  *
- * <p>Centres dumped:
- * <ul>
- *   <li><b>clean_50k</b>, <b>clean_150k</b> — interior reference regions
- *       well below any wrap pivot. Anisotropy here implicates a systemic
- *       cause (precision, modulator banding, cross-sample coupling)
- *       independent of wrap geometry.
- *   <li><b>x_250k</b> — {@code (250 154, -45)}. Deep interior at the
- *       default {@code wrapRange = 500 000}; all per-octave wraps are the
- *       identity here.
- *   <li><b>x_500k</b>, <b>x_750k</b>, <b>x_1M</b> — past 1, 1.5, and 2
- *       wrap cycles. 500 k sits exactly on the pivot plane; 750 k is the
- *       mirrored counterpart of 250 k; 1 M exercises double-reflected
- *       coordinates plus extreme per-octave spatial decorrelation (each
- *       octave samples an unrelated remote region).
- * </ul>
+ * <p>Centres cover interior references ({@code clean_*}), the wrap pivot
+ * ({@code x_500k}), mirrored counterparts ({@code x_750k}), and doubly-
+ * reflected coordinates ({@code x_1M}). Variants per centre: full density,
+ * {@code cyclicDensity} modulator in isolation, fixed {@code cycleHeight}
+ * (removes spatial gradient), and 10× wider period.
  *
- * <p>Variants per centre:
- * <ul>
- *   <li><b>density</b> — production {@code getTerrainDensity} with live
- *       {@code activeTerrainParams}.
- *   <li><b>cyclic</b> — isolation of the {@code cyclicDensity} modulator
- *       alone; reveals whether a centre's density anisotropy is driven by
- *       the spatial gradient of {@code cycleHeight}.
- *   <li><b>fixedcycle</b> — density with {@code cycleHeightOverride = 55}
- *       (a global constant). Flattens any anisotropy caused by
- *       {@code cycleHeight(x,z)} gradient.
- *   <li><b>period1m</b> — density with {@code cycleHeightFrequencyMultiplier = 0.1}
- *       (10× wider period than production). Preserves regional variety
- *       while eliminating in-view spatial gradient; acts as a sanity
- *       check that further widening the period produces no new artifact.
- * </ul>
- *
- * <h2>Output</h2>
- * PNGs land in {@code build/terrain-grid-dumps/}. Each pixel:
- * <ul>
- *   <li>Grayscale intensity = density normalized to [min, max] observed in
- *       that scenario (auto-contrast per image; absolute values are in the
- *       stdout log next to each dump).
- *   <li>Red tint = density exceeds threshold at that point, i.e. the chunk
- *       generator would place END_STONE here. Makes the terrain shape
- *       visible without needing to eyeball a grayscale threshold.
- * </ul>
- * Grid is {@link #GRID_SIZE}² samples spaced {@link #GRID_STRIDE} blocks
- * apart; total footprint per image is
- * {@code GRID_SIZE * GRID_STRIDE} blocks square. Current defaults give
- * 2 048×2 048 blocks at 2 blocks/pixel — wide enough to capture multiple
- * cycleHeight periods and reveal the OCTAVE_WRAP_FACTORS pivot pattern.
- *
- * <h2>Determinism</h2>
- * Uses {@link #NOISE_SEED} to init the same five-noise chain as
- * {@link BeyondEndChunkGenerator#computeNoisesIfNotPresent(long)}. The
- * PNGs are bit-exact reproducible across runs and machines.
- *
- * <h2>NOT a contract test</h2>
- * This test ALWAYS passes — its only failure mode is throwing on I/O. The
- * value is in the PNG artifacts, not in the assertion. Kept as {@code @Test}
- * rather than a {@code main()} so it runs under {@code ./gradlew test}
- * without extra wiring.
+ * <p>PNG pixels: grayscale = density auto-contrasted per image; red tint =
+ * density exceeds threshold (END_STONE placement). Grid defaults to
+ * {@code GRID_SIZE}² samples at {@code GRID_STRIDE} blocks/pixel (2 048-block
+ * window at 2 blocks/pixel). Bit-exact reproducible via {@link #NOISE_SEED}.
  */
 class TerrainDensityGridDumpTest {
 
-    /** Samples per axis. 1024 at stride 2 covers a 2 048-block window —
-     *  wide enough that any anisotropy is hit in multiple periods. The
-     *  resulting 4 MB PNG is acceptable for a diagnostic-only path. */
+    /** Samples per axis; 1024 at stride 2 = 2 048-block window. */
     private static final int GRID_SIZE = 1024;
 
-    /** Blocks per sample. 2 keeps per-pixel fidelity while holding the
-     *  window to a couple of cycleHeight periods. */
+    /** Blocks per sample. */
     private static final int GRID_STRIDE = 2;
 
-    /** Sample altitude. 234 sits well below the edgeGradient top cutoff when
-     *  the combo dim bounds are in effect (Enderscape bounds pack:
-     *  [-64, 320) → worldHeight=288). With the default Beyond-só
-     *  worldHeight=192, {@code y=234} would be above the cutoff and density
-     *  would clamp to 0 everywhere, producing uniformly blank PNGs. See
-     *  {@link BeyondEndChunkGenerator#edgeGradient}. */
+    /** Sample altitude. Sits below the edgeGradient top cutoff when the
+     *  extended-bounds (Enderscape pack: [-64, 320)) is in effect. Under the
+     *  default Beyond-only bounds y=234 clamps to 0 everywhere and produces
+     *  blank PNGs — see {@link BeyondEndChunkGenerator#edgeGradient}. */
     private static final int SAMPLE_Y = 234;
 
-    /** Dim min Y. Matches the {@code beyond_enderscape_bounds} sidecar
-     *  pack so the sampling reflects the extended-bounds environment in
-     *  which terrain is actually generated when that pack is loaded. */
+    /** Dim min Y — matches {@code beyond_enderscape_bounds} sidecar pack. */
     private static final int SAMPLE_DIM_MIN_Y = -64;
 
-    /** Dim max Y. See {@link #SAMPLE_DIM_MIN_Y}. */
+    /** Dim max Y — see {@link #SAMPLE_DIM_MIN_Y}. */
     private static final int SAMPLE_DIM_MAX_Y = 320;
 
-    /** Seed for noise init. Any stable value works; pinning it makes the
-     *  PNGs bit-exact reproducible. */
+    /** Pinned seed for bit-exact reproducible PNGs. */
     private static final long NOISE_SEED = 42L;
 
-    /** Output directory. Under build/ so it's ignored and auto-cleaned. */
+    /** Output directory (ignored/auto-cleaned under build/). */
     private static final File OUTPUT_DIR = new File("build/terrain-grid-dumps");
 
     // ---------- state capture ----------
@@ -144,9 +84,8 @@ class TerrainDensityGridDumpTest {
         savedMinY = BeyondTerrainState.getDimMinY();
         savedMaxY = BeyondTerrainState.getDimMaxY();
 
-        // Mirror the production noise chain: 5 sequential seeds (the
-        // SplitMix64 hash decorrelates them; no prime spacing needed).
-        // See BeyondEndChunkGenerator.computeNoisesIfNotPresent.
+        // Mirror the production noise chain (5 sequential seeds, SplitMix64
+        // hash decorrelates them). See BeyondEndChunkGenerator.computeNoisesIfNotPresent.
         RandomSource r1 = RandomSource.create(NOISE_SEED);
         RandomSource r2 = RandomSource.create(NOISE_SEED + 1);
         RandomSource r3 = RandomSource.create(NOISE_SEED + 2);
@@ -159,15 +98,12 @@ class TerrainDensityGridDumpTest {
         BeyondEndChunkGenerator.globalCOffsetNoise = new PerlinSimplexNoise(r4, List.of(1));
         BeyondEndChunkGenerator.biomeSimplexNoise = new HashSimplexNoise(r5);
 
-        // Ensure terrain params at DEFAULTS so the snapshot is the reference
-        // transform, regardless of state leaked from prior tests.
+        // Force DEFAULTS so the snapshot is the reference transform,
+        // regardless of state leaked from prior tests.
         BeyondEndChunkGenerator.activeTerrainParams = BeyondTerrainParams.DEFAULTS;
 
-        // Combo dim bounds matching the Enderscape bounds sidecar pack.
-        // getWorldHeight() uses these to scale the edgeGradient taper so
-        // y=234 stays inside the generation zone; under the Beyond-only
-        // default (0..256) edgeGradient would clamp density to 0 at that
-        // altitude and produce uniformly blank PNGs.
+        // Extended dim bounds (Enderscape pack) — needed so SAMPLE_Y sits
+        // inside the edgeGradient taper zone; otherwise density clamps to 0.
         BeyondTerrainState.setDimBounds(SAMPLE_DIM_MIN_Y, SAMPLE_DIM_MAX_Y);
 
         //noinspection ResultOfMethodCallIgnored
@@ -203,42 +139,32 @@ class TerrainDensityGridDumpTest {
     }
 
     // ---------- extended coverage: 500 k / 750 k / 1 M ----------
-    //
-    // Each centre gets the full four-variant treatment (default, cyclic,
-    // option2, period1m) so the table across centres is directly comparable.
 
     @Test
     void dumpX500k() throws IOException {
-        // Exactly at the default wrapRange — the ping-pong pivot plane itself.
+        // Exactly on the default wrapRange pivot plane.
         dumpGrid(500000, 0, "x_500k");
     }
 
     @Test
     void dumpX750k() throws IOException {
-        // Past the pivot; wraps back to |500 000 - 250 000| = 250 000, the
-        // mirrored counterpart of x_250k.
+        // Past the pivot; wraps to the mirrored counterpart of x_250k.
         dumpGrid(750000, 0, "x_750k");
     }
 
     @Test
     void dumpX1M() throws IOException {
-        // Two pivots out; wrap reflects back to the origin.
+        // Two pivots out; wraps back to the origin.
         dumpGrid(1000000, 0, "x_1M");
     }
 
     // ---------- isolation dump: cyclicDensity field only ----------
 
     /**
-     * Renders {@code cyclicDensity(SAMPLE_Y, cycleHeight(x, z))} alone at each
-     * of the three scenario centers — no simplex contribution, no
-     * edgeGradient, no threshold overlay. Purpose: isolate whether the
-     * directional banding visible in the corresponding {@code density_*}
-     * PNGs originates from the {@code y % cycleHeight} modulation at a fixed
-     * {@code y} slice.
-     *
-     * <p>If the isocontours in these images match the band direction seen in
-     * the matching density image at the same center, the diagnosis is
-     * confirmed and the fix target is {@code BeyondEndChunkGenerator.cyclicDensity}.
+     * Renders {@code cyclicDensity(SAMPLE_Y, cycleHeight(x, z))} alone (no
+     * simplex, no edgeGradient, no threshold overlay). Isolates whether
+     * directional banding in the matching {@code density_*} PNGs originates
+     * from the {@code y % cycleHeight} modulation at a fixed {@code y} slice.
      */
     @Test
     void dumpCyclicFieldClean50k() throws IOException {
@@ -274,10 +200,9 @@ class TerrainDensityGridDumpTest {
 
     /**
      * Dumps density with {@link BeyondEndChunkGenerator#cycleHeightOverride}
-     * pinned to a single global constant ({@value #FIXED_CYCLE_HEIGHT_OVERRIDE}).
-     * Makes {@code cycleHeight} independent of {@code (x, z)}, so at a fixed
-     * {@code y} slice the modulator becomes a uniform scalar and any remaining
-     * directional banding can only come from the simplex blob field itself.
+     * pinned to {@value #FIXED_CYCLE_HEIGHT_OVERRIDE}. Flattens
+     * {@code cycleHeight} so any remaining directional banding must come from
+     * the simplex blob field itself.
      */
     private static final double FIXED_CYCLE_HEIGHT_OVERRIDE = 55.0;
 
@@ -344,12 +269,10 @@ class TerrainDensityGridDumpTest {
     // ---------- sanity check: 10× wider cycleHeight period ----------
 
     /**
-     * Widens {@code cycleHeight}'s spatial period to 10× the production
-     * default by setting {@link BeyondEndChunkGenerator#cycleHeightFrequencyMultiplier}
-     * to {@value #PERIOD_1M_FREQUENCY_MULTIPLIER}. Sanity check that a
-     * flatter spatial gradient of {@code cycleHeight} does not reintroduce
-     * banding anywhere — i.e. the period scales monotonically with
-     * anisotropy suppression.
+     * Widens {@code cycleHeight}'s spatial period to 10× the production default
+     * via {@link BeyondEndChunkGenerator#cycleHeightFrequencyMultiplier} =
+     * {@value #PERIOD_1M_FREQUENCY_MULTIPLIER}. Sanity check that a flatter
+     * {@code cycleHeight} gradient does not reintroduce banding.
      */
     private static final double PERIOD_1M_FREQUENCY_MULTIPLIER = 0.1;
 
@@ -420,22 +343,12 @@ class TerrainDensityGridDumpTest {
     }
 
     // ---------- wrap-disabled validation sweep ----------
-    //
-    // Runs the density dump with {@link BeyondEndChunkGenerator#wrapDisabled}
-    // set so ping-pong reflection is bypassed. Coordinates cover a 6×3 matrix
-    // (6 distances × 3 axial directions) to check whether visible stretching
-    // and chevron artifacts vanish once the reflective wrap is removed. The
-    // grid is {@value #GRID_SIZE}² at stride {@value #GRID_STRIDE}, so each
-    // PNG shows a {@code GRID_SIZE * GRID_STRIDE} = 2 048-block square around
-    // the named center.
-    //
-    // Expected read-out per PNG:
-    //   - clean organic red-blotch field → hScale protection is sufficient,
-    //     no wrap needed
-    //   - residual diagonal streaks on the x=z diagonal → warp correlation
-    //     contributes independently of wrap (next diagnostic target)
-    //   - axis-aligned streaks on X-only or Z-only → simplex lattice bias
-    //     is visible without the wrap masking it
+    // Bypasses ping-pong reflection via {@link BeyondEndChunkGenerator#wrapDisabled}.
+    // 6 distances × 3 axial directions matrix — probes whether streaks/chevron
+    // artifacts vanish once the reflective wrap is removed. Read-out per PNG:
+    //   - clean field → hScale protection sufficient, no wrap needed
+    //   - diagonal streaks on x=z → warp correlation (wrap-independent)
+    //   - axis-aligned streaks → simplex lattice bias unmasked
 
     private void dumpNoWrap(int centerX, int centerZ, String label) throws IOException {
         BeyondEndChunkGenerator.wrapDisabled = true;
@@ -474,15 +387,13 @@ class TerrainDensityGridDumpTest {
     @Test void dumpNoWrapDiag2M()   throws IOException { dumpNoWrap(2_000_000, 2_000_000, "nowrap_diag_2M"); }
 
     // ---------- Diagnostic isolation tests ----------
-    // Each method pins one component of the density pipeline to a constant
-    // (or disables it) so its contribution to streaks is observable in
-    // isolation. Pipeline components:
-    //   warp        — snoise/zsnoise adds per-column offset to globalX/globalZ
-    //   hScale      — PerlinSimplexNoise (table-based) varies horizontal scale
-    //   vScale      — PerlinSimplexNoise varies vertical scale
-    //   cycleHeight — PerlinSimplexNoise varies the cyclic density modulator
-    //   base        — HashSimplexNoise 3D sample with all of the above baked in
-    // Focused at diag_250k / diag_500k as representative streaky regions.
+    // Each helper pins one component of the density pipeline (or disables it)
+    // so its contribution to streaks is observable in isolation. Components:
+    //   warp        — snoise/zsnoise per-column offset to globalX/globalZ
+    //   hScale      — PerlinSimplexNoise (table-based) horizontal scale
+    //   vScale      — PerlinSimplexNoise vertical scale
+    //   cycleHeight — PerlinSimplexNoise cyclic density modulator
+    //   base        — HashSimplexNoise 3D sample with all above baked in
 
     /** Disables the domain warp, keeps wrap disabled. Isolates warp contribution. */
     private void dumpNoWarpOnly(int centerX, int centerZ, String label) throws IOException {
@@ -532,9 +443,9 @@ class TerrainDensityGridDumpTest {
         }
     }
 
-    /** All overrides active: wrap off, warp off, hScale fixed, vScale fixed, cycleHeight fixed.
-     *  Isolates base HashSimplexNoise 3D sampling. If streaks STILL appear, they're from
-     *  the simplex lattice itself. */
+    /** All overrides active: wrap off, warp off, hScale/vScale/cycleHeight pinned.
+     *  Isolates base HashSimplexNoise 3D sampling — any remaining streaks are
+     *  from the simplex lattice itself. */
     private void dumpAllFixed(int centerX, int centerZ, String label) throws IOException {
         BeyondEndChunkGenerator.wrapDisabled = true;
         BeyondEndChunkGenerator.warpDisabled = true;
@@ -568,17 +479,15 @@ class TerrainDensityGridDumpTest {
     @Test void dumpDiag500k_fixedCycleH()   throws IOException { dumpFixedCycleHeight(500_000, 500_000, "diag_500k_fixedCycleH"); }
     @Test void dumpDiag500k_allFixed()      throws IOException { dumpAllFixed(500_000, 500_000, "diag_500k_allFixed"); }
 
-    // Isolation matrix extended to 1M and 2M to verify hScale alone versus
-    // all-pinned behaviour at extreme distances.
+    // Extended to 1M/2M to check hScale-alone vs all-pinned at extreme distances.
     @Test void dumpDiag1M_fixedHScale()     throws IOException { dumpFixedHScale(1_000_000, 1_000_000, "diag_1M_fixedHScale"); }
     @Test void dumpDiag1M_allFixed()        throws IOException { dumpAllFixed(1_000_000, 1_000_000, "diag_1M_allFixed"); }
     @Test void dumpDiag2M_fixedHScale()     throws IOException { dumpFixedHScale(2_000_000, 2_000_000, "diag_2M_fixedHScale"); }
     @Test void dumpDiag2M_allFixed()        throws IOException { dumpAllFixed(2_000_000, 2_000_000, "diag_2M_allFixed"); }
 
     // ---------- hScale multi-rotation averaging ----------
-    // Averages the hScale sample over four 90°-rotations of the input so the
-    // directional lattice bias cancels while each point still receives a
-    // distinct scalar. Exercised at diag_* distances to probe isotropy.
+    // Averages hScale over four 90° input rotations so directional lattice
+    // bias cancels while each point still receives a distinct scalar.
 
     private void dumpMultirotation(int centerX, int centerZ, String label) throws IOException {
         BeyondEndChunkGenerator.wrapDisabled = true;
@@ -597,9 +506,8 @@ class TerrainDensityGridDumpTest {
     @Test void dumpDiag2M_multiRot()   throws IOException { dumpMultirotation(2_000_000, 2_000_000, "diag_2M_multiRot"); }
 
     // ---------- hScale via HashSimplexNoise (hash-based permutation) ----------
-    // Swaps the table-based PerlinSimplexNoise for HashSimplexNoise (same
-    // lattice, hash-based permutation) to separate table-driven bias from
-    // lattice-driven bias.
+    // Swaps table-based PerlinSimplexNoise for HashSimplexNoise (same lattice,
+    // hash permutation) to separate table-driven bias from lattice-driven bias.
 
     private void dumpHashNoise(int centerX, int centerZ, String label) throws IOException {
         BeyondEndChunkGenerator.wrapDisabled = true;
@@ -618,9 +526,8 @@ class TerrainDensityGridDumpTest {
     @Test void dumpDiag2M_hashNoise()   throws IOException { dumpHashNoise(2_000_000, 2_000_000, "diag_2M_hashNoise"); }
 
     // ---------- hScale via 3×3 spatial blur ----------
-    // Smooths the hScale sample over a 3×3 neighbourhood of simplex cells.
-    // Adjacent cells carry decorrelated gradients, so cell-local directional
-    // bias averages out.
+    // Smooths hScale over a 3×3 neighbourhood of simplex cells so cell-local
+    // directional bias averages out across decorrelated gradients.
 
     private void dumpBlur3x3(int centerX, int centerZ, String label) throws IOException {
         BeyondEndChunkGenerator.wrapDisabled = true;
@@ -639,9 +546,9 @@ class TerrainDensityGridDumpTest {
     @Test void dumpDiag2M_blur3x3()   throws IOException { dumpBlur3x3(2_000_000, 2_000_000, "diag_2M_blur3x3"); }
 
     // ---------- Distance-adaptive hScale amplitude ----------
-    // Attenuates hScale amplitude as 1/r beyond a reference radius so the
-    // (∂h/∂x)·r streak-width product stays bounded at any distance. Full
-    // amplitude inside refRadius (~100 k) keeps near-origin regional variety.
+    // Attenuates hScale amplitude as 1/r beyond a reference radius (~100k) to
+    // keep the (∂h/∂x)·r streak-width product bounded at any distance while
+    // preserving near-origin regional variety.
 
     private void dumpDistanceAdaptive(int centerX, int centerZ, String label) throws IOException {
         BeyondEndChunkGenerator.wrapDisabled = true;
@@ -660,10 +567,9 @@ class TerrainDensityGridDumpTest {
     @Test void dumpDiag2M_distAdapt()   throws IOException { dumpDistanceAdaptive(2_000_000, 2_000_000, "diag_2M_distAdapt"); }
 
     // ---------- hScale local ping-pong wrap ----------
-    // Bounds the hScale noise INPUT via a dedicated ping-pong wrap
-    // (range 50 k = period 100 k). Keeps amplitude full everywhere while
-    // still capping streak-width, since the wrapped input is bounded
-    // regardless of raw worldX/worldZ.
+    // Bounds hScale noise INPUT via dedicated ping-pong wrap (range 50k, period
+    // 100k). Full amplitude everywhere while capping streak-width, since the
+    // wrapped input is bounded regardless of raw worldX/worldZ.
 
     private void dumpLocalWrap(int centerX, int centerZ, String label) throws IOException {
         BeyondEndChunkGenerator.wrapDisabled = true;
@@ -682,19 +588,17 @@ class TerrainDensityGridDumpTest {
     @Test void dumpDiag2M_localWrap()   throws IOException { dumpLocalWrap(2_000_000, 2_000_000, "diag_2M_localWrap"); }
 
     // ---------- 3×3 blur with pingPongWrap ENABLED (production mode) ----------
-    // Runs hScaleBlur3x3 at six diagonal centres that exercise the
-    // pingPongWrap stationarity pairs with range 500_000:
-    //   (0,0)        ↔ (1M,1M)      ↔ (2M,2M)      all map to wrappedX=0
-    //   (250k,250k)  ↔ (750k,750k)                 both map to wrappedX=250k
-    //   (500k,500k)                               sits exactly on the pivot
-    // Pass criteria:
-    //   1) Zero visible streaks / anisotropy in any of the six PNGs.
-    //   2) Pair members visually identical (pixel-exact for the 0/1M/2M
-    //      group; mirrored for 250k/750k).
-    //   3) Density value ranges printed in the log match within each pair.
+    // hScaleBlur3x3 at six diagonal centres that exercise pingPongWrap
+    // stationarity pairs (range 500_000):
+    //   (0,0) ↔ (1M,1M) ↔ (2M,2M)   all → wrappedX=0
+    //   (250k,250k) ↔ (750k,750k)   both → wrappedX=250k
+    //   (500k,500k)                  exactly on the pivot
+    // Pass criteria: (1) no streaks/anisotropy, (2) pair members visually
+    // identical (pixel-exact for the 0/1M/2M group; mirrored for 250k/750k),
+    // (3) logged density ranges match within each pair.
 
     private void dumpBlur3x3Production(int centerX, int centerZ, String label) throws IOException {
-        // NOTE: wrapDisabled intentionally left false — this is production mode.
+        // wrapDisabled intentionally left false — this is production mode.
         BeyondEndChunkGenerator.hScaleBlur3x3 = true;
         try {
             dumpGrid(centerX, centerZ, label);
@@ -710,11 +614,10 @@ class TerrainDensityGridDumpTest {
     @Test void dumpProdBlur3x3_diag1M()   throws IOException { dumpBlur3x3Production(1_000_000, 1_000_000, "prodBlur3x3_diag_1M"); }
     @Test void dumpProdBlur3x3_diag2M()   throws IOException { dumpBlur3x3Production(2_000_000, 2_000_000, "prodBlur3x3_diag_2M"); }
 
-    // ---------- Baseline dumps: production mode with no hScale knob ----------
-    // Comparison reference for the prodBlur3x3_* matrix — same six diagonal centres,
-    // all knobs at their defaults. Any artifact shared between the two sets
-    // is pre-existing in the stock pipeline; anything unique to prodG is
-    // introduced by the 3×3 blur.
+    // ---------- Baseline dumps: production mode, no hScale knob ----------
+    // Reference for the prodBlur3x3_* matrix — same six centres, defaults.
+    // Artifacts shared between sets are pre-existing; artifacts unique to
+    // prodBlur3x3 are introduced by the 3×3 blur.
 
     @Test void dumpProdBaseline_diag0()    throws IOException { dumpGrid(0,         0,         "prodBase_diag_0"); }
     @Test void dumpProdBaseline_diag250k() throws IOException { dumpGrid(250_000,   250_000,   "prodBase_diag_250k"); }
@@ -724,19 +627,15 @@ class TerrainDensityGridDumpTest {
     @Test void dumpProdBaseline_diag2M()   throws IOException { dumpGrid(2_000_000, 2_000_000, "prodBase_diag_2M"); }
 
     // ---------- Island-envelope sampler validation ----------
-    // Forces hScale constant so the X × ∂hScale/∂X streak term vanishes
-    // identically at all distances; regional island-size variance is moved
-    // into a slowly-varying amplitude envelope (X-independent factor). Runs
-    // with wrapDisabled=true to confirm streak-freeness is structural and
-    // not wrap-masked.
-    // Coverage: diag_0 reference, 250k/500k/750k (baseline streaked),
-    //           1M/2M (baseline clean), 5M/10M (scale-freedom stress).
-    // Pass criteria:
-    //   1) Zero streaks / directional bias at every centre including 5M/10M.
-    //   2) Visible regional variation in solid-cell density across centres
-    //      (envelope is doing its job — not a flat uniform amplitude).
-    //   3) No catastrophic precision loss at 10M (density range stays
-    //      near [-0.3, 0.3]).
+    // Forces hScale constant so the X·∂hScale/∂X streak term vanishes at all
+    // distances; regional island-size variance moves into a slowly-varying
+    // X-independent amplitude envelope. Runs with wrapDisabled=true to prove
+    // streak-freeness is structural, not wrap-masked.
+    // Coverage: diag_0 reference; 250k/500k/750k (baseline streaked); 1M/2M
+    // (baseline clean); 5M/10M (scale-freedom stress).
+    // Pass criteria: (1) zero streaks at every centre including 5M/10M,
+    // (2) visible regional variation in solid-cell density (envelope working),
+    // (3) density range stays near [-0.3, 0.3] at 10M (no precision loss).
 
     private void dumpIslandEnvelope(int centerX, int centerZ, String label) throws IOException {
         BeyondEndChunkGenerator.wrapDisabled = true;
@@ -758,25 +657,21 @@ class TerrainDensityGridDumpTest {
     @Test void dumpEnvelope_diag5M()   throws IOException { dumpIslandEnvelope(5_000_000,  5_000_000,  "envelope_diag_5M"); }
     @Test void dumpEnvelope_diag10M()  throws IOException { dumpIslandEnvelope(10_000_000, 10_000_000, "envelope_diag_10M"); }
 
-    // Axis-only variants at a challenging distance (pure X streak test, pure Z
-    // streak test). Proves isotropy claim: if streaks appear on X-only or Z-only
-    // but not both, there's a lurking asymmetry in the sample pipeline.
+    // Axis-only at a challenging distance — isotropy check. Streaks on X-only
+    // xor Z-only indicate a lurking asymmetry in the sample pipeline.
 
     @Test void dumpEnvelope_xOnly1M()  throws IOException { dumpIslandEnvelope(1_000_000,  0,          "envelope_xOnly_1M"); }
     @Test void dumpEnvelope_zOnly1M()  throws IOException { dumpIslandEnvelope(0,          1_000_000,  "envelope_zOnly_1M"); }
 
     // ---------- Band-blend sampler validation ----------
-    // Runs the band-blend hot-path (2-sample lerp over adjacent fixed-
-    // frequency bands) with wrapDisabled=true to confirm streak-freeness is
-    // structural. Same matrix as the island-envelope block plus axis-only
-    // variants at 1M for directional-asymmetry checks.
-    // Pass criteria:
-    //   a) Zero streaks at every centre, at every distance (5M/10M included).
-    //   b) Regional wavelength variance visible across centres — different
-    //      island sizes, not just different amplitudes.
-    //   c) (0,0) output matches the stock pipeline's local character (the
-    //      blend at h* ≈ hBase is ~identical to simplex(X × h*, Z × h*) for
-    //      hBase near one of the band centres).
+    // Band-blend hot-path (2-sample lerp over adjacent fixed-frequency bands)
+    // with wrapDisabled=true — confirms streak-freeness is structural. Same
+    // matrix as island-envelope plus axis-only variants at 1M.
+    // Pass criteria: (a) zero streaks at every centre (5M/10M included),
+    // (b) regional wavelength variance visible across centres (different
+    // island sizes, not just amplitudes), (c) (0,0) output matches stock
+    // pipeline's local character (blend at h* ≈ hBase is ~identical to
+    // simplex(X·h*, Z·h*) for hBase near a band centre).
 
     private void dumpBandBlend(int centerX, int centerZ, String label) throws IOException {
         BeyondEndChunkGenerator.wrapDisabled = true;
@@ -798,7 +693,7 @@ class TerrainDensityGridDumpTest {
     @Test void dumpBlend_diag5M()   throws IOException { dumpBandBlend(5_000_000,  5_000_000,  "blend_diag_5M"); }
     @Test void dumpBlend_diag10M()  throws IOException { dumpBandBlend(10_000_000, 10_000_000, "blend_diag_10M"); }
 
-    // Axis-only variants at a challenging distance — proves isotropy.
+    // Axis-only variants — isotropy check.
     @Test void dumpBlend_xOnly1M()  throws IOException { dumpBandBlend(1_000_000,  0,          "blend_xOnly_1M"); }
     @Test void dumpBlend_zOnly1M()  throws IOException { dumpBandBlend(0,          1_000_000,  "blend_zOnly_1M"); }
 
@@ -806,19 +701,13 @@ class TerrainDensityGridDumpTest {
 
     /**
      * Samples a {@code GRID_SIZE × GRID_STRIDE}-block grid centered on
-     * {@code (centerX, centerZ)} at {@link #SAMPLE_Y}, renders density as
-     * PNG, and writes the file to {@link #OUTPUT_DIR}.
+     * {@code (centerX, centerZ)} at {@link #SAMPLE_Y} and writes a PNG to
+     * {@link #OUTPUT_DIR}.
      *
-     * <p>Density normalization is PER-IMAGE (auto-contrast). This makes
-     * subtle directional patterns visible regardless of absolute density
-     * magnitude at that location, which differs between scenarios (the
-     * threshold curve depends on distanceFromOrigin). The raw min/max are
-     * printed to stdout so absolute values remain inspectable.
-     *
-     * <p>Solid pixels (density &gt; threshold) are red-tinted so the
-     * terrain SHAPE is visible overlaid on the density field — if the
-     * stretching is structural (solid cells form streaks) it shows up
-     * directly as red bands, not just as a grayscale bias.
+     * <p>Density normalization is per-image (auto-contrast) so subtle
+     * directional patterns are visible regardless of absolute magnitude; raw
+     * min/max are logged to stdout. Solid pixels (density &gt; threshold) are
+     * red-tinted so the terrain shape overlays the density field.
      */
     private void dumpGrid(int centerX, int centerZ, String label) throws IOException {
         BufferedImage image = new BufferedImage(GRID_SIZE, GRID_SIZE, BufferedImage.TYPE_INT_RGB);
@@ -838,10 +727,9 @@ class TerrainDensityGridDumpTest {
                 double density = BeyondEndChunkGenerator.getTerrainDensity(globalX, SAMPLE_Y, globalZ);
                 float distanceFromOrigin = (float) Math.sqrt(
                         (double) globalX * globalX + (double) globalZ * globalZ);
-                // Sample threshold in wrapped coord space to match the chunk generator —
-                // getTerrainDensity() wraps internally and getThreshold MUST be called on
-                // the same (wrappedX, wrappedZ) pair or the "solid" red tint in the PNG
-                // would disagree with where the generator actually places END_STONE.
+                // Threshold must be sampled in wrapped coord space to match
+                // getTerrainDensity (which wraps internally); otherwise the red
+                // tint disagrees with actual END_STONE placement.
                 long packed = BeyondEndChunkGenerator.computeWrappedCoords(globalX, globalZ);
                 int wrappedX = BeyondEndChunkGenerator.unpackWrappedX(packed);
                 int wrappedZ = BeyondEndChunkGenerator.unpackWrappedZ(packed);
@@ -873,7 +761,7 @@ class TerrainDensityGridDumpTest {
 
                 int rgb;
                 if (d > t) {
-                    // Red-tinted solid — terrain shape is the RED BAND pattern.
+                    // Red-tinted solid — terrain shape overlays density.
                     int r = Math.min(255, gray + 80);
                     int g = gray / 2;
                     int b = gray / 4;
@@ -882,9 +770,7 @@ class TerrainDensityGridDumpTest {
                     rgb = (gray << 16) | (gray << 8) | gray;
                 }
 
-                // Flip Y so +Z is up in the image (standard cartographic
-                // convention). The image's origin is top-left; our +Z points
-                // into the map as the player sees it.
+                // Flip Y so +Z is up (standard cartographic convention).
                 image.setRGB(px, GRID_SIZE - 1 - py, rgb);
             }
         }
@@ -907,11 +793,10 @@ class TerrainDensityGridDumpTest {
 
     /**
      * Samples {@code cyclicDensity(SAMPLE_Y, cycleHeight(wrappedX, wrappedZ))}
-     * over the same grid shape as {@link #dumpGrid} and writes a grayscale
-     * PNG. Mirrors the wrapping behaviour of the chunk generator
-     * ({@code cycleHeight} is always sampled at the octave-0 wrapped coords
-     * in the production path), so the output is directly comparable to the
-     * density images at the same center.
+     * over the same grid as {@link #dumpGrid} and writes a grayscale PNG.
+     * Mirrors the chunk generator's wrapping ({@code cycleHeight} is sampled
+     * at octave-0 wrapped coords in production) so output is directly
+     * comparable to the density image at the same centre.
      */
     private void dumpCyclicGrid(int centerX, int centerZ, String label) throws IOException {
         BufferedImage image = new BufferedImage(GRID_SIZE, GRID_SIZE, BufferedImage.TYPE_INT_RGB);
@@ -973,11 +858,9 @@ class TerrainDensityGridDumpTest {
 
     /**
      * Bit-exact replica of the private
-     * {@code BeyondEndChunkGenerator.cyclicDensity(int, double)} used by the
-     * terrain generator. Kept here so the isolation dumps can sample the
-     * field without exposing a package-private helper in production code.
-     * Any change to the production formula must be mirrored here or the
-     * diagnostic loses meaning.
+     * {@code BeyondEndChunkGenerator.cyclicDensity(int, double)}. Allows
+     * isolation dumps to sample the field without exposing a package-private
+     * helper. Must be kept in sync with the production formula.
      */
     private static double replicateCyclicDensity(int y, double cycleHeight) {
         double normalizedY = (y % cycleHeight) / cycleHeight;

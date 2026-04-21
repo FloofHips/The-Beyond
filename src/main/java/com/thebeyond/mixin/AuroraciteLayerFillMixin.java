@@ -28,77 +28,26 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Post-decoration safety net that guarantees a full auroracite floor in every End chunk,
- * independent of whether {@link AuroraciteLayerFeature} / {@link AuroraciteLayerDTFeature}
- * have been wired up for the current biome via
- * {@code #the_beyond:has_auroracite_layer} biome_modifier.
- *
- * <h2>Why this mixin exists</h2>
- * The data-driven path (biome_modifier + feature) covers most End biomes but has known
- * blind spots:
- * <ul>
- *   <li><b>Orphan biomes:</b> e.g. {@code unusualend:gloopstone_midlands} is injected via
- *       Unusual End's custom "slice" mechanism and never appears in {@code #minecraft:is_end}
- *       nor any other tag referenced by {@code has_auroracite_layer}.</li>
- *   <li><b>Fabric-via-Sinytra biomes:</b> e.g. {@code phantasm:dreaming_den} and
- *       {@code phantasm:acidburnt_abysses} are listed in {@code #minecraft:is_end} via
- *       Phantasm's datapack, but NeoForge's {@code add_features} biome_modifier does not
- *       propagate to biomes registered through the Sinytra Connector, so the floor
- *       feature does not run for these biomes.</li>
- * </ul>
- * Both cases produce the same symptom — biome-boundary-aligned void holes at
- * {@code minY}. Manually expanding the tag cannot protect against future modded biomes.
- * This mixin closes both gaps by running AFTER all feature decoration in every End chunk
- * and filling any remaining floor gaps idempotently.
- *
- * <h2>Safety guards (layered)</h2>
- * <ol>
- *   <li>Fast exit for non-End chunks (reads only {@code level.getLevel().dimension()}).</li>
- *   <li>Noise is <b>shared</b> with the feature via {@link AuroraciteLayerFeature#getNoiseInstance()}
- *       and {@link AuroraciteLayerDTFeature#getNoiseInstance()} — if either feature has
- *       already initialized a noise field for this world session, we reuse it so the
- *       pattern is visually continuous across biome boundaries where one side gets floor
- *       via the feature and the other via this mixin.</li>
- *   <li>If neither feature has initialized (worst case: biome_modifier didn't reach ANY
- *       biome), we seed from the world seed for deterministic patterns per save.</li>
- *   <li><b>Never overwrite non-air blocks.</b> We only write at positions where the
- *       current block state is air — legitimate terrain, ice, structure blocks, etc.
- *       are preserved. This makes the pass strictly additive.</li>
- *   <li>Targets abstract {@link ChunkGenerator#applyBiomeDecoration} at {@code TAIL}, so
- *       it runs for vanilla, {@code NoiseBasedChunkGenerator}, {@code WoverChunkGenerator},
- *       and {@code BeyondEndChunkGenerator} (the last calls {@code super} first, so we
- *       fire before its exit-portal cleanup which operates at high-y and can't conflict
- *       with the floor layer).</li>
- *   <li>DT detection uses {@link ModList}; if loaded, fills {@code noise <= 0} cells with
- *       Dimensional Tears' source fluid at {@code minY} (mirrors
- *       {@link AuroraciteLayerDTFeature}). If not loaded, leaves those cells as air
- *       (mirrors {@link AuroraciteLayerFeature}).</li>
- * </ol>
- *
- * <h2>Interaction with existing systems</h2>
- * <ul>
- *   <li>{@link AuroraciteLayerProtectionMixin} vetoes ice/snow overwrites at minY via
- *       {@code WorldGenRegion.setBlock}. This mixin writes via
- *       {@link ChunkAccess#setBlockState(BlockPos, BlockState, boolean)}, which does not
- *       go through {@code WorldGenRegion.setBlock}, so there's no interaction. Our own
- *       writes are auroracite/DT-fluid, which are not ice, so even if the paths were
- *       merged there'd be no veto.</li>
- *   <li>{@link BeyondEndChunkGenerator#applyBiomeDecoration} calls {@code super} first
- *       (our inject fires), then does a portal-column cleanup at high-y — no conflict.</li>
- * </ul>
+ * Guarantees a full auroracite floor in every End chunk as a safety net for orphan biomes
+ * (e.g. Unusual End) and Sinytra-Connector biomes where {@code add_features} doesn't
+ * propagate, closing void holes at {@code minY}. Injects at {@code TAIL} of
+ * {@link ChunkGenerator#applyBiomeDecoration} so it runs for every generator. Writes are
+ * additive — only air cells are overwritten. Noise is shared with the feature's live
+ * instance when available so the pattern stays continuous across biome borders; otherwise
+ * a world-seeded fallback is used. With Dimensional Tears loaded, {@code noise <= 0}
+ * cells are filled with its source fluid at {@code minY}; without DT, they stay air.
  */
 @Mixin(ChunkGenerator.class)
 public abstract class AuroraciteLayerFillMixin {
 
     private static final ResourceLocation DT_FLUID_ID = ResourceLocation.parse("dimensional_tears:dimensional_tears");
 
-    // Cached via double-checked locking; populated lazily the first time the mixin fires.
+    // DCL-populated on first fire.
     private static volatile Boolean dtLoaded;
     private static volatile BlockState cachedDTFluid;
     private static volatile SimplexNoise fallbackNoise;
 
-    // One-shot diagnostic logging the mixin's first fire and which noise source it uses
-    // (feature-shared vs fallback). Logs once per JVM session.
+    /** Logs the first fire per JVM with the chosen noise source. */
     private static final AtomicBoolean LOGGED_FIRST_FIRE = new AtomicBoolean(false);
 
     @Inject(
@@ -109,13 +58,11 @@ public abstract class AuroraciteLayerFillMixin {
             WorldGenLevel level, ChunkAccess chunk, StructureManager structureManager,
             CallbackInfo ci) {
 
-        // Gate 1: End only. Early exit for all other dimensions.
+        // End only.
         if (level.getLevel().dimension() != Level.END) return;
 
-        // Gate 2: resolve the SimplexNoise. Prefer the feature's instance for visual
-        // continuity with biomes where the feature path DID run.
         SimplexNoise noise = resolveNoise(level);
-        if (noise == null) return; // should never happen; defensive
+        if (noise == null) return; // defensive; resolveNoise always returns non-null
 
         final int minY = level.getMinBuildHeight();
         final int chunkX = chunk.getPos().getMinBlockX();
@@ -153,32 +100,20 @@ public abstract class AuroraciteLayerFillMixin {
                         chunk.setBlockState(mutable, auroracite, false);
                     }
                 } else if (dtUsable) {
-                    // Single-layer DT fluid in the gaps (DT variant only).
+                    // DT fluid fills the gaps (DT variant only).
                     mutable.set(globalX, minY, globalZ);
                     if (chunk.getBlockState(mutable).isAir()) {
                         chunk.setBlockState(mutable, dtFluid, false);
                     }
                 }
-                // else: no DT and noise <= 0 -> leave air (matches AuroraciteLayerFeature semantics).
+                // no DT and noise <= 0: leave air.
             }
         }
     }
 
     /**
-     * Returns the SimplexNoise to use for this chunk. Preference order:
-     * <ol>
-     *   <li>{@link AuroraciteLayerDTFeature#getNoiseInstance()} if non-null (DT variant
-     *       already initialized by a feature call in some biome this session).</li>
-     *   <li>{@link AuroraciteLayerFeature#getNoiseInstance()} if non-null (regular variant
-     *       already initialized).</li>
-     *   <li>A fallback noise seeded from the world seed, cached per JVM. This path only
-     *       activates when NO biome in the current world session has triggered the feature
-     *       yet — i.e. biome_modifier reached zero biomes.</li>
-     * </ol>
-     * Using the feature's noise when possible ensures pattern continuity at biome
-     * boundaries: if biome A uses the feature and biome B uses this mixin, both sample
-     * the same SimplexNoise so the auroracite landmasses flow seamlessly across the
-     * boundary.
+     * Prefers either feature's live noise for cross-biome continuity; falls back to a
+     * JVM-cached, world-seeded noise when neither feature has run yet.
      */
     private static SimplexNoise resolveNoise(WorldGenLevel level) {
         SimplexNoise n = AuroraciteLayerDTFeature.getNoiseInstance();
@@ -186,9 +121,6 @@ public abstract class AuroraciteLayerFillMixin {
         n = AuroraciteLayerFeature.getNoiseInstance();
         if (n != null) return n;
 
-        // Fallback: seed from world seed. Cached per JVM; not reset between worlds in the
-        // same session, which is acceptable because the fallback is an emergency fill and
-        // continuity across worlds isn't visible.
         SimplexNoise cached = fallbackNoise;
         if (cached != null) return cached;
         synchronized (AuroraciteLayerFillMixin.class) {
@@ -213,11 +145,8 @@ public abstract class AuroraciteLayerFillMixin {
     }
 
     /**
-     * Lazily resolves Dimensional Tears' source fluid block state. Mirrors
-     * {@link AuroraciteLayerDTFeature#getDTFluidState()}: sets {@code is_ocean=true} on
-     * the blockstate if DT still exposes that property (skipRendering perf win for
-     * stacked fluid cells). Falls back silently to air if DT is missing or the property
-     * was renamed.
+     * Returns DT's source fluid with {@code is_ocean=true} when that property exists
+     * (enables DT's skipRendering optimisation). Air if DT is absent or the property moved.
      */
     private static BlockState getDTFluidState() {
         BlockState cached = cachedDTFluid;

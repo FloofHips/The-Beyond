@@ -83,9 +83,9 @@ public class BeyondNetworking {
     }
 
     /**
-     * Applies an S2C knowledge sync to the local player's attachment and triggers a JEI
-     * refresh. Common code is fine here — no client-only types are touched; the JEI
-     * bridge is a no-op when JEI is absent.
+     * Applies an S2C knowledge sync to the local player's attachment and refreshes JEI.
+     * Lives in common code because no client-only types are touched; the JEI bridge is a
+     * no-op when JEI is absent.
      */
     private static void handleKnowledgeSyncClient(PlayerKnowledgeSyncPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {

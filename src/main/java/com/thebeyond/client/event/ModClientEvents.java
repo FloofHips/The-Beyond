@@ -351,59 +351,6 @@ public class ModClientEvents {
         }
     }
 
-//    @SubscribeEvent
-//    public static void onSoundEvent(PlayLevelSoundEvent.AtPosition event) {
-//        if (event.getOriginalVolume() < 0.1f) return;
-//        if (skipSound(event.getSound().value())) return;
-//        scheduleDelayedSound(event, 2, event.getOriginalVolume()*0.5f);
-//        //scheduleDelayedSound(event, 5, event.getOriginalVolume()*0.25f);
-//    }
-//
-//    private static void scheduleDelayedSound(PlayLevelSoundEvent.AtPosition event, int delayTicks, float volume) {
-//        SimpleSoundInstance sound = new SimpleSoundInstance(
-//                event.getSound().value().getLocation(),
-//                SoundSource.AMBIENT,
-//                volume,
-//                1.0f,
-//                SoundInstance.createUnseededRandom(),
-//                false,
-//                0,
-//                SoundInstance.Attenuation.LINEAR,
-//                event.getPosition().x,
-//                event.getPosition().y,
-//                event.getPosition().z,
-//                false
-//        );
-//
-//        Minecraft.getInstance().getSoundManager().playDelayed(sound, delayTicks);
-//    }
-//
-//    private static boolean skipSound(SoundEvent sound) {
-//        if (sound == null) return true;
-//        String str = sound.getLocation().toString();
-//
-//        if (str.contains("ambient") || str.contains("music") || str.contains("weather")) {
-//            return true;
-//        }
-//
-//        if (str.contains("entity") || str.contains("block") || str.contains("item") || str.contains("ui")) {
-//            return false;
-//        }
-//        return false;
-//    }
-
-//    private static Optional<BlockPos> getRefuge(ServerLevel serverLevel, BlockPos pos) {
-//        return serverLevel.getPoiManager().findClosest(
-//                poiType -> poiType.is(BeyondPoiTypes.REFUGE),
-//                blockPos -> {
-//                    BlockState state = serverLevel.getBlockState(blockPos);
-//                    return state.is(BeyondBlocks.REFUGE.get()) && RefugeBlock.isActive(state);},
-//                pos,
-//                80,
-//                PoiManager.Occupancy.ANY
-//        );
-//    }
-
     // Server-side Refuge, Totem, and gameplay handlers moved to ModGameEvents.java
     // so they register on dedicated servers (not just Dist.CLIENT).
 
@@ -417,43 +364,8 @@ public class ModClientEvents {
     }
 
 
-    //@SubscribeEvent
-    //public static void onChunkLoadEvent(ChunkEvent.Unload event) {
-    //    event.getChunk().getbloc
-    //}
-    //@SubscribeEvent
-    //public static void onChunkLoadEvent(ChunkEvent.Load event) {
-        //event.getChunk().findBlocks();
-    //}
-
     @SubscribeEvent
     public static void fogColor(ViewportEvent.ComputeFogColor event) {
-        //event.setRed(0);
-        //event.setGreen(1);
-        //event.setBlue(1);
-        //Minecraft minecraft = Minecraft.getInstance();
-        //ClientLevel level = minecraft.level;
-        //if (level == null) return;
-//
-        //Camera camera = minecraft.gameRenderer.getMainCamera();
-        //BlockPos cameraPos = BlockPos.containing(camera.getPosition());
-        //Biome biome = level.getBiome(cameraPos).value();
-        //float gamma = Minecraft.getInstance().options.gamma().get().floatValue();
-//
-        //int fogColor = biome.getFogColor();
-        //float r = ((fogColor >> 16) & 0xFF) / 255.0f;
-        //float g = ((fogColor >> 8) & 0xFF) / 255.0f;
-        //float b = (fogColor & 0xFF) / 255.0f;
-//
-        //Vec3 rgbfogColor = new Vec3(r, g, b);
-        //Vec3 skyColorVector = level.effects().getBrightnessDependentFogColor(rgbfogColor, 0);
-//
-        //event.setRed((float) skyColorVector.x * gamma);
-        //event.setGreen((float) skyColorVector.y * gamma);
-        //event.setBlue((float) skyColorVector.z * gamma);
-        //event.setRed(event.getRed() / gamma);
-        //event.setGreen(event.getGreen() / gamma);
-        //event.setBlue(event.getBlue() / gamma);
     }
 
     @SubscribeEvent
@@ -623,95 +535,6 @@ public class ModClientEvents {
         bufferSource.endBatch();
         poseStack.popPose();
     }
-
-//    private static void renderRefugeDebug(RenderLevelStageEvent event) {
-//        Minecraft mc = Minecraft.getInstance();
-//        Player player = mc.player;
-//        Level level = player.level();
-//        Frustum frustum = event.getFrustum();
-//        int renderDistance = mc.options.getEffectiveRenderDistance();
-//        ChunkPos playerChunk = player.chunkPosition();
-//        int yLevel = (int) (-50);
-//
-//        for (int x = -renderDistance; x <= renderDistance; x++) {
-//            for (int z = -renderDistance; z <= renderDistance; z++) {
-//                ChunkPos chunkPos = new ChunkPos(playerChunk.x + x, playerChunk.z + z);
-//
-//                double worldX = chunkPos.getMiddleBlockX();
-//                double worldZ = chunkPos.getMiddleBlockZ();
-//
-//                BlockPos centerPos = new BlockPos(
-//                        chunkPos.getMiddleBlockX(),
-//                        yLevel,
-//                        chunkPos.getMiddleBlockZ()
-//                );
-//
-//                RefugeChunkData data = level.getChunkAt(centerPos).getData(BeyondAttachments.REFUGE_DATA);
-//
-//                PoseStack poseStack = event.getPoseStack();
-//                Vec3 camPos = event.getCamera().getPosition();
-//
-//                poseStack.pushPose();
-//                poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
-//
-//                poseStack.translate(centerPos.getX(), centerPos.getY(), centerPos.getZ());
-//
-//                //poseStack.translate(0, yoffset, 0);
-//                poseStack.translate(-0.5f, -0.5f, -0.5f);
-//
-//                poseStack.mulPose(Minecraft.getInstance().gameRenderer.getMainCamera().rotation());
-//
-//                poseStack.translate(0, -0.5f, -0.5f);
-//
-//                double chunkCenterX = chunkPos.getMiddleBlockX();
-//                double chunkCenterZ = chunkPos.getMiddleBlockZ();
-//                double deltaX = chunkCenterX - player.getX();
-//                double deltaZ = chunkCenterZ - player.getZ();
-//                double distanceFromPlayer = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
-//                double maxPlayerDistance = renderDistance * 16 * 0.8;
-//                float l = (float) (1.0 - (distanceFromPlayer / maxPlayerDistance));
-//
-//                MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
-//
-//                if (data.shouldPreventExplosion()) {
-//                    ItemStack itemStack = new ItemStack(Blocks.TNT.asItem());
-//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
-//                } else {
-//                    ItemStack itemStack = new ItemStack(Blocks.BARRIER.asItem());
-//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
-//                }
-//                if (data.shouldPreventHunger()) {
-//                    poseStack.translate(0,1,0);
-//                    ItemStack itemStack = new ItemStack(Items.COOKED_BEEF);
-//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
-//                } else {
-//                    poseStack.translate(0,1,0);
-//                    ItemStack itemStack = new ItemStack(Blocks.BARRIER.asItem());
-//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
-//                }
-//                if (data.shouldPreventFallDamage()) {
-//                    poseStack.translate(0,1,0);
-//                    ItemStack itemStack = new ItemStack(Items.DIAMOND_BOOTS);
-//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
-//                } else {
-//                    poseStack.translate(0,1,0);
-//                    ItemStack itemStack = new ItemStack(Blocks.BARRIER.asItem());
-//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
-//                }
-//                if (data.shouldPreventMobSpawn()) {
-//                    poseStack.translate(0,1,0);
-//                    ItemStack itemStack = new ItemStack(Blocks.SKELETON_SKULL.asItem());
-//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
-//                } else {
-//                    poseStack.translate(0,1,0);
-//                    ItemStack itemStack = new ItemStack(Blocks.BARRIER.asItem());
-//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
-//                }
-//                poseStack.popPose();
-//
-//            }
-//        }
-//    }
 
     public static void renderClouds(PoseStack poseStack, float translate, float scale, float time, ResourceLocation model, MultiBufferSource.BufferSource buffer) {
         poseStack.pushPose();

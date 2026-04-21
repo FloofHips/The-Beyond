@@ -16,11 +16,9 @@ import java.util.List;
 /**
  * Wraps foreign packs in {@link EndDimensionFilteringPackResources} so Beyond's
  * {@code beyond_terrain} pack wins the {@code dimension/the_end.json} and
- * {@code dimension_type/the_end.json} slots. Everything else (biomes, noise settings,
- * features, structures) passes through unchanged.
- *
- * <p>Skips Beyond's own packs and already-wrapped packs. No-ops when Beyond's pack is
- * absent (soup-mode fallback).</p>
+ * {@code dimension_type/the_end.json} slots; other content (biomes, noise, features,
+ * structures) passes through. Skips Beyond's own packs and already-wrapped packs;
+ * no-ops when {@code beyond_terrain} is absent (soup-mode fallback).
  */
 @Mixin(MultiPackResourceManager.class)
 public class MultiPackResourceManagerMixin {
@@ -41,27 +39,20 @@ public class MultiPackResourceManagerMixin {
     )
     private static List<PackResources> the_beyond$filterEndDimensionOverrides(List<PackResources> packs) {
         if (packs == null || packs.isEmpty()) {
-            // Null/empty is still logged so the mixin's application to every
-            // MultiPackResourceManager construction is observable.
             TheBeyond.LOGGER.info("[MultiPackFilter] construction with {} pack(s) — bailing early (null or empty).",
                     packs == null ? "null" : "0");
             return packs;
         }
 
-        // Dump every pack ID the MultiPackResourceManager is about to index. This runs
-        // on EVERY construction (client assets, server data, datagen, reload, etc.) — the
-        // greppable tag and pack count make it easy to narrow logs to server data builds
-        // when diagnosing filter behavior.
+        // Log every pack ID indexed on every construction; grep tag narrows to server-data builds.
         List<String> allIds = new ArrayList<>(packs.size());
         for (PackResources pr : packs) {
             allIds.add(pr.packId());
         }
         TheBeyond.LOGGER.info("[MultiPackFilter] construction with {} pack(s): {}", packs.size(), allIds);
 
-        // Bail if Beyond's main pack isn't present — fall through to "soup mode".
-        // With beyond_enderscape_bounds attached as a child of beyond_terrain, absence
-        // of BEYOND_MAIN_PACK_ID also implies absence of bounds (children can't be
-        // active without their parent), so this single check is sufficient.
+        // Bail into soup-mode when beyond_terrain is absent. Bounds sidecar is a child
+        // of beyond_terrain, so checking the parent is sufficient.
         boolean beyondPresent = false;
         for (PackResources pr : packs) {
             if (BEYOND_MAIN_PACK_ID.equals(pr.packId())) {
@@ -81,7 +72,7 @@ public class MultiPackResourceManagerMixin {
         for (PackResources pr : packs) {
             String id = pr.packId();
 
-            // Don't wrap any Beyond-owned pack (beyond_terrain + compat sidecars).
+            // Skip Beyond-owned packs (main + sidecars).
             if (id != null && id.startsWith(BEYOND_PACK_ID_PREFIX)) {
                 filtered.add(pr);
                 skippedBeyondIds.add(id);
@@ -93,8 +84,7 @@ public class MultiPackResourceManagerMixin {
                 continue;
             }
 
-            // Wrap packs that ship either contested dimension file. Other foreign content
-            // (noise settings, biomes, features) is NOT a trigger and NOT hidden.
+            // Wrap only if the pack ships a contested dimension file; other content passes through.
             boolean hasDimension = pr.getResource(PackType.SERVER_DATA, END_DIMENSION) != null;
             boolean hasDimensionType = pr.getResource(PackType.SERVER_DATA, END_DIMENSION_TYPE) != null;
             if (hasDimension || hasDimensionType) {

@@ -14,10 +14,7 @@ import java.util.Set;
 /**
  * Static API for knowledge queries and grants. Routes between {@link PlayerKnowledge}
  * (per-player modes) and {@link WorldKnowledge} (shared-world mode) based on config.
- *
- * <p>Gate off → {@link #isKnown} returns {@code true} for every key (vacuous). TODO:
- * detection wiring (Farlands-biome enter, wall proximity) pending the relevant
- * biome tags / wall structure.</p>
+ * When the gate is off, {@link #isKnown} returns {@code true} for every key.
  */
 public final class BeyondKnowledge {
 
@@ -50,8 +47,8 @@ public final class BeyondKnowledge {
     }
 
     /**
-     * Server-only. No-op when the gate is off (don't accumulate silent state — flipping
-     * the feature on later would expose content the player never had to discover).
+     * Server-only. No-op when the gate is off so silent state doesn't accumulate: flipping
+     * the feature on later would otherwise expose content the player never had to discover.
      * Successful changes are pushed to clients via {@link PlayerKnowledgeSyncPayload}.
      */
     public static boolean grant(ServerPlayer player, ResourceLocation key) {
@@ -74,7 +71,7 @@ public final class BeyondKnowledge {
         return changed;
     }
 
-    /** Admin/debug. Gameplay doesn't revoke. Full-replace snapshot on success — the
+    /** Admin/debug only; gameplay never revokes. Sends a full-replace snapshot because the
      *  delta payload can only union, not subtract. */
     public static boolean revoke(ServerPlayer player, ResourceLocation key) {
         if (!gateEnabled()) return false;

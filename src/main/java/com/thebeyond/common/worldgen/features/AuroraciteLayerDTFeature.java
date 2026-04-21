@@ -19,40 +19,14 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
 import net.minecraft.world.level.levelgen.synth.SimplexNoise;
 
 /**
- * Dimensional-Tears-aware variant of the auroracite layer.
+ * Dimensional-Tears-aware variant of the auroracite layer. Places 2-layer auroracite where
+ * {@code SimplexNoise(x*0.1, z*0.1) > 0} and fills the remaining cells at {@code minY} with
+ * Dimensional Tears' source fluid, producing auroracite islands that protrude one block above
+ * the fluid surface. Mutual exclusion with {@link AuroraciteLayerFeature} is enforced via
+ * {@code mod_loaded}/{@code not(mod_loaded)} conditions on the biome_modifier.
  *
- * <p>The default {@link AuroraciteLayerFeature} places auroracite in organic patches wherever
- * {@code SimplexNoise(x*0.1, z*0.1) > 0} — that's roughly 50% of the surface, leaving the
- * other half as void gaps. When the Dimensional Tears mod (modid {@code dimensional_tears})
- * is installed, this variant runs <em>instead of</em> the default feature (mutual exclusion
- * is enforced at the {@code neoforge:add_features} biome_modifier level via
- * {@code mod_loaded} / {@code not(mod_loaded)} conditions) and:
- *
- * <ul>
- *   <li>places auroracite in the {@code noise > 0} cells (same 2-layer column as the default),
- *       preserving the island silhouette;</li>
- *   <li>fills the {@code noise ≤ 0} gaps with Dimensional Tears' source fluid block
- *       ({@code dimensional_tears:dimensional_tears}) in a single layer at {@code minY} only,
- *       so the auroracite "islands" stick up 1 block above the fluid surface.</li>
- * </ul>
- *
- * <p>Net visual: auroracite forms organic landmasses that protrude 1 block above the DT fluid
- * channels between them — "islands and rivers" with visible shoreline relief.
- *
- * <h2>Why the block lookup is lazy and cached</h2>
- * The feature class is registered unconditionally (registering a Java feature never touches
- * DT classes) but the DT fluid block is only looked up the first time {@code place()} runs.
- * Since placement only happens when the biome_modifier's {@code mod_loaded} condition
- * matched at datapack load, DT is guaranteed to be installed by the time we hit that lookup.
- * The safety fallback (air state) only matters if someone wires this feature up manually
- * without the condition guard; in that edge case, we silently degrade to the default
- * auroracite behavior (no fluid in the gaps) instead of crashing.
- *
- * <h2>Noise sharing</h2>
- * This feature uses its own static {@link SimplexNoise} instance seeded from the first
- * {@link FeaturePlaceContext}'s random. The default feature has its own independent noise
- * field — only one of the two features ever runs per world (mutual exclusion), so there's
- * no need to share.
+ * <p>The DT fluid block is looked up lazily and cached. If DT is absent, falls back to air
+ * (no fluid in the gaps) so manual wiring without the condition guard degrades gracefully.
  */
 public class AuroraciteLayerDTFeature extends Feature<NoneFeatureConfiguration> {
 
@@ -61,9 +35,7 @@ public class AuroraciteLayerDTFeature extends Feature<NoneFeatureConfiguration> 
     private static volatile SimplexNoise noise;
     private static volatile BlockState cachedDTFluid;
 
-    // One-shot diagnostic: logs the first minY observed in each world load to record
-    // which dim_type won. Resets in resetNoise() alongside the noise field, so every
-    // fresh server start gets its own log line.
+    // Diagnostic: logs the first minY seen per world load to record which dim_type won.
     private static volatile int loggedMinY = Integer.MIN_VALUE;
 
     public AuroraciteLayerDTFeature(Codec<NoneFeatureConfiguration> codec) {
@@ -81,10 +53,7 @@ public class AuroraciteLayerDTFeature extends Feature<NoneFeatureConfiguration> 
         return noise;
     }
 
-    /**
-     * Returns the noise instance used for auroracite/DT placement, or {@code null} if not yet
-     * initialized. Used by {@code BeyondEndChunkGenerator} for post-decoration restoration.
-     */
+    /** Returns the noise instance, or {@code null} if not yet initialized. */
     public static SimplexNoise getNoiseInstance() {
         return noise;
     }
@@ -103,20 +72,13 @@ public class AuroraciteLayerDTFeature extends Feature<NoneFeatureConfiguration> 
         synchronized (AuroraciteLayerDTFeature.class) {
             if (cachedDTFluid == null) {
                 Block block = BuiltInRegistries.BLOCK.get(DT_FLUID_ID);
-                // If DT is missing (shouldn't happen when gated by the biome_modifier condition),
-                // the registry returns minecraft:air — fall back to the air state so we silently
-                // degrade to "no fluid in gaps" instead of placing garbage.
+                // Missing DT -> registry returns air; fall back to the air state.
                 if (block == null || block == Blocks.AIR) {
                     cachedDTFluid = Blocks.AIR.defaultBlockState();
                 } else {
                     BlockState state = block.defaultBlockState();
-                    // DT's ocean blockstate flag `is_ocean=true` is what DT's native ocean feature
-                    // places for stacked fluid columns — skipRendering logic in DimensionalTearsBlock
-                    // drops internal face rendering between stacked ocean cells (big perf win for
-                    // contiguous fluid surfaces) and marks the block as non-bucketable.
-                    // Look up the property dynamically by name to avoid any direct reference to
-                    // DT classes — if DT ever removes or renames the property, we silently fall
-                    // back to the default (non-ocean) state.
+                    // is_ocean=true enables DT's skipRendering optimization for stacked fluid
+                    // cells. Looked up by name so a DT rename falls back to the default state.
                     Property<?> isOceanProp = block.getStateDefinition().getProperty("is_ocean");
                     if (isOceanProp instanceof BooleanProperty boolProp) {
                         state = state.setValue(boolProp, Boolean.TRUE);
@@ -138,7 +100,6 @@ public class AuroraciteLayerDTFeature extends Feature<NoneFeatureConfiguration> 
         boolean hasDTFluid = !dtFluid.isAir();
 
         int minY = level.getMinBuildHeight();
-        // First-placement diagnostic: confirms which dim_type's min_y is active.
         if (loggedMinY != minY) {
             loggedMinY = minY;
             TheBeyond.LOGGER.info("[AuroraciteLayerDTFeature] placing at minY={} (level.getMinBuildHeight())", minY);
