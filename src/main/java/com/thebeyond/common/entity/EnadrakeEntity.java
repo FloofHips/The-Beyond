@@ -626,7 +626,7 @@ public class EnadrakeEntity extends PathfinderMob {
             if (this.getMoveToTarget() == null) return false;
 
             // Recheck if target hut still has empty slot
-            BlockPos targetPos = this.getMoveToTarget().below();
+            BlockPos targetPos = this.blockPos;
             BlockEntity hut = entity.level().getBlockEntity(targetPos);
             if (hut instanceof EnadrakeHutBlockEntity hutblockentity) {
                 if (!hutblockentity.getTheItem().isEmpty()) return false;
@@ -655,6 +655,31 @@ public class EnadrakeEntity extends PathfinderMob {
             return hutblockentity.getTheItem().isEmpty();
         }
 
+        @Override
+        protected BlockPos getMoveToTarget() {
+            if (this.blockPos == null) return super.getMoveToTarget();
+            Level level = this.mob.level();
+
+            BlockPos above = this.blockPos.above();
+            if (level.getBlockState(above).isAir()) return above;
+
+            for (Direction dir : Direction.Plane.HORIZONTAL) {
+                BlockPos lateral = this.blockPos.relative(dir);
+                if (level.getBlockState(lateral).isAir()
+                        && level.getBlockState(lateral.above()).isAir()) {
+                    return lateral;
+                }
+            }
+
+            BlockPos.MutableBlockPos scan = above.mutable();
+            for (int i = 0; i < 16; i++) {
+                scan.move(Direction.UP);
+                if (level.getBlockState(scan).isAir()) return scan.immutable();
+            }
+
+            return above;
+        }
+
         protected boolean isReachedTarget() {
             return this.reachedTarget;
         }
@@ -662,7 +687,7 @@ public class EnadrakeEntity extends PathfinderMob {
         @Override
         public void tick() {
             if (isReachedTarget()) {
-                BlockPos pos = this.getMoveToTarget().below();
+                BlockPos pos = this.blockPos;
                 BlockEntity hut = level().getBlockEntity(pos);
                 if (hut instanceof EnadrakeHutBlockEntity hutblockentity) {
                     ItemStack itemstack1 = hutblockentity.getTheItem();
@@ -794,7 +819,7 @@ public class EnadrakeEntity extends PathfinderMob {
             if (level().isRaining()) return false;
             if (this.getMoveToTarget() == null) return false;
 
-            BlockPos targetPos = this.getMoveToTarget().below();
+            BlockPos targetPos = this.blockPos;
             BlockEntity hut = entity.level().getBlockEntity(targetPos);
             if (hut instanceof EnadrakeHutBlockEntity hutEntity) {
                 if (!hutEntity.isAvailable()) return false;
@@ -862,6 +887,30 @@ public class EnadrakeEntity extends PathfinderMob {
             //return true;
         }
 
+        @Override
+        protected BlockPos getMoveToTarget() {
+            if (this.blockPos == null) return super.getMoveToTarget();
+            Level level = this.mob.level();
+
+            BlockPos above = this.blockPos.above();
+            if (level.getBlockState(above).isAir()) return above;
+
+            for (Direction dir : Direction.Plane.HORIZONTAL) {
+                BlockPos lateral = this.blockPos.relative(dir);
+                if (level.getBlockState(lateral).isAir()
+                        && level.getBlockState(lateral.above()).isAir()) {
+                    return lateral;
+                }
+            }
+
+            BlockPos.MutableBlockPos scan = above.mutable();
+            for (int i = 0; i < 16; i++) {
+                scan.move(Direction.UP);
+                if (level.getBlockState(scan).isAir()) return scan.immutable();
+            }
+
+            return above;
+        }
 
         public boolean shouldRecalculatePath() {
             return this.tryTicks % 40 == 0;
@@ -888,7 +937,7 @@ public class EnadrakeEntity extends PathfinderMob {
             }
 
             if (isReachedTarget()) {
-                BlockPos pos = this.getMoveToTarget().below();
+                BlockPos pos = this.blockPos;
                 BlockEntity hut = level().getBlockEntity(pos);
                 if (hut instanceof EnadrakeHutBlockEntity enadrakeHutBlockEntity) {
                     if (!enadrakeHutBlockEntity.tryToEnter(this.entity)) {

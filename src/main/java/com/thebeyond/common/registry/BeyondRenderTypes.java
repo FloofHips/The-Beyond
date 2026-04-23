@@ -101,6 +101,34 @@ public class BeyondRenderTypes extends RenderType {
         return ENTITY_TRANSLUCENT_NO_CULLED.apply(location);
     }
 
+    // Unlit NO_CULL variant — same geometry as ENTITY_TRANSLUCENT_NO_CULLED
+    // (back+front faces rendered → volumetric translucent look for the solid
+    // 3D body cube) but uses entity_translucent_unlit instead of the standard
+    // entity_translucent shader. The unlit shader skips Mojang's face-normal
+    // shading (which would make UP ≈ 1.0 / DOWN ≈ 0.4), so coplanar zero-thickness
+    // fin/tail quads render with uniform brightness top and bottom — fixes the
+    // hue mismatch the vanilla translucent shader produces.
+    //
+    // Only safe to use when no Iris/Oculus shaderpack is actively running:
+    // a live pack replaces the entire shader pipeline via G-Buffer, ignoring
+    // custom shader state. Gate via ShaderCompatLib.isShaderPackActive() and
+    // fall back to ENTITY_TRANSLUCENT_NO_CULLED when a pack is in use.
+    public static final Function<ResourceLocation, RenderType> ENTITY_TRANSLUCENT_NO_CULLED_UNLIT = Util.memoize((location) -> {
+        CompositeState compositeState = CompositeState.builder()
+                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_UNLIT_SHADER)
+                .setTextureState(new TextureStateShard(location, false, false))
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                .setLightmapState(LIGHTMAP)
+                .setOverlayState(OVERLAY)
+                .createCompositeState(true);
+        return create("entity_translucent_no_culled_unlit", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536, true, true, compositeState);
+    });
+
+    public static RenderType entityTranslucentNoCulledUnlit(ResourceLocation location) {
+        return ENTITY_TRANSLUCENT_NO_CULLED_UNLIT.apply(location);
+    }
+
     // entityTranslucentEmissive variant with back-face culling.
     // Triggers Iris shader pack bloom/glow effects while preventing z-fighting on
     // zero-thickness fin quads. Uses COLOR_WRITE (no depth write) like vanilla
@@ -119,5 +147,39 @@ public class BeyondRenderTypes extends RenderType {
 
     public static RenderType entityTranslucentEmissiveCulled(ResourceLocation location) {
         return ENTITY_TRANSLUCENT_EMISSIVE_CULLED.apply(location);
+    }
+
+    // entityTranslucentEmissive variant WITHOUT back-face culling.
+    // SAFE ONLY for atlases whose zero-thickness fin/tail DOWN UV regions are
+    // fully transparent (α=0) — otherwise the two coplanar quads (UP and DOWN)
+    // both rasterize opaque content at the same depth, producing the
+    // "scribble" z-fighting artifact that COLOR_WRITE doesn't prevent (it
+    // suppresses depth-buffer flicker, not rasterizer coverage overlap).
+    //
+    // In this mod: use ONLY for the Leviathan lantern — its leviathan_lantern.png
+    // was confirmed via .backups/DumpAtlasUVs to have α=0% DOWN UV on every
+    // fin/tail face. Small / Medium / Large lanterns all have DOWN UV identical
+    // to UP with opaque content (confirmed via .backups/DumpSmallerLanternUVs),
+    // so they MUST keep entityTranslucentEmissiveCulled.
+    //
+    // Purpose: under an active Iris shaderpack, CULL from below strips the UP
+    // face (back-facing from camera), and the DOWN face being transparent on
+    // the Leviathan means zero bloom contribution on the underside of fins/tail.
+    // NO_CULL renders the UP face from its back side too, so its opaque pixels
+    // project bloom uniformly top and bottom.
+    public static final Function<ResourceLocation, RenderType> ENTITY_TRANSLUCENT_EMISSIVE_NO_CULLED = Util.memoize((location) -> {
+        CompositeState compositeState = CompositeState.builder()
+                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER)
+                .setTextureState(new TextureStateShard(location, false, false))
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                .setWriteMaskState(COLOR_WRITE)
+                .setOverlayState(OVERLAY)
+                .createCompositeState(true);
+        return create("entity_translucent_emissive_no_culled", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536, true, true, compositeState);
+    });
+
+    public static RenderType entityTranslucentEmissiveNoCulled(ResourceLocation location) {
+        return ENTITY_TRANSLUCENT_EMISSIVE_NO_CULLED.apply(location);
     }
 }
