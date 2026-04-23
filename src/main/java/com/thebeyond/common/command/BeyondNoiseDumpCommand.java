@@ -31,21 +31,18 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * {@code /beyond_noise_dump} — samples {@link BeyondEndChunkGenerator#getTerrainDensity}
- * on a grid around a center point and writes a PNG to {@code <world>/beyond_noise_dumps/}
- * for diagnosing stretching/streaking artifacts at large {@code |X|} coordinates.
+ * on a grid and writes a PNG to {@code <world>/beyond_noise_dumps/} for diagnosing
+ * stretching/streaking at large {@code |X|}. Permission level 2.
  *
- * <p>Syntax: {@code /beyond_noise_dump (here|at <pos>) [<size> [<stride>]] [normal|no_warp|no_wrap]}.
- * Defaults: size=200 samples per side, stride=2 blocks. Permission level 2.
+ * <p>Syntax: {@code /beyond_noise_dump [vertical] (here|at <pos>) [<size> [<stride>]] [normal|no_warp|no_wrap]}.
+ * Horizontal is XZ at fixed Y; {@code vertical} is XY at fixed Z (exposes {@code cyclicDensity}
+ * Y-periodicity invisible in horizontal dumps). Defaults: size=200, stride=2.
+ * Modes {@code no_warp}/{@code no_wrap} progressively neutralize warp then wrap to
+ * isolate the contribution of each transform.
  *
- * <p>Modes: {@code normal} uses live params; {@code no_warp} zeroes warp amplitude to
- * isolate domain warp; {@code no_wrap} also raises wrap range to
- * {@link BeyondTerrainParams#MAX_WRAP_RANGE} so the coordinate transform is identity.
- *
- * <p>The sample loop and PNG write run off-thread via {@link CompletableFuture#runAsync};
- * chat feedback is dispatched back via {@code server.execute(...)}. The parameterized
- * {@code getTerrainDensity(x,y,z,params)} overload is used so diagnostic params do not
- * swap {@link BeyondEndChunkGenerator#activeTerrainParams}, which would race with
- * concurrent chunk-gen workers.
+ * <p>Sampling and PNG write run via {@link CompletableFuture#runAsync}; the parameterized
+ * {@code getTerrainDensity(x,y,z,params)} overload avoids swapping
+ * {@link BeyondEndChunkGenerator#activeTerrainParams} (would race with chunk-gen workers).
  */
 @EventBusSubscriber(modid = TheBeyond.MODID)
 public final class BeyondNoiseDumpCommand {
@@ -63,6 +60,21 @@ public final class BeyondNoiseDumpCommand {
     private static final String DUMP_SUBDIR = "beyond_noise_dumps";
 
     private static final DateTimeFormatter TS = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
+
+    /**
+     * Sampling plane orientation. {@code HORIZONTAL_XZ} is the XZ slice at fixed Y
+     * (heightmap-style view); {@code VERTICAL_XY} is the XY slice at fixed Z (side
+     * view — required to observe {@code cyclicDensity}'s Y-periodic modulation and
+     * any divisor seams where {@code cycleHeight} crosses {@code y % cycleHeight}
+     * discontinuities, both invisible in a horizontal dump).
+     */
+    private enum Plane {
+        HORIZONTAL_XZ("xz"),
+        VERTICAL_XY("xy");
+
+        final String suffix;
+        Plane(String suffix) { this.suffix = suffix; }
+    }
 
     /** Diagnostic transform mode. Derives a {@link BeyondTerrainParams} from live params. */
     private enum Mode {
@@ -93,61 +105,72 @@ public final class BeyondNoiseDumpCommand {
         LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal("beyond_noise_dump")
                 .requires(src -> src.hasPermission(2));
 
-        // --- here branch ---
-        root.then(Commands.literal("here")
-                .executes(ctx -> runHere(ctx, DEFAULT_SIZE, DEFAULT_STRIDE, Mode.NORMAL))
+        // --- here / at branches (horizontal XZ slice, default) ---
+        root.then(buildHereBranch(Plane.HORIZONTAL_XZ));
+        root.then(buildAtBranch(Plane.HORIZONTAL_XZ));
+
+        // --- vertical XY slice (fixed Z) ---
+        root.then(Commands.literal("vertical")
+                .then(buildHereBranch(Plane.VERTICAL_XY))
+                .then(buildAtBranch(Plane.VERTICAL_XY)));
+
+        dispatcher.register(root);
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> buildHereBranch(Plane plane) {
+        return Commands.literal("here")
+                .executes(ctx -> runHere(ctx, DEFAULT_SIZE, DEFAULT_STRIDE, Mode.NORMAL, plane))
                 .then(Commands.argument("size", IntegerArgumentType.integer(4, 1024))
-                        .executes(ctx -> runHere(ctx, IntegerArgumentType.getInteger(ctx, "size"), DEFAULT_STRIDE, Mode.NORMAL))
+                        .executes(ctx -> runHere(ctx, IntegerArgumentType.getInteger(ctx, "size"), DEFAULT_STRIDE, Mode.NORMAL, plane))
                         .then(Commands.argument("stride", IntegerArgumentType.integer(1, 64))
                                 .executes(ctx -> runHere(ctx,
                                         IntegerArgumentType.getInteger(ctx, "size"),
                                         IntegerArgumentType.getInteger(ctx, "stride"),
-                                        Mode.NORMAL))
+                                        Mode.NORMAL, plane))
                                 .then(Commands.literal("normal").executes(ctx -> runHere(ctx,
                                         IntegerArgumentType.getInteger(ctx, "size"),
                                         IntegerArgumentType.getInteger(ctx, "stride"),
-                                        Mode.NORMAL)))
+                                        Mode.NORMAL, plane)))
                                 .then(Commands.literal("no_warp").executes(ctx -> runHere(ctx,
                                         IntegerArgumentType.getInteger(ctx, "size"),
                                         IntegerArgumentType.getInteger(ctx, "stride"),
-                                        Mode.NO_WARP)))
+                                        Mode.NO_WARP, plane)))
                                 .then(Commands.literal("no_wrap").executes(ctx -> runHere(ctx,
                                         IntegerArgumentType.getInteger(ctx, "size"),
                                         IntegerArgumentType.getInteger(ctx, "stride"),
-                                        Mode.NO_WRAP))))));
+                                        Mode.NO_WRAP, plane)))));
+    }
 
-        // --- at branch ---
-        root.then(Commands.literal("at")
+    private static LiteralArgumentBuilder<CommandSourceStack> buildAtBranch(Plane plane) {
+        return Commands.literal("at")
                 .then(Commands.argument("pos", BlockPosArgument.blockPos())
-                        .executes(ctx -> runAt(ctx, DEFAULT_SIZE, DEFAULT_STRIDE, Mode.NORMAL))
+                        .executes(ctx -> runAt(ctx, DEFAULT_SIZE, DEFAULT_STRIDE, Mode.NORMAL, plane))
                         .then(Commands.argument("size", IntegerArgumentType.integer(4, 1024))
-                                .executes(ctx -> runAt(ctx, IntegerArgumentType.getInteger(ctx, "size"), DEFAULT_STRIDE, Mode.NORMAL))
+                                .executes(ctx -> runAt(ctx, IntegerArgumentType.getInteger(ctx, "size"), DEFAULT_STRIDE, Mode.NORMAL, plane))
                                 .then(Commands.argument("stride", IntegerArgumentType.integer(1, 64))
                                         .executes(ctx -> runAt(ctx,
                                                 IntegerArgumentType.getInteger(ctx, "size"),
                                                 IntegerArgumentType.getInteger(ctx, "stride"),
-                                                Mode.NORMAL))
+                                                Mode.NORMAL, plane))
                                         .then(Commands.literal("normal").executes(ctx -> runAt(ctx,
                                                 IntegerArgumentType.getInteger(ctx, "size"),
                                                 IntegerArgumentType.getInteger(ctx, "stride"),
-                                                Mode.NORMAL)))
+                                                Mode.NORMAL, plane)))
                                         .then(Commands.literal("no_warp").executes(ctx -> runAt(ctx,
                                                 IntegerArgumentType.getInteger(ctx, "size"),
                                                 IntegerArgumentType.getInteger(ctx, "stride"),
-                                                Mode.NO_WARP)))
+                                                Mode.NO_WARP, plane)))
                                         .then(Commands.literal("no_wrap").executes(ctx -> runAt(ctx,
                                                 IntegerArgumentType.getInteger(ctx, "size"),
                                                 IntegerArgumentType.getInteger(ctx, "stride"),
-                                                Mode.NO_WRAP)))))));
-
-        dispatcher.register(root);
+                                                Mode.NO_WRAP, plane))))));
     }
 
     // ------------------------------------------------------------------
     // Branch adapters
     // ------------------------------------------------------------------
 
-    private static int runHere(CommandContext<CommandSourceStack> ctx, int size, int stride, Mode mode)
+    private static int runHere(CommandContext<CommandSourceStack> ctx, int size, int stride, Mode mode, Plane plane)
             throws CommandSyntaxException {
         CommandSourceStack src = ctx.getSource();
         Entity entity = src.getEntity();
@@ -157,14 +180,14 @@ public final class BeyondNoiseDumpCommand {
         }
         Vec3 pos = entity.position();
         return dispatch(src, (int) Math.floor(pos.x), (int) Math.floor(pos.y), (int) Math.floor(pos.z),
-                size, stride, mode);
+                size, stride, mode, plane);
     }
 
-    private static int runAt(CommandContext<CommandSourceStack> ctx, int size, int stride, Mode mode)
+    private static int runAt(CommandContext<CommandSourceStack> ctx, int size, int stride, Mode mode, Plane plane)
             throws CommandSyntaxException {
         CommandSourceStack src = ctx.getSource();
         BlockPos pos = BlockPosArgument.getBlockPos(ctx, "pos");
-        return dispatch(src, pos.getX(), pos.getY(), pos.getZ(), size, stride, mode);
+        return dispatch(src, pos.getX(), pos.getY(), pos.getZ(), size, stride, mode, plane);
     }
 
     // ------------------------------------------------------------------
@@ -172,7 +195,7 @@ public final class BeyondNoiseDumpCommand {
     // ------------------------------------------------------------------
 
     private static int dispatch(CommandSourceStack src, int cx, int cy, int cz,
-                                int size, int stride, Mode mode) {
+                                int size, int stride, Mode mode, Plane plane) {
         MinecraftServer server = src.getServer();
 
         // Resolve effective params on the main thread so the worker sees a single snapshot
@@ -188,18 +211,18 @@ public final class BeyondNoiseDumpCommand {
         }
 
         String modeLabel = mode.label();
-        String fileName = String.format("%s_x%d_y%d_z%d_s%d_st%d_%s.png",
-                LocalDateTime.now().format(TS), cx, cy, cz, size, stride, modeLabel);
+        String fileName = String.format("%s_x%d_y%d_z%d_s%d_st%d_%s_%s.png",
+                LocalDateTime.now().format(TS), cx, cy, cz, size, stride, modeLabel, plane.suffix);
         File outFile = new File(dumpDir, fileName);
 
         src.sendSuccess(() -> Component.literal(
-                String.format("[beyond_noise_dump] Sampling %dx%d grid @ (%d, %d, %d) stride=%d mode=%s → %s",
-                        size, size, cx, cy, cz, stride, modeLabel, fileName))
+                String.format("[beyond_noise_dump] Sampling %dx%d %s grid @ (%d, %d, %d) stride=%d mode=%s → %s",
+                        size, size, plane.suffix, cx, cy, cz, stride, modeLabel, fileName))
                 .withStyle(ChatFormatting.GRAY), false);
 
         CompletableFuture.runAsync(() -> {
             try {
-                Result result = sampleAndWrite(cx, cy, cz, size, stride, effective, outFile);
+                Result result = sampleAndWrite(cx, cy, cz, size, stride, effective, outFile, plane);
                 // CommandSourceStack is not safe to touch from worker threads.
                 server.execute(() -> src.sendSuccess(() -> Component.literal(String.format(
                         "[beyond_noise_dump] Done → %s  density=[%.3f, %.3f]  solid=%d/%d (%.1f%%)",
@@ -217,8 +240,20 @@ public final class BeyondNoiseDumpCommand {
         return 1;
     }
 
+    /**
+     * Samples density on a {@code size × size} grid oriented by {@code plane}, emitting
+     * grayscale-density PNG with red tint on solid cells (matches horizontal dump palette).
+     *
+     * <p>For {@link Plane#HORIZONTAL_XZ}: X runs across image columns, Z across rows (flipped
+     * so +Z points down — JourneyMap convention), Y is constant at {@code cy}. For
+     * {@link Plane#VERTICAL_XY}: X across columns, Y across rows (flipped so +Y points up —
+     * world-space convention), Z is constant at {@code cz}. Sample Y may fall outside the
+     * dim build height — {@code edgeGradient} inside {@code getTerrainDensity} clamps
+     * density near the floor/ceiling so rows far above/below the world appear black.
+     */
     private static Result sampleAndWrite(int cx, int cy, int cz, int size, int stride,
-                                         BeyondTerrainParams params, File outFile) throws IOException {
+                                         BeyondTerrainParams params, File outFile,
+                                         Plane plane) throws IOException {
         double[] densities = new double[size * size];
         boolean[] solid = new boolean[size * size];
         double min = Double.POSITIVE_INFINITY;
@@ -226,11 +261,19 @@ public final class BeyondNoiseDumpCommand {
         int solidCount = 0;
 
         int half = size / 2;
-        for (int iz = 0; iz < size; iz++) {
-            int sampleZ = cz + (iz - half) * stride;
-            for (int ix = 0; ix < size; ix++) {
-                int sampleX = cx + (ix - half) * stride;
-                double density = BeyondEndChunkGenerator.getTerrainDensity(sampleX, cy, sampleZ, params);
+        for (int iOuter = 0; iOuter < size; iOuter++) {
+            for (int iInner = 0; iInner < size; iInner++) {
+                int sampleX, sampleY, sampleZ;
+                if (plane == Plane.VERTICAL_XY) {
+                    sampleX = cx + (iInner - half) * stride;
+                    sampleY = cy + (iOuter - half) * stride;
+                    sampleZ = cz;
+                } else { // HORIZONTAL_XZ
+                    sampleX = cx + (iInner - half) * stride;
+                    sampleY = cy;
+                    sampleZ = cz + (iOuter - half) * stride;
+                }
+                double density = BeyondEndChunkGenerator.getTerrainDensity(sampleX, sampleY, sampleZ, params);
                 // Threshold must be sampled at WRAPPED coords to match the chunk generator:
                 // getTerrainDensity wraps internally, and isSolidTerrain / generateEndTerrain
                 // both wrap before calling getThreshold. Diagnostic params apply so the dump
@@ -239,7 +282,7 @@ public final class BeyondNoiseDumpCommand {
                 int wrappedSampleX = BeyondEndChunkGenerator.unpackWrappedX(packed);
                 int wrappedSampleZ = BeyondEndChunkGenerator.unpackWrappedZ(packed);
                 double threshold = BeyondEndChunkGenerator.getThreshold(wrappedSampleX, wrappedSampleZ, DISPLAY_DISTANCE_FROM_ORIGIN);
-                int idx = iz * size + ix;
+                int idx = iOuter * size + iInner;
                 densities[idx] = density;
                 if (density > threshold) {
                     solid[idx] = true;
@@ -254,9 +297,9 @@ public final class BeyondNoiseDumpCommand {
         // so outputs can be overlaid visually.
         double range = Math.max(1e-9, max - min);
         BufferedImage img = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
-        for (int iz = 0; iz < size; iz++) {
-            for (int ix = 0; ix < size; ix++) {
-                int idx = iz * size + ix;
+        for (int iOuter = 0; iOuter < size; iOuter++) {
+            for (int iInner = 0; iInner < size; iInner++) {
+                int idx = iOuter * size + iInner;
                 double norm = (densities[idx] - min) / range;
                 int v = Math.max(0, Math.min(255, (int) Math.round(norm * 255.0)));
                 int rgb;
@@ -265,8 +308,9 @@ public final class BeyondNoiseDumpCommand {
                 } else {
                     rgb = (v << 16) | (v << 8) | v;
                 }
-                // Flip z so +z points down in the image, matching JourneyMap orientation.
-                img.setRGB(ix, size - 1 - iz, rgb);
+                // Row flip matches the plane's natural orientation: XZ -> +Z points down
+                // (JourneyMap), XY -> +Y points up (side view).
+                img.setRGB(iInner, size - 1 - iOuter, rgb);
             }
         }
         ImageIO.write(img, "png", outFile);

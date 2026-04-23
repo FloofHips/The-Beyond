@@ -103,16 +103,11 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
         // driven by each model's getRoot()/getMainPart().
         ResourceLocation textureLocation = getTextureLocation(entity);
 
-        // Leviathan body: unlit NO_CULL when no shader pack is live (fixes the
-        // UP/DOWN hue mismatch on zero-thickness fin/tail quads — Mojang's
-        // face-normal shading gives UP ≈ 1.0 / DOWN ≈ 0.4 under the vanilla
-        // translucent shader). When a pack IS active, Iris/Oculus replace the
-        // pipeline via G-Buffer and strip custom shader state, so we fall back
-        // to the plain translucent RenderType which still produces an acceptable
-        // body (the bloom pass below compensates for the rest). Gate is
-        // isShaderPackActive() — pack live state — NOT isShaderModLoaded()
-        // (mere mod presence does not corrupt the shader pipeline; a pack must
-        // actually be loaded and enabled).
+        // Leviathan: unlit NO_CULL body fixes the UP≈1.0/DOWN≈0.4 hue mismatch
+        // on zero-thickness fin/tail quads (Mojang's face-normal shading). Under
+        // an active pack, Iris/Oculus strip the custom shader via G-Buffer, so
+        // fall back to plain translucent (bloom pass below compensates). Gate
+        // on live pack state — isShaderPackActive — not mere mod presence.
         RenderType leviathanRenderType = ShaderCompatLib.isShaderPackActive()
                 ? BeyondRenderTypes.entityTranslucentNoCulled(textureLocation)
                 : BeyondRenderTypes.entityTranslucentNoCulledUnlit(textureLocation);
@@ -120,22 +115,13 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
 
         model.renderToBuffer(poseStack, buffer.getBuffer(entity.getSize()==3 ? leviathanRenderType : smallRenderType), lightLevel, OverlayTexture.NO_OVERLAY, color);
 
-        // Additive bloom halo for shader-mod setups only. Uses the emissive
-        // render type so the pack can apply bloom/glow on top of the base pass.
-        //
-        // Size gate on CULL state — critical to prevent z-fighting:
-        //  - Leviathan (size==3): NO_CULL. Its atlas has α=0% on every dy=0
-        //    fin/tail DOWN UV region (confirmed via .backups/DumpAtlasUVs),
-        //    so coplanar quads don't rasterize opaque content at the same depth.
-        //    NO_CULL is needed so the UP face's opaque pixels also project
-        //    bloom when viewed from below (otherwise fin/tail undersides go dark).
-        //  - Small / Medium / Large (size 0,1,2): CULL. Their atlases have
-        //    OPAQUE DOWN UV content (confirmed via .backups/DumpSmallerLanternUVs,
-        //    81–100% alpha), so NO_CULL would trigger the "scribble" rasterizer
-        //    z-fighting on coplanar fin quads. Keep CULL — bloom works fine
-        //    from above, and the smaller lanterns don't have the underside-dark
-        //    problem the Leviathan does because their face-normal shading already
-        //    produces a brighter underside in this geometry.
+        // Additive bloom halo for shader-mod setups; emissive render type lets
+        // the pack apply bloom on top of the base pass. Size gates CULL to
+        // prevent z-fighting: Leviathan (size 3) uses NO_CULL — its DOWN UVs
+        // are α=0%, so coplanar quads don't z-fight, and NO_CULL is required
+        // for underside bloom. Smaller lanterns (0–2) use CULL — their DOWN UVs
+        // are opaque (81–100%), so NO_CULL would trigger "scribble" z-fighting
+        // on coplanar fin quads.
         if (ShaderCompatLib.isShaderModLoaded() && finalAlpha > 10) {
             RenderType emissiveRenderType = entity.getSize() == 3
                     ? BeyondRenderTypes.entityTranslucentEmissiveNoCulled(textureLocation)

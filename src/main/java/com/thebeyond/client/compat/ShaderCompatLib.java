@@ -44,20 +44,12 @@ public class ShaderCompatLib {
     }
 
     /**
-     * Returns {@code true} if a shader pack is currently loaded AND enabled by
-     * Iris/Oculus — reflects the live pipeline state, flipping to {@code false}
-     * when the user toggles the pack off mid-session.
+     * Returns {@code true} if a shader pack is live (loaded AND enabled). Flips to
+     * {@code false} when the user toggles the pack off mid-session — unlike
+     * {@link #isShaderModLoaded()}, which only reports mod presence.
      *
-     * <p>Distinct from {@link #isShaderModLoaded()}: with the mod merely installed
-     * (no pack applied) the vanilla render pipeline is still in use, so custom
-     * shaders (e.g. the entity_translucent_unlit used for Lantern fin/tail top-bottom
-     * hue fix) work correctly. Only when a pack is actively running does Iris's
-     * G-Buffer replacement strip custom shader state — that's when we must fall
-     * back to vanilla-compatible RenderTypes.</p>
-     *
-     * <p>Reflective call into {@code net.irisshaders.iris.api.v0.IrisApi#isShaderPackInUse()}.
-     * Iris/Oculus are runtime-only (not in {@code build.gradle}), so we look up the
-     * class lazily and tolerate its absence.</p>
+     * <p>Reflective call into {@code IrisApi#isShaderPackInUse()} (runtime-only, not on
+     * the compile classpath) — absence is tolerated.</p>
      */
     public static boolean isShaderPackActive() {
         if (!isShaderModLoaded()) return false;
