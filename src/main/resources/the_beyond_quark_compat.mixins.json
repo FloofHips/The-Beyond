@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "com.thebeyond.mixin.compat.quark",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "the_beyond.refmap.json",
+  "mixins": [
+    "SpiralSpireGeneratorMixin",
+    "ZetaGeneratorGetBiomeMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}
