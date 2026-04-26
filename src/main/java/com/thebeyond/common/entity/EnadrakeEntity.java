@@ -65,13 +65,14 @@ public class EnadrakeEntity extends PathfinderMob {
     private static final EntityDataAccessor<Byte> DATA_FLAGS_ID = SynchedEntityData.defineId(EnadrakeEntity.class, EntityDataSerializers.BYTE);
     private static final EntityDataAccessor<Boolean> DATA_SCREAM = SynchedEntityData.defineId(EnadrakeEntity.class, EntityDataSerializers.BOOLEAN);
     public int panic;
+    public int onAWalkTimer = 0;
     private boolean insideHut = false;
     private BlockPos hutPosition = null;
     private int inHutTime = 0;
-    public int onAWalkTimer = 0;
-    private boolean fleeToHut = false;
-    public boolean shouldFleeToHut() { return fleeToHut; }
-    public void setFleeToHut(boolean flee) { this.fleeToHut = flee; }
+
+     private boolean fleeToHut = false;
+     public boolean shouldFleeToHut() { return fleeToHut; }
+     public void setFleeToHut(boolean flee) { this.fleeToHut = flee; }
 
     public EnadrakeEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
@@ -145,8 +146,8 @@ public class EnadrakeEntity extends PathfinderMob {
     @Override
     public void tick() {
         super.tick();
-        if (onAWalkTimer > 0) onAWalkTimer--;
         if (panic > 0) panic--;
+        if (onAWalkTimer > 0) onAWalkTimer--;
         if (panic > 190) this.setYHeadRot(getYHeadRot()+(random.nextInt(-40, 40)));
         if (panic < 190 && panic > 140) this.setYHeadRot(getYHeadRot()+(random.nextInt(-10, 10)));
         if (panic == 190) scream();
@@ -163,9 +164,9 @@ public class EnadrakeEntity extends PathfinderMob {
     }
 
     public void scream() {
-        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.FOX_SCREECH, SoundSource.HOSTILE, 0.5f, 1.5f);
-        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.FOX_SCREECH, SoundSource.HOSTILE, 1, 1);
-        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.FOX_SCREECH, SoundSource.HOSTILE, 0.5f, 0.5f);
+        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.FOX_SCREECH, SoundSource.HOSTILE, 2, 0.4f);
+        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.FOX_SCREECH, SoundSource.HOSTILE, 2, 0.45f);
+        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.FOX_SCREECH, SoundSource.HOSTILE, 2, 0.5f);
         level().playSound(this, BlockPos.containing(this.position()), SoundEvents.BELL_RESONATE, SoundSource.HOSTILE, 2, 2);
 
         AABB detectionBox = new AABB(getOnPos()).inflate(10);
@@ -399,16 +400,12 @@ public class EnadrakeEntity extends PathfinderMob {
                 cooldown--;
                 return false;
             }
+            if (EnadrakeEntity.this.onAWalkTimer > 0) return false;
             if (!EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty()) return false;
 
             List<ItemEntity> list = EnadrakeEntity.this.level().getEntitiesOfClass(ItemEntity.class, EnadrakeEntity.this.getBoundingBox().inflate((double)8.0F, (double)8.0F, (double)8.0F), EnadrakeEntity.ALLOWED_ITEMS);
             return !list.isEmpty() && EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty();
         }
-
-        // --- Reda's original canContinueToUse ---
-        //public boolean canContinueToUse() {
-        //    return EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty();
-        //}
 
         public boolean canContinueToUse() {
             if (!EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty()) return false;
@@ -425,16 +422,6 @@ public class EnadrakeEntity extends PathfinderMob {
                 EnadrakeEntity.this.getNavigation().moveTo(list.get(0), 1.2);
             }
         }
-
-        // --- Reda's original tick ---
-        //public void tick() {
-        //    List<ItemEntity> list = EnadrakeEntity.this.level().getEntitiesOfClass(ItemEntity.class, EnadrakeEntity.this.getBoundingBox().inflate((double)8.0F, (double)8.0F, (double)8.0F), EnadrakeEntity.ALLOWED_ITEMS);
-        //    ItemStack itemstack = EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND);
-        //    if (itemstack.isEmpty() && !list.isEmpty()) {
-        //        EnadrakeEntity.this.getNavigation().moveTo((Entity)list.get(0), (double)1.2F);
-        //    }
-        //    //if (getNavigation().isStuck()) addDeltaMovement(new Vec3(0, 0.2, 0));
-        //}
 
         public void tick() {
             searchTicks++;
@@ -457,18 +444,18 @@ public class EnadrakeEntity extends PathfinderMob {
                 }
             } else {
                 stuckTicks = 0;
-            }
 
-            if (searchTicks % 20 == 0) {
-                List<ItemEntity> list = EnadrakeEntity.this.level().getEntitiesOfClass(ItemEntity.class, EnadrakeEntity.this.getBoundingBox().inflate((double)8.0F, (double)8.0F, (double)8.0F), EnadrakeEntity.ALLOWED_ITEMS);
-                ItemStack itemstack = EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND);
-                if (itemstack.isEmpty() && !list.isEmpty()) {
-                    if (list.size() == 1) {
-                        ItemEntity item = list.getFirst();
-                        level().playSound(item, BlockPos.containing(item.position()), SoundEvents.CHORUS_FRUIT_TELEPORT, SoundSource.BLOCKS,1,1);
-                        item.moveTo(EnadrakeEntity.this.position());
-                    } else {
-                        EnadrakeEntity.this.getNavigation().moveTo(list.get(0), 1.2);
+                if (searchTicks % 20 == 0) {
+                    List<ItemEntity> list = EnadrakeEntity.this.level().getEntitiesOfClass(ItemEntity.class, EnadrakeEntity.this.getBoundingBox().inflate((double)8.0F, (double)8.0F, (double)8.0F), EnadrakeEntity.ALLOWED_ITEMS);
+                    ItemStack itemstack = EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND);
+                    if (itemstack.isEmpty() && !list.isEmpty()) {
+                        if (list.size() == 1) {
+                            ItemEntity item = list.getFirst();
+                            level().playSound(item, BlockPos.containing(item.position()), SoundEvents.CHORUS_FRUIT_TELEPORT, SoundSource.BLOCKS, 1, 1);
+                            item.moveTo(EnadrakeEntity.this.position());
+                        } else {
+                            EnadrakeEntity.this.getNavigation().moveTo(list.get(0), 1.2);
+                        }
                     }
                 }
             }
@@ -639,7 +626,7 @@ public class EnadrakeEntity extends PathfinderMob {
             if (this.getMoveToTarget() == null) return false;
 
             // Recheck if target hut still has empty slot
-            BlockPos targetPos = this.getMoveToTarget().below();
+            BlockPos targetPos = this.blockPos;
             BlockEntity hut = entity.level().getBlockEntity(targetPos);
             if (hut instanceof EnadrakeHutBlockEntity hutblockentity) {
                 if (!hutblockentity.getTheItem().isEmpty()) return false;
@@ -668,6 +655,31 @@ public class EnadrakeEntity extends PathfinderMob {
             return hutblockentity.getTheItem().isEmpty();
         }
 
+        @Override
+        protected BlockPos getMoveToTarget() {
+            if (this.blockPos == null) return super.getMoveToTarget();
+            Level level = this.mob.level();
+
+            BlockPos above = this.blockPos.above();
+            if (level.getBlockState(above).isAir()) return above;
+
+            for (Direction dir : Direction.Plane.HORIZONTAL) {
+                BlockPos lateral = this.blockPos.relative(dir);
+                if (level.getBlockState(lateral).isAir()
+                        && level.getBlockState(lateral.above()).isAir()) {
+                    return lateral;
+                }
+            }
+
+            BlockPos.MutableBlockPos scan = above.mutable();
+            for (int i = 0; i < 16; i++) {
+                scan.move(Direction.UP);
+                if (level.getBlockState(scan).isAir()) return scan.immutable();
+            }
+
+            return above;
+        }
+
         protected boolean isReachedTarget() {
             return this.reachedTarget;
         }
@@ -675,7 +687,7 @@ public class EnadrakeEntity extends PathfinderMob {
         @Override
         public void tick() {
             if (isReachedTarget()) {
-                BlockPos pos = this.getMoveToTarget().below();
+                BlockPos pos = this.blockPos;
                 BlockEntity hut = level().getBlockEntity(pos);
                 if (hut instanceof EnadrakeHutBlockEntity hutblockentity) {
                     ItemStack itemstack1 = hutblockentity.getTheItem();
@@ -807,7 +819,7 @@ public class EnadrakeEntity extends PathfinderMob {
             if (level().isRaining()) return false;
             if (this.getMoveToTarget() == null) return false;
 
-            BlockPos targetPos = this.getMoveToTarget().below();
+            BlockPos targetPos = this.blockPos;
             BlockEntity hut = entity.level().getBlockEntity(targetPos);
             if (hut instanceof EnadrakeHutBlockEntity hutEntity) {
                 if (!hutEntity.isAvailable()) return false;
@@ -875,6 +887,30 @@ public class EnadrakeEntity extends PathfinderMob {
             //return true;
         }
 
+        @Override
+        protected BlockPos getMoveToTarget() {
+            if (this.blockPos == null) return super.getMoveToTarget();
+            Level level = this.mob.level();
+
+            BlockPos above = this.blockPos.above();
+            if (level.getBlockState(above).isAir()) return above;
+
+            for (Direction dir : Direction.Plane.HORIZONTAL) {
+                BlockPos lateral = this.blockPos.relative(dir);
+                if (level.getBlockState(lateral).isAir()
+                        && level.getBlockState(lateral.above()).isAir()) {
+                    return lateral;
+                }
+            }
+
+            BlockPos.MutableBlockPos scan = above.mutable();
+            for (int i = 0; i < 16; i++) {
+                scan.move(Direction.UP);
+                if (level.getBlockState(scan).isAir()) return scan.immutable();
+            }
+
+            return above;
+        }
 
         public boolean shouldRecalculatePath() {
             return this.tryTicks % 40 == 0;
@@ -901,7 +937,7 @@ public class EnadrakeEntity extends PathfinderMob {
             }
 
             if (isReachedTarget()) {
-                BlockPos pos = this.getMoveToTarget().below();
+                BlockPos pos = this.blockPos;
                 BlockEntity hut = level().getBlockEntity(pos);
                 if (hut instanceof EnadrakeHutBlockEntity enadrakeHutBlockEntity) {
                     if (!enadrakeHutBlockEntity.tryToEnter(this.entity)) {
@@ -942,8 +978,11 @@ public class EnadrakeEntity extends PathfinderMob {
 
         @Override
         public boolean canUse() {
+            // Gate re-planting to ~10% per tick. MoveToBlockGoal polls canUse every tick,
+            // so a higher probability combined with the ParanoiaBlock sprout cadence
+            // produces near-instant re-planting on pickup.
             ItemStack itemstack = entity.getItemBySlot(EquipmentSlot.MAINHAND);
-            if (itemstack.is(BeyondBlocks.OBIROOT_SPROUT.asItem()) && level().random.nextBoolean()) return super.canUse();
+            if (itemstack.is(BeyondBlocks.OBIROOT_SPROUT.asItem()) && level().random.nextFloat() < 0.1f) return super.canUse();
             return false;
         }
 

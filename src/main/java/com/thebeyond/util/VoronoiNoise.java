@@ -59,7 +59,7 @@ public class VoronoiNoise {
             for(int xCur = xInt - 2; xCur <= xInt + 2; xCur++) {
 
                 double xPos = xCur + valueNoise2D(xCur, zCur, seed);
-                double zPos = zCur + valueNoise2D(xCur, zCur, new Random(seed).nextLong());
+                double zPos = zCur + valueNoise2D(xCur, zCur, seed+1);
                 double xDist = xPos - x;
                 double zDist = zPos - z;
                 double dist = xDist * xDist + zDist * zDist;
@@ -185,5 +185,63 @@ public class VoronoiNoise {
         );
     }
 
+    public CellResult3D getCell(double x, double y, double z, double frequency) {
+        x *= frequency;
+        y *= frequency;
+        z *= frequency;
+
+        int xInt = (int)(x > 0 ? x : x - 1);
+        int yInt = (int)(y > 0 ? y : y - 1);
+        int zInt = (int)(z > 0 ? z : z - 1);
+
+        double minDist = Double.MAX_VALUE;
+        long closestCellId = 0;
+
+        double xCandidate = 0;
+        double yCandidate = 0;
+        double zCandidate = 0;
+
+        for (int zCur = zInt - 2; zCur <= zInt + 2; zCur++) {
+            for (int yCur = yInt - 2; yCur <= yInt + 2; yCur++) {
+                for (int xCur = xInt - 2; xCur <= xInt + 2; xCur++) {
+
+                    long cellSeed = (long)xCur * 1619L
+                            + (long)yCur * 31337L
+                            + (long)zCur * 6971L
+                            + this.seed;
+
+                    Random cellRandom = new Random(cellSeed);
+
+                    double xPos = xCur + valueNoise3D(xCur, yCur, zCur, cellSeed);
+                    double yPos = yCur + valueNoise3D(xCur, yCur, zCur, cellRandom.nextLong());
+                    double zPos = zCur + valueNoise3D(xCur, yCur, zCur, cellRandom.nextLong());
+
+                    double xDist = xPos - x;
+                    double yDist = yPos - y;
+                    double zDist = zPos - z;
+
+                    double dist = xDist * xDist + yDist * yDist + zDist * zDist;
+
+                    if (dist < minDist) {
+                        minDist = dist;
+                        closestCellId = cellSeed;
+                        xCandidate = xPos;
+                        yCandidate = yPos;
+                        zCandidate = zPos;
+                    }
+                }
+            }
+        }
+
+        return new CellResult3D(
+                closestCellId,
+                getDistance(xCandidate - x, yCandidate - y, zCandidate - z),
+                xCandidate / frequency,
+                yCandidate / frequency,
+                zCandidate / frequency
+        );
+    }
+
     public record CellResult(long cellId, double distance, double cellX, double cellZ) {}
+    public record CellResult3D(long cellId, double distance, double cellX, double cellY, double cellZ) {}
 }

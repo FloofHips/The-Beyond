@@ -1,0 +1,21 @@
+{
+  "values": [
+    "#minecraft:is_end",
+    { "id": "#c:is_end_biome", "required": false },
+    { "id": "#stellarity:biomes/all", "required": false },
+    { "id": "#enderscape:is_enderscape", "required": false },
+    { "id": "#phantasm:is_end", "required": false },
+
+    { "id": "#wover:is_end/center", "required": false },
+    { "id": "#wover:is_end/land", "required": false },
+    { "id": "#wover:is_end/highland", "required": false },
+    { "id": "#wover:is_end/high_or_midland", "required": false },
+    { "id": "#wover:is_end/midland", "required": false },
+    { "id": "#wover:is_end/barrens", "required": false },
+    { "id": "#wover:is_end/small_island", "required": false },
+
+    { "id": "unusualend:gloopstone_midlands", "required": false },
+    { "id": "phantasm:dreaming_den", "required": false },
+    { "id": "phantasm:acidburnt_abysses", "required": false }
+  ]
+}

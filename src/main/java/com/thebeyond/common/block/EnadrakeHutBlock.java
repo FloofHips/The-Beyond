@@ -76,15 +76,6 @@ public class EnadrakeHutBlock extends BaseEntityBlock {
     }
 
     @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        BlockEntity baseBE = level.getBlockEntity(pos);
-        if (baseBE instanceof EnadrakeHutBlockEntity hutblockentity) {
-            hutblockentity.tryToExit(false);
-        }
-        return super.useWithoutItem(state, level, pos, player, hitResult);
-    }
-
-    @Override
     protected boolean isPathfindable(BlockState state, PathComputationType pathComputationType) {
         return false;
     }
@@ -96,6 +87,18 @@ public class EnadrakeHutBlock extends BaseEntityBlock {
         if (baseBE instanceof EnadrakeHutBlockEntity hutblockentity) {
             hutblockentity.tryToExit(true);
         }
+    }
+
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+        if (!player.getMainHandItem().isEmpty()) {
+            return super.useWithoutItem(state, level, pos, player, hitResult);
+        }
+        BlockEntity baseBE = level.getBlockEntity(pos);
+        if (baseBE instanceof EnadrakeHutBlockEntity hutblockentity) {
+            hutblockentity.tryToExit(false);
+        }
+        return super.useWithoutItem(state, level, pos, player, hitResult);
     }
 
     @Override

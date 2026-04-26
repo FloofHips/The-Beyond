@@ -118,7 +118,7 @@ public class AbyssalNomadEntity extends PathfinderMob {
         super.defineSynchedData(builder);
         builder.define(DATA_SITTING, false);
         builder.define(DATA_TO_PRAY, false);
-        builder.define(DATA_CORRUPTION, level().random.nextInt(100,256));
+        builder.define(DATA_CORRUPTION, java.util.concurrent.ThreadLocalRandom.current().nextInt(100, 256));
     }
 
     @Override
@@ -127,6 +127,13 @@ public class AbyssalNomadEntity extends PathfinderMob {
         setSitting(compound.getBoolean("Sitting"));
         setCorruption(compound.getInt("Corruption"));
         setPray(compound.getBoolean("toPray"));
+
+        if (compound.contains("PrayerSiteX")) {
+            prayerSite = new BlockPos(compound.getInt("PrayerSiteX"), compound.getInt("PrayerSiteY"), compound.getInt("PrayerSiteZ"));
+        }
+        if (compound.contains("LookAtX")) {
+            lookAt = new BlockPos(compound.getInt("LookAtX"), compound.getInt("LookAtY"), compound.getInt("LookAtZ"));
+        }
     }
 
     @Override
@@ -135,6 +142,17 @@ public class AbyssalNomadEntity extends PathfinderMob {
         compound.putBoolean("Sitting", entityData.get(DATA_SITTING));
         compound.putInt("Corruption", entityData.get(DATA_CORRUPTION));
         compound.putBoolean("toPray", entityData.get(DATA_TO_PRAY));
+
+        if (prayerSite != null) {
+            compound.putInt("PrayerSiteX", prayerSite.getX());
+            compound.putInt("PrayerSiteY", prayerSite.getY());
+            compound.putInt("PrayerSiteZ", prayerSite.getZ());
+        }
+        if (lookAt != null) {
+            compound.putInt("LookAtX", lookAt.getX());
+            compound.putInt("LookAtY", lookAt.getY());
+            compound.putInt("LookAtZ", lookAt.getZ());
+        }
     }
 
     @Override
@@ -209,7 +227,11 @@ public class AbyssalNomadEntity extends PathfinderMob {
         handlePray();
         handleLook();
 
-        if (isPraying() && prayerSite == null && level() instanceof ServerLevel serverLevel)
+        // Only search for prayer sites in the End dimension. In non-End dimensions
+        // (e.g. player riding nomad through a portal), the structure tag doesn't exist
+        // and findNearestMapStructure would waste CPU returning null every tick.
+        if (isPraying() && prayerSite == null && level().dimension() == Level.END
+                && level() instanceof ServerLevel serverLevel)
             prayerSite = serverLevel.getLevel().findNearestMapStructure(BeyondTags.NOMAD_PRAYER_SITE, this.getOnPos(), 200, false);
 
         if (this.position().y < this.level().getMinBuildHeight() - 5) TeleportUtils.randomTeleport(this.level(), this);
@@ -472,7 +494,7 @@ public class AbyssalNomadEntity extends PathfinderMob {
                 nomad.playSound(SoundEvents.NOTE_BLOCK_DIDGERIDOO.value(), 1, random.nextFloat()*2);
             //}
 
-            if (nomad.getTarget().position().subtract(nomad.position()).length() < 5) {
+            if (nomad.getTarget() != null && nomad.getTarget().position().subtract(nomad.position()).length() < 5) {
                 if (nomad.attackCounter == 0) {
                     nomad.attackCounter = 51;
                 }
@@ -502,7 +524,11 @@ public class AbyssalNomadEntity extends PathfinderMob {
         @Override
         public void start() {
             super.start();
-            if (nomad.level() instanceof ServerLevel serverLevel) nomad.prayerSite = serverLevel.getLevel().findNearestMapStructure(BeyondTags.NOMAD_PRAYER_SITE, this.nomad.getOnPos(), 200, false);
+            // Only search for prayer site structures in the End dimension. In other
+            // dimensions prayerSite stays null and the goal will stop gracefully via
+            // canContinueToUse()'s null check.
+            if (nomad.level().dimension() == Level.END && nomad.level() instanceof ServerLevel serverLevel)
+                nomad.prayerSite = serverLevel.getLevel().findNearestMapStructure(BeyondTags.NOMAD_PRAYER_SITE, this.nomad.getOnPos(), 200, false);
         }
 
         @Override
@@ -543,7 +569,8 @@ public class AbyssalNomadEntity extends PathfinderMob {
 
         @Override
         public boolean canContinueToUse() {
-            return canUse() && nomad.position().distanceTo(Vec3.atCenterOf(nomad.prayerSite)) > 3;
+            return canUse() && nomad.prayerSite != null
+                    && nomad.position().distanceTo(Vec3.atCenterOf(nomad.prayerSite)) > 3;
         }
 
         @Override
@@ -622,7 +649,7 @@ public class AbyssalNomadEntity extends PathfinderMob {
         for (int x = -1; x <= 1; x++) {
             for (int z = -1; z <= 1; z++) {
                 BlockPos check = pos.offset(x, 0, z);
-                if ((level.getBlockState(check.below()).is(BeyondBlocks.AURORACITE) || level.getBlockState(pos.below()).isSolid()) &&
+                if ((level.getBlockState(check.below()).is(BeyondBlocks.AURORACITE) || level.getBlockState(check.below()).isSolid()) &&
                         level.getBlockState(check).isAir() &&
                         level.getBlockState(check.above()).isAir()) {
                     return check;

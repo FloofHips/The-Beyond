@@ -60,7 +60,7 @@ public class EnadrakeVillageFeature extends Feature<NoneFeatureConfiguration> {
 
             if (height > 2) {
                 states[0] = BeyondBlocks.ENADRAKE_HUT.get().defaultBlockState().setValue(EnadrakeHutBlock.HEIGHT, HutHeightProperty.BASE).setValue(EnadrakeHutBlock.FACING, Direction.Plane.HORIZONTAL.getRandomDirection(level.getRandom()));
-                for (int j = 0; j < height; j++) {
+                for (int j = 1; j < height - 1; j++) {
                     states[j] = BeyondBlocks.ENADRAKE_HUT.get().defaultBlockState().setValue(EnadrakeHutBlock.HEIGHT, HutHeightProperty.CORE).setValue(EnadrakeHutBlock.FACING, Direction.Plane.HORIZONTAL.getRandomDirection(level.getRandom()));
                 }
                 states[height-1] = BeyondBlocks.ENADRAKE_HUT.get().defaultBlockState().setValue(EnadrakeHutBlock.HEIGHT, HutHeightProperty.TOP).setValue(EnadrakeHutBlock.FACING, Direction.Plane.HORIZONTAL.getRandomDirection(level.getRandom()));

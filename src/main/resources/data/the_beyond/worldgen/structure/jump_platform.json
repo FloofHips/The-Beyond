@@ -1,7 +1,7 @@
 {
   "type": "minecraft:jigsaw",
   "biomes": "#the_beyond:has_sparse_platforms",
-  "terrain_adaptation": "beard_thin",
+  "terrain_adaptation": "none",
   "start_height": {
     "type": "minecraft:uniform",
     "min_inclusive": {

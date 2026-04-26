@@ -18,6 +18,15 @@ repositories {
         url "https://cursemaven.com"
         content { includeGroup "curse.maven" }
     }
+    // JEI compile-only API (plugin module is runtime-optional — we never
+    // ship the JEI jar, just compile against its interfaces).
+    maven {
+        url "https://maven.blamejared.com/"
+        content { includeGroup "mezz.jei" }
+    }
+    // JUnit and other standard test/build dependencies. Scoped after cursemaven
+    // so the explicit `includeGroup` above keeps curse artifacts routed correctly.
+    mavenCentral()
 }
 
 base {
@@ -70,6 +79,20 @@ neoForge {
             sourceSet(sourceSets.main)
         }
     }
+
+    // Wires the Minecraft + NeoForge classpath (and its transitive deps — DFU,
+    // Gson, Mojang authlib, etc.) into the `test` source set. Without this the
+    // test compile fails with "cannot find symbol" for net.minecraft.util.*,
+    // com.mojang.serialization.*, and com.google.gson.* — classes that are
+    // supplied by the NeoForged userdev artifact at runtime but are NOT
+    // transitively exposed to the test source set by default.
+    //
+    // `testedMod` tells moddev which mod's classpath to inherit; we only have
+    // one, so it's `mods.named(mod_id)`. Moddev 2.0.107+ supports this DSL.
+    unitTest {
+        enable()
+        testedMod = mods.named(mod_id)
+    }
 }
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
@@ -81,6 +104,30 @@ configurations {
 dependencies {
     implementation "curse.maven:ctm-267602:5587515"
     jarJar "curse.maven:ctm-267602:5587515"
+
+    // --- Optional compat: JEI ---
+    // compileOnly so the plugin module (com.thebeyond.compat.jei) can
+    // reference JEI's API types. NOT shipped. When JEI is absent at
+    // runtime, the @JeiPlugin-annotated class is never scanned/loaded,
+    // so no NoClassDefFoundError — the class file sits inert in the jar.
+    compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
+    compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
+
+    // --- Unit tests ---
+    // JUnit 5 for pure-function tests (pingPongWrap, computeWrappedCoords contract,
+    // HashSimplexNoise determinism). These tests intentionally do NOT spin up
+    // Minecraft — they exercise math and packing logic that should hold whether
+    // or not the game is running. See src/test/java/... for coverage.
+    testImplementation platform('org.junit:junit-bom:5.10.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test', Test).configure {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+    }
 }
 
 tasks.withType(ProcessResources).configureEach {
@@ -95,7 +142,8 @@ tasks.withType(ProcessResources).configureEach {
             mod_license            : mod_license,
             mod_version            : mod_version,
             mod_authors            : mod_authors,
-            mod_description        : mod_description
+            mod_description        : mod_description,
+            jei_version            : jei_version
     ]
     inputs.properties replaceProperties
 

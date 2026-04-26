@@ -4,6 +4,7 @@ import com.mojang.blaze3d.shaders.FogShape;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Axis;
+import com.thebeyond.BeyondConfig;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.event.specialeffects.EndSpecialEffects;
 import com.thebeyond.client.gui.NomadsBlessingOverlay;
@@ -22,8 +23,6 @@ import com.thebeyond.client.renderer.blockentities.MemorFaucetRenderer;
 import com.thebeyond.client.renderer.blockentities.RefugeRenderer;
 import com.thebeyond.common.block.RefugeBlock;
 import com.thebeyond.common.block.blockentities.RefugeBlockEntity;
-import com.thebeyond.common.entity.AbyssalNomadEntity;
-import com.thebeyond.common.entity.LanternEntity;
 import com.thebeyond.common.entity.TotemOfRespiteEntity;
 import com.thebeyond.common.item.LiveFlameItem;
 import com.thebeyond.common.item.ModelArmorItem;
@@ -93,7 +92,6 @@ import net.minecraft.world.level.block.SweetBerryBushBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.synth.PerlinSimplexNoise;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.portal.DimensionTransition;
@@ -112,7 +110,6 @@ import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.common.util.TriState;
 import net.neoforged.neoforge.event.PlayLevelSoundEvent;
-import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
 import net.neoforged.neoforge.event.entity.living.*;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -215,24 +212,8 @@ public class ModClientEvents {
                 });
     }
 
-    @SubscribeEvent
-    public static void registerSpawnPlacements(RegisterSpawnPlacementsEvent event){
-        event.register(
-                BeyondEntityTypes.LANTERN.get(),
-                SpawnPlacementTypes.NO_RESTRICTIONS,
-                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-                LanternEntity::checkMonsterSpawnRules,
-                RegisterSpawnPlacementsEvent.Operation.OR
-        );
-
-        event.register(
-                BeyondEntityTypes.ABYSSAL_NOMAD.get(),
-                SpawnPlacementTypes.NO_RESTRICTIONS,
-                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-                AbyssalNomadEntity::checkMonsterSpawnRules,
-                RegisterSpawnPlacementsEvent.Operation.OR
-        );
-    }
+    // Spawn placements moved to com.thebeyond.common.event.ModEvents — RegisterSpawnPlacementsEvent
+    // must fire on BOTH sides (mod event bus) or the dedicated server never registers them.
 
     @SubscribeEvent
     public static void registerParticleProviders(RegisterParticleProvidersEvent event) {
@@ -302,20 +283,36 @@ public class ModClientEvents {
         //}, BeyondBlocks.PEARL.get(), BeyondBlocks.PEARL_BRICKS.get());
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.LOW)
     public static void dimensionSpecialEffects(RegisterDimensionSpecialEffectsEvent event){
-        event.register(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"), new EndSpecialEffects());
+        EndSpecialEffects effects = new EndSpecialEffects();
+        event.register(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"), effects);
+        // Also register for the vanilla key. When another mod (e.g. BetterEnd) overrides
+        // the End dimension type's effectsLocation back to minecraft:the_end, Beyond's custom
+        // sky, fog color, and lightmap adjustments must still apply. Priority LOW ensures this
+        // handler runs after other mods' NORMAL-priority handlers, so Beyond's registration
+        // takes precedence (last writer wins in the DimensionSpecialEffects map).
+        event.register(ResourceLocation.withDefaultNamespace("the_end"), effects);
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
     public static void onRenderFog(ViewportEvent.RenderFog event) {
-        if (event.getCamera().getEntity().level().dimensionType().effectsLocation().equals(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"))) {
+        Entity cameraEntity = event.getCamera().getEntity();
+        if (cameraEntity == null) return;
+        // Gated by enableCustomFog clientside config — when disabled, the vanilla
+        // fog for the End runs unchanged. Mirrors FogRendererMixin's gate.
+        if (cameraEntity.level().dimension() == Level.END
+                && BeyondConfig.ENABLE_CUSTOM_FOG.get()) {
             event.setCanceled(true);
             event.setFogShape(FogShape.SPHERE);
 
             float finalFog = finalEffectFog(event.getCamera());
 
-            event.setFarPlaneDistance((float) (Minecraft.getInstance().cameraEntity.position().y + 30) * finalFog);
+            float y = (float) cameraEntity.position().y;
+            // Clamp minimum fog end to 30 blocks so fog stays valid at negative Y
+            // (Enderscape extends End min height to y=-64)
+            float fogEnd = Math.max((y + 30) * finalFog, 30 * finalFog);
+            event.setFarPlaneDistance(fogEnd);
             event.setNearPlaneDistance(15 * finalFog);
        }
     }
@@ -354,102 +351,8 @@ public class ModClientEvents {
         }
     }
 
-//    @SubscribeEvent
-//    public static void onSoundEvent(PlayLevelSoundEvent.AtPosition event) {
-//        if (event.getOriginalVolume() < 0.1f) return;
-//        if (skipSound(event.getSound().value())) return;
-//        scheduleDelayedSound(event, 2, event.getOriginalVolume()*0.5f);
-//        //scheduleDelayedSound(event, 5, event.getOriginalVolume()*0.25f);
-//    }
-//
-//    private static void scheduleDelayedSound(PlayLevelSoundEvent.AtPosition event, int delayTicks, float volume) {
-//        SimpleSoundInstance sound = new SimpleSoundInstance(
-//                event.getSound().value().getLocation(),
-//                SoundSource.AMBIENT,
-//                volume,
-//                1.0f,
-//                SoundInstance.createUnseededRandom(),
-//                false,
-//                0,
-//                SoundInstance.Attenuation.LINEAR,
-//                event.getPosition().x,
-//                event.getPosition().y,
-//                event.getPosition().z,
-//                false
-//        );
-//
-//        Minecraft.getInstance().getSoundManager().playDelayed(sound, delayTicks);
-//    }
-//
-//    private static boolean skipSound(SoundEvent sound) {
-//        if (sound == null) return true;
-//        String str = sound.getLocation().toString();
-//
-//        if (str.contains("ambient") || str.contains("music") || str.contains("weather")) {
-//            return true;
-//        }
-//
-//        if (str.contains("entity") || str.contains("block") || str.contains("item") || str.contains("ui")) {
-//            return false;
-//        }
-//        return false;
-//    }
-
-//    private static Optional<BlockPos> getRefuge(ServerLevel serverLevel, BlockPos pos) {
-//        return serverLevel.getPoiManager().findClosest(
-//                poiType -> poiType.is(BeyondPoiTypes.REFUGE),
-//                blockPos -> {
-//                    BlockState state = serverLevel.getBlockState(blockPos);
-//                    return state.is(BeyondBlocks.REFUGE.get()) && RefugeBlock.isActive(state);},
-//                pos,
-//                80,
-//                PoiManager.Occupancy.ANY
-//        );
-//    }
-
-    private static RefugeChunkData getChunkData(ServerLevel level, BlockPos pos) {
-        // Do NOT create or load the chunk here. This method is called from mod events that
-        // can fire while the server is already inside DistanceManager.runAllUpdates — a
-        // recursive chunk load in that context causes a ConcurrentModificationException on
-        // chunksToUpdateFutures. If the chunk isn't fully loaded, there is no refuge data
-        // to check anyway, so callers treat null as "no protection".
-        ChunkAccess chunk = level.getChunkSource().getChunk(pos.getX() >> 4, pos.getZ() >> 4, false);
-        return chunk == null ? null : chunk.getData(BeyondAttachments.REFUGE_DATA);
-    }
-
-    @SubscribeEvent
-    public static void onExplosion(ExplosionEvent.Start event) {
-        //if (RefugeBlockEntity.ACTIVE_REFUGES.isEmpty()) return;
-        if (event.getLevel() instanceof ServerLevel serverLevel) {
-            BlockPos pos = BlockPos.containing(event.getExplosion().center());
-            RefugeChunkData data = getChunkData(serverLevel, pos);
-            if (data != null && data.shouldPreventExplosion()) {
-                event.setCanceled(true);
-            }
-        }
-    }
-
-    @SubscribeEvent
-    public static void onMobSpawn(MobSpawnEvent.SpawnPlacementCheck event) {
-        //if (RefugeBlockEntity.ACTIVE_REFUGES.isEmpty()) return;
-        if (event.getLevel() instanceof ServerLevel serverLevel) {
-            RefugeChunkData data = getChunkData(serverLevel, event.getPos());
-            if (data != null && data.shouldPreventMobSpawn()) {
-                event.setResult(MobSpawnEvent.SpawnPlacementCheck.Result.FAIL);
-            }
-        }
-    }
-
-    @SubscribeEvent
-    public static void onFall(LivingFallEvent event) {
-        //if (RefugeBlockEntity.ACTIVE_REFUGES.isEmpty()) return;
-        if (event.getEntity() != null && event.getEntity().level() instanceof ServerLevel serverLevel) {
-            RefugeChunkData data = getChunkData(serverLevel, event.getEntity().getOnPos());
-            if (data != null && data.shouldPreventFallDamage()) {
-                event.setCanceled(true);
-            }
-        }
-    }
+    // Server-side Refuge, Totem, and gameplay handlers moved to ModGameEvents.java
+    // so they register on dedicated servers (not just Dist.CLIENT).
 
     @SubscribeEvent
     public static void onRenderNameTag(RenderNameTagEvent event) {
@@ -460,215 +363,9 @@ public class ModClientEvents {
         }
     }
 
-    @SubscribeEvent
-    public static void onLivingVisibility(LivingEvent.LivingVisibilityEvent event) {
-        if (event.getEntity() != null && event.getEntity() instanceof LivingEntity livingEntity) {
-            if (livingEntity.getItemBySlot(EquipmentSlot.HEAD).is(BeyondItems.ETHER_CLOAK.get())) {
-                event.modifyVisibility(0.1f);
-            }
-        }
-    }
-
-    @SubscribeEvent
-    public static void onItemToss(ItemTossEvent event) {
-        ItemStack item = event.getEntity().getItem();
-        if (item.is(BeyondItems.LIVE_FLAME) || item.is(BeyondItems.LIVID_FLAME) ) {
-            boolean flag = item.is(BeyondItems.LIVE_FLAME) ? true : false;
-
-            if (event.getPlayer().level() instanceof ServerLevel serverLevel) {
-                serverLevel.playSound(null, event.getEntity().blockPosition(), SoundEvents.FIRE_EXTINGUISH, SoundSource.NEUTRAL, 1, 0.8f + serverLevel.random.nextFloat());
-                serverLevel.playSound(null, event.getEntity().blockPosition(), SoundEvents.ENDER_EYE_DEATH, SoundSource.NEUTRAL, 1, 0.8f + serverLevel.random.nextFloat());
-                serverLevel.sendParticles(!flag ? BeyondParticleTypes.VOID_FLAME.get() : ParticleTypes.SOUL_FIRE_FLAME, event.getEntity().getX(), event.getEntity().getY(), event.getEntity().getZ(), 10, 0.05,0.1,0.05,0.05);
-                serverLevel.sendParticles(new ItemParticleOption(ParticleTypes.ITEM, item), event.getEntity().getX(), event.getEntity().getY(), event.getEntity().getZ(), 16, 0.02,0.02,0.02,0.1);
-            }
-
-            event.getEntity().discard();
-        }
-    }
-
-    @SubscribeEvent
-    public static void onLand(LivingFallEvent event) {
-        if ((event.getEntity() instanceof LivingEntity livingEntity) && !livingEntity.getItemBySlot(EquipmentSlot.LEGS).is(BeyondItems.ANCHOR_LEGGINGS)) {
-            return;
-        }
-
-        if (event.getEntity() instanceof ServerPlayer serverplayer && serverplayer.isShiftKeyDown() && serverplayer.level() instanceof ServerLevel serverlevel) {
-            if (serverplayer.fallDistance > 1.5F && !serverplayer.isFallFlying()) {
-                serverplayer.setSpawnExtraParticlesOnFall(true);
-                SoundEvent soundevent = serverplayer.fallDistance > 5.0F ? SoundEvents.MACE_SMASH_GROUND_HEAVY : SoundEvents.MACE_SMASH_GROUND;
-                serverlevel.playSound((Player)null, serverplayer.getX(), serverplayer.getY(), serverplayer.getZ(), soundevent, serverplayer.getSoundSource(), 1.0F, 1.0F);
-
-                Registry<Enchantment> enchantmentRegistry = serverlevel.registryAccess().registryOrThrow(Registries.ENCHANTMENT);
-                Holder<Enchantment> powerHolder = enchantmentRegistry.getHolderOrThrow(Enchantments.POWER);
-                int powerLevel = EnchantmentHelper.getItemEnchantmentLevel(powerHolder, serverplayer.getItemBySlot(EquipmentSlot.LEGS));
-
-                AOEManager.knockback(serverlevel, serverplayer, serverplayer, powerLevel);
-                event.setDamageMultiplier(0.3f / powerLevel);
-            }
-        }
-    }
-
-    @SubscribeEvent
-    public static void onPlayer(PlayerTickEvent.Post event) {
-        Player player = event.getEntity();
-        if (!(player instanceof ServerPlayer serverPlayer)) return;
-        if (player.tickCount % 20 != 0) return;
-        if (!player.level().dimensionType().effectsLocation().equals(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"))) return;
-        if (!player.level().isThundering()) return;
-        if (player.getY() < 192 || player.getY() > 208) return;
-       // if (!player.getAbilities().flying) return;
-
-        BeyondCriteriaTriggers.MIGRATION_STORM.get().trigger(serverPlayer);
-    }
-
-    private static final String TAG_PENDING_TOTEM = "the_beyond:pendingTotem";
-    private static final String TAG_TOTEM_ITEMS = "the_beyond:totemItems";
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onDeath(LivingDeathEvent event) {
-        if (event.isCanceled()) return;
-
-        if (event.getEntity() instanceof Player player) {
-            if (!(player.getMainHandItem().is(BeyondItems.TOTEM_OF_RESPITE) || player.getOffhandItem().is(BeyondItems.TOTEM_OF_RESPITE))) return;
-
-            if (player.level().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY))
-                return;
-            if (player.getHealth() > 0)
-                return;
-            CompoundTag persistent = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
-            persistent.remove(TAG_PENDING_TOTEM);
-            persistent.remove(TAG_TOTEM_ITEMS);
-
-            ListTag itemsList = new ListTag();
-            RegistryAccess regAccess = player.registryAccess();
-
-            boolean hasConsumedTotem = false;
-
-            if (player.getMainHandItem().is(BeyondItems.TOTEM_OF_RESPITE)) {
-                player.getMainHandItem().shrink(1);
-                hasConsumedTotem = true;
-            }
-            if (!hasConsumedTotem && player.getOffhandItem().is(BeyondItems.TOTEM_OF_RESPITE)) {
-                player.getOffhandItem().shrink(1);
-                hasConsumedTotem = true;
-            }
-
-            for (ItemStack stack : player.getInventory().items) {
-                if (!stack.isEmpty()) {
-                    Tag itemTag = stack.save(regAccess);
-                    itemsList.add(itemTag);
-                }
-            }
-
-            for (ItemStack stack : player.getInventory().armor) {
-                if (!stack.isEmpty()) {
-                    Tag itemTag = stack.save(regAccess);
-                    itemsList.add(itemTag);
-                }
-            }
-
-            for (ItemStack stack : player.getInventory().offhand) {
-                if (!stack.isEmpty()) {
-                    Tag itemTag = stack.save(regAccess);
-                    itemsList.add(itemTag);
-                }
-            }
-
-            if (!itemsList.isEmpty()) {
-                persistent.put(TAG_TOTEM_ITEMS, itemsList);
-                persistent.putBoolean(TAG_PENDING_TOTEM, true);
-            }
-
-            player.getPersistentData().put(Player.PERSISTED_NBT_TAG, persistent);
-        }
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onDrop(LivingDropsEvent event) {
-        if (event.isCanceled()) return;
-
-        if (event.getEntity() instanceof Player player) {
-            CompoundTag persistent = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
-            if (persistent.getBoolean(TAG_PENDING_TOTEM)) event.setCanceled(true);
-        }
-    }
-
-    @SubscribeEvent
-    public static void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
-        if (event.getEntity() instanceof Player player) {
-            if (player.level().isClientSide) return;
-
-            CompoundTag persistent = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
-
-            if (!persistent.getBoolean(TAG_PENDING_TOTEM)) return;
-
-            ListTag itemsList = persistent.getList(TAG_TOTEM_ITEMS, Tag.TAG_COMPOUND);
-            if (itemsList.isEmpty()) return;
-
-            TotemOfRespiteEntity totem = new TotemOfRespiteEntity(BeyondEntityTypes.TOTEM_OF_RESPITE.get(), player.level());
-            totem.setPos(player.getX(), player.getY() + 1.5, player.getZ());
-            totem.setOwner(player);
-
-            RegistryAccess regAccess = player.registryAccess();
-
-            for (Tag tag : itemsList) {
-                if (tag instanceof CompoundTag itemTag) {
-                    ItemStack stack = ItemStack.parse(regAccess, itemTag).orElse(ItemStack.EMPTY);
-
-                    if (!stack.isEmpty()) {
-                        totem.addItem(stack);
-                    }
-                }
-            }
-
-            player.level().addFreshEntity(totem);
-
-            if (player != null && player instanceof ServerPlayer serverPlayer) {
-                BeyondCriteriaTriggers.USE_TOTEM.get().trigger(serverPlayer);
-            }
-
-            persistent.remove(TAG_PENDING_TOTEM);
-            persistent.remove(TAG_TOTEM_ITEMS);
-        }
-    }
-
-    //@SubscribeEvent
-    //public static void onChunkLoadEvent(ChunkEvent.Unload event) {
-    //    event.getChunk().getbloc
-    //}
-    //@SubscribeEvent
-    //public static void onChunkLoadEvent(ChunkEvent.Load event) {
-        //event.getChunk().findBlocks();
-    //}
 
     @SubscribeEvent
     public static void fogColor(ViewportEvent.ComputeFogColor event) {
-        //event.setRed(0);
-        //event.setGreen(1);
-        //event.setBlue(1);
-        //Minecraft minecraft = Minecraft.getInstance();
-        //ClientLevel level = minecraft.level;
-        //if (level == null) return;
-//
-        //Camera camera = minecraft.gameRenderer.getMainCamera();
-        //BlockPos cameraPos = BlockPos.containing(camera.getPosition());
-        //Biome biome = level.getBiome(cameraPos).value();
-        //float gamma = Minecraft.getInstance().options.gamma().get().floatValue();
-//
-        //int fogColor = biome.getFogColor();
-        //float r = ((fogColor >> 16) & 0xFF) / 255.0f;
-        //float g = ((fogColor >> 8) & 0xFF) / 255.0f;
-        //float b = (fogColor & 0xFF) / 255.0f;
-//
-        //Vec3 rgbfogColor = new Vec3(r, g, b);
-        //Vec3 skyColorVector = level.effects().getBrightnessDependentFogColor(rgbfogColor, 0);
-//
-        //event.setRed((float) skyColorVector.x * gamma);
-        //event.setGreen((float) skyColorVector.y * gamma);
-        //event.setBlue((float) skyColorVector.z * gamma);
-        //event.setRed(event.getRed() / gamma);
-        //event.setGreen(event.getGreen() / gamma);
-        //event.setBlue(event.getBlue() / gamma);
     }
 
     @SubscribeEvent
@@ -695,7 +392,7 @@ public class ModClientEvents {
         //MODEL_ARMOR.clear();
 
         event.registerFluidType(new IClientFluidTypeExtensions() {
-            private static final ResourceLocation STILL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void"),
+            private static final ResourceLocation STILL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_0"),
                     STILL_2 = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/plate_block"),
                     FLOW = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/auroracite"),
                     OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/auroracite"),
@@ -717,16 +414,19 @@ public class ModClientEvents {
             }
             @Override
             public ResourceLocation getStillTexture(FluidState state, BlockAndTintGetter getter, BlockPos pos) {
+                // Jade and other overlay mods may call this without a valid BlockPos (null)
+                // when rendering fluid icons in tooltips. Return the static base texture as
+                // fallback instead of NPE-ing on pos.getX().
+                if (pos == null) return STILL;
                 int offset = (getVoidWaveOffset(pos.getX(), pos.getY(), pos.getZ())) % 39;
-
-                //System.out.println(offset);
                 return ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_" + Mth.abs(offset));
             }
 
             @Override
             public ResourceLocation getFlowingTexture(FluidState state, BlockAndTintGetter getter, BlockPos pos) {
+                // Same null-safety as getStillTexture — overlay mods may omit BlockPos.
+                if (pos == null) return FLOW;
                 int offset = (getVoidWaveOffset(pos.getX(), pos.getY(), pos.getZ())) % 39;
-                //System.out.println(offset);
                 return ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_flowing_" + Mth.abs(offset));
             }
 
@@ -785,15 +485,13 @@ public class ModClientEvents {
 
         //renderRefugeDebug(event);
 
-        if (!event.getCamera().getEntity().level().dimensionType().effectsLocation().equals(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"))) return;
+        Entity camEntity = event.getCamera().getEntity();
+        if (camEntity == null || camEntity.level().dimension() != Level.END) return;
 
         Minecraft mc = Minecraft.getInstance();
         Player player = mc.player;
+        if (player == null) return;
         Level level = player.level();
-
-        if (player == null || level == null) {
-            return;
-        }
 
         PoseStack poseStack = event.getPoseStack();
         Vec3 camPos = event.getCamera().getPosition();
@@ -808,7 +506,19 @@ public class ModClientEvents {
 
         if (!(Math.sqrt(player.getX() * player.getX() + player.getZ() * player.getZ())>300)) {
 
-            if (Minecraft.getInstance().gui.getBossOverlay().shouldCreateWorldFog()) {
+            // Detect any active boss fight. shouldCreateWorldFog() only returns true for
+            // Java ServerBossEvent boss bars (vanilla dragon). Stellarity uses command boss
+            // bars (/bossbar add) which never set that flag. Fall back to checking if the
+            // BossHealthOverlay has any entries at all — this catches both vanilla and
+            // Stellarity boss bars so the 3D cloud rings render during any End boss fight.
+            boolean bossActive = Minecraft.getInstance().gui.getBossOverlay().shouldCreateWorldFog();
+            if (!bossActive) {
+                var overlay = Minecraft.getInstance().gui.getBossOverlay();
+                if (overlay instanceof com.thebeyond.mixin.client.BossHealthOverlayAccessor accessor) {
+                    bossActive = !accessor.the_beyond$getEvents().isEmpty();
+                }
+            }
+            if (bossActive) {
                 bossFog = Mth.lerp(0.05f , bossFog, 1);
             } else {
                 bossFog = Mth.lerp(0.05f , bossFog, 0);
@@ -825,95 +535,6 @@ public class ModClientEvents {
         bufferSource.endBatch();
         poseStack.popPose();
     }
-
-//    private static void renderRefugeDebug(RenderLevelStageEvent event) {
-//        Minecraft mc = Minecraft.getInstance();
-//        Player player = mc.player;
-//        Level level = player.level();
-//        Frustum frustum = event.getFrustum();
-//        int renderDistance = mc.options.getEffectiveRenderDistance();
-//        ChunkPos playerChunk = player.chunkPosition();
-//        int yLevel = (int) (-50);
-//
-//        for (int x = -renderDistance; x <= renderDistance; x++) {
-//            for (int z = -renderDistance; z <= renderDistance; z++) {
-//                ChunkPos chunkPos = new ChunkPos(playerChunk.x + x, playerChunk.z + z);
-//
-//                double worldX = chunkPos.getMiddleBlockX();
-//                double worldZ = chunkPos.getMiddleBlockZ();
-//
-//                BlockPos centerPos = new BlockPos(
-//                        chunkPos.getMiddleBlockX(),
-//                        yLevel,
-//                        chunkPos.getMiddleBlockZ()
-//                );
-//
-//                RefugeChunkData data = level.getChunkAt(centerPos).getData(BeyondAttachments.REFUGE_DATA);
-//
-//                PoseStack poseStack = event.getPoseStack();
-//                Vec3 camPos = event.getCamera().getPosition();
-//
-//                poseStack.pushPose();
-//                poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
-//
-//                poseStack.translate(centerPos.getX(), centerPos.getY(), centerPos.getZ());
-//
-//                //poseStack.translate(0, yoffset, 0);
-//                poseStack.translate(-0.5f, -0.5f, -0.5f);
-//
-//                poseStack.mulPose(Minecraft.getInstance().gameRenderer.getMainCamera().rotation());
-//
-//                poseStack.translate(0, -0.5f, -0.5f);
-//
-//                double chunkCenterX = chunkPos.getMiddleBlockX();
-//                double chunkCenterZ = chunkPos.getMiddleBlockZ();
-//                double deltaX = chunkCenterX - player.getX();
-//                double deltaZ = chunkCenterZ - player.getZ();
-//                double distanceFromPlayer = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
-//                double maxPlayerDistance = renderDistance * 16 * 0.8;
-//                float l = (float) (1.0 - (distanceFromPlayer / maxPlayerDistance));
-//
-//                MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
-//
-//                if (data.shouldPreventExplosion()) {
-//                    ItemStack itemStack = new ItemStack(Blocks.TNT.asItem());
-//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
-//                } else {
-//                    ItemStack itemStack = new ItemStack(Blocks.BARRIER.asItem());
-//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
-//                }
-//                if (data.shouldPreventHunger()) {
-//                    poseStack.translate(0,1,0);
-//                    ItemStack itemStack = new ItemStack(Items.COOKED_BEEF);
-//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
-//                } else {
-//                    poseStack.translate(0,1,0);
-//                    ItemStack itemStack = new ItemStack(Blocks.BARRIER.asItem());
-//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
-//                }
-//                if (data.shouldPreventFallDamage()) {
-//                    poseStack.translate(0,1,0);
-//                    ItemStack itemStack = new ItemStack(Items.DIAMOND_BOOTS);
-//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
-//                } else {
-//                    poseStack.translate(0,1,0);
-//                    ItemStack itemStack = new ItemStack(Blocks.BARRIER.asItem());
-//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
-//                }
-//                if (data.shouldPreventMobSpawn()) {
-//                    poseStack.translate(0,1,0);
-//                    ItemStack itemStack = new ItemStack(Blocks.SKELETON_SKULL.asItem());
-//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
-//                } else {
-//                    poseStack.translate(0,1,0);
-//                    ItemStack itemStack = new ItemStack(Blocks.BARRIER.asItem());
-//                    Minecraft.getInstance().getItemRenderer().renderStatic(itemStack, ItemDisplayContext.FIXED, 255, OverlayTexture.NO_OVERLAY, poseStack, bufferSource, level, (int) l);
-//                }
-//                poseStack.popPose();
-//
-//            }
-//        }
-//    }
 
     public static void renderClouds(PoseStack poseStack, float translate, float scale, float time, ResourceLocation model, MultiBufferSource.BufferSource buffer) {
         poseStack.pushPose();

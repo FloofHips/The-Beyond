@@ -1,9 +1,15 @@
 {
   "required": true,
   "package": "com.thebeyond.mixin.client",
+  "plugin": "com.thebeyond.mixin.client.ClientMixinConfigPlugin",
   "compatibilityLevel": "JAVA_21",
   "refmap": "the_beyond.refmap.json",
+  "priority": 500,
   "mixins": [
+    "CreativeModeInventoryScreenMixin",
+    "CreativeModeTabMixin",
+    "EndDimensionEffectsMixin",
+    "FogRendererMixin",
     "ItemRendererMixin"
   ],
   "server": [],

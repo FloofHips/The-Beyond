@@ -41,9 +41,9 @@ public class BeyondBlockLoot extends BlockLootSubProvider {
         dropSelf(BeyondBlocks.POLAR_PILLAR.get());
         dropSelf(BeyondBlocks.POLAR_ANTENNA.get());
         dropSelf(BeyondBlocks.PLATE_BLOCK.get());
-        dropSelf(BeyondBlocks.FERROJELLY_BLOCK.get());
         dropSelf(BeyondBlocks.REFUGE.get());
         dropSelf(BeyondBlocks.ENADRAKE_FLARE.get());
+        dropSelf(BeyondBlocks.FERROJELLY_BLOCK.get());
 
         add(BeyondBlocks.VOID_CRYSTAL.get(), createSilkTouchOnlyTable(BeyondItems.VOID_CRYSTAL.get()));
         add(BeyondBlocks.ENADRAKE_HUT.get(), createSilkTouchOnlyTable(BeyondBlocks.ENADRAKE_HUT.asItem()));

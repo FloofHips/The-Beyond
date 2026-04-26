@@ -9,8 +9,25 @@
     "BlockBehaviourMixin",
     "FallingBlockEntityAccessor",
     "PistonStructureResolverMixin",
+    "NoiseGeneratorSettingsAccessor",
     "RandomStateMixin",
-    "RefugeHungerMixin"
+    "RefugeHungerMixin",
+    "BiomeSourceSanitizerMixin",
+    "RegistryFileCodecMixin",
+    "MultiNoiseBiomeSourceMixin",
+    "EndWeatherMixin",
+    "EndWeatherSyncMixin",
+    "TheEndBiomeSourceMixin",
+    "MultiPackResourceManagerMixin",
+    "EndPodiumFeatureMixin",
+    "WoverChunkGeneratorMixin",
+    "WoverSurfaceRuleUtilMixin",
+    "JigsawStructureMixin",
+    "AuroraciteLayerProtectionMixin",
+    "AuroraciteLayerFillMixin"
+  ],
+  "client": [
+    "client.BossHealthOverlayAccessor"
   ],
   "server": [],
   "injectors": {

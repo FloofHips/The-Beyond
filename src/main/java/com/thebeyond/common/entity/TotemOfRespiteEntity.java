@@ -8,6 +8,7 @@ import net.minecraft.core.particles.ItemParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -155,7 +156,6 @@ public class TotemOfRespiteEntity extends Entity {
             this.hasImpulse = true;
         }
 
-        super.tick();
         this.move(MoverType.SELF, this.getDeltaMovement());
     }
 
@@ -173,6 +173,17 @@ public class TotemOfRespiteEntity extends Entity {
         entityData.set(LIFESPAN, lifespan);
 
         owner = compound.getString("Owner");
+
+        storedItems.clear();
+        if (compound.contains("StoredItems", Tag.TAG_LIST)) {
+            ListTag list = compound.getList("StoredItems", Tag.TAG_COMPOUND);
+            for (int i = 0; i < list.size(); i++) {
+                ItemStack stack = ItemStack.parse(registryAccess(), list.getCompound(i)).orElse(ItemStack.EMPTY);
+                if (!stack.isEmpty()) {
+                    storedItems.add(stack);
+                }
+            }
+        }
     }
 
     @Override
@@ -180,6 +191,16 @@ public class TotemOfRespiteEntity extends Entity {
         compound.putInt("Lifespan", entityData.get(LIFESPAN));
         if(owner != null)
             compound.putString("Owner", owner);
+
+        if (!storedItems.isEmpty()) {
+            ListTag list = new ListTag();
+            for (ItemStack stack : storedItems) {
+                if (!stack.isEmpty()) {
+                    list.add(stack.save(registryAccess()));
+                }
+            }
+            compound.put("StoredItems", list);
+        }
     }
 
     @Override

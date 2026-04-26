@@ -112,4 +112,11 @@ public class LanternMediumModel<T extends LanternEntity> extends EntityModel<Lan
     public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int i, int i1, int i2) {
         root.render(poseStack, vertexConsumer, i, i1, i2);
     }
+
+    /** Root part — entry point for {@code LanternRenderer}'s split-pass render. */
+    public ModelPart getRoot() { return root; }
+
+    /** Solid body cube. Children are zero-thickness fin quads; the renderer draws
+     *  body with NO_CULL and fins with CULL to avoid z-fighting on the coplanar quads. */
+    public ModelPart getMainPart() { return body; }
 }

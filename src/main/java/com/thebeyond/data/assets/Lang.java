@@ -32,7 +32,19 @@ public class Lang extends LanguageProvider {
         Set<Block> blocks = BuiltInRegistries.BLOCK.stream().filter(i -> TheBeyond.MODID.equals(BuiltInRegistries.BLOCK.getKey(i).getNamespace()))
                 .collect(Collectors.toSet());
 
-        blocks.forEach(block -> add(block, getLangName(block.asItem().toString())));
+        // Use the block's own registry key, NOT block.asItem().toString(). For blocks registered
+        // without a BlockItem (registerBlockWithoutItem), asItem() falls back to Items.AIR, which
+        // makes getLangName produce "Air" — that's why gellid_void_block, void_flame, ectoplasm,
+        // etc. were all showing as "Air" in tooltips and Jade.
+        // Gellid Void Block is a liquid — display name should be just "Gellid Void", not "Gellid Void Block".
+        blocks.forEach(block -> {
+            String key = BuiltInRegistries.BLOCK.getKey(block).toString();
+            if (key.equals("the_beyond:gellid_void_block")) {
+                add(block, "Gellid Void");
+            } else {
+                add(block, getLangName(key));
+            }
+        });
 
         Set<MobEffect> effects = BuiltInRegistries.MOB_EFFECT.stream().filter(i -> TheBeyond.MODID.equals(BuiltInRegistries.MOB_EFFECT.getKey(i).getNamespace()))
                 .collect(Collectors.toSet());
@@ -42,7 +54,33 @@ public class Lang extends LanguageProvider {
         Set<EntityType<?>> mobs = BuiltInRegistries.ENTITY_TYPE.stream().filter(i -> TheBeyond.MODID.equals(BuiltInRegistries.ENTITY_TYPE.getKey(i).getNamespace()))
                 .collect(Collectors.toSet());
 
-        mobs.forEach(mob -> add(mob, getName(mob.getDescriptionId())));
+        mobs.forEach(mob -> {
+            String path = BuiltInRegistries.ENTITY_TYPE.getKey(mob).getPath();
+            // "Totem Of Respite" → "Totem of Respite" — prepositions should stay lowercase.
+            if (path.equals("totem_of_respite")) {
+                add(mob, "Totem of Respite");
+            } else {
+                add(mob, getName(mob.getDescriptionId()));
+            }
+        });
+
+        // Entity translations added manually as a safety net — DeferredRegister entities
+        // may not be populated in BuiltInRegistries at datagen time depending on load order.
+        // If the loop above already added them, these will be silently skipped (duplicate key).
+        safeAdd("entity.the_beyond.lantern", "Lantern");
+        safeAdd("entity.the_beyond.abyssal_nomad", "Abyssal Nomad");
+        safeAdd("entity.the_beyond.totem_of_respite", "Totem of Respite");
+        safeAdd("entity.the_beyond.gravistar", "Gravistar");
+        safeAdd("entity.the_beyond.enderglop", "Enderglop");
+        safeAdd("entity.the_beyond.enadrake", "Enadrake");
+        safeAdd("entity.the_beyond.enatious_totem", "Enatious Totem");
+        safeAdd("entity.the_beyond.knockback_seed", "Knockback Seed");
+        safeAdd("entity.the_beyond.poison_seed", "Poison Seed");
+        safeAdd("entity.the_beyond.unstable_seed", "Unstable Seed");
+        safeAdd("entity.the_beyond.rising_block", "Rising Block");
+
+        // Fluid type translation — shown by Jade and other overlay mods for fluid tooltips.
+        safeAdd("fluid_type.the_beyond.gellid_void", "Gellid Void");
 
         // Biomes are datapack-registered (JSON in data/the_beyond/worldgen/biome/), so they
         // don't appear in BuiltInRegistries.BIOME at datagen time and can't be iterated like
@@ -106,6 +144,26 @@ public class Lang extends LanguageProvider {
         add("advancements.the_beyond.full_power_magnet.description", "Use a magnet to pull yourself somewhere 32 blocks away");
     }
 
+    /**
+     * Like {@link #add(String, String)} but silently skips the key if it was already
+     * registered by the automatic registry loops above. Avoids the
+     * {@code IllegalStateException("Duplicate translation key")} that LanguageProvider
+     * throws on repeated keys.
+     */
+    private final Set<String> addedKeys = new java.util.HashSet<>();
+
+    @Override
+    public void add(String key, String value) {
+        addedKeys.add(key);
+        super.add(key, value);
+    }
+
+    private void safeAdd(String key, String value) {
+        if (!addedKeys.contains(key)) {
+            add(key, value);
+        }
+    }
+
     public String getLangName(String id) {
         String[] words = id.toString().split(":")[1].split("_");
 
@@ -128,7 +186,6 @@ public class Lang extends LanguageProvider {
         }
         return result.toString().trim();
     }
-
     public static <T> Collection<T> takeAll(Set<T> src, Predicate<T> pred) {
         List<T> ret = new ArrayList<>();
 

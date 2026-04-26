@@ -30,6 +30,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
+import java.util.ArrayDeque;
 import java.util.function.Supplier;
 
 public class NacreBlock extends Block {
@@ -75,22 +76,32 @@ public class NacreBlock extends Block {
     }
 
     private void trigger(Level level, BlockPos pos, int delay, RandomSource random) {
-        spawnParticles(level, pos, random, new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.NACRE.get().defaultBlockState()), 20);
+        // Iterative BFS to avoid StackOverflowError on large connected NacreBlock areas.
+        ArrayDeque<BlockPos> queue = new ArrayDeque<>();
+        queue.add(pos);
 
-        if (level.getBlockState(pos).getValue(POWERED)) return;
-        level.playSound(null, pos, SoundEvents.BRUSH_GRAVEL_COMPLETED, SoundSource.BLOCKS);
-        level.setBlockAndUpdate(pos, BeyondBlocks.NACRE.get().defaultBlockState().setValue(POWERED, true));
+        while (!queue.isEmpty()) {
+            BlockPos current = queue.poll();
+            BlockState state = level.getBlockState(current);
 
-        int cell = getVariant(pos);
-        for (Direction direction : Direction.values()) {
-            Block block = level.getBlockState(pos.relative(direction)).getBlock();
-            if (block instanceof NacreBlock nacreBlock) {
-                if (isSameVariant(cell, pos.relative(direction)))
-                    nacreBlock.trigger(level, pos.relative(direction), delay, random);
+            if (!(state.getBlock() instanceof NacreBlock)) continue;
+            if (state.getValue(POWERED)) continue;
+
+            spawnParticles(level, current, random, new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.NACRE.get().defaultBlockState()), 20);
+            level.playSound(null, current, SoundEvents.BRUSH_GRAVEL_COMPLETED, SoundSource.BLOCKS);
+            level.setBlockAndUpdate(current, BeyondBlocks.NACRE.get().defaultBlockState().setValue(POWERED, true));
+            level.scheduleTick(current, state.getBlock(), delay);
+
+            int cell = getVariant(current);
+            for (Direction direction : Direction.values()) {
+                BlockPos neighbor = current.relative(direction);
+                if (level.getBlockState(neighbor).getBlock() instanceof NacreBlock) {
+                    if (isSameVariant(cell, neighbor)) {
+                        queue.add(neighbor);
+                    }
+                }
             }
         }
-
-        level.scheduleTick(pos, this, delay);
     }
 
     @Override

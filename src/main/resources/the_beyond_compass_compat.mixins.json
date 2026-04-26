@@ -1,0 +1,14 @@
+{
+  "required": false,
+  "package": "com.thebeyond.mixin.compat.compass",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "the_beyond.refmap.json",
+  "mixins": [
+    "ExplorersCompassItemMixin",
+    "NaturesCompassItemMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

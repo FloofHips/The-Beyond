@@ -5,16 +5,23 @@
     "settings": "the_beyond:the_end",
     "biome_source": {
       "type": "the_beyond:the_end",
-      "end_biomes": [
+      "tainted_end_biomes": [
         "minecraft:end_highlands",
         "minecraft:end_midlands",
         "minecraft:end_barrens",
         "the_beyond:attracta_expanse",
-        "the_beyond:peer_lands"
+        "the_beyond:peer_lands",
+        "endercon:end_hallows"
       ],
       "outer_void_biomes": [
         "minecraft:the_void",
-        "minecraft:small_end_islands"
+        "minecraft:small_end_islands",
+        "enderscape:void_depths",
+        "enderscape:void_skies",
+        "enderscape:void_sky_islands",
+        "endercon:end_depths",
+        "endercon:end_skies",
+        "endercon:end_sky_islands"
       ],
       "inner_void_biomes": [
         "the_beyond:true_void",

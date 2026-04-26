@@ -1,0 +1,15 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:mod_loaded",
+        "modid": "dimensional_tears"
+      }
+    }
+  ],
+  "type": "neoforge:add_features",
+  "biomes": "#the_beyond:has_auroracite_layer",
+  "features": "the_beyond:auroracite_layer",
+  "step": "raw_generation"
+}
