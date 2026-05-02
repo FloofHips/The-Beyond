@@ -231,6 +231,7 @@ public class EnadrakeEntity extends PathfinderMob {
                 this.level().addFreshEntity(itementity);
 
                 this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(itemstack.getItem(), 1));
+                this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
                 itemstack.consume(1, player);
 
                 if (player instanceof ServerPlayer serverPlayer) {
@@ -249,6 +250,7 @@ public class EnadrakeEntity extends PathfinderMob {
                 ItemStack playerItem = new ItemStack(itemstack.getItem(), 1);
                 itemstack.consume(1, player);
                 this.setItemInHand(InteractionHand.MAIN_HAND, playerItem);
+                this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
 
                 if (player instanceof ServerPlayer serverPlayer) {
                     BeyondCriteriaTriggers.GIFT_ENADRAKE.get().trigger(serverPlayer);
