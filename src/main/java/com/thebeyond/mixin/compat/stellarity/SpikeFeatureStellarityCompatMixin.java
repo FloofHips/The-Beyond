@@ -12,21 +12,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.List;
 
-/**
- * Overrides {@link SpikeFeature#getSpikesForLevel} to return Stellarity's hardcoded 10-spike ring
- * instead of vanilla's per-seed random positions.
- *
- * <p>Without this, post-worldgen callers ({@code EndDragonFight.updateCrystalCount},
- * {@code resetSpikeCrystals}, {@code DragonRespawnAnimation.SUMMONING_PILLARS}) target vanilla's
- * random positions — explosions and rebuilt towers miss Stellarity's actual pillars.</p>
- *
- * <p>Safe because Stellarity's worldgen provides spikes inline (never hits the fallback).</p>
- *
- * <p>Values copied from {@code ring.json}; must be kept in sync with
- * {@code StellarityBetterEndCompatEvents.STELLARITY_RING_POSITIONS}.</p>
- *
- * <p>Gated on: Stellarity loaded, {@link BeyondTerrainState#isActive()}.</p>
- */
+/** Returns Stellarity's hardcoded 10-spike ring instead of vanilla's seed-random positions so
+ *  {@code EndDragonFight} dragon-fight callers (crystal count, respawn animation, etc.) hit
+ *  the actual pillars. Values mirror {@code ring.json} — keep synced with
+ *  {@code StellarityBetterEndCompatEvents.STELLARITY_RING_POSITIONS}. */
 @Mixin(SpikeFeature.class)
 public abstract class SpikeFeatureStellarityCompatMixin {
 

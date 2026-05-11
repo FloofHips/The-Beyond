@@ -10,14 +10,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Cancels vanilla {@link EndPodiumFeature#place} in the Beyond+BetterEnd+Stellarity combo
- * to prevent a duplicate portal/egg from spawning at the wrong Y (BetterEnd rewrites the
- * origin to WORLD_SURFACE, which lands ~y=260 on Beyond's terrain). Stellarity owns the
- * real podium and dragon egg via its own mcfunction chain.
- *
- * <p>Gated on: stellarity + betterend loaded, {@link BeyondTerrainState#isActive()}.</p>
- */
+/** Cancels vanilla podium in the Beyond+BetterEnd+Stellarity combo. Stellarity places it
+ *  via mcfunction; BetterEnd rewrites the vanilla origin to WORLD_SURFACE (~y=260). */
 @Mixin(EndPodiumFeature.class)
 public class EndPodiumFeatureMixin {
 

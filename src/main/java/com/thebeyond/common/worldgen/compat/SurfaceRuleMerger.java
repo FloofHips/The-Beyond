@@ -28,24 +28,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Merges Beyond's surface rules into the End's active noise settings.
- *
- * Conditional thresholds:
- * - External terrain (Enderscape): wider noise range [-0.3, 0.3] for plate_block
- *   to compensate for different terrain characteristics
- * - Beyond/vanilla terrain: uses JSON-defined thresholds (default [-0.2, 0.2])
- */
+/** Merges Beyond's surface rules into the End's active noise settings. When foreign
+ *  terrain (Enderscape) owns the dim, widens plate thresholds to fit its shape. */
 public class SurfaceRuleMerger {
 
     private static final ResourceKey<NoiseGeneratorSettings> BEYOND_END_SETTINGS =
             ResourceKey.create(Registries.NOISE_SETTINGS, ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"));
 
-    /**
-     * Merges surface rules into the active End noise settings. When {@code beyondActive}
-     * is true, also scans foreign noise settings for biome-specific surface rules so mod
-     * biomes keep their surface blocks under Beyond's chunk generator.
-     */
+    /** Merges surface rules into the active End noise settings; when {@code beyondActive},
+     *  also scans foreign settings so mod biomes keep their surface under Beyond's chunkgen. */
     public static void mergeSurfaceRules(MinecraftServer server, boolean beyondActive) {
         RegistryAccess registryAccess = server.registryAccess();
 
@@ -103,13 +94,9 @@ public class SurfaceRuleMerger {
         mergeSurfaceRules(server, false);
     }
 
-    /**
-     * Collects surface rules from foreign {@link NoiseGeneratorSettings}:
-     * {@code minecraft:end} (where datapack overrides like Stellarity inject their
-     * rules) and any non-Beyond namespace whose key path contains {@code "end"}.
-     * These are whole-settings blobs that may contain terminators, so the caller
-     * must place them AFTER biome-guarded rules in the sequence.
-     */
+    /** Collects whole-settings surface rules from {@code minecraft:end} (datapack overrides)
+     *  and other non-Beyond namespaces whose path contains "end". These blobs may contain
+     *  terminators, so the caller must order them AFTER biome-guarded rules. */
     private static List<SurfaceRules.RuleSource> collectForeignNoiseSettingsRules(
             RegistryAccess registryAccess) {
         Registry<NoiseGeneratorSettings> noiseRegistry = registryAccess.registryOrThrow(Registries.NOISE_SETTINGS);
@@ -149,12 +136,8 @@ public class SurfaceRuleMerger {
         return foreignRules;
     }
 
-    /**
-     * Collects per-biome rules from Wover's {@code SURFACE_RULES_REGISTRY} and
-     * wraps each with {@code ifTrue(isBiome(key), ...)}. Mirrors Wover's own
-     * {@code SurfaceRuleUtil.getRulesForBiome}; reflective because Wover is not
-     * a compile-time dependency. Silent empty return when Wover is absent.
-     */
+    /** Collects per-biome rules from Wover's {@code SURFACE_RULES_REGISTRY} wrapped in
+     *  {@code ifTrue(isBiome(key), …)}; reflective, empty result when Wover is absent. */
     private static List<SurfaceRules.RuleSource> collectWoverBiomeSurfaceRules(
             RegistryAccess registryAccess, BiomeSource biomeSource) {
         WoverRegistryAccess access = WoverRegistryAccess.INSTANCE;
@@ -194,7 +177,9 @@ public class SurfaceRuleMerger {
             // priority overrides continue to win under this collection.
             matches.sort((a, b) -> b.priority - a.priority);
             SurfaceRules.RuleSource[] perBiome = new SurfaceRules.RuleSource[matches.size()];
-            for (int i = 0; i < matches.size(); i++) perBiome[i] = matches.get(i).rule;
+            for (int i = 0; i < matches.size(); i++) {
+                perBiome[i] = normalizeFillerOrdering(matches.get(i).rule);
+            }
             // Public sequence(...) factory — SequenceRuleSource ctor is package-private.
             out.add(SurfaceRules.ifTrue(
                     SurfaceRules.isBiome(biomeKey),
@@ -211,6 +196,52 @@ public class SurfaceRuleMerger {
 
     /** Simple tuple for the biomeID → rules bucket in {@link #collectWoverBiomeSurfaceRules}. */
     private record Entry(SurfaceRules.RuleSource rule, int priority) {}
+
+    /** Moves unconditional {@code BlockRuleSource} fillers to the END of a
+     *  {@code SequenceRuleSource}. Wover's {@code filler(state)} sits at priority 900 (above
+     *  conditional rules at priority 2) and would short-circuit {@code SequenceRule.tryApply}'s
+     *  first-non-null match. Reflective because the rule records are package-private. */
+    private static SurfaceRules.RuleSource normalizeFillerOrdering(SurfaceRules.RuleSource rule) {
+        if (rule == null) return null;
+        if (!"SequenceRuleSource".equals(rule.getClass().getSimpleName())) return rule;
+        try {
+            java.lang.reflect.Method seq = rule.getClass().getMethod("sequence");
+            @SuppressWarnings("unchecked")
+            List<SurfaceRules.RuleSource> entries = (List<SurfaceRules.RuleSource>) seq.invoke(rule);
+            if (entries == null || entries.size() < 2) return rule;
+
+            // Recurse into nested sequences first so terminators bubble up at every level.
+            List<SurfaceRules.RuleSource> normalized = new ArrayList<>(entries.size());
+            for (SurfaceRules.RuleSource entry : entries) {
+                normalized.add(normalizeFillerOrdering(entry));
+            }
+
+            // Detect terminators (unconditional BlockRuleSource) and partition.
+            List<SurfaceRules.RuleSource> conditional = new ArrayList<>(normalized.size());
+            List<SurfaceRules.RuleSource> filler = new ArrayList<>(2);
+            for (SurfaceRules.RuleSource entry : normalized) {
+                if ("BlockRuleSource".equals(entry.getClass().getSimpleName())) {
+                    filler.add(entry);
+                } else {
+                    conditional.add(entry);
+                }
+            }
+            // No terminators or no conditionals → no reorder needed.
+            if (filler.isEmpty() || conditional.isEmpty()) {
+                // Still return the recursed version in case nested seqs were normalized.
+                return SurfaceRules.sequence(normalized.toArray(new SurfaceRules.RuleSource[0]));
+            }
+
+            List<SurfaceRules.RuleSource> reordered = new ArrayList<>(normalized.size());
+            reordered.addAll(conditional);
+            reordered.addAll(filler);
+            return SurfaceRules.sequence(reordered.toArray(new SurfaceRules.RuleSource[0]));
+        } catch (Throwable t) {
+            // Reflection failure → return original. Logged once per server start.
+            TheBeyond.LOGGER.debug("[TheBeyond] normalizeFillerOrdering skipped: {}", t.toString());
+            return rule;
+        }
+    }
 
     /** Reflective handle to Wover's SurfaceRuleRegistry / AssignedSurfaceRule,
      *  resolved once at class init. INSTANCE is null when Wover is absent. */
@@ -253,11 +284,7 @@ public class SurfaceRuleMerger {
         }
     }
 
-    /**
-     * Builds attracta_expanse surface rules with wider thresholds for Enderscape terrain.
-     * plate_block: [-0.3, 0.3] (vs JSON default [-0.2, 0.2])
-     * plated_end_stone: [-0.5, 0.5] (vs JSON default [-0.3, 0.3])
-     */
+    /** attracta_expanse rules with widened plate thresholds for Enderscape terrain. */
     private static SurfaceRules.RuleSource buildExternalTerrainRules() {
         BlockState plateBlock = BeyondBlocks.PLATE_BLOCK.get().defaultBlockState();
         BlockState platedEndStone = BeyondBlocks.PLATED_END_STONE.get().defaultBlockState();

@@ -29,12 +29,8 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 public class AnchorLeggingsItem extends ModelArmorItem {
-    /**
-     * Tracks accumulated fall distance for creative-mode players.
-     * In creative, {@code ServerPlayer.causeFallDamage()} short-circuits before
-     * {@code LivingFallEvent} fires, so we compute fall distance manually from
-     * downward velocity each tick.
-     */
+    /** Accumulated fall distance for creative players: their {@code causeFallDamage}
+     *  short-circuits before {@code LivingFallEvent}, so we integrate velocity. */
     private static final Map<UUID, Float> creativeFallDistance = new HashMap<>();
 
     public AnchorLeggingsItem(Holder<ArmorMaterial> material, Type type, Properties properties, Supplier<MultipartArmorModel> modelSupplier) {

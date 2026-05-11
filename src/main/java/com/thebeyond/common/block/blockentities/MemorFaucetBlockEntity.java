@@ -1,6 +1,7 @@
 package com.thebeyond.common.block.blockentities;
 
 import com.thebeyond.common.block.MemorFaucetBlock;
+import com.thebeyond.common.compat.BeyondCompatHooks;
 import com.thebeyond.common.entity.AbyssalNomadEntity;
 import com.thebeyond.common.entity.EnadrakeEntity;
 import com.thebeyond.common.entity.LanternEntity;
@@ -82,6 +83,19 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
         return false;
     }
 
+    /** Visible center; identity outside sub-levels. */
+    private static BlockPos anchor(Level level, BlockPos pos) {
+        Vec3 v = BeyondCompatHooks.visibleOrCenter(level, pos);
+        return BlockPos.containing(v);
+    }
+
+    private static void safeSendBlockUpdated(Level level, BlockPos pos, BlockState state) {
+        try {
+            level.sendBlockUpdated(pos, state, state, 3);
+        } catch (UnsupportedOperationException ignored) {
+        }
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, MemorFaucetBlockEntity be) {
         if (state.getValue(AGE) == MemorFaucetBlock.MAX_AGE && be.activeProgress == 0) return;
 
@@ -101,35 +115,37 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
         if (be.activeProgress > 0 && be.activeProgress < 1) {
             be.setChanged();
             if (!level.isClientSide) {
-                level.sendBlockUpdated(pos, state, state, 3);
+                safeSendBlockUpdated(level, pos, state);
             }
         }
 
         if (be.tickCounter >= CHECK_INTERVAL + 5) {
             be.tickCounter = 0;
-            AABB detectionBox = new AABB(pos).inflate(20);
+            BlockPos a = anchor(level, pos);
+            AABB detectionBox = new AABB(a).inflate(20);
 
             if (level.getBlockState(pos).getValue(AGE) == 0) {
                 List<AbyssalNomadEntity> entities = level.getEntitiesOfClass(AbyssalNomadEntity.class, detectionBox);
 
                 for (AbyssalNomadEntity nomad : entities) {
-                    Vec3 newPos = pos.getCenter().subtract(nomad.position()).normalize().scale(15);
-                    nomad.prayerSite = pos.offset((int) newPos.x, 0, (int) newPos.z);
+                    Vec3 newPos = a.getCenter().subtract(nomad.position()).normalize().scale(15);
+                    nomad.prayerSite = a.offset((int) newPos.x, 0, (int) newPos.z);
                 }
             }
 
             if (level.getBlockState(pos).getValue(AGE) == 0) {
                 TargetingConditions conditions = TargetingConditions.forNonCombat().range(6).ignoreLineOfSight().selector((entity) -> entity instanceof AbyssalNomadEntity nomad);
-                AbyssalNomadEntity nearestNomad = (AbyssalNomadEntity) level.getNearestEntity(AbyssalNomadEntity.class, conditions, null, pos.getX(), pos.getY(), pos.getZ(), detectionBox);
+                AbyssalNomadEntity nearestNomad = (AbyssalNomadEntity) level.getNearestEntity(AbyssalNomadEntity.class, conditions, null, a.getX(), a.getY(), a.getZ(), detectionBox);
 
-                if (nearestNomad!=null && pos.getCenter().subtract(nearestNomad.position()).length() < 10)
-                    be.spawnItemFromNomad(nearestNomad, pos);
+                if (nearestNomad!=null && a.getCenter().subtract(nearestNomad.position()).length() < 10)
+                    be.spawnItemFromNomad(nearestNomad, a);
             }
         }
     }
 
     private void checkForActivation(Level level, BlockPos pos) {
-        AABB detectionBox = new AABB(pos).inflate(DETECTION_RANGE);
+        BlockPos a = anchor(level, pos);
+        AABB detectionBox = new AABB(a).inflate(DETECTION_RANGE);
 
         List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, detectionBox);
 
@@ -183,26 +199,27 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
         setItems();
         if (active) return;
         active = true;
-        level.playSound(null, pos, SoundEvents.VAULT_ACTIVATE, SoundSource.BLOCKS, 1.0F, 1.0F);
+        BlockPos a = anchor(level, pos);
+        level.playSound(null, a, SoundEvents.VAULT_ACTIVATE, SoundSource.BLOCKS, 1.0F, 1.0F);
 
         if (level instanceof ServerLevel serverLevel) {
-            serverLevel.sendParticles(ParticleTypes.ENCHANT, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, 10, 0.5, 0.5, 0.5, 0.1);
+            serverLevel.sendParticles(ParticleTypes.ENCHANT, a.getX() + 0.5, a.getY() + 1.0, a.getZ() + 0.5, 10, 0.5, 0.5, 0.5, 0.1);
         }
 
         setChanged();
         if (!level.isClientSide) {
-            level.sendBlockUpdated(pos, getBlockState(), getBlockState(), 3);
+            safeSendBlockUpdated(level, pos, getBlockState());
         }
     }
 
     private void deactivateFaucet(Level level, BlockPos pos) {
         if (!active) return;
         active = false;
-        level.playSound(null, pos, SoundEvents.VAULT_DEACTIVATE, SoundSource.BLOCKS, 1.0F, 1.0F);
+        level.playSound(null, anchor(level, pos), SoundEvents.VAULT_DEACTIVATE, SoundSource.BLOCKS, 1.0F, 1.0F);
 
         setChanged();
         if (!level.isClientSide) {
-            level.sendBlockUpdated(pos, getBlockState(), getBlockState(), 3);
+            safeSendBlockUpdated(level, pos, getBlockState());
         }
     }
 
@@ -245,7 +262,8 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
     }
 
     private void consumeItems(Level level, BlockPos pos) {
-        AABB itemBB = new AABB(pos).inflate(2.0).move(0,-2.5,0);
+        BlockPos a = anchor(level, pos);
+        AABB itemBB = new AABB(a).inflate(2.0).move(0,-2.5,0);
         List<ItemEntity> items = level.getEntitiesOfClass(ItemEntity.class, itemBB);
 
         for (ItemEntity itemEntity : items) {
@@ -264,12 +282,12 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
                 itemEntity.discard();
             }
 
-            level.playSound(null, pos, SoundEvents.RESPAWN_ANCHOR_CHARGE, SoundSource.BLOCKS, 1, 1);
-            level.playSound(null, pos, SoundEvents.ALLAY_ITEM_TAKEN, SoundSource.BLOCKS, 0.5F, 1.0F);
+            level.playSound(null, a, SoundEvents.RESPAWN_ANCHOR_CHARGE, SoundSource.BLOCKS, 1, 1);
+            level.playSound(null, a, SoundEvents.ALLAY_ITEM_TAKEN, SoundSource.BLOCKS, 0.5F, 1.0F);
 
             if (level instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(ParticleTypes.POOF, itemEntity.getX(), itemEntity.getY(), itemEntity.getZ(), 5, 0.2, 0.2, 0.2, 0.05);
-                serverLevel.sendParticles(BeyondParticleTypes.AURORACITE_STEP.get(), pos.getX() + 0.5, pos.getY() - 0.5, pos.getZ() + 0.5, 1, 0, 0, 0, 0);
+                serverLevel.sendParticles(BeyondParticleTypes.AURORACITE_STEP.get(), a.getX() + 0.5, a.getY() - 0.5, a.getZ() + 0.5, 1, 0, 0, 0, 0);
                 serverLevel.sendParticles(BeyondParticleTypes.AURORACITE_STEP.get(), itemEntity.position().x, itemEntity.position().y + 0.1, itemEntity.position().z, 1, 0, 0, 0, 0);
             }
 
@@ -303,7 +321,8 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
     }
 
     private void spawnNomads(Level level, BlockPos pos) {
-        AABB box = new AABB(pos).inflate(NOMAD_RANGE);
+        BlockPos a = anchor(level, pos);
+        AABB box = new AABB(a).inflate(NOMAD_RANGE);
         List<AbyssalNomadEntity> nomads = level.getEntitiesOfClass(AbyssalNomadEntity.class, box);
 
         int i1 = Math.max((2 + level.random.nextInt(10)) - nomads.size(),0);
@@ -311,9 +330,20 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
 
         Direction direction = level.getBlockState(pos).getValue(MemorFaucetBlock.FACING);
 
+        // Stationary: spawn deep in The Paths and walk up via prayerSite. On a balloon:
+        // probe for a sturdy block near storage pos and spawn on top, projected to visible.
+        boolean inSubLevel = com.thebeyond.common.compat.BeyondCompatHooks.visibleOnly(level, pos) != null;
+
         for (int i = 0; i < i1; i++) {
-            BlockPos spawnPos = BlockPos.randomInCube(getLevel().random, 1, pos, 10).iterator().next();
-            if (spawnPos != null) {
+            if (inSubLevel) {
+                BlockPos ground = findGroundNear(level, pos, 4, 8);
+                if (ground == null) continue;
+                Vec3 spawn = com.thebeyond.common.compat.BeyondCompatHooks.visibleOrCenter(level, ground.above());
+                AbyssalNomadEntity nomad = new AbyssalNomadEntity(BeyondEntityTypes.ABYSSAL_NOMAD.get(), level);
+                nomad.setPos(spawn.x, spawn.y, spawn.z);
+                level.addFreshEntity(nomad);
+            } else {
+                BlockPos spawnPos = BlockPos.randomInCube(getLevel().random, 1, a, 10).iterator().next();
                 BlockPos newpos = spawnPos.atY(-6).relative(direction, 10);
                 AbyssalNomadEntity nomad = new AbyssalNomadEntity(BeyondEntityTypes.ABYSSAL_NOMAD.get(), level);
                 nomad.setPos(newpos.getX(), newpos.getY(), newpos.getZ());
@@ -322,31 +352,44 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
         }
     }
 
+    /** First sturdy-top block within hRadius/vDepth of center; spawn anchor is one above. */
+    private static BlockPos findGroundNear(Level level, BlockPos center, int hRadius, int vDepth) {
+        int dx = level.random.nextInt(hRadius * 2 + 1) - hRadius;
+        int dz = level.random.nextInt(hRadius * 2 + 1) - hRadius;
+        BlockPos cursor = center.offset(dx, 1, dz);
+        for (int y = 0; y <= vDepth; y++) {
+            BlockPos p = cursor.below(y);
+            if (level.getBlockState(p).isFaceSturdy(level, p, Direction.UP)) return p;
+        }
+        return null;
+    }
+
     private void affectNomads(Level level, BlockPos pos, byte b) {
-        AABB box = new AABB(pos).inflate(NOMAD_RANGE);
+        BlockPos a = anchor(level, pos);
+        AABB box = new AABB(a).inflate(NOMAD_RANGE);
         List<AbyssalNomadEntity> nomads = level.getEntitiesOfClass(AbyssalNomadEntity.class, box);
 
         if (b == (byte) 1) {
             for (AbyssalNomadEntity nomad : nomads) {
-                nomad.lookAt = pos;
-                Vec3 distance = nomad.position().subtract(Vec3.atCenterOf(pos));
+                nomad.lookAt = a;
+                Vec3 distance = nomad.position().subtract(Vec3.atCenterOf(a));
                 Vec3 dest = distance.normalize().scale(10);
 
-                Vec3 newPos = Vec3.atCenterOf(pos).add(dest);
+                Vec3 newPos = Vec3.atCenterOf(a).add(dest);
                 nomad.getNavigation().moveTo(newPos.x, newPos.y, newPos.z, 0.5 + nomad.level().random.nextFloat());
             }
         }
 
         if (b == (byte) 2) {
             for (AbyssalNomadEntity nomad : nomads) {
-                nomad.lookAt = pos;
+                nomad.lookAt = a;
                 nomad.sitDownCounter = 60 + nomad.level().random.nextInt(0, 20);
             }
         }
 
         if (b == (byte) 3) {
             for (AbyssalNomadEntity nomad : nomads) {
-                nomad.lookAt = pos;
+                nomad.lookAt = a;
                 nomad.level().broadcastEntityEvent(nomad, (byte) 69);
             }
         }
@@ -354,13 +397,13 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
         if (b == (byte) 4) {
             this.birthday = (int) (level.getDayTime() / 24000);
             if (level instanceof ServerLevel serverLevel) {
-                serverLevel.sendParticles(ColorUtils.auroraOptions, pos.getX() + 0.5, pos.getY() - 0.5, pos.getZ() + 0.5, 5, 0.1, 0.1, 0.1, 0.05);
+                serverLevel.sendParticles(ColorUtils.auroraOptions, a.getX() + 0.5, a.getY() - 0.5, a.getZ() + 0.5, 5, 0.1, 0.1, 0.1, 0.05);
             }
 
-            level.playSound(null, pos, SoundEvents.TRIAL_SPAWNER_OMINOUS_ACTIVATE, SoundSource.BLOCKS, 1, 1);
+            level.playSound(null, a, SoundEvents.TRIAL_SPAWNER_OMINOUS_ACTIVATE, SoundSource.BLOCKS, 1, 1);
 
             for (AbyssalNomadEntity nomad : nomads) {
-                nomad.lookAt = pos;
+                nomad.lookAt = a;
                 level.playSound(null, nomad.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 0.5F, 0.8F);
                 if (level instanceof ServerLevel serverLevel) {
                     serverLevel.sendParticles(BeyondParticleTypes.AURORACITE_STEP.get(), nomad.position().x, nomad.position().y + nomad.getEyeHeight() + 0.1, nomad.position().z, 1, 0, 0, 0, 0);
@@ -368,7 +411,7 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
                 nomad.dropCounter = 60 + nomad.level().random.nextInt(0, 20);
             }
 
-            Player nearestPlayer = level.getNearestPlayer(pos.getX(), pos.getY(), pos.getZ(), 16, false);
+            Player nearestPlayer = level.getNearestPlayer(a.getX(), a.getY(), a.getZ(), 16, false);
             if (nearestPlayer instanceof ServerPlayer serverPlayer) {
                 BeyondCriteriaTriggers.FOUNTAIN_OFFERING.get().trigger(serverPlayer);
             }

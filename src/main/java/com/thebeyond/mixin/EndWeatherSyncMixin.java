@@ -8,17 +8,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Syncs weather levels in the End with the overworld's weather state.
- *
- * Vanilla's advanceWeatherCycle() only updates rainLevel/thunderLevel for
- * dimensions with hasSkyLight=true (overworld). The End's levels stay stale
- * from world creation, breaking isRaining() and weather-dependent gameplay.
- *
- * This mixin runs after advanceWeatherCycle() and updates the End's
- * rain/thunder levels based on the shared levelData (DerivedLevelData
- * delegates to the overworld's weather state).
- */
+/** Tail-injects the End's {@code advanceWeatherCycle} to mirror rain/thunder levels from
+ *  shared levelData (DerivedLevelData → overworld). Vanilla skips non-skylight dims. */
 @Mixin(ServerLevel.class)
 public class EndWeatherSyncMixin {
 

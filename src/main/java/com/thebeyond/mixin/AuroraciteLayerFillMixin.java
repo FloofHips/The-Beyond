@@ -27,16 +27,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/**
- * Guarantees a full auroracite floor in every End chunk as a safety net for orphan biomes
- * (e.g. Unusual End) and Sinytra-Connector biomes where {@code add_features} doesn't
- * propagate, closing void holes at {@code minY}. Injects at {@code TAIL} of
- * {@link ChunkGenerator#applyBiomeDecoration} so it runs for every generator. Writes are
- * additive — only air cells are overwritten. Noise is shared with the feature's live
- * instance when available so the pattern stays continuous across biome borders; otherwise
- * a world-seeded fallback is used. With Dimensional Tears loaded, {@code noise <= 0}
- * cells are filled with its source fluid at {@code minY}; without DT, they stay air.
- */
+/** Safety-net auroracite floor for End chunks bypassing Beyond's chunkgen (orphans,
+ *  Sinytra). Tail-injected so it fires under any generator. */
 @Mixin(ChunkGenerator.class)
 public abstract class AuroraciteLayerFillMixin {
 
@@ -90,23 +82,37 @@ public abstract class AuroraciteLayerFillMixin {
                 final double n = noise.getValue(globalX * 0.1, globalZ * 0.1);
 
                 if (n > 0.0) {
-                    // Two-layer auroracite column at floor.
+                    // Two-layer auroracite column at floor. Overwrite foreign blocks (e.g. end_stone
+                    // placed by foreign biome surface rules in soup mode) — auroracite is the floor's
+                    // ground truth in End. Idempotent: skip the write if already auroracite.
                     mutable.set(globalX, minY, globalZ);
-                    if (chunk.getBlockState(mutable).isAir()) {
+                    if (!chunk.getBlockState(mutable).is(BeyondBlocks.AURORACITE.get())) {
                         chunk.setBlockState(mutable, auroracite, false);
                     }
                     mutable.set(globalX, minY + 1, globalZ);
-                    if (chunk.getBlockState(mutable).isAir()) {
+                    if (!chunk.getBlockState(mutable).is(BeyondBlocks.AURORACITE.get())) {
                         chunk.setBlockState(mutable, auroracite, false);
                     }
+                    // Clear foreign vegetation that landed on top of the auroracite column via
+                    // MOTION_BLOCKING-heightmap features (Oak's Frontier ender_grass_patch and
+                    // similar). Auroracite is a void-biome floor; surface plants belong on islands
+                    // higher up, not on the floor. Air check guards against erasing legitimate
+                    // future placements at minY+2 in non-void biomes (none currently use this slot).
+                    mutable.set(globalX, minY + 2, globalZ);
+                    BlockState aboveFloor = chunk.getBlockState(mutable);
+                    if (!aboveFloor.isAir()) {
+                        chunk.setBlockState(mutable, Blocks.AIR.defaultBlockState(), false);
+                    }
                 } else if (dtUsable) {
-                    // DT fluid fills the gaps (DT variant only).
+                    // DT fluid fills the gaps (DT variant only). Overwrite foreign blocks the same
+                    // way; skip when already auroracite or the same DT fluid.
                     mutable.set(globalX, minY, globalZ);
-                    if (chunk.getBlockState(mutable).isAir()) {
+                    BlockState existing = chunk.getBlockState(mutable);
+                    if (!existing.is(BeyondBlocks.AURORACITE.get()) && existing.getBlock() != dtFluid.getBlock()) {
                         chunk.setBlockState(mutable, dtFluid, false);
                     }
                 }
-                // no DT and noise <= 0: leave air.
+                // no DT and noise <= 0: leave whatever is there (may be foreign block; rare in End).
             }
         }
     }

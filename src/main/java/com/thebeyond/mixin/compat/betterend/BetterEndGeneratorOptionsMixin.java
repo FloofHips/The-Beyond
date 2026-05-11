@@ -7,14 +7,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Forces BetterEnd's {@code replacePortal}, {@code replacePillars}, and {@code hasCentralIsland}
- * to return {@code false} when Stellarity is also loaded, ceding central-island ownership to
- * Stellarity's datapack-driven chain.
- *
- * <p>{@code hasDragonFights()} is left alone (disabling it would break EndDragonFight entirely).
- * Soft-targeted via {@code @Pseudo} — no-op without BetterEnd. Only fires when Stellarity is loaded.</p>
- */
+/** Forces {@code replacePortal}/{@code replacePillars}/{@code hasCentralIsland} to {@code false}
+ *  when Stellarity is loaded, ceding the central island to Stellarity. {@code hasDragonFights()}
+ *  is left alone since disabling it breaks the dragon fight. */
 @Pseudo
 @Mixin(targets = "org.betterx.betterend.world.generator.GeneratorOptions", remap = false)
 public abstract class BetterEndGeneratorOptionsMixin {

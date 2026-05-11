@@ -11,11 +11,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.Set;
 
-/**
- * Static API for knowledge queries and grants. Routes between {@link PlayerKnowledge}
- * (per-player modes) and {@link WorldKnowledge} (shared-world mode) based on config.
- * When the gate is off, {@link #isKnown} returns {@code true} for every key.
- */
+/** Static API for knowledge queries; routes per-player or shared-world per config.
+ *  Gate-off → {@link #isKnown} returns true for every key. */
 public final class BeyondKnowledge {
 
     private BeyondKnowledge() {}
@@ -46,11 +43,8 @@ public final class BeyondKnowledge {
         return pk.isKnown(key);
     }
 
-    /**
-     * Server-only. No-op when the gate is off so silent state doesn't accumulate: flipping
-     * the feature on later would otherwise expose content the player never had to discover.
-     * Successful changes are pushed to clients via {@link PlayerKnowledgeSyncPayload}.
-     */
+    /** Server-only. No-op when the gate is off so silent state can't accumulate;
+     *  successful changes sync to clients via {@link PlayerKnowledgeSyncPayload}. */
     public static boolean grant(ServerPlayer player, ResourceLocation key) {
         if (!gateEnabled()) return false;
 

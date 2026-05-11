@@ -697,6 +697,55 @@ class TerrainDensityGridDumpTest {
     @Test void dumpBlend_xOnly1M()  throws IOException { dumpBandBlend(1_000_000,  0,          "blend_xOnly_1M"); }
     @Test void dumpBlend_zOnly1M()  throws IOException { dumpBandBlend(0,          1_000_000,  "blend_zOnly_1M"); }
 
+    // ---------- vertical Y-axis sweep (X-Y slice at fixed Z) ----------
+    // Probes density as a function of Y across an extended dim-bounds range.
+    // Pass criteria the user cares about:
+    //   (1) islands appear in Y < 32 when bounds extend below 0 (Y=-48 target)
+    //   (2) islands appear up to Y close to maxBuildHeight (Y=383 target)
+    //   (3) edgeGradient does not collapse density unexpectedly in the new ranges
+    // Image: X horizontal, Y vertical (flipped: +Y up). Solid pixels (red tint) =
+    // density > threshold = where END_STONE would be placed.
+
+    @Test void dumpVerticalSlice_enderscape_diag250k() throws IOException {
+        dumpVerticalSlice(250_000, 250_000, -64, 320, "vert_enderscape_diag_250k");
+    }
+
+    @Test void dumpVerticalSlice_enderscape_origin() throws IOException {
+        dumpVerticalSlice(0, 0, -64, 320, "vert_enderscape_origin");
+    }
+
+    @Test void dumpVerticalSlice_astrological_diag250k() throws IOException {
+        dumpVerticalSlice(250_000, 250_000, -256, 384, "vert_astrological_diag_250k");
+    }
+
+    @Test void dumpVerticalSlice_astrological_origin() throws IOException {
+        dumpVerticalSlice(0, 0, -256, 384, "vert_astrological_origin");
+    }
+
+    @Test void dumpVerticalSlice_proposed_minus48to383_diag250k() throws IOException {
+        // User target: islands generate from Y=-48 (deepest base) up to ~Y=383.
+        // 256 dim min keeps Astrological pack compatible while gen target is -48..383.
+        dumpVerticalSlice(250_000, 250_000, -256, 384, "vert_target_minus48_383_diag_250k");
+    }
+
+    // Beyond-only (dimMinY=0, hardcoded floor at y=32) at long distances.
+    @Test void dumpVerticalSlice_beyondOnly_diag1M()  throws IOException { dumpVerticalSlice(1_000_000, 1_000_000, 0, 256, "vert_beyondOnly_diag_1M"); }
+    @Test void dumpVerticalSlice_beyondOnly_diag2M()  throws IOException { dumpVerticalSlice(2_000_000, 2_000_000, 0, 256, "vert_beyondOnly_diag_2M"); }
+    @Test void dumpVerticalSlice_beyondOnly_diag4M()  throws IOException { dumpVerticalSlice(4_000_000, 4_000_000, 0, 256, "vert_beyondOnly_diag_4M"); }
+    @Test void dumpVerticalSlice_beyondOnly_diag5M()  throws IOException { dumpVerticalSlice(5_000_000, 5_000_000, 0, 256, "vert_beyondOnly_diag_5M"); }
+
+    // Enderscape (dimMinY=-64, parametrized floor at y=-32) at long distances.
+    @Test void dumpVerticalSlice_enderscape_diag1M()  throws IOException { dumpVerticalSlice(1_000_000, 1_000_000, -64, 320, "vert_enderscape_diag_1M"); }
+    @Test void dumpVerticalSlice_enderscape_diag2M()  throws IOException { dumpVerticalSlice(2_000_000, 2_000_000, -64, 320, "vert_enderscape_diag_2M"); }
+    @Test void dumpVerticalSlice_enderscape_diag4M()  throws IOException { dumpVerticalSlice(4_000_000, 4_000_000, -64, 320, "vert_enderscape_diag_4M"); }
+    @Test void dumpVerticalSlice_enderscape_diag5M()  throws IOException { dumpVerticalSlice(5_000_000, 5_000_000, -64, 320, "vert_enderscape_diag_5M"); }
+
+    // Astrological (dimMinY=-256, parametrized floor at y=-224) at long distances.
+    @Test void dumpVerticalSlice_astrological_diag1M()  throws IOException { dumpVerticalSlice(1_000_000, 1_000_000, -256, 384, "vert_astrological_diag_1M"); }
+    @Test void dumpVerticalSlice_astrological_diag2M()  throws IOException { dumpVerticalSlice(2_000_000, 2_000_000, -256, 384, "vert_astrological_diag_2M"); }
+    @Test void dumpVerticalSlice_astrological_diag4M()  throws IOException { dumpVerticalSlice(4_000_000, 4_000_000, -256, 384, "vert_astrological_diag_4M"); }
+    @Test void dumpVerticalSlice_astrological_diag5M()  throws IOException { dumpVerticalSlice(5_000_000, 5_000_000, -256, 384, "vert_astrological_diag_5M"); }
+
     // ---------- implementation ----------
 
     /**
@@ -854,6 +903,111 @@ class TerrainDensityGridDumpTest {
                 label, outFile.getAbsolutePath(),
                 centerX, centerZ, SAMPLE_Y, GRID_SIZE * GRID_STRIDE, GRID_STRIDE,
                 minValue, maxValue, minCycleHeight, maxCycleHeight);
+    }
+
+    /**
+     * Samples an X-Y vertical slice (fixed Z = centerZ) over a Y range bounded by
+     * {@code dimMinY}..{@code dimMaxY-1} for an X span of {@link #GRID_SIZE} ×
+     * {@link #GRID_STRIDE} blocks. Dim bounds are temporarily set to the supplied
+     * range so {@code edgeGradient} reflects the proposed extended-bounds scenario.
+     */
+    private void dumpVerticalSlice(int centerX, int centerZ, int dimMinY, int dimMaxY, String label)
+            throws IOException {
+        int savedMin = BeyondTerrainState.getDimMinY();
+        int savedMax = BeyondTerrainState.getDimMaxY();
+        BeyondTerrainState.setDimBounds(dimMinY, dimMaxY);
+        try {
+            int yRange = dimMaxY - dimMinY;
+            int imageHeight = yRange; // 1 pixel per Y block
+            int imageWidth = GRID_SIZE;
+
+            BufferedImage image = new BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_INT_RGB);
+            double[] densities = new double[imageWidth * imageHeight];
+            double[] thresholds = new double[imageWidth * imageHeight];
+
+            double minDensity = Double.POSITIVE_INFINITY;
+            double maxDensity = Double.NEGATIVE_INFINITY;
+            int solidCount = 0;
+            int firstSolidY = Integer.MAX_VALUE;
+            int lastSolidY = Integer.MIN_VALUE;
+
+            final int half = imageWidth / 2;
+            for (int yIdx = 0; yIdx < imageHeight; yIdx++) {
+                int globalY = dimMinY + yIdx;
+                for (int px = 0; px < imageWidth; px++) {
+                    int globalX = centerX + (px - half) * GRID_STRIDE;
+
+                    double density = BeyondEndChunkGenerator.getTerrainDensity(globalX, globalY, centerZ);
+                    float distanceFromOrigin = (float) Math.sqrt(
+                            (double) globalX * globalX + (double) centerZ * centerZ);
+                    long packed = BeyondEndChunkGenerator.computeWrappedCoords(globalX, centerZ);
+                    int wrappedX = BeyondEndChunkGenerator.unpackWrappedX(packed);
+                    int wrappedZ = BeyondEndChunkGenerator.unpackWrappedZ(packed);
+                    double threshold = BeyondEndChunkGenerator.getThreshold(wrappedX, wrappedZ, distanceFromOrigin);
+
+                    int idx = yIdx * imageWidth + px;
+                    densities[idx] = density;
+                    thresholds[idx] = threshold;
+
+                    assertFalse(Double.isNaN(density),
+                            () -> "NaN density at " + globalX + "," + globalY + "," + centerZ);
+                    assertFalse(Double.isInfinite(density),
+                            () -> "Infinite density at " + globalX + "," + globalY + "," + centerZ);
+
+                    if (density < minDensity) minDensity = density;
+                    if (density > maxDensity) maxDensity = density;
+                    if (density > threshold) {
+                        solidCount++;
+                        if (globalY < firstSolidY) firstSolidY = globalY;
+                        if (globalY > lastSolidY) lastSolidY = globalY;
+                    }
+                }
+            }
+
+            double span = Math.max(maxDensity - minDensity, 1e-9);
+            for (int yIdx = 0; yIdx < imageHeight; yIdx++) {
+                for (int px = 0; px < imageWidth; px++) {
+                    int idx = yIdx * imageWidth + px;
+                    double d = densities[idx];
+                    double t = thresholds[idx];
+                    int gray = (int) (255.0 * (d - minDensity) / span);
+                    if (gray < 0) gray = 0;
+                    if (gray > 255) gray = 255;
+                    int rgb;
+                    if (d > t) {
+                        int r = Math.min(255, gray + 80);
+                        int g = gray / 2;
+                        int b = gray / 4;
+                        rgb = (r << 16) | (g << 8) | b;
+                    } else {
+                        rgb = (gray << 16) | (gray << 8) | gray;
+                    }
+                    // Flip Y so +Y is up.
+                    image.setRGB(px, imageHeight - 1 - yIdx, rgb);
+                }
+            }
+
+            String fileName = String.format("vert_%s_center_%d_%d_dimY%d_%d_stride%d.png",
+                    label, centerX, centerZ, dimMinY, dimMaxY, GRID_STRIDE);
+            File outFile = new File(OUTPUT_DIR, fileName);
+            ImageIO.write(image, "png", outFile);
+
+            int totalCells = imageWidth * imageHeight;
+            System.out.printf(
+                    "[VerticalSlice] %s -> %s%n" +
+                            "  center=(%d, z=%d)  dimY=[%d, %d)  worldHeight=%.1f%n" +
+                            "  density range=[%.4f, %.4f]  solid=%d/%d (%.2f%%)%n" +
+                            "  solid Y range=[%d, %d]%n",
+                    label, outFile.getAbsolutePath(),
+                    centerX, centerZ, dimMinY, dimMaxY,
+                    BeyondEndChunkGenerator.getWorldHeight(),
+                    minDensity, maxDensity, solidCount, totalCells,
+                    100.0 * solidCount / totalCells,
+                    firstSolidY == Integer.MAX_VALUE ? 0 : firstSolidY,
+                    lastSolidY == Integer.MIN_VALUE ? 0 : lastSolidY);
+        } finally {
+            BeyondTerrainState.setDimBounds(savedMin, savedMax);
+        }
     }
 
     /**

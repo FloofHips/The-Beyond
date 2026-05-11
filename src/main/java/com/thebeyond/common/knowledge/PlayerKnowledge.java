@@ -12,12 +12,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Per-player attachment: set of discovered knowledge keys. Survives death ({@code copyOnDeath})
- * and is populated even in {@code SHARED_WORLD} mode so an admin can switch modes without
- * losing per-player history. Synced S2C via
- * {@link com.thebeyond.common.network.PlayerKnowledgeSyncPayload} (login snapshot + per-grant delta).
- */
+/** Per-player attachment: discovered keys, copy-on-death, populated even in SHARED_WORLD
+ *  mode for mode-switch safety. S2C via {@code PlayerKnowledgeSyncPayload}. */
 public class PlayerKnowledge implements INBTSerializable<CompoundTag> {
 
     private final Set<ResourceLocation> known = new HashSet<>();

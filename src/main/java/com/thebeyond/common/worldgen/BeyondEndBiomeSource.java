@@ -6,6 +6,7 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.*;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.thebeyond.TheBeyond;
+import com.thebeyond.common.worldgen.compat.WarpedReefMacroRegion;
 import com.thebeyond.util.HashSimplexNoise;
 import com.thebeyond.util.VoronoiNoise;
 import net.minecraft.core.*;
@@ -13,6 +14,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.biome.Climate;
@@ -20,27 +22,17 @@ import net.minecraft.world.level.biome.Climate;
 import com.google.common.base.Suppliers;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/**
- * Custom End biome source for The Beyond.
- *
- * The dimension JSON lists biomes from ALL supported End mods. At load time,
- * biomes from mods that aren't installed are silently filtered out during
- * codec decode. This avoids ClassCastException during world save.
- *
- * Uses ResourceLocation-based codec instead of RegistryCodecs.homogeneousList()
- * to gracefully handle missing biome entries.
- */
+/** Custom End biome source. The dimension JSON lists biomes from all supported End mods;
+ *  unknown entries are silently dropped at decode (the codec is ResourceLocation-based
+ *  instead of {@code RegistryCodecs.homogeneousList} to avoid ClassCastException on save). */
 public class BeyondEndBiomeSource extends BiomeSource {
     private Supplier<VoronoiNoise> voronoiNoise;
-    /**
-     * A lenient biome list codec that:
-     * - Decode: reads ResourceLocation strings, resolves each against the biome registry,
-     *   silently drops biomes that don't exist (from mods not installed)
-     * - Encode: extracts ResourceLocation strings from bound holders
-     */
+    /** Decode: resolve ResourceLocation strings against the biome registry, drop missing.
+     *  Encode: extract ResourceLocation strings from bound holders. */
     private static final Codec<List<Holder<Biome>>> LENIENT_BIOME_LIST = new Codec<>() {
         @Override
         public <T> DataResult<Pair<List<Holder<Biome>>, T>> decode(DynamicOps<T> ops, T input) {
@@ -82,10 +74,7 @@ public class BeyondEndBiomeSource extends BiomeSource {
         }
     };
 
-    /**
-     * A lenient single biome codec (for center_biome and bottom_biome).
-     * Falls back to minecraft:the_end if the specified biome doesn't exist.
-     */
+    /** Single-biome codec for center/bottom; falls back to {@code minecraft:the_end} on miss. */
     private static final Codec<Holder<Biome>> LENIENT_BIOME = new Codec<>() {
         @Override
         public <T> DataResult<Pair<Holder<Biome>, T>> decode(DynamicOps<T> ops, T input) {
@@ -122,18 +111,8 @@ public class BeyondEndBiomeSource extends BiomeSource {
         }
     };
 
-    /**
-     * Codec schema:
-     *   tainted_end_biomes  — main biome pool (Beyond native + foreign mod biomes).
-     *   farlands_biomes     — optional pool for the Farlands region (north of farlands_z_boundary).
-     *   farlands_z_boundary — optional z-block coordinate where Farlands begin. Duo-region gate is
-     *                         active only when both this and a non-empty farlands_biomes are present.
-     *   outer_void_biomes   — void biomes for the outer ring.
-     *   inner_void_biomes   — void biomes for the inner ring.
-     *   center_biome        — single biome for the central island.
-     *   bottom_biome        — single biome below the dim floor band.
-     *   terrain_params      — optional generation tuning; defaults to calibrated values.
-     */
+    /** Pools and a few singletons: tainted/farlands/outer/inner/center/bottom plus optional
+     *  {@code terrain_params}. Farlands duo-region active only when both pool and z-boundary set. */
     public static final MapCodec<BeyondEndBiomeSource> CODEC = RecordCodecBuilder.mapCodec(instance ->
             instance.group(
                     LENIENT_BIOME_LIST.fieldOf("tainted_end_biomes").forGetter(source -> source.taintedEndBiomeList),
@@ -148,17 +127,23 @@ public class BeyondEndBiomeSource extends BiomeSource {
             ).apply(instance, BeyondEndBiomeSource::new)
     );
 
-    /**
-     * Reference value for the Farlands z boundary. Not read by generation logic —
-     * datapacks must opt in by setting {@code farlands_z_boundary} explicitly.
-     */
+    /** Reference value only; datapacks must set {@code farlands_z_boundary} explicitly. */
     public static final int DEFAULT_FARLANDS_Z_BOUNDARY = -10000;
+
+    /** Biomes that have a dedicated overlay system (e.g. macro region) and must be kept out of
+     *  the random Voronoi tainted pool — they reach {@link #allBiomes} via a separate path so
+     *  {@code /locate} still works, but {@link #getNoiseBiome} never random-rolls them. */
+    private static final Set<ResourceLocation> POOL_EXCLUDED_BIOMES = Set.of(
+            ResourceLocation.fromNamespaceAndPath("unusualend", "warped_reef")
+    );
 
     // Mutable: auto-discovery (EndBiomeDiscovery) may inject additional biomes at server start.
     private final List<Holder<Biome>> taintedEndBiomeList;
     private final List<Holder<Biome>> farlandsBiomeList;
     private final Optional<Integer> farlandsZBoundary;
     private final List<Holder<Biome>> outerVoidBiomeList;
+    /** {@link #outerVoidBiomeList} minus {@code minecraft:the_void}. Used above the floor band so the void biome stays visually adjacent to the bottom auroracite layer. */
+    private final List<Holder<Biome>> outerVoidBiomeListNoTheVoid;
     private final List<Holder<Biome>> innerVoidBiomeList;
     private final Holder<Biome> centerBiome;
     private final Holder<Biome> bottomBiome;
@@ -168,12 +153,8 @@ public class BeyondEndBiomeSource extends BiomeSource {
     private Set<Holder<Biome>> allBiomes;
     private final boolean farlandsGateActive;
 
-    /**
-     * Per-thread column cache: memoizes the expensive y-invariant biome
-     * computation (two Perlin lookups + one Simplex lookup) across the ~80
-     * y-samples Mojang issues per (quartX, quartZ). ThreadLocal because chunk
-     * generation is multi-threaded.
-     */
+    /** Per-thread cache for the y-invariant biome computation across the ~80 y-samples
+     *  per (quartX, quartZ). ThreadLocal because chunk-gen is multi-threaded. */
     private static final class ColumnCache {
         /** Sentinel value meaning "no column cached yet". */
         int blockX = Integer.MIN_VALUE;
@@ -184,28 +165,15 @@ public class BeyondEndBiomeSource extends BiomeSource {
 
     private final ThreadLocal<ColumnCache> columnCacheTL = ThreadLocal.withInitial(ColumnCache::new);
 
-    /**
-     * Baseline pool size the default {@code 0.02} frequency is calibrated for
-     * (~Beyond native + vanilla End). Larger pools (mod combos push tainted past
-     * 50) lose biome coherence because {@code absSeed % poolSize} jumps too far
-     * per step — {@link #getBiomeNoiseScale()} widens the simplex patches to
-     * compensate.
-     */
+    /** Baseline pool size the default {@code 0.02} frequency was calibrated for; bigger pools
+     *  lose biome coherence, so {@link #getBiomeNoiseScale()} widens the simplex patches. */
     private static final int BASELINE_POOL_SIZE = 12;
 
-    /**
-     * Cached per-instance biome noise frequency. Invalidated to {@code -1} on
-     * {@link #injectBiomesIntoTaintedPool} since pool growth changes the computed value.
-     * Volatile because inject happens on the server-start thread and reads happen on
-     * chunk-gen worker threads.
-     */
+    /** Cached biome-noise frequency; invalidated to {@code -1} by {@link #injectBiomesIntoTaintedPool}.
+     *  Volatile because injects happen on server-start while reads happen on chunk-gen workers. */
     private volatile double cachedBiomeNoiseScale = -1.0;
 
-    /**
-     * Simplex frequency for biome selection, scaled by {@code sqrt(BASELINE / poolSize)}
-     * so patch area grows with pool size (biome patches are 2D — linear scaling would
-     * over-correct). Clamped to {@code [0.35 * 0.02, 1.0 * 0.02]}.
-     */
+    /** {@code sqrt(BASELINE / poolSize)} scaling (patches are 2D), clamped to [0.35, 1.0] × 0.02. */
     private double getBiomeNoiseScale() {
         double cached = cachedBiomeNoiseScale;
         if (cached > 0) return cached;
@@ -234,10 +202,15 @@ public class BeyondEndBiomeSource extends BiomeSource {
                                 Holder<Biome> centerBiome, Holder<Biome> bottomBiome,
                                 BeyondTerrainParams terrainParams) {
         super();
-        this.taintedEndBiomeList = new ArrayList<>(taintedEndBiomes);
+        this.taintedEndBiomeList = new ArrayList<>(taintedEndBiomes.stream()
+                .filter(h -> h.unwrapKey().map(k -> !POOL_EXCLUDED_BIOMES.contains(k.location())).orElse(true))
+                .toList());
         this.farlandsBiomeList = farlandsBiomes;
         this.farlandsZBoundary = farlandsZBoundary;
         this.outerVoidBiomeList = outerVoidBiomes;
+        this.outerVoidBiomeListNoTheVoid = outerVoidBiomes.stream()
+                .filter(h -> !h.is(net.minecraft.world.level.biome.Biomes.THE_VOID))
+                .toList();
         this.innerVoidBiomeList = innerVoidBiomes;
         this.centerBiome = centerBiome;
         this.bottomBiome = bottomBiome;
@@ -291,13 +264,8 @@ public class BeyondEndBiomeSource extends BiomeSource {
         return allBiomes.stream();
     }
 
-    /**
-     * Injects externally-discovered biomes into the tainted End pool at server start
-     * (via {@link com.thebeyond.common.worldgen.compat.EndBiomeDiscovery}, before chunk
-     * generation). Biomes already present in any pool are skipped.
-     *
-     * @return the number of biomes actually injected
-     */
+    /** Injects discovered biomes into the tainted pool at server start; skips duplicates.
+     *  @return the number of biomes actually injected */
     public int injectBiomesIntoTaintedPool(Collection<Holder<Biome>> biomes) {
         Set<ResourceKey<Biome>> existingKeys = allBiomes.stream()
                 .flatMap(h -> h.unwrapKey().stream())
@@ -309,7 +277,15 @@ public class BeyondEndBiomeSource extends BiomeSource {
 
         if (toAdd.isEmpty()) return 0;
 
-        taintedEndBiomeList.addAll(toAdd);
+        // Overlay-only biomes (e.g. warped_reef macro region) bypass the random Voronoi pool
+        // but still reach allBiomes below so /locate and structure placement see them.
+        List<Holder<Biome>> overlayOnly = toAdd.stream()
+                .filter(h -> h.unwrapKey().map(k -> POOL_EXCLUDED_BIOMES.contains(k.location())).orElse(false))
+                .toList();
+        List<Holder<Biome>> poolEligible = toAdd.stream()
+                .filter(h -> h.unwrapKey().map(k -> !POOL_EXCLUDED_BIOMES.contains(k.location())).orElse(true))
+                .toList();
+        taintedEndBiomeList.addAll(poolEligible);
 
         // Pool size changed — force biome-noise frequency recompute on next call.
         cachedBiomeNoiseScale = -1.0;
@@ -317,6 +293,7 @@ public class BeyondEndBiomeSource extends BiomeSource {
         // Rebuild combined set so /locate and structure placement see the new biomes.
         allBiomes = ImmutableSet.<Holder<Biome>>builder()
                 .addAll(taintedEndBiomeList)
+                .addAll(overlayOnly)
                 .addAll(farlandsBiomeList)
                 .addAll(innerVoidBiomeList)
                 .addAll(outerVoidBiomeList)
@@ -497,7 +474,7 @@ public class BeyondEndBiomeSource extends BiomeSource {
         // each End chunk column.
         if (distanceFromO <= 690) {
             if (innerVoidBiomeList.isEmpty()) return centerBiome;
-            int inner_void_index = selectBiome(x, y, z, innerVoidBiomeList);
+            int inner_void_index = selectBiome(blockX, blockY, blockZ, innerVoidBiomeList);
             return innerVoidBiomeList.get(inner_void_index);
         }
 
@@ -507,10 +484,21 @@ public class BeyondEndBiomeSource extends BiomeSource {
         boolean isVoid = BeyondEndChunkGenerator.getTerrainDensity(blockX, blockY, blockZ) < 0.01f;
 
         if (isVoid) {
-            if (outerVoidBiomeList.isEmpty()) return centerBiome;
-            int outer_void_index = selectBiome(x, y, z, outerVoidBiomeList);
-            return outerVoidBiomeList.get(outer_void_index);
+            // Confine minecraft:the_void to a band right above the_paths (auroracite floor).
+            // Above the band, drop the_void from the pool so dim ranges that extend deep
+            // negative don't smear pure-void biome across the bulk of the dim.
+            List<Holder<Biome>> voidPool = blockY < dimMinY + 32
+                    ? outerVoidBiomeList
+                    : (outerVoidBiomeListNoTheVoid.isEmpty() ? outerVoidBiomeList : outerVoidBiomeListNoTheVoid);
+            if (voidPool.isEmpty()) return centerBiome;
+            int outer_void_index = selectBiome(blockX, blockY, blockZ, voidPool);
+            return voidPool.get(outer_void_index);
         }
+
+        // Macro overlay only on solid columns — keeps warped_reef from smearing onto void
+        // columns near the_paths floor where the only "terrain" is the bottom_biome band.
+        Holder<Biome> reefMacro = WarpedReefMacroRegion.biomeAt(blockX, blockZ);
+        if (reefMacro != null) return reefMacro;
 
         // Pick the solid-land pool: Farlands when north of the boundary AND the gate is active,
         // Tainted End everywhere else. Gate stays inactive (and Farlands pool is empty) until the
@@ -520,12 +508,12 @@ public class BeyondEndBiomeSource extends BiomeSource {
                 : taintedEndBiomeList;
 
         if (solidPool.isEmpty()) return centerBiome;
-        int solid_index = selectBiome(x, y, z, solidPool);
+        int solid_index = selectBiome(blockX, blockY, blockZ, solidPool);
         return solidPool.get(solid_index);
     }
 
     private int selectBiome(int x, int y, int z, List<Holder<Biome>> biomePool) {
-        double cellSize = 50.0;
+        double cellSize = 200.0;
         VoronoiNoise.CellResult3D cell = voronoiNoise.get().getCell(
                 x,
                 y,
@@ -534,5 +522,95 @@ public class BeyondEndBiomeSource extends BiomeSource {
         );
 
         return (int)(Math.abs(cell.cellId()) % biomePool.size());
+    }
+
+    /** Voronoi-cell biome from the tainted pool, ignoring the air/solid split — used by
+     *  {@code BiomeFilterMixin} for features that need 3D-cell semantics. */
+    public Holder<Biome> voronoiCellBiomeIgnoringDensity(int blockX, int blockY, int blockZ) {
+        Holder<Biome> reefMacro = WarpedReefMacroRegion.biomeAt(blockX, blockZ);
+        if (reefMacro != null) return reefMacro;
+        if (taintedEndBiomeList.isEmpty()) return centerBiome;
+        int idx = selectBiome(blockX, blockY, blockZ, taintedEndBiomeList);
+        return taintedEndBiomeList.get(idx);
+    }
+
+    /** Dual-lookup so {@code /locate biome} sees Voronoi-cell biomes at air positions
+     *  that regular {@link #getNoiseBiome} would resolve to void. */
+    @Override
+    public Pair<BlockPos, Holder<Biome>> findClosestBiome3d(
+            BlockPos origin, int radius, int horizontalStep, int verticalStep,
+            Predicate<Holder<Biome>> filter, Climate.Sampler sampler, LevelReader level) {
+        int qx = QuartPos.fromBlock(origin.getX());
+        int qy = QuartPos.fromBlock(origin.getY());
+        int qz = QuartPos.fromBlock(origin.getZ());
+        int qRadius = radius >> 2;
+        int qHorizStep = Math.max(1, horizontalStep >> 2);
+        int qVertStep = Math.max(1, verticalStep >> 2);
+        int blockMinStep = Math.min(qHorizStep, qVertStep) * 4;
+        int maxShell = Math.max(
+                (qRadius + qHorizStep - 1) / qHorizStep,
+                (qRadius + qVertStep - 1) / qVertStep);
+
+        Pair<BlockPos, Holder<Biome>> best = null;
+        long bestDistSq = Long.MAX_VALUE;
+
+        // Chebyshev-shell expansion: iterate concentric cube shells outward, exit when the
+        // next shell's minimum distance to origin can no longer beat {@code bestDistSq}.
+        // Cuts {@code /locate biome}'s worst-case from cubic O(qRadius³) to typically O(few shells).
+        shellLoop:
+        for (int shell = 0; shell <= maxShell; shell++) {
+            int xRange = Math.min(qRadius, shell * qHorizStep);
+            int yRange = Math.min(qRadius, shell * qVertStep);
+            int prevXRange = shell == 0 ? -1 : Math.min(qRadius, (shell - 1) * qHorizStep);
+            int prevYRange = shell == 0 ? -1 : Math.min(qRadius, (shell - 1) * qVertStep);
+
+            for (int yi = -yRange; yi <= yRange; yi += qVertStep) {
+                int absYi = Math.abs(yi);
+                int targetQy = qy + yi;
+                int blockY = QuartPos.toBlock(targetQy);
+                if (blockY < level.getMinBuildHeight() || blockY >= level.getMaxBuildHeight()) continue;
+                for (int xi = -xRange; xi <= xRange; xi += qHorizStep) {
+                    int absXi = Math.abs(xi);
+                    for (int zi = -xRange; zi <= xRange; zi += qHorizStep) {
+                        int absZi = Math.abs(zi);
+                        // Skip points already visited by a smaller shell.
+                        if (shell > 0
+                                && absXi <= prevXRange
+                                && absYi <= prevYRange
+                                && absZi <= prevXRange) continue;
+
+                        int targetQx = qx + xi;
+                        int targetQz = qz + zi;
+                        int blockX = QuartPos.toBlock(targetQx);
+                        int blockZ = QuartPos.toBlock(targetQz);
+
+                        Holder<Biome> matched = null;
+                        Holder<Biome> regular = this.getNoiseBiome(targetQx, targetQy, targetQz, sampler);
+                        if (filter.test(regular)) {
+                            matched = regular;
+                        } else {
+                            Holder<Biome> voronoi = this.voronoiCellBiomeIgnoringDensity(blockX, blockY, blockZ);
+                            if (filter.test(voronoi)) matched = voronoi;
+                        }
+                        if (matched == null) continue;
+
+                        long dx = blockX - origin.getX();
+                        long dy = blockY - origin.getY();
+                        long dz = blockZ - origin.getZ();
+                        long distSq = dx * dx + dy * dy + dz * dz;
+                        if (distSq < bestDistSq) {
+                            best = Pair.of(new BlockPos(blockX, blockY, blockZ), matched);
+                            bestDistSq = distSq;
+                        }
+                    }
+                }
+            }
+
+            if (best != null) {
+                long nextMin = (long) (shell + 1) * blockMinStep;
+                if (bestDistSq <= nextMin * nextMin) break shellLoop;
+            }
+        }
+        return best;
     }
 }

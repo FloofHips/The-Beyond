@@ -21,21 +21,10 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Bootstraps Stellarity's dragons_den chain on Beyond's End (with or without BetterEnd).
- *
- * <p>On the first server tick where the origin chunk is loaded:
- * <ol>
- *   <li>Places the center crystal at (0.5, 61, 0.5) so Stellarity's exit_portal predicate fires.</li>
- *   <li>Force-loads altar chunks so {@code /place template} doesn't silently fail on unloaded chunks.</li>
- *   <li>Force-loads + kills all 10 ring spike crystals (repeated sweep ticks 1–20 for async entity visibility).</li>
- * </ol>
- *
- * <p>Uses both {@code getChunk()} (synchronous gen to FULL) and {@code setChunkForced()} (persistent ticket)
- * — the first ensures entities exist, the second prevents eviction before Stellarity's mcfunctions run.</p>
- *
- * <p>Gated on: Stellarity loaded, {@link BeyondTerrainState#isActive()}, once per session.</p>
- */
+/** Bootstraps Stellarity's dragons_den chain on Beyond's End: places the center crystal
+ *  at (0.5, 61, 0.5) so Stellarity's exit_portal predicate fires, force-loads altar chunks
+ *  for {@code /place template}, and force-loads + kills the 10 ring spike crystals.
+ *  Once per session when Stellarity is loaded and Beyond is active. */
 @EventBusSubscriber(modid = TheBeyond.MODID)
 public class StellarityBetterEndCompatEvents {
 

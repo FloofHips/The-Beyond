@@ -1,0 +1,8 @@
+{
+  "values": [
+    "#minecraft:is_end"
+  ],
+  "remove": [
+    "#the_beyond:is_farlands"
+  ]
+}

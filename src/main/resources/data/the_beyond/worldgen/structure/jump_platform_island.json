@@ -4,12 +4,8 @@
   "terrain_adaptation": "none",
   "start_height": {
     "type": "minecraft:uniform",
-    "min_inclusive": {
-      "absolute": 70
-    },
-    "max_inclusive": {
-      "absolute": 100
-    }
+    "min_inclusive": {"above_bottom": 16},
+    "max_inclusive": {"below_top": 32}
   },
   "max_distance_from_center": 1,
   "size": 1,

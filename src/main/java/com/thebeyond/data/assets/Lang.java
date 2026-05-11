@@ -144,12 +144,8 @@ public class Lang extends LanguageProvider {
         add("advancements.the_beyond.full_power_magnet.description", "Use a magnet to pull yourself somewhere 32 blocks away");
     }
 
-    /**
-     * Like {@link #add(String, String)} but silently skips the key if it was already
-     * registered by the automatic registry loops above. Avoids the
-     * {@code IllegalStateException("Duplicate translation key")} that LanguageProvider
-     * throws on repeated keys.
-     */
+    /** Tracks keys already registered so {@link #add(String, String)} can skip duplicates
+     *  instead of triggering LanguageProvider's {@code IllegalStateException}. */
     private final Set<String> addedKeys = new java.util.HashSet<>();
 
     @Override

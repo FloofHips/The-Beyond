@@ -21,15 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Bridges {@code hidden_until/*} tags (items, structures, biomes) to {@link BeyondKnowledge}.
- * Consumed by creative tab/search, Explorer's/Nature's Compass, and JEI.
- *
- * <p>To add a new gate: declare a key in {@link BeyondKnowledgeKeys}, add matching
- * {@link TagKey} fields and {@code *_TAG_TO_KEY} entries, drop tag JSONs under
- * {@code data/the_beyond/tags/{item,worldgen/structure,worldgen/biome}/hidden_until/}, and
- * wire the detection event that grants the key. Empty tags are no-ops.
- */
+/** Bridges {@code hidden_until/*} tags (items, structures, biomes) to {@link BeyondKnowledge}.
+ *  Consumed by creative tab/search, Explorer's/Nature's Compass, and JEI. */
 public final class HiddenContentFilter {
 
     private HiddenContentFilter() {}

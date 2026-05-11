@@ -9,19 +9,9 @@ import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Gates every mixin in {@code the_beyond.client.mixins.json} behind a dist-client check
- * so the config can be {@code required=true} without crashing dedicated-server JVMs
- * (where {@code net.minecraft.client.*} is absent).
- *
- * <p>Vetoing every declared target at {@link #shouldApplyMixin} prevents mixin attach from
- * ever loading the target bytecode, so {@code ClassNotFoundException: Minecraft} cannot
- * fire during the NeoForge JUnit bootstrap. The plugin must not reference any game class
- * itself — only FML-loader, JDK, ASM, and mixin types (all server-classpath safe).
- *
- * <p>Client-only config is assumed: if a non-client mixin is added, move it to
- * {@code the_beyond.mixins.json} rather than complicating this gate.
- */
+/** Dist-client gate for {@code the_beyond.client.mixins.json}: vetoes every target on
+ *  servers so the config can be {@code required=true} without {@code ClassNotFoundException}
+ *  on {@code net.minecraft.client.*}. The plugin itself must reference no game classes. */
 public class ClientMixinConfigPlugin implements IMixinConfigPlugin {
 
     @Override

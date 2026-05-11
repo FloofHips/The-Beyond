@@ -91,13 +91,24 @@ public class TheBeyond {
             //       dimension_type resolution — giving us the min_y=-64 override.
             // Only ships dimension_type/the_end.json. If Enderscape is not loaded, no
             // child is attached and Beyond's own 0..256 dimension_type stays authoritative.
+            // Priority: Astrological > Enderscape. If both loaded, Astrological's wider bounds
+            // (-256..384) win. Only one child is attached at a time so resolution is unambiguous.
             List<Pack> children = List.of();
-            if (ModList.get().isLoaded("enderscape")) {
+            String compatPackName = null;
+            String compatLogMsg = null;
+            if (ModList.get().isLoaded("astrological")) {
+                compatPackName = "beyond_astrological_bounds";
+                compatLogMsg = "Astrological detected — attaching beyond_astrological_bounds (extends End y-bounds to -256..384).";
+            } else if (ModList.get().isLoaded("enderscape")) {
+                compatPackName = "beyond_enderscape_bounds";
+                compatLogMsg = "Enderscape detected — attaching beyond_enderscape_bounds (extends End y-bounds to -64..320).";
+            }
+            if (compatPackName != null) {
                 Path compatPath = ModList.get().getModFileById(MODID)
-                        .getFile().findResource("resourcepacks/beyond_enderscape_bounds");
+                        .getFile().findResource("resourcepacks/" + compatPackName);
                 PackLocationInfo compatInfo = new PackLocationInfo(
-                        "mod/" + MODID + ":beyond_enderscape_bounds",
-                        Component.literal("The Beyond - Enderscape Bounds Compat"),
+                        "mod/" + MODID + ":" + compatPackName,
+                        Component.literal("The Beyond - " + compatPackName + " Compat"),
                         PackSource.DEFAULT, Optional.empty());
                 Pack.ResourcesSupplier compatSupplier = new PathPackResources.PathResourcesSupplier(compatPath);
                 // defaultPosition / fixedPosition are ignored for children (NeoForge forces
@@ -106,9 +117,9 @@ public class TheBeyond {
                 Pack compatPack = Pack.readMetaAndCreate(compatInfo, compatSupplier, PackType.SERVER_DATA, compatSelection);
                 if (compatPack != null) {
                     children = List.of(compatPack);
-                    LOGGER.info("[TheBeyond] Enderscape detected — attaching beyond_enderscape_bounds as hidden child of beyond_terrain (extends End y-bounds to -64..384 whenever beyond_terrain is active).");
+                    LOGGER.info("[TheBeyond] {}", compatLogMsg);
                 } else {
-                    LOGGER.warn("[TheBeyond] Enderscape detected but failed to build beyond_enderscape_bounds pack — falling back to Beyond's own 0..256 dimension_type.");
+                    LOGGER.warn("[TheBeyond] {} pack build failed — falling back to Beyond's own 0..256 dimension_type.", compatPackName);
                 }
             }
 
@@ -125,6 +136,11 @@ public class TheBeyond {
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
-
+        if (ModList.get().isLoaded("create")) {
+            com.thebeyond.compat.create.BeyondCreateCompat.register();
+        }
+        if (ModList.get().isLoaded("sable")) {
+            com.thebeyond.compat.sable.BeyondSableCompat.register();
+        }
     }
 }

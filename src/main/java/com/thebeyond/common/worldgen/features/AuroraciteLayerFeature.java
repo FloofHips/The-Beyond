@@ -11,17 +11,9 @@ import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import net.minecraft.world.level.levelgen.synth.SimplexNoise;
 
-/**
- * Generates the auroracite floor layer at the bottom of the End dimension. Places 2 layers
- * of auroracite where {@code SimplexNoise(x*0.1, z*0.1) > 0}, matching the behavior of
- * {@code BeyondEndChunkGenerator.generateAuroracite()} and covering roughly half the area
- * in organic patches.
- *
- * <p>Placement Y is {@code level.getMinBuildHeight()}, so the layer tracks whichever
- * dim_type the active pack set declares (Beyond's {@code min_y=0}, Enderscape's
- * {@code min_y=-64}, etc.). The fountain structure is re-anchored via
- * {@code JigsawStructureMixin} so it still lands on the floor regardless.
- */
+/** 2-layer auroracite floor at {@code level.getMinBuildHeight()}, gated by
+ *  {@code SimplexNoise(x*0.1, z*0.1) > 0} for organic patches (~50% coverage). Y tracks
+ *  the active dim_type's min_y so the layer follows combo-mode floors. */
 public class AuroraciteLayerFeature extends Feature<NoneFeatureConfiguration> {
 
     private static volatile SimplexNoise noise;

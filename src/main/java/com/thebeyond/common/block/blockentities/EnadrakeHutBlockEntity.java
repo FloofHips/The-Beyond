@@ -109,8 +109,40 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         this.pregnant = true;
     };
 
+    private static void safeSendBlockUpdated(Level level, BlockPos pos, BlockState state) {
+        try {
+            level.sendBlockUpdated(pos, state, state, 3);
+        } catch (UnsupportedOperationException ignored) {
+        }
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, EnadrakeHutBlockEntity be) {
         if (!(level instanceof ServerLevel serverLevel)) return;
+
+        // Sub-level pull: mirrors EnadrakeEnterHutGoal + EnadrakeMoveToHutGoal canUse() gates.
+        // Gate on gameTime first to avoid the Sable lookup on 19 of every 20 ticks.
+        net.minecraft.world.phys.Vec3 visible = level.getGameTime() % 20 == 0
+                ? com.thebeyond.common.compat.BeyondCompatHooks.visibleOnly(level, pos)
+                : null;
+        if (visible != null) {
+            net.minecraft.world.phys.AABB box =
+                    net.minecraft.world.phys.AABB.ofSize(visible, 30, 20, 30);
+            for (com.thebeyond.common.entity.EnadrakeEntity e :
+                    serverLevel.getEntitiesOfClass(com.thebeyond.common.entity.EnadrakeEntity.class, box)) {
+                if (e.onAWalkTimer > 0 || e.panic > 0) continue;
+                ItemStack held = e.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND);
+                if (be.isAvailable() && !e.isInsideHut()
+                        && (e.shouldFleeToHut() || (held.isEmpty() && !level.isRaining()))) {
+                    if (be.tryToEnter(e)) return;
+                    continue;
+                }
+                if (!held.isEmpty() && held.getRarity() != net.minecraft.world.item.Rarity.EPIC) {
+                    EnadrakeHutBlock.fillHut(held, level, pos, e, be, be.getTheItem());
+                    e.panic = 50;
+                    return;
+                }
+            }
+        }
 
         if (be.pregnant) {
             EnadrakeEntity entity = BeyondEntityTypes.ENADRAKE.get().create(level);
@@ -248,7 +280,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         enadrake.remove(Entity.RemovalReason.DISCARDED);
 
         this.setChanged();
-        this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
+        safeSendBlockUpdated(this.level, this.worldPosition, this.getBlockState());
 
         return true;
     }
@@ -263,7 +295,10 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
 
         CompoundTag nbt = this.storedEnadrake;
         this.storedEnadrake = new CompoundTag();
-        BlockPos exitPos = this.findExitPosition();
+        // Sub-level: anchor exit at the visible apparent position. Otherwise neighbor-probe.
+        net.minecraft.world.phys.Vec3 visible =
+                com.thebeyond.common.compat.BeyondCompatHooks.visibleOnly(serverLevel, this.worldPosition);
+        BlockPos exitPos = visible != null ? BlockPos.containing(visible).above() : this.findExitPosition();
 
         serverLevel.playSound(null, this.getBlockPos(), SoundEvents.BEEHIVE_EXIT, SoundSource.BLOCKS, 1.0F, 0.7F + 0.5F);
 
@@ -285,7 +320,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         }
 
         this.setChanged();
-        this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
+        safeSendBlockUpdated(this.level, this.worldPosition, this.getBlockState());
     }
 
     /**

@@ -4,6 +4,7 @@ import com.thebeyond.client.event.ModClientEvents;
 import com.thebeyond.common.entity.util.SlowRotMoveControl;
 import com.thebeyond.common.item.components.Components;
 import com.thebeyond.common.registry.*;
+import com.thebeyond.common.worldgen.BeyondTerrainState;
 import net.minecraft.server.level.ServerPlayer;
 import com.thebeyond.util.AOEManager;
 import com.thebeyond.util.ColorUtils;
@@ -214,7 +215,7 @@ public class AbyssalNomadEntity extends PathfinderMob {
     }
 
     public static boolean checkMonsterSpawnRules(EntityType<AbyssalNomadEntity> entityType, ServerLevelAccessor serverLevelAccessor, MobSpawnType mobSpawnType, BlockPos blockPos, RandomSource randomSource) {
-        return true;
+        return blockPos.getY() <= BeyondTerrainState.getDimMinY() + 8;
     }
 
     @Override

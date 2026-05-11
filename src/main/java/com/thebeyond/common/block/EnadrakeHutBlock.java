@@ -108,15 +108,22 @@ public class EnadrakeHutBlock extends BaseEntityBlock {
             return;
         }
 
-        BlockEntity baseBE = level.getBlockEntity(pos);
-        if (baseBE instanceof EnadrakeHutBlockEntity hutblockentity) {
-            hutblockentity.tryToExit(true);
+        // Skip exit during contraption assembly (Create or Sable/Aeronautics) — the BE NBT
+        // travels with the assembly; ejecting would duplicate the enadrake.
+        if (!com.thebeyond.compat.create.ContraptionAssemblyDetector.isAssembling()) {
+            BlockEntity baseBE = level.getBlockEntity(pos);
+            if (baseBE instanceof EnadrakeHutBlockEntity hutblockentity) {
+                hutblockentity.tryToExit(true);
+            }
         }
 
         super.onRemove(state, level, pos, newState, movedByPiston);
     }
 
     public static void fillHut(ItemStack stack, Level level, BlockPos pos, LivingEntity entity, EnadrakeHutBlockEntity hutblockentity, ItemStack itemstack1) {
+        // Cap at maxStackSize; the ItemStack codec rejects saves past 99.
+        if (!hutblockentity.isEmpty() && itemstack1.getCount() >= itemstack1.getMaxStackSize()) return;
+
         ItemStack itemstack = stack.consumeAndReturn(1, entity);
         float f;
         if (hutblockentity.isEmpty()) {
@@ -127,13 +134,14 @@ public class EnadrakeHutBlock extends BaseEntityBlock {
             f = (float) itemstack1.getCount() / (float) itemstack1.getMaxStackSize();
         }
 
-        level.playSound(null, pos, SoundEvents.DECORATED_POT_INSERT, SoundSource.BLOCKS, 1.0F, 0.7F + 0.5F * f);
+        Vec3 anchor = com.thebeyond.common.compat.BeyondCompatHooks.visibleOrCenter(level, pos);
+        level.playSound(null, BlockPos.containing(anchor), SoundEvents.DECORATED_POT_INSERT, SoundSource.BLOCKS, 1.0F, 0.7F + 0.5F * f);
         if (level instanceof ServerLevel serverlevel) {
             serverlevel.sendParticles(
                     ParticleTypes.DUST_PLUME,
-                    (double) pos.getX() + 0.5,
-                    (double) pos.getY() + 1.2,
-                    (double) pos.getZ() + 0.5,
+                    anchor.x,
+                    anchor.y + 0.7,
+                    anchor.z,
                     7,
                     0.0,
                     0.0,

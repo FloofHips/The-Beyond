@@ -14,26 +14,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Replaces Zeta {@code Generator#getBiome}'s "sample at world top" branch with
- * "sample at terrain-surface Y" whenever the generator runs in an End-type
- * dimension.
- *
- * <p>Problem: Zeta's helper, when called with {@code offset=true}, relocates
- * the sample to {@code world.getMaxBuildHeight() - 1}. In vanilla End this is
- * harmless (biomes are 2D). In Beyond's End the biome source is 3D — at the
- * world top {@code getTerrainDensity} is ~0, so every sample returns an
- * {@code outerVoidBiomeList} entry. Quark generators that gate spawning on a
- * specific End biome (ChorusVegetation's {@code end_highlands} check,
- * BigStoneClusters' {@code myalite} whitelist, etc.) can never match, so their
- * content silently never spawns regardless of user config.</p>
- *
- * <p>Scope: only rewrites the {@code offset=true} path, only in End-type dims
- * (natural=false, hasCeiling=false, ultraWarm=false). Overworld, Nether, and
- * any ceilinged/warm custom dim are untouched.</p>
- *
- * <p>Soft-targeted via {@code @Pseudo} — no-op without Quark/Zeta.</p>
- */
+/** Redirects Zeta's {@code offset=true} world-top biome sample to terrain-surface Y in End
+ *  dims only. Beyond's 3D biome source returns {@code outerVoidBiomeList} at world top, so
+ *  Quark generators that gate on a specific End biome would never match. Scoped to
+ *  natural/non-ceiling/non-warm dims. */
 @Pseudo
 @Mixin(targets = "org.violetmoon.zeta.world.generator.Generator", remap = false)
 public abstract class ZetaGeneratorGetBiomeMixin {

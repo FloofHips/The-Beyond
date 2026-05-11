@@ -10,17 +10,9 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * S2C sync for {@link com.thebeyond.common.knowledge.PlayerKnowledge}. Attachments don't auto-sync
- * across sides, so without this packet {@link com.thebeyond.common.knowledge.HiddenContentFilter}
- * would read an empty set on the client.
- *
- * <p>{@code replace=true} overwrites the client's local set with {@link #keys} — used for the
- * login snapshot and for revokes (the delta form can't express subtraction).
- * {@code replace=false} unions {@link #keys} into the local set for per-grant deltas;
- * {@link #keys} is typically a single element but the wire format is a set so batched grants
- * stay cheap.
- */
+/** S2C sync for {@code PlayerKnowledge}. {@code replace=true} overwrites the client's set
+ *  (login snapshot or revoke); {@code replace=false} unions for per-grant deltas. Set wire
+ *  format keeps batched grants cheap. */
 public record PlayerKnowledgeSyncPayload(Set<ResourceLocation> keys, boolean replace) implements CustomPacketPayload {
     public static final Type<PlayerKnowledgeSyncPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "player_knowledge_sync"));

@@ -195,14 +195,8 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
         return new AABB(getX() - 0.7, getY() - 0.8, getZ() - 0.7, getX() + 0.7, getY() + 0.8, getZ() + 0.7);
     }
 
-    /**
-     * Lantern models extend far beyond the collision AABB (Leviathan body ~5b,
-     * tail ~4b vs 1.4b collision). Without this override, frustum culling pops
-     * the entity in/out on sub-block camera movement — under a shaderpack the
-     * bloom/glow drops with it, producing the "halo flicker" artifact.
-     * Per-size inflation covers visual extent + animation swing; extra draw
-     * calls when grazing the frustum are acceptable.
-     */
+    /** Models extend far beyond the collision AABB (Leviathan body ~5b vs 1.4b); without
+     *  this, frustum culling pops the entity in/out and a shaderpack's bloom flickers. */
     @Override
     public AABB getBoundingBoxForCulling() {
         double inflate = switch (getSize()) {

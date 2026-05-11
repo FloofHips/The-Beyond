@@ -11,16 +11,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Fixes ClassCastException: ResourceKey cannot be cast to Holder during world save.
- *
- * Some mods inject ResourceKey objects into biome lists via generic erasure.
- * When the world saves, RegistryFileCodec.encode() receives these via a synthetic
- * bridge method and tries to cast to Holder, which crashes.
- *
- * This targets the bridge method directly (erased Object signature), intercepting
- * BEFORE the checkcast occurs.
- */
+/** Intercepts the erased {@code encode(Object)} bridge before its checkcast to Holder so
+ *  ResourceKey contamination (via generic erasure from other mods) doesn't crash saves. */
 @Mixin(RegistryFileCodec.class)
 public class RegistryFileCodecMixin<E> {
 

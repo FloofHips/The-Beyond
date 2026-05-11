@@ -18,20 +18,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Moves Quark's Spiral Spire biome whitelist check from Y=256 down to the real
- * surface Y (the eventual END_STONE landing).
- *
- * <p>Beyond's {@code BeyondEndBiomeSource} is 3D: at Y=256 {@code getTerrainDensity}
- * is ~0, so {@code getNoiseBiome} always returns an entry from
- * {@code outerVoidBiomeList} — never attracta_expanse, peer_lands, or end_highlands.
- * Without this mixin the player cannot unlock spire spawning in Beyond by editing
- * the quark-common.toml, because the high-Y sample never matches.</p>
- *
- * <p>Quark is not on Beyond's compile classpath, so {@code SpiralSpiresModule.biomes}
- * and {@code .radius} are resolved reflectively and cached. Soft-targeted via
- * {@code @Pseudo} — no-op without Quark.</p>
- */
+/** Moves Quark's Spiral Spire biome whitelist check from Y=256 to the real surface Y so
+ *  Beyond's 3D biome source returns tainted biomes instead of outer-void at the sample. */
 @Pseudo
 @Mixin(targets = "org.violetmoon.quark.content.world.gen.SpiralSpireGenerator", remap = false)
 public abstract class SpiralSpireGeneratorMixin {
@@ -61,11 +49,8 @@ public abstract class SpiralSpireGeneratorMixin {
         return the_beyond$reflectOk;
     }
 
-    /**
-     * Replaces {@code generateChunkPart} wholesale: same RNG consumption order as
-     * Quark's original, but the biome check runs AFTER the downward END_STONE walk
-     * instead of BEFORE, so Beyond's 3D biome source returns the real surface biome.
-     */
+    /** Wholesale replacement preserving Quark's RNG order; biome check runs AFTER the
+     *  END_STONE walk so the 3D biome source returns the real surface biome. */
     @Inject(
         method = "generateChunkPart(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/chunk/ChunkGenerator;Ljava/util/Random;Lnet/minecraft/core/BlockPos;Lnet/minecraft/server/level/WorldGenRegion;)V",
         at = @At("HEAD"),

@@ -166,6 +166,10 @@ public class ModClientEvents {
 
         ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID.get(), RenderType.cutoutMipped());
         ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID_FLOWING.get(), RenderType.cutoutMipped());
+        // Fire textures have alpha-channel transparency; without cutout the default solid layer
+        // renders the alpha=0 pixels as opaque void, exposing the sky/render-behind through the
+        // flame and making the block underneath look transparent.
+        ItemBlockRenderTypes.setRenderLayer(BeyondBlocks.VOID_FLAME.get(), RenderType.cutout());
 
         BlockEntityRenderers.register(BeyondBlockEntities.BONFIRE.get(), BonfireRenderer::new);
         BlockEntityRenderers.register(BeyondBlockEntities.MEMOR_FAUCET.get(), MemorFaucetRenderer::new);

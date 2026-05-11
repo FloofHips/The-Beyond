@@ -21,15 +21,9 @@ import net.minecraft.world.level.dimension.LevelStem;
 
 import java.util.*;
 
-/**
- * Injects Beyond biomes into the End dimension at server start.
- *
- * Supports two modes:
- * - MultiNoiseBiomeSource (Enderscape): Injects climate parameters directly
- * - TheEndBiomeSource (vanilla): Sets up holders for TheEndBiomeSourceMixin
- *
- * Called via ServerAboutToStartEvent, before levels are created.
- */
+/** Injects Beyond biomes into the End dim at server start. Two modes:
+ *  {@code MultiNoiseBiomeSource} (Enderscape) gets climate parameters directly;
+ *  {@code TheEndBiomeSource} (vanilla) gets holders for {@code TheEndBiomeSourceMixin}. */
 public class EndBiomeInjector {
 
     private static final ResourceKey<Biome> ATTRACTA_EXPANSE = ResourceKey.create(Registries.BIOME,

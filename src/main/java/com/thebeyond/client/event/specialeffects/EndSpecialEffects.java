@@ -212,13 +212,8 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         return color.lerp(new Vec3(0,0,0), 1-ModClientEvents.effectFog);
     }
 
-    /**
-     * Detects whether a boss fight is active. Checks {@code shouldCreateWorldFog()} first
-     * (vanilla dragon), then falls back to checking if the {@link BossHealthOverlay} has any
-     * entries. Stellarity uses command boss bars ({@code /bossbar add}) which don't set the
-     * {@code createWorldFog} flag — without this fallback, the fog/lightmap tinting never
-     * triggers during Stellarity's dragon fight.
-     */
+    /** Vanilla {@code shouldCreateWorldFog} first, then any boss-bar entry (Stellarity's
+     *  {@code /bossbar add} doesn't set the createWorldFog flag). */
     private static boolean isBossFightActive() {
         var overlay = Minecraft.getInstance().gui.getBossOverlay();
         if (overlay.shouldCreateWorldFog()) return true;

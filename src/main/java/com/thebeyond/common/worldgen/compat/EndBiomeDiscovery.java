@@ -3,6 +3,7 @@ package com.thebeyond.common.worldgen.compat;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.worldgen.BeyondEndBiomeSource;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
@@ -12,19 +13,16 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeSource;
+import net.minecraft.world.level.biome.TheEndBiomeSource;
 import net.minecraft.world.level.dimension.LevelStem;
 
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-/**
- * Discovers End biomes from installed mods via tags ({@code #minecraft:is_end},
- * {@code #c:is_end_biome}, {@code #wover:is_end/*}) and injects them into
- * {@link BeyondEndBiomeSource}'s tainted End pool at server start.
- *
- * <p>Deduplicates against all existing pools. Called from {@code ServerWorldEvents}.</p>
- */
+/** Discovers End biomes from installed mods via {@code is_end} tag variants and adds them
+ *  to {@link BeyondEndBiomeSource}'s tainted pool. Deduplicates against existing pools. */
 public class EndBiomeDiscovery {
 
     /** Vanilla End biome tag — most mods add their End biomes here. */
@@ -44,12 +42,14 @@ public class EndBiomeDiscovery {
             TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath("wover", "is_end/high_or_midland"))
     );
 
-    /**
-     * Scans biome tags for End biomes from installed mods and injects them into
-     * Beyond's tainted End biome pool.
-     *
-     * @param server the Minecraft server instance (available at ServerAboutToStartEvent)
-     */
+    /** Fabric-API-port {@code TheEndBiomeData} classes. Each exposes static {@code ADDED_BIOMES}. */
+    private static final List<String> FABRIC_END_BIOMES_DATA_CLASSES = List.of(
+            "com.oakmods.oaksend.endbiomes.TheEndBiomeData",
+            "com.oakmods.oakfrontier.endbiomes.TheEndBiomeData"
+    );
+
+    /** Scans biome tags for End biomes from installed mods, injects into the tainted pool.
+     *  @param server available from ServerAboutToStartEvent */
     public static void discoverAndInject(MinecraftServer server) {
         RegistryAccess registryAccess = server.registryAccess();
 
@@ -75,6 +75,8 @@ public class EndBiomeDiscovery {
         for (TagKey<Biome> woverTag : WOVER_END_TAGS) {
             collectFromTag(biomeRegistry, woverTag, candidates);
         }
+        collectFromVanillaEndBiomeSource(registryAccess, biomeRegistry, candidates);
+        collectFromFabricEndBiomesData(biomeRegistry, candidates);
 
         if (candidates.isEmpty()) {
             TheBeyond.LOGGER.info("[TheBeyond] No End biomes found via tags — nothing to auto-discover");
@@ -105,6 +107,66 @@ public class EndBiomeDiscovery {
         Iterable<Holder<Biome>> entries = registry.getTagOrEmpty(tag);
         for (Holder<Biome> holder : entries) {
             holder.unwrapKey().ifPresent(key -> out.putIfAbsent(key, holder));
+        }
+    }
+
+    /** Reads {@code ADDED_BIOMES} via reflection — Fabric-API ports populate it but their mixins
+     *  don't expose biomes through transient {@link TheEndBiomeSource#possibleBiomes()}. */
+    @SuppressWarnings("unchecked")
+    private static void collectFromFabricEndBiomesData(
+            Registry<Biome> biomeRegistry,
+            Map<ResourceKey<Biome>, Holder<Biome>> out) {
+        for (String className : FABRIC_END_BIOMES_DATA_CLASSES) {
+            try {
+                Class<?> cls = Class.forName(className);
+                Field field = cls.getField("ADDED_BIOMES");
+                Object raw = field.get(null);
+                if (!(raw instanceof Set<?> set)) continue;
+
+                int before = out.size();
+                for (Object obj : set) {
+                    if (!(obj instanceof ResourceKey<?> key)) continue;
+                    ResourceKey<Biome> biomeKey = (ResourceKey<Biome>) key;
+                    biomeRegistry.getHolder(biomeKey).ifPresent(h -> out.putIfAbsent(biomeKey, h));
+                }
+                int discovered = out.size() - before;
+                if (discovered > 0) {
+                    TheBeyond.LOGGER.debug(
+                            "[TheBeyond] Discovered {} biome(s) via {} ADDED_BIOMES",
+                            discovered, className);
+                }
+            } catch (ClassNotFoundException ignored) {
+                // Mod not present; skip silently.
+            } catch (Throwable t) {
+                TheBeyond.LOGGER.debug("[TheBeyond] Reading {} ADDED_BIOMES failed (non-fatal): {}",
+                        className, t.toString());
+            }
+        }
+    }
+
+    /** Builds a transient {@link TheEndBiomeSource} so mixins that hook construction (Phantasm,
+     *  UnusualEnd, etc.) fire; reads {@code possibleBiomes()} to harvest the resulting set. */
+    private static void collectFromVanillaEndBiomeSource(
+            RegistryAccess registryAccess,
+            Registry<Biome> biomeRegistry,
+            Map<ResourceKey<Biome>, Holder<Biome>> out) {
+        try {
+            HolderGetter<Biome> getter = registryAccess.lookupOrThrow(Registries.BIOME);
+            TheEndBiomeSource transientSource = TheEndBiomeSource.create(getter);
+
+            int before = out.size();
+            for (Holder<Biome> holder : transientSource.possibleBiomes()) {
+                holder.unwrapKey().ifPresent(key -> out.putIfAbsent(key, holder));
+            }
+            int discovered = out.size() - before;
+            if (discovered > 0) {
+                TheBeyond.LOGGER.debug(
+                        "[TheBeyond] Discovered {} biome(s) via transient TheEndBiomeSource (mods using mixin-based End injection)",
+                        discovered);
+            }
+        } catch (Throwable t) {
+            TheBeyond.LOGGER.debug("[TheBeyond] Transient TheEndBiomeSource discovery failed (non-fatal): {}",
+                    t.toString());
         }
     }
 }

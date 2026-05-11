@@ -5,25 +5,13 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
-/**
- * Datapack-configurable knobs for the Beyond End coordinate transform
- * ({@code wrap_range}, {@code warp_amplitude}, {@code warp_scale}).
- * Decoded from the {@code terrain_params} field on the dimension JSON
- * (optional; falls back to {@link #DEFAULTS}). The biome source publishes
- * the decoded instance to {@link BeyondEndChunkGenerator#activeTerrainParams};
- * that static is reset to {@link #DEFAULTS} on server stop so config does
- * not leak between worlds. Out-of-range values are rejected with an explicit
- * error rather than silently clamped.
- */
+/** Datapack-configurable knobs for the Beyond End coordinate transform. Decoded from the
+ *  dimension JSON's {@code terrain_params} field (optional, falls back to {@link #DEFAULTS}).
+ *  Published to {@link BeyondEndChunkGenerator#activeTerrainParams}; reset on server stop. */
 public record BeyondTerrainParams(int wrapRange, double warpAmplitude, double warpScale) {
 
-    /**
-     * Defaults applied when the dimension JSON omits {@code terrain_params}.
-     * {@code wrapRange=500000} places the ping-pong pivot outside the ~50 k
-     * lore-gameplay radius; {@code warpAmplitude=50} / {@code warpScale=0.001}
-     * is a low-frequency, low-magnitude domain warp that fuzzes the pivot
-     * reflection line without visibly distorting the interior.
-     */
+    /** Wrap pivot outside the ~50k lore radius; low-frequency, low-magnitude warp fuzzes
+     *  the pivot reflection line without visibly distorting the interior. */
     public static final BeyondTerrainParams DEFAULTS = new BeyondTerrainParams(
             500000, 50.0, 0.001);
 
@@ -65,19 +53,9 @@ public record BeyondTerrainParams(int wrapRange, double warpAmplitude, double wa
     /** Unvalidated intermediate decode target; see {@link #CODEC}. */
     private record Raw(int wrapRange, double warpAmplitude, double warpScale) {}
 
-    /**
-     * Codec for datapack JSON. All three fields are optional and fall back
-     * individually to {@link #DEFAULTS} so a dimension JSON can tweak a
-     * single knob without re-stating the others.
-     *
-     * <p>Decoded in two stages — {@link Raw} first, then {@code flatXmap}
-     * through the record constructor — because passing the record ctor
-     * directly would let the compact constructor's {@link IllegalArgumentException}
-     * escape {@code Codec#parse} as a thrown exception (crashing world load)
-     * instead of becoming a {@link DataResult#error}. The catch block forwards
-     * the original message verbatim so datapack authors still see e.g.
-     * {@code "wrap_range must be in [50000, 1000000], got 10"} in logs.
-     */
+    /** Two-stage codec: decode raw fields, then {@code flatXmap} through the record's compact
+     *  constructor so its {@link IllegalArgumentException} becomes {@link DataResult#error}
+     *  (world load logs the message, doesn't crash). All fields default individually. */
     public static final MapCodec<BeyondTerrainParams> CODEC = RecordCodecBuilder.<Raw>mapCodec(instance ->
             instance.group(
                     Codec.INT.optionalFieldOf("wrap_range", DEFAULTS.wrapRange())

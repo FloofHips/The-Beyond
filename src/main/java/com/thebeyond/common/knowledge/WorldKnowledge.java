@@ -13,11 +13,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Server-wide knowledge store for {@link KnowledgeMode#SHARED_WORLD}. Saved on
- * the overworld's {@code DataStorage} (canonical dim-agnostic slot). Ignored
- * in per-player modes.
- */
+/** Server-wide knowledge store for {@link KnowledgeMode#SHARED_WORLD}; ignored in
+ *  per-player modes. Persisted to the overworld's {@code DataStorage}. */
 public class WorldKnowledge extends SavedData {
 
     /** Stable across versions — renaming breaks save compat. */

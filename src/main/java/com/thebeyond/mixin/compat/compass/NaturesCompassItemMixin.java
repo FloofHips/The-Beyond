@@ -14,14 +14,8 @@ import org.spongepowered.asm.mixin.injection.At;
 
 import java.util.List;
 
-/**
- * Per-player filter on Nature's Compass. Single wrap suffices — downstream xpLevels +
- * dimensionKeys derive from {@code getAllowedBiomeKeys}. Descriptor is {@code Level}
- * (not {@code ServerLevel}) to match what {@code BiomeUtils} declares.
- *
- * <p>{@code @Pseudo}/{@code require=0}/{@code remap=false} — inert when the mod is
- * absent or the injection point moves.
- */
+/** Filters Nature's Compass results per-player. Wraps {@code getAllowedBiomeKeys} —
+ *  the downstream xpLevels/dimensionKeys derive from it, so one wrap is enough. */
 @Pseudo
 @Mixin(targets = "com.chaosthedude.naturescompass.items.NaturesCompassItem", remap = false)
 public abstract class NaturesCompassItemMixin {

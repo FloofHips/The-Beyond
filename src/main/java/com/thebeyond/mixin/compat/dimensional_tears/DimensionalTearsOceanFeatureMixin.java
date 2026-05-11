@@ -7,14 +7,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Cancels Dimensional Tears' {@code DimensionalTearsOceanFeature} so Beyond's
- * {@code AuroraciteLayerDTFeature} is the sole low-Y fluid authority in the End.
- * Without this, DT's 4-block ocean slab buries Beyond's auroracite islands.
- *
- * <p>Soft-targeted via {@code @Pseudo} — no-op without Dimensional Tears.
- * Does not affect DT's other features (pools, springs, obsidian patches).</p>
- */
+/** Cancels DT's {@code DimensionalTearsOceanFeature} (a 4-block ocean slab that buries
+ *  Beyond's auroracite islands). Beyond's {@code AuroraciteLayerDTFeature} owns low-Y fluid. */
 @Pseudo
 @Mixin(targets = "com.ordana.dimensional_tears.worldgen_features.DimensionalTearsOceanFeature")
 public abstract class DimensionalTearsOceanFeatureMixin {

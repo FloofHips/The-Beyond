@@ -12,13 +12,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 
-/**
- * {@link PackResources} wrapper that hides {@code dimension/the_end.json} and
- * {@code dimension_type/the_end.json} from foreign packs so Beyond's pack wins those slots.
- * Everything else (biomes, noise settings, features, etc.) passes through unchanged.
- *
- * <p>Applied by {@code MultiPackResourceManagerMixin} when Beyond's pack is present.</p>
- */
+/** Wrapper that hides {@code dimension/the_end.json} and {@code dimension_type/the_end.json}
+ *  from foreign packs so Beyond's pack wins those slots. Everything else passes through. */
 public class EndDimensionFilteringPackResources implements PackResources {
 
     private static final ResourceLocation END_DIMENSION = ResourceLocation.fromNamespaceAndPath(

@@ -15,27 +15,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Injects Beyond biomes into the vanilla End's TheEndBiomeSource.
- *
- * Priority 500 ensures this runs before Phantasm (900) and UnusualEnd (1000),
- * which also inject at RETURN on getNoiseBiome with cancellable=true.
- *
- * Uses erosion noise (the only non-zero noise in vanilla End) to split
- * vanilla biome zones into sub-ranges for Beyond biomes.
- *
- * Vanilla erosion ranges (from endIslands function):
- *   > 0.25        → end_highlands
- *   -0.0625..0.25 → end_midlands
- *   < -0.21875    → small_end_islands
- *   else          → end_barrens
- *
- * Beyond biome placement (sub-ranges within vanilla zones):
- *   0.35..0.5     → attracta_expanse (within highlands)
- *   >= 0.5        → peer_lands (high highlands)
- *   < -0.35       → true_void (deep small islands)
- *   -0.21875..-0.1 → the_paths (within barrens)
- */
+/** Injects Beyond biomes into vanilla End's {@code TheEndBiomeSource} by sub-dividing
+ *  erosion-noise ranges. Priority 500 to run before Phantasm (900) / UnusualEnd (1000),
+ *  which also @Inject RETURN cancellable on getNoiseBiome. */
 @Mixin(value = TheEndBiomeSource.class, priority = 500)
 public class TheEndBiomeSourceMixin {
 

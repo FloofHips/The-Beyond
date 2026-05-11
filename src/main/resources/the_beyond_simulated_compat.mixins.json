@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "com.thebeyond.mixin.compat.simulated",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "the_beyond.refmap.json",
+  "mixins": [
+    "SimAssemblyContraptionMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

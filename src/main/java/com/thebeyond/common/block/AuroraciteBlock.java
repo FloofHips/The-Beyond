@@ -55,7 +55,7 @@ public class AuroraciteBlock extends Block {
     protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         if (context instanceof EntityCollisionContext entitycollisioncontext) {
             Entity entity = entitycollisioncontext.getEntity();
-            if (entity != null) {
+            if (entity instanceof LivingEntity) {
                 if (!(canEntityWalkOn(entity) && context.isAbove(Shapes.block(), pos, false))) {
                     return Shapes.empty();
                 }

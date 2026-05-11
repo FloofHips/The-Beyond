@@ -4,7 +4,24 @@
   "compatibilityLevel": "JAVA_21",
   "refmap": "the_beyond.refmap.json",
   "mixins": [
-    "BetterEndGeneratorOptionsMixin"
+    "BetterEndGeneratorOptionsMixin",
+    "MegaLakeStructureMixin",
+    "MegaLakeSmallStructureMixin",
+    "ScatterFeatureMixin",
+    "FullHeightScatterFeatureMixin",
+    "InvertedScatterFeatureMixin",
+    "WallScatterFeatureMixin",
+    "SpireFeatureMixin",
+    "FloatingSpireFeatureMixin",
+    "FeatureBaseStructureMixin",
+    "CrystalMountainPieceMixin",
+    "SingleEndPoolElementMixin",
+    "PaintedMountainStructureMixin",
+    "PaintedMountainPieceMixin",
+    "SDFStructureFeatureMixin",
+    "EternalPortalStructureMixin",
+    "GiantIceStarStructureMixin",
+    "UnderwaterPlantScatterMixin"
   ],
   "server": [],
   "injectors": {

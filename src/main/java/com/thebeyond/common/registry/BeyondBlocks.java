@@ -31,7 +31,12 @@ public class BeyondBlocks {
             () -> new VoidFlameBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_PURPLE)
                     .sound(SoundType.SHROOMLIGHT)
-                    .mapColor(MapColor.COLOR_PURPLE))
+                    .replaceable()
+                    .noCollission()
+                    .instabreak()
+                    .noOcclusion()
+                    .noLootTable()
+                    .lightLevel(state -> 15))
 
     );
     public static final DeferredBlock<Block> VOID_CRYSTAL = registerBlockWithoutItem("void_crystal",
@@ -120,7 +125,9 @@ public class BeyondBlocks {
             () -> new AuroraciteBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_LIGHT_BLUE)
                     .strength(-1, 3600000F)
-                    .sound(SoundType.AMETHYST))
+                    .sound(SoundType.AMETHYST)
+                    .isSuffocating((s, l, p) -> false)
+                    .isViewBlocking((s, l, p) -> false))
     );
     public static final DeferredBlock<Block> STARDUST = registerBlock("stardust",
             () -> new StardustBlock(BlockBehaviour.Properties.of()

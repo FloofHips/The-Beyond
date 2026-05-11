@@ -1,24 +1,13 @@
 package com.thebeyond.common.worldgen;
 
-/**
- * Server-session-scoped End-worldgen state; reset on {@code ServerStoppedEvent}.
- * {@link #isActive()} reports whether Beyond's biome source decoded for the
- * current server (gates compat mixins and soup-mode fallbacks).
- * {@link #getDimMinY()} / {@link #getDimMaxY()} expose the End dim build bounds
- * (Beyond-only: [0, 256); Enderscape combo: [-64, 320)) and are consumed by
- * {@link BeyondEndBiomeSource} to anchor the bottom_biome band and by
- * {@link BeyondEndChunkGenerator#getWorldHeight()} to scale worldHeight so the
- * terrain loop, gradient and heightmap scan match the actual dim range.
- */
+/** Server-session-scoped End-worldgen state. {@link #isActive()} gates compat mixins;
+ *  {@link #getDimMinY()} / {@link #getDimMaxY()} expose the active dim's build bounds.
+ *  Reset on {@code ServerStoppedEvent}. */
 public final class BeyondTerrainState {
 
     private static volatile boolean active = false;
     private static volatile int dimMinY = 0;
-    /**
-     * Dim max build height, exclusive (same semantics as {@code LevelHeightAccessor.getMaxBuildHeight}).
-     * Defaults to 256 so callers reading this before the first chunk-gen callback still see
-     * a sane Beyond-only value.
-     */
+    /** Exclusive — matches {@code LevelHeightAccessor.getMaxBuildHeight}. */
     private static volatile int dimMaxY = 256;
 
     private BeyondTerrainState() {}

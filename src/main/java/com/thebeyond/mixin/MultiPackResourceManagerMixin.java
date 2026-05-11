@@ -13,13 +13,9 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Wraps foreign packs in {@link EndDimensionFilteringPackResources} so Beyond's
- * {@code beyond_terrain} pack wins the {@code dimension/the_end.json} and
- * {@code dimension_type/the_end.json} slots; other content (biomes, noise, features,
- * structures) passes through. Skips Beyond's own packs and already-wrapped packs;
- * no-ops when {@code beyond_terrain} is absent (soup-mode fallback).
- */
+/** Wraps foreign packs so {@code beyond_terrain} wins the End {@code dimension*.json}
+ *  slots while biomes/noise/features/structures pass through. No-op when
+ *  {@code beyond_terrain} is absent (soup-mode fallback). */
 @Mixin(MultiPackResourceManager.class)
 public class MultiPackResourceManagerMixin {
 

@@ -15,15 +15,9 @@ import net.minecraft.world.item.ItemStack;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * JEI integration for progressive-discovery hiding. Runs each ItemStack through
- * {@link HiddenContentFilter#isHidden} and removes hidden stacks at runtime. Tracks
- * removed stacks in {@link #removedByUs} so add-back only affects entries this plugin
- * hid — stacks hidden by other mods/configs are left alone.
- *
- * <p>Refresh is invoked via {@link JeiCompatBridge#refresh()}. Not loaded when JEI is
- * absent: {@code @JeiPlugin} is service-loaded by JEI itself.
- */
+/** Removes hidden ItemStacks from JEI at runtime via {@link HiddenContentFilter#isHidden}.
+ *  Tracks own removals in {@link #removedByUs} so add-back only touches entries this plugin
+ *  hid. Refresh entry point: {@link JeiCompatBridge#refresh()}. */
 @JeiPlugin
 public class BeyondJeiPlugin implements IModPlugin {
 

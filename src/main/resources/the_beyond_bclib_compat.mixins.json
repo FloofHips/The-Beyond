@@ -1,0 +1,13 @@
+{
+  "required": false,
+  "package": "com.thebeyond.mixin.compat.bclib",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "the_beyond.refmap.json",
+  "mixins": [
+    "TemplateStructureMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    { "id": "betterend:megalake", "required": false },
+    { "id": "betterend:megalake_grove", "required": false }
+  ]
+}

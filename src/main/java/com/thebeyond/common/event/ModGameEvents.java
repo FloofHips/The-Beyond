@@ -65,14 +65,24 @@ public class ModGameEvents {
         // chunksToUpdateFutures. An unloaded chunk has no refuge data anyway, so null
         // is treated as "no protection".
         ChunkAccess chunk = level.getChunkSource().getChunk(pos.getX() >> 4, pos.getZ() >> 4, false);
+        if (chunk != null) {
+            RefugeChunkData data = chunk.getData(BeyondAttachments.REFUGE_DATA);
+            if (data.shouldPreventHunger() || data.shouldPreventExplosion()
+                    || data.shouldPreventMobSpawn() || data.shouldPreventFallDamage()) {
+                return data;
+            }
+        }
+        // Sub-level fallback: refuge attachment lives at the remote plot storage offset.
+        BlockPos stored = com.thebeyond.common.compat.BeyondCompatHooks.storedForVisible(level, pos);
+        if (stored != null) {
+            ChunkAccess sChunk = level.getChunkSource().getChunk(stored.getX() >> 4, stored.getZ() >> 4, false);
+            if (sChunk != null) return sChunk.getData(BeyondAttachments.REFUGE_DATA);
+        }
         return chunk == null ? null : chunk.getData(BeyondAttachments.REFUGE_DATA);
     }
 
-    /**
-     * Pushes the authoritative "known" set to the client on login. NeoForge does not
-     * S2C-sync attachments, so the server sends a {@code replace=true} snapshot: the
-     * world set in SHARED_WORLD mode, otherwise the player's attachment.
-     */
+    /** Pushes the authoritative known set to the client on login (NeoForge doesn't
+     *  S2C-sync attachments). World set in SHARED_WORLD mode, else the player's. */
     @SubscribeEvent
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer sp)) return;

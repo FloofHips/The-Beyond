@@ -14,14 +14,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Prevents Wover/BetterX's {@code enforceGeneratorInWorldGenSettings} from replacing Beyond's
- * chunk generator with a {@code WoverChunkGenerator} at dimension-load time. Without this,
- * Beyond's End is silently swapped out because {@code BeyondEndBiomeSource} isn't a Wover type.
- *
- * <p>Only cancels for {@code LevelStem.END} + {@link BeyondEndBiomeSource}. Soft-targeted
- * via {@code @Pseudo} — silent no-op without WorldWeaver.</p>
- */
+/** Blocks Wover/BetterX from swapping Beyond's End generator at dim-load. Only cancels for
+ *  {@code LevelStem.END + BeyondEndBiomeSource}; {@code @Pseudo} → silent no-op without Wover. */
 @Pseudo
 @Mixin(targets = "org.betterx.wover.generator.impl.chunkgenerator.WoverChunkGenerator", remap = false)
 public class WoverChunkGeneratorMixin {

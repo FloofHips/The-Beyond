@@ -1,0 +1,12 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "betterend"
+    }
+  ],
+  "type": "neoforge:add_features",
+  "biomes": "#betterend:has_structure/mountain",
+  "features": "the_beyond:compat/aurora_crystal_cluster",
+  "step": "surface_structures"
+}

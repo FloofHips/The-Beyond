@@ -1,5 +1,6 @@
 package com.thebeyond.common.block.blockentities;
 
+import com.thebeyond.common.compat.BeyondCompatHooks;
 import com.thebeyond.common.entity.LanternEntity;
 import com.thebeyond.common.registry.BeyondBlockEntities;
 import net.minecraft.core.BlockPos;
@@ -16,6 +17,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.entity.TickingBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 
@@ -40,6 +42,8 @@ public class BonfireBlockEntity extends BlockEntity {
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         birthday = tag.getInt("Birthday");
+        if (tag.contains("ActivationTimer")) activationTimer = tag.getInt("ActivationTimer");
+        if (tag.hasUUID("ActivatingPlayer")) activatingPlayerUUID = tag.getUUID("ActivatingPlayer");
     }
 
     @Override
@@ -48,6 +52,8 @@ public class BonfireBlockEntity extends BlockEntity {
         if (getBlockState().getValue(LIT)) {
             tag.putInt("Birthday", birthday);
         }
+        if (activationTimer > 0) tag.putInt("ActivationTimer", activationTimer);
+        if (activatingPlayerUUID != null) tag.putUUID("ActivatingPlayer", activatingPlayerUUID);
     }
 
     private Player getActivatingPlayer() {
@@ -100,7 +106,8 @@ public class BonfireBlockEntity extends BlockEntity {
         if (activatingPlayer == null) return;
 
         if (!(level instanceof ServerLevel serverLevel)) return;
-        BlockPos center = worldPosition;
+        Vec3 anchor = BeyondCompatHooks.visibleOrCenter(level, worldPosition);
+        BlockPos center = BlockPos.containing(anchor);
 
         AABB boundingBox = new AABB(center).inflate(20);
 
@@ -117,7 +124,7 @@ public class BonfireBlockEntity extends BlockEntity {
             if ((level.random.nextFloat() < 0.9f)) {
                 BlockPos spawnPos = BlockPos.randomInCube(getLevel().random, 1, center, 10).iterator().next();
                 if (spawnPos != null) {
-                    BlockPos newpos = spawnPos.atY(getBlockPos().getY());
+                    BlockPos newpos = spawnPos.atY(center.getY());
                     LanternEntity.spawnSelf(serverLevel, newpos, activatingPlayer);
                 }
             }

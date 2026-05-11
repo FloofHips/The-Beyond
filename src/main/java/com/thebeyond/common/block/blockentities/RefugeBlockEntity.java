@@ -69,6 +69,8 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
     private int tickCounter;
     public boolean isActive;
     private final Set<ChunkPos> affectedChunks = new HashSet<>();
+    @Nullable
+    private BlockPos appliedPos;
     private ContainerData dataAccess;
 
     private static final Component DEFAULT_NAME = Component.translatable("container.refuge");
@@ -315,6 +317,10 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         } else {
             this.pattern = createPattern();
         }
+        if (tag.contains("AppliedPos")) {
+            long packed = tag.getLong("AppliedPos");
+            this.appliedPos = BlockPos.of(packed);
+        }
     }
 
     @Override
@@ -328,6 +334,9 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         }
         if (pattern != null) {
             tag.putString("Pattern", flattenPattern(pattern));
+        }
+        if (appliedPos != null) {
+            tag.putLong("AppliedPos", appliedPos.asLong());
         }
     }
 
@@ -354,6 +363,13 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
     public ResolvableProfile getOwnerProfile() {
         return this.owner;
     }
+    private void safeSendBlockUpdated() {
+        try {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        } catch (UnsupportedOperationException ignored) {
+        }
+    }
+
     public void setOwner(ItemStack stack) {
         if (stack.is(Items.PLAYER_HEAD)) {
             ResolvableProfile resolvableprofile = (ResolvableProfile)stack.get(DataComponents.PROFILE);
@@ -361,7 +377,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
                 this.owner = resolvableprofile;
                 this.updateOwnerProfile();
                 if (level != null && !level.isClientSide) {
-                    level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+                    safeSendBlockUpdated();
                 }
             }
         }
@@ -375,7 +391,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
 
         this.updateOwnerProfile();
         if (level != null && !level.isClientSide) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            safeSendBlockUpdated();
         }
 
         if (level == null) return;
@@ -452,11 +468,13 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         }
 
         currentMode = newMode;
+        appliedPos = worldPosition.immutable();
         //fill();
     }
 
     public void remove() {
         if (level == null || level.isClientSide) return;
+        appliedPos = null;
 
         for (ChunkPos chunkPos : affectedChunks) {
             LevelChunk chunk = level.getChunkSource().getChunk(chunkPos.x, chunkPos.z, false);
@@ -523,6 +541,25 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
                 registerRefuge((ServerLevel) level, be);
             } else {
                 unregisterRefuge((ServerLevel) level, be);
+            }
+        }
+
+        // Sub-level pull: mirrors EnadrakeBuildRefugeGoal canUse() gate.
+        if (!state.getValue(RefugeBlock.POWERED) && be.tickCounter % 20 == 0) {
+            Vec3 visible = com.thebeyond.common.compat.BeyondCompatHooks.visibleOnly(level, pos);
+            if (visible != null) {
+                AABB box = AABB.ofSize(visible, 20, 20, 20);
+                for (com.thebeyond.common.entity.EnadrakeEntity e :
+                        level.getEntitiesOfClass(com.thebeyond.common.entity.EnadrakeEntity.class, box)) {
+                    if (e.onAWalkTimer > 0 || e.panic > 0) continue;
+                    net.minecraft.world.item.ItemStack held =
+                            e.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND);
+                    if (held.isEmpty() || held.getRarity() == net.minecraft.world.item.Rarity.EPIC) continue;
+                    be.printPattern();
+                    held.shrink(1);
+                    e.panic = 50;
+                    break;
+                }
             }
         }
     }
@@ -599,6 +636,37 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         if (level instanceof ServerLevel serverLevel && isActive) {
             registerRefuge(serverLevel, this);
         }
+        reapplyIfRelocated();
+    }
+
+    /** Re-runs {@code addRefuge} on relocation; probes the center chunk first to skip
+     *  legacy saves whose counter was already applied in a prior session. */
+    private void reapplyIfRelocated() {
+        if (level == null || level.isClientSide) return;
+        if (currentMode < 0 || currentMode > 3) return;
+        if (worldPosition.equals(appliedPos)) return;
+        makeChunks();
+        LevelChunk centerChunk = level.getChunkSource().getChunk(worldPosition.getX() >> 4, worldPosition.getZ() >> 4, false);
+        boolean alreadyApplied = false;
+        if (centerChunk != null) {
+            RefugeChunkData centerData = centerChunk.getData(BeyondAttachments.REFUGE_DATA);
+            alreadyApplied = switch (currentMode) {
+                case MODE_HUNGER -> centerData.shouldPreventHunger();
+                case MODE_EXPLOSION -> centerData.shouldPreventExplosion();
+                case MODE_MOB_SPAWN -> centerData.shouldPreventMobSpawn();
+                case MODE_FALL_DAMAGE -> centerData.shouldPreventFallDamage();
+                default -> false;
+            };
+        }
+        if (!alreadyApplied) {
+            for (ChunkPos cp : affectedChunks) {
+                LevelChunk chunk = level.getChunkSource().getChunk(cp.x, cp.z, false);
+                if (chunk == null) continue;
+                chunk.getData(BeyondAttachments.REFUGE_DATA).addRefuge(currentMode);
+            }
+        }
+        appliedPos = worldPosition.immutable();
+        setChanged();
     }
 
     public void activate(Player player) {

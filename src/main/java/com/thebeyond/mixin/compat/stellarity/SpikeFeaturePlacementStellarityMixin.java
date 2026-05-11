@@ -23,22 +23,9 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Redirects {@code SpikeFeature.place() → placeSpike()} to use vanilla absolute-Y semantics
- * for Stellarity's ring spikes in the Beyond+BetterEnd+Stellarity combo.
- *
- * <p>BetterEnd's {@code be_placeSpike} HEAD inject replaces placement with surface-relative math,
- * breaking Stellarity's absolute-Y heights. A {@code @Redirect} on the call site in {@code place()}
- * bypasses BetterEnd's injector entirely — deterministic, unlike competing HEAD injects.</p>
- *
- * <p>Raw heights are looked up from a static table (not {@code spike.getHeight()}) because
- * BetterEnd's {@code EndSpikeMixin} also intercepts that getter.</p>
- *
- * <p>Center spike (0,0) is excluded — delegated to BetterEnd / event handler.</p>
- *
- * <p>Gated on: stellarity + betterend loaded, {@link BeyondTerrainState#isActive()}.
- * Falls through to original {@code placeSpike} when gates fail.</p>
- */
+/** Redirects {@code SpikeFeature.place → placeSpike} to vanilla absolute-Y placement for
+ *  Stellarity's ring spikes. Heights come from a static table since BetterEnd also
+ *  intercepts {@code spike.getHeight()}. */
 @Mixin(SpikeFeature.class)
 public abstract class SpikeFeaturePlacementStellarityMixin {
 

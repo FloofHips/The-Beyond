@@ -7,7 +7,9 @@ import com.thebeyond.common.worldgen.BeyondEndChunkGenerator;
 import com.thebeyond.common.worldgen.BeyondTerrainState;
 import com.thebeyond.common.worldgen.compat.EndBiomeDiscovery;
 import com.thebeyond.common.worldgen.compat.EndBiomeInjector;
+import com.thebeyond.common.worldgen.compat.EnderscapePlacedFeatureRewriter;
 import com.thebeyond.common.worldgen.compat.SurfaceRuleMerger;
+import com.thebeyond.common.worldgen.compat.WarpedReefMacroRegion;
 import com.thebeyond.common.worldgen.features.AuroraciteLayerFeature;
 import com.thebeyond.common.worldgen.features.AuroraciteLayerDTFeature;
 import net.minecraft.core.Registry;
@@ -50,7 +52,9 @@ public class ServerWorldEvents {
         if (BeyondTerrainState.isActive()) {
             TheBeyond.LOGGER.info("[TheBeyond] Beyond terrain is active — running auto-discovery for foreign End biomes");
             EndBiomeDiscovery.discoverAndInject(event.getServer());
+            EnderscapePlacedFeatureRewriter.rewrite(event.getServer());
             SurfaceRuleMerger.mergeSurfaceRules(event.getServer(), true);
+            WarpedReefMacroRegion.cache(event.getServer());
             return;
         }
 
@@ -85,5 +89,6 @@ public class ServerWorldEvents {
         AuroraciteLayerDTFeature.resetNoise();
         EndBiomeInjector.vanillaEndHolders = null;
         AnchorLeggingsItem.clearCreativeTracking();
+        WarpedReefMacroRegion.clear();
     }
 }

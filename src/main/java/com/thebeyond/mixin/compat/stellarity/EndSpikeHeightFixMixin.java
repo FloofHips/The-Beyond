@@ -10,17 +10,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Attempts to neutralise BetterEnd's {@code getHeight()} surface-relative override by returning
- * the raw {@code height} field at higher mixin priority (1500 vs BetterEnd's 1000).
- *
- * <p>Note: mixin HEAD ordering across separate configs is not fully deterministic. The primary
- * height fix is the static lookup table in {@code SpikeFeaturePlacementStellarityMixin}. This
- * mixin is a best-effort belt-and-suspenders for callers outside our control (e.g.
- * {@code DragonRespawnAnimation.SUMMONING_PILLARS}).</p>
- *
- * <p>Gated on: Stellarity loaded, {@link BeyondTerrainState#isActive()}.</p>
- */
+/** Returns the raw {@code height} field at priority 1500 (above BetterEnd's 1000) so callers
+ *  outside {@code SpikeFeaturePlacementStellarityMixin}'s redirect (e.g.
+ *  {@code DragonRespawnAnimation.SUMMONING_PILLARS}) still see the unwrapped value. */
 @Mixin(value = SpikeFeature.EndSpike.class, priority = 1500)
 public class EndSpikeHeightFixMixin {
 

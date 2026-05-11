@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "com.thebeyond.compat.astrological",
+  "compatibilityLevel": "JAVA_21",
+  "plugin": "com.thebeyond.compat.astrological.BeyondAstrologicalMixinDisabler",
+  "mixins": [],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

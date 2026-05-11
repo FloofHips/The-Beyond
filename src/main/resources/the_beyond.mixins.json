@@ -17,17 +17,29 @@
     "MultiNoiseBiomeSourceMixin",
     "EndWeatherMixin",
     "EndWeatherSyncMixin",
+    "ServerLevelLightningSuppressMixin",
     "TheEndBiomeSourceMixin",
     "MultiPackResourceManagerMixin",
     "EndPodiumFeatureMixin",
     "WoverChunkGeneratorMixin",
     "WoverSurfaceRuleUtilMixin",
     "JigsawStructureMixin",
+    "JigsawPlacementMixin",
+    "PlacedFeatureAccessor",
+    "HeightRangePlacementAccessor",
+    "UniformHeightAccessor",
     "AuroraciteLayerProtectionMixin",
-    "AuroraciteLayerFillMixin"
+    "AuroraciteLayerFillMixin",
+    "HeightmapPlacementMultiSurfaceMixin",
+    "CountOnEveryLayerPlacementMixin",
+    "EnvironmentScanPlacementMixin",
+    "HeightRangePlacementVoronoiMixin",
+    "BiomeFilterMixin",
+    "BeehiveDecoratorEmptyLogsMixin"
   ],
   "client": [
-    "client.BossHealthOverlayAccessor"
+    "client.BossHealthOverlayAccessor",
+    "client.LevelRendererWeatherSuppressMixin"
   ],
   "server": [],
   "injectors": {
