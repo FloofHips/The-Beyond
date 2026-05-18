@@ -7,7 +7,6 @@ import com.thebeyond.common.item.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.*;
-import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -96,11 +95,4 @@ public class BeyondItems {
         return (DeferredItem<T>) toReturn;
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T extends Item> DeferredItem<T> registerIntegrationItem(final String name, final Supplier<? extends Item> item, String modId) {
-        if (!ModList.get().isLoaded(modId)) return null;
-        DeferredItem<Item> toReturn = ITEMS.register(name, item);
-        CREATIVE_TAB_ITEMS.add(toReturn);
-        return (DeferredItem<T>) toReturn;
-    }
 }

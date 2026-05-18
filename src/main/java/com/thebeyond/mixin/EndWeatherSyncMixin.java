@@ -18,7 +18,6 @@ public class EndWeatherSyncMixin {
         ServerLevel self = (ServerLevel) (Object) this;
         if (self.dimension() != Level.END) return;
 
-        // Update rain level from shared levelData (DerivedLevelData -> overworld)
         self.oRainLevel = self.rainLevel;
         if (self.getLevelData().isRaining()) {
             self.rainLevel = Math.min(1.0F, self.rainLevel + 0.01F);
@@ -27,7 +26,6 @@ public class EndWeatherSyncMixin {
         }
         self.rainLevel = Mth.clamp(self.rainLevel, 0.0F, 1.0F);
 
-        // Update thunder level
         self.oThunderLevel = self.thunderLevel;
         if (self.getLevelData().isThundering()) {
             self.thunderLevel = Math.min(1.0F, self.thunderLevel + 0.01F);

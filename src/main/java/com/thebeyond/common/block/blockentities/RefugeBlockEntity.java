@@ -546,7 +546,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
 
         // Sub-level pull: mirrors EnadrakeBuildRefugeGoal canUse() gate.
         if (!state.getValue(RefugeBlock.POWERED) && be.tickCounter % 20 == 0) {
-            Vec3 visible = com.thebeyond.common.compat.BeyondCompatHooks.visibleOnly(level, pos);
+            Vec3 visible = com.thebeyond.api.compat.BeyondCompatHooks.visibleOnly(level, pos);
             if (visible != null) {
                 AABB box = AABB.ofSize(visible, 20, 20, 20);
                 for (com.thebeyond.common.entity.EnadrakeEntity e :

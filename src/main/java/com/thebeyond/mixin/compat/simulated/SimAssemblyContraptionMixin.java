@@ -20,8 +20,7 @@ public abstract class SimAssemblyContraptionMixin {
     private void the_beyond$whitelist(BlockState state, Level world, BlockPos pos,
                                        CallbackInfoReturnable<Boolean> cir) {
         Block b = state.getBlock();
-        if (b == BeyondBlocks.MEMOR_FAUCET.get()
-                || b == BeyondBlocks.BONFIRE.get()
+        if (b == BeyondBlocks.BONFIRE.get()
                 || b == BeyondBlocks.ENADRAKE_HUT.get()
                 || b == BeyondBlocks.REFUGE.get()) {
             cir.setReturnValue(true);

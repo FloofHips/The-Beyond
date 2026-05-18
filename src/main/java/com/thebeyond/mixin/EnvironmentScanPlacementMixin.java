@@ -1,9 +1,8 @@
 package com.thebeyond.mixin;
 
-import com.thebeyond.common.worldgen.BeyondTerrainState;
+import com.thebeyond.api.worldgen.BeyondTerrainState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.blockpredicates.BlockPredicate;
 import net.minecraft.world.level.levelgen.placement.EnvironmentScanPlacement;
 import net.minecraft.world.level.levelgen.placement.PlacementContext;
@@ -42,7 +41,6 @@ public abstract class EnvironmentScanPlacementMixin {
         for (int step = 0; step < extended; step++) {
             int y = pos.getY();
             if (y < minY || y > maxY) break;
-            BlockState state = ctx.getBlockState(pos);
             if (this.targetCondition.test(ctx.getLevel(), pos)) {
                 cir.setReturnValue(Stream.of(pos.immutable()));
                 return;

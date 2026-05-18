@@ -74,8 +74,4 @@ public class BeyondEntityTypes {
                             .sized(1, 1)
                             .clientTrackingRange(4)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rising_block").toString()));
-    public static void register(EventBus eventBus) {
-        ENTITY_TYPES.register(eventBus);
-    }
-
 }

@@ -73,7 +73,7 @@ public class ModGameEvents {
             }
         }
         // Sub-level fallback: refuge attachment lives at the remote plot storage offset.
-        BlockPos stored = com.thebeyond.common.compat.BeyondCompatHooks.storedForVisible(level, pos);
+        BlockPos stored = com.thebeyond.api.compat.BeyondCompatHooks.storedForVisible(level, pos);
         if (stored != null) {
             ChunkAccess sChunk = level.getChunkSource().getChunk(stored.getX() >> 4, stored.getZ() >> 4, false);
             if (sChunk != null) return sChunk.getData(BeyondAttachments.REFUGE_DATA);

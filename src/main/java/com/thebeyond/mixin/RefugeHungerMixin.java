@@ -32,7 +32,7 @@ public abstract class RefugeHungerMixin {
                 if (data.shouldPreventHunger()) { ci.cancel(); return; }
             }
             // Sub-level fallback: refuge attachment lives at the remote plot storage offset.
-            BlockPos stored = com.thebeyond.common.compat.BeyondCompatHooks.storedForVisible(serverLevel, playerPos);
+            BlockPos stored = com.thebeyond.api.compat.BeyondCompatHooks.storedForVisible(serverLevel, playerPos);
             if (stored != null) {
                 ChunkAccess sChunk = serverLevel.getChunkSource()
                         .getChunk(stored.getX() >> 4, stored.getZ() >> 4, false);

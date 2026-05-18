@@ -1,6 +1,6 @@
 package com.thebeyond.mixin;
 
-import com.thebeyond.common.worldgen.BeyondTerrainState;
+import com.thebeyond.api.worldgen.BeyondTerrainState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.levelgen.Heightmap;

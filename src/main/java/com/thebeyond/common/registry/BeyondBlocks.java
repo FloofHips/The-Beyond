@@ -10,7 +10,6 @@ import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
-import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -322,34 +321,11 @@ public class BeyondBlocks {
         return (DeferredBlock<T>) toReturn;
     }
 
-    @SuppressWarnings("unchecked")
-    private static <T extends Block> DeferredBlock<T> registerIntegrationBlockWithoutItem(String name, Supplier<? extends Block> block, String modId) {
-        if (!ModList.get().isLoaded(modId)) return null;
-        DeferredBlock<Block> toReturn = BLOCKS.register(name, block);
-        return (DeferredBlock<T>) toReturn;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T extends Block> DeferredBlock<T> registerIntegrationBlock(String name, Supplier<? extends Block> block, String modId) {
-        if (!ModList.get().isLoaded(modId)) return null;
-        DeferredBlock<Block> toReturn = BLOCKS.register(name, block);
-        CREATIVE_TAB_ITEMS.add(registerIntegrationBlockItem(name, toReturn));
-        return (DeferredBlock<T>) toReturn;
-    }
-//    private static <T extends Block> DeferredBlock<Block> registerSpecial(String name, Supplier<? extends T> supp) {
-//        DeferredBlock<Block> toReturn = BLOCKS.register(name, supp);
-//        CREATIVE_TAB_ITEMS.add(registerBlockItem(name, toReturn));
-//        return toReturn;
-//    }
-        private static DeferredHolder<Item, BlockItem> registerBlockItem(String name, Supplier<? extends Block> block) {
+    private static DeferredHolder<Item, BlockItem> registerBlockItem(String name, Supplier<? extends Block> block) {
         return BeyondItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties()));
     }
 
     private static DeferredHolder<Item, BlockItem> registerBlockItem(String name, Supplier<? extends Block> block, Rarity rarity) {
         return BeyondItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties().rarity(rarity)));
-    }
-
-    private static DeferredHolder<Item, BlockItem> registerIntegrationBlockItem(String name, Supplier<? extends Block> block) {
-        return BeyondItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties()));
     }
 }

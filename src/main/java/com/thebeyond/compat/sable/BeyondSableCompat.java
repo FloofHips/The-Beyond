@@ -1,8 +1,8 @@
 package com.thebeyond.compat.sable;
 
 import com.thebeyond.TheBeyond;
-import com.thebeyond.common.compat.BeyondCompatHooks;
-import com.thebeyond.common.compat.LocationTranslator;
+import com.thebeyond.api.compat.BeyondCompatHooks;
+import com.thebeyond.api.compat.LocationTranslator;
 import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.companion.math.BoundingBox3d;
 import dev.ryanhcode.sable.sublevel.SubLevel;

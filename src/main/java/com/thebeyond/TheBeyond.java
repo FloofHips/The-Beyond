@@ -76,61 +76,44 @@ public class TheBeyond {
                     Component.literal("The Beyond - Custom End Terrain"),
                     PackSource.DEFAULT, Optional.empty());
             Pack.ResourcesSupplier supplier = new PathPackResources.PathResourcesSupplier(resourcePath);
-            PackSelectionConfig selection = new PackSelectionConfig(false, Pack.Position.TOP, false);
 
-            // Enderscape compat: override Beyond's dimension_type/the_end.json with a merged
-            // version that keeps Beyond's effects/fixed_time/has_skylight but takes its
-            // y-bounds from Enderscape (min_y=-64, height=384). Attached as a CHILD pack of
-            // beyond_terrain (via Pack.withChildren):
-            //   (1) Children are hidden from the datapack UI by NeoForge.
-            //   (2) Lifecycle is bound to the parent — enabling/disabling beyond_terrain
-            //       enables/disables the child, so the bounds override cannot be active
-            //       while beyond_terrain is off.
-            //   (3) Children are placed after the parent in the selected pack list and
-            //       FallbackResourceManager scans end-to-start, so the child wins
-            //       dimension_type resolution — giving us the min_y=-64 override.
-            // Only ships dimension_type/the_end.json. If Enderscape is not loaded, no
-            // child is attached and Beyond's own 0..256 dimension_type stays authoritative.
-            // Priority: Astrological > Enderscape. If both loaded, Astrological's wider bounds
-            // (-256..384) win. Only one child is attached at a time so resolution is unambiguous.
-            List<Pack> children = List.of();
-            String compatPackName = null;
-            String compatLogMsg = null;
-            if (ModList.get().isLoaded("astrological")) {
-                compatPackName = "beyond_astrological_bounds";
-                compatLogMsg = "Astrological detected — attaching beyond_astrological_bounds (extends End y-bounds to -256..384).";
-            } else if (ModList.get().isLoaded("enderscape")) {
-                compatPackName = "beyond_enderscape_bounds";
-                compatLogMsg = "Enderscape detected — attaching beyond_enderscape_bounds (extends End y-bounds to -64..320).";
-            }
-            if (compatPackName != null) {
-                Path compatPath = ModList.get().getModFileById(MODID)
-                        .getFile().findResource("resourcepacks/" + compatPackName);
-                PackLocationInfo compatInfo = new PackLocationInfo(
-                        "mod/" + MODID + ":" + compatPackName,
-                        Component.literal("The Beyond - " + compatPackName + " Compat"),
-                        PackSource.DEFAULT, Optional.empty());
-                Pack.ResourcesSupplier compatSupplier = new PathPackResources.PathResourcesSupplier(compatPath);
-                // defaultPosition / fixedPosition are ignored for children (NeoForge forces
-                // them into the child slot below the parent). Required=false also forced.
-                PackSelectionConfig compatSelection = new PackSelectionConfig(false, Pack.Position.TOP, false);
-                Pack compatPack = Pack.readMetaAndCreate(compatInfo, compatSupplier, PackType.SERVER_DATA, compatSelection);
-                if (compatPack != null) {
-                    children = List.of(compatPack);
-                    LOGGER.info("[TheBeyond] {}", compatLogMsg);
-                } else {
-                    LOGGER.warn("[TheBeyond] {} pack build failed — falling back to Beyond's own 0..256 dimension_type.", compatPackName);
-                }
+            // Always applied. Visible & player-toggleable (opt into soup mode) only when
+            // Convergence is present; otherwise required + hidden from the datapack UI.
+            boolean convergencePresent = ModList.get().isLoaded("isleweaver");
+            PackSelectionConfig selection =
+                    new PackSelectionConfig(!convergencePresent, Pack.Position.TOP, false);
+
+            // Bounds-override compat children (rewrite End dim-type y-bounds) attached to beyond_terrain:
+            // UI-hidden, lifecycle-bound, win dim_type resolution; resolveWinner picks one by priority.
+            com.thebeyond.api.event.BeyondTerrainPackAssembleEvent assembleEvent =
+                    new com.thebeyond.api.event.BeyondTerrainPackAssembleEvent(event);
+            net.neoforged.fml.ModLoader.postEvent(assembleEvent);
+
+            com.thebeyond.api.event.BeyondTerrainPackAssembleEvent.Contribution winner =
+                    assembleEvent.resolveWinner();
+            LOGGER.info(
+                    "[TheBeyond] BeyondTerrainPackAssembleEvent resolved: {} total contribution(s), winner={}",
+                    assembleEvent.getContributions().size(),
+                    winner == null ? "<none>" : winner.packName() + " (priority " + winner.priority() + ")");
+            final List<Pack> finalChildren = winner != null ? List.of(winner.pack()) : List.of();
+            if (winner != null) {
+                LOGGER.info("[TheBeyond] {}", winner.logMessage());
             }
 
-            final List<Pack> finalChildren = children;
             event.addRepositorySource(consumer -> {
                 Pack beyondTerrain = Pack.readMetaAndCreate(info, supplier, PackType.SERVER_DATA, selection);
                 if (beyondTerrain == null) {
                     LOGGER.error("[TheBeyond] Failed to build beyond_terrain pack — terrain features will not be available.");
                     return;
                 }
-                consumer.accept(finalChildren.isEmpty() ? beyondTerrain : beyondTerrain.withChildren(finalChildren));
+                Pack toAccept = finalChildren.isEmpty() ? beyondTerrain : beyondTerrain.withChildren(finalChildren);
+                if (!convergencePresent) {
+                    toAccept = toAccept.hidden();
+                }
+                LOGGER.info(
+                        "[TheBeyond] Submitting beyond_terrain pack to repository source: id={} childCount={} visible={}",
+                        toAccept.getId(), finalChildren.size(), convergencePresent);
+                consumer.accept(toAccept);
             });
         }
     }
@@ -142,5 +125,9 @@ public class TheBeyond {
         if (ModList.get().isLoaded("sable")) {
             com.thebeyond.compat.sable.BeyondSableCompat.register();
         }
+
+        // Notify addons Beyond's common-setup is done so they can register compat modules.
+        // Fires on the mod event bus; subscribers self-register.
+        net.neoforged.fml.ModLoader.postEvent(new com.thebeyond.api.event.BeyondCommonSetupEvent());
     }
 }

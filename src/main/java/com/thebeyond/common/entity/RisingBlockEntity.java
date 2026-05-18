@@ -23,8 +23,6 @@ import net.minecraft.world.phys.Vec3;
 import java.util.List;
 import java.util.function.Predicate;
 
-import static com.ibm.icu.text.PluralRules.Operand.f;
-
 public class RisingBlockEntity extends FallingBlockEntity {
     private int fallDamageMax;
     private float fallDamagePerDistance;

@@ -1,5 +1,7 @@
 package com.thebeyond.common.worldgen;
 
+import com.thebeyond.api.worldgen.BeyondTerrainState;
+import com.thebeyond.internal.worldgen.BeyondTerrainStateInternal;
 import com.thebeyond.util.HashSimplexNoise;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.levelgen.synth.PerlinSimplexNoise;
@@ -104,7 +106,7 @@ class TerrainDensityGridDumpTest {
 
         // Extended dim bounds (Enderscape pack) — needed so SAMPLE_Y sits
         // inside the edgeGradient taper zone; otherwise density clamps to 0.
-        BeyondTerrainState.setDimBounds(SAMPLE_DIM_MIN_Y, SAMPLE_DIM_MAX_Y);
+        BeyondTerrainStateInternal.setDimBounds(SAMPLE_DIM_MIN_Y, SAMPLE_DIM_MAX_Y);
 
         //noinspection ResultOfMethodCallIgnored
         OUTPUT_DIR.mkdirs();
@@ -118,7 +120,7 @@ class TerrainDensityGridDumpTest {
         BeyondEndChunkGenerator.globalVOffsetNoise = savedV;
         BeyondEndChunkGenerator.globalCOffsetNoise = savedC;
         BeyondEndChunkGenerator.activeTerrainParams = savedParams;
-        BeyondTerrainState.setDimBounds(savedMinY, savedMaxY);
+        BeyondTerrainStateInternal.setDimBounds(savedMinY, savedMaxY);
     }
 
     // ---------- the three scenarios ----------
@@ -915,7 +917,7 @@ class TerrainDensityGridDumpTest {
             throws IOException {
         int savedMin = BeyondTerrainState.getDimMinY();
         int savedMax = BeyondTerrainState.getDimMaxY();
-        BeyondTerrainState.setDimBounds(dimMinY, dimMaxY);
+        BeyondTerrainStateInternal.setDimBounds(dimMinY, dimMaxY);
         try {
             int yRange = dimMaxY - dimMinY;
             int imageHeight = yRange; // 1 pixel per Y block
@@ -1006,7 +1008,7 @@ class TerrainDensityGridDumpTest {
                     firstSolidY == Integer.MAX_VALUE ? 0 : firstSolidY,
                     lastSolidY == Integer.MIN_VALUE ? 0 : lastSolidY);
         } finally {
-            BeyondTerrainState.setDimBounds(savedMin, savedMax);
+            BeyondTerrainStateInternal.setDimBounds(savedMin, savedMax);
         }
     }
 

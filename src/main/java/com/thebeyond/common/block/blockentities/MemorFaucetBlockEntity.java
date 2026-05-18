@@ -1,7 +1,7 @@
 package com.thebeyond.common.block.blockentities;
 
 import com.thebeyond.common.block.MemorFaucetBlock;
-import com.thebeyond.common.compat.BeyondCompatHooks;
+import com.thebeyond.api.compat.BeyondCompatHooks;
 import com.thebeyond.common.entity.AbyssalNomadEntity;
 import com.thebeyond.common.entity.EnadrakeEntity;
 import com.thebeyond.common.entity.LanternEntity;
@@ -332,21 +332,22 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
 
         // Stationary: spawn deep in The Paths and walk up via prayerSite. On a balloon:
         // probe for a sturdy block near storage pos and spawn on top, projected to visible.
-        boolean inSubLevel = com.thebeyond.common.compat.BeyondCompatHooks.visibleOnly(level, pos) != null;
+        boolean inSubLevel = com.thebeyond.api.compat.BeyondCompatHooks.visibleOnly(level, pos) != null;
 
         for (int i = 0; i < i1; i++) {
             if (inSubLevel) {
                 BlockPos ground = findGroundNear(level, pos, 4, 8);
                 if (ground == null) continue;
-                Vec3 spawn = com.thebeyond.common.compat.BeyondCompatHooks.visibleOrCenter(level, ground.above());
+                Vec3 spawn = com.thebeyond.api.compat.BeyondCompatHooks.visibleOrCenter(level, ground.above());
                 AbyssalNomadEntity nomad = new AbyssalNomadEntity(BeyondEntityTypes.ABYSSAL_NOMAD.get(), level);
                 nomad.setPos(spawn.x, spawn.y, spawn.z);
                 level.addFreshEntity(nomad);
             } else {
-                BlockPos spawnPos = BlockPos.randomInCube(getLevel().random, 1, a, 10).iterator().next();
-                BlockPos newpos = spawnPos.atY(-6).relative(direction, 10);
+                BlockPos auroracite = findAuroraciteNear(level, a.relative(direction, 10),
+                        level.getMinBuildHeight() + 1, 10, 8);
+                if (auroracite == null) continue;
                 AbyssalNomadEntity nomad = new AbyssalNomadEntity(BeyondEntityTypes.ABYSSAL_NOMAD.get(), level);
-                nomad.setPos(newpos.getX(), newpos.getY(), newpos.getZ());
+                nomad.setPos(auroracite.getX() + 0.5, auroracite.getY() + 1, auroracite.getZ() + 0.5);
                 level.addFreshEntity(nomad);
             }
         }
@@ -360,6 +361,16 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
         for (int y = 0; y <= vDepth; y++) {
             BlockPos p = cursor.below(y);
             if (level.getBlockState(p).isFaceSturdy(level, p, Direction.UP)) return p;
+        }
+        return null;
+    }
+
+    private static BlockPos findAuroraciteNear(Level level, BlockPos center, int layerTopY, int hRadius, int attempts) {
+        for (int n = 0; n < attempts; n++) {
+            int dx = level.random.nextInt(hRadius * 2 + 1) - hRadius;
+            int dz = level.random.nextInt(hRadius * 2 + 1) - hRadius;
+            BlockPos p = new BlockPos(center.getX() + dx, layerTopY, center.getZ() + dz);
+            if (level.getBlockState(p).is(BeyondBlocks.AURORACITE)) return p;
         }
         return null;
     }

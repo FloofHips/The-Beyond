@@ -134,7 +134,7 @@ public class EnadrakeHutBlock extends BaseEntityBlock {
             f = (float) itemstack1.getCount() / (float) itemstack1.getMaxStackSize();
         }
 
-        Vec3 anchor = com.thebeyond.common.compat.BeyondCompatHooks.visibleOrCenter(level, pos);
+        Vec3 anchor = com.thebeyond.api.compat.BeyondCompatHooks.visibleOrCenter(level, pos);
         level.playSound(null, BlockPos.containing(anchor), SoundEvents.DECORATED_POT_INSERT, SoundSource.BLOCKS, 1.0F, 0.7F + 0.5F * f);
         if (level instanceof ServerLevel serverlevel) {
             serverlevel.sendParticles(

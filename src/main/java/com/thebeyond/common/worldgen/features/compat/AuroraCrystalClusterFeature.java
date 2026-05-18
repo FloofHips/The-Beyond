@@ -1,7 +1,7 @@
 package com.thebeyond.common.worldgen.features.compat;
 
 import com.mojang.serialization.Codec;
-import com.thebeyond.common.worldgen.BeyondTerrainState;
+import com.thebeyond.api.worldgen.BeyondTerrainState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;

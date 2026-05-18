@@ -122,7 +122,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         // Sub-level pull: mirrors EnadrakeEnterHutGoal + EnadrakeMoveToHutGoal canUse() gates.
         // Gate on gameTime first to avoid the Sable lookup on 19 of every 20 ticks.
         net.minecraft.world.phys.Vec3 visible = level.getGameTime() % 20 == 0
-                ? com.thebeyond.common.compat.BeyondCompatHooks.visibleOnly(level, pos)
+                ? com.thebeyond.api.compat.BeyondCompatHooks.visibleOnly(level, pos)
                 : null;
         if (visible != null) {
             net.minecraft.world.phys.AABB box =
@@ -297,7 +297,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         this.storedEnadrake = new CompoundTag();
         // Sub-level: anchor exit at the visible apparent position. Otherwise neighbor-probe.
         net.minecraft.world.phys.Vec3 visible =
-                com.thebeyond.common.compat.BeyondCompatHooks.visibleOnly(serverLevel, this.worldPosition);
+                com.thebeyond.api.compat.BeyondCompatHooks.visibleOnly(serverLevel, this.worldPosition);
         BlockPos exitPos = visible != null ? BlockPos.containing(visible).above() : this.findExitPosition();
 
         serverLevel.playSound(null, this.getBlockPos(), SoundEvents.BEEHIVE_EXIT, SoundSource.BLOCKS, 1.0F, 0.7F + 0.5F);

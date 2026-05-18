@@ -1,7 +1,8 @@
 package com.thebeyond.mixin;
 
+import com.thebeyond.api.worldgen.BeyondTerrain;
+import com.thebeyond.api.worldgen.BeyondTerrainState;
 import com.thebeyond.common.worldgen.BeyondEndChunkGenerator;
-import com.thebeyond.common.worldgen.BeyondTerrainState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
@@ -68,6 +69,12 @@ public abstract class JigsawStructureMixin {
             return;
         }
 
+        // Branches below scan Beyond's real terrain via streamPancakeTops, which reads
+        // the End's static noise; prime it first since structure-start/locate can run
+        // before any generator primed it (NPE otherwise).
+        if (context.chunkGenerator() instanceof BeyondEndChunkGenerator beg)
+            beg.computeNoisesIfNotPresent(context.randomState());
+
         // jump_platform: floats midpoint between pancakes (small footprint waypoint).
         if ("misc/jump_platform".equals(path)) {
             int centerX = chunkPos.getMinBlockX();
@@ -85,8 +92,8 @@ public abstract class JigsawStructureMixin {
             return;
         }
 
-        // bridge: anchors above the highest pancake within its radial reach (max_distance 116),
-        // so the deck and the descending pillar chain (size 20: ~62-block worst case) never touch islands.
+        // bridge: anchor above the highest pancake within radial reach so the deck and the
+        // descending pillar chain never touch islands.
         if (path.startsWith("bridge/")) {
             int centerX = chunkPos.getMinBlockX();
             int centerZ = chunkPos.getMinBlockZ();
@@ -111,8 +118,8 @@ public abstract class JigsawStructureMixin {
             return;
         }
 
-        // Pancake-aware Y picker — landmarks must land on a real pancake, distributed across
-        // all layers (not just topmost). Different chunks pick different pancakes by salt.
+        // Landmarks land on a real pancake, distributed across all layers (not just the
+        // topmost); per-chunk salt picks a different pancake each chunk.
         if (path.startsWith("bonfire/") || path.startsWith("aberrant_remains/") || "misc/arch".equals(path)) {
             int centerX = chunkPos.getMinBlockX();
             int centerZ = chunkPos.getMinBlockZ();
@@ -159,15 +166,12 @@ public abstract class JigsawStructureMixin {
     }
 
     private static List<Integer> the_beyond$pancakeTops(int x, int z, int minY, int maxY) {
+        if ((double) x * x + (double) z * z < 650.0 * 650.0) return new ArrayList<>();
         List<Integer> tops = new ArrayList<>();
-        float distance = (float) Math.sqrt((double) (x * x + z * z));
-        BeyondEndChunkGenerator.ColumnScratch scratch = BeyondEndChunkGenerator.getColumnScratch();
-        BeyondEndChunkGenerator.initColumnScratch(x, z, distance, scratch);
-        boolean prevSolid = false;
-        for (int y = maxY; y >= minY; y--) {
-            boolean solid = BeyondEndChunkGenerator.isSolidTerrainScratch(y, scratch);
-            if (!prevSolid && solid) tops.add(y + 1);
-            prevSolid = solid;
+        try {
+            BeyondTerrain.streamPancakeTops(x, z, minY, maxY).forEach(tops::add);
+        } catch (Throwable t) {
+            return new ArrayList<>();   // unprimed/edge state → empty (caller falls back), never crash
         }
         return tops;
     }

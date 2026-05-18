@@ -4,7 +4,7 @@ import com.thebeyond.client.event.ModClientEvents;
 import com.thebeyond.common.entity.util.SlowRotMoveControl;
 import com.thebeyond.common.item.components.Components;
 import com.thebeyond.common.registry.*;
-import com.thebeyond.common.worldgen.BeyondTerrainState;
+import com.thebeyond.api.worldgen.BeyondTerrainState;
 import net.minecraft.server.level.ServerPlayer;
 import com.thebeyond.util.AOEManager;
 import com.thebeyond.util.ColorUtils;

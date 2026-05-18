@@ -1,6 +1,6 @@
 package com.thebeyond.common.block.blockentities;
 
-import com.thebeyond.common.compat.BeyondCompatHooks;
+import com.thebeyond.api.compat.BeyondCompatHooks;
 import com.thebeyond.common.entity.LanternEntity;
 import com.thebeyond.common.registry.BeyondBlockEntities;
 import net.minecraft.core.BlockPos;

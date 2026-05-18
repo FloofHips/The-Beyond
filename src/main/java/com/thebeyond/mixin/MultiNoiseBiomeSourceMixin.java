@@ -46,9 +46,8 @@ public abstract class MultiNoiseBiomeSourceMixin {
             }
         }
 
-        // Total contamination should never happen in practice (at least one entry is
-        // always a valid Holder), but returning the first pair's value raw is safer
-        // than null — vanilla code never expects null from getNoiseBiome().
+        // Total contamination shouldn't happen; the raw first value is still safer than
+        // null, which vanilla getNoiseBiome() callers never expect.
         return firstValid != null ? firstValid : (Holder<Biome>) (Object) this.parameters().values().getFirst().getSecond();
     }
 }

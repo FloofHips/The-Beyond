@@ -10,25 +10,11 @@ config = "the_beyond.mixins.json"
 [[mixins]]
 config = "the_beyond.client.mixins.json"
 [[mixins]]
-config = "the_beyond_dimensional_tears.mixins.json"
-[[mixins]]
-config = "the_beyond_betterend_compat.mixins.json"
-[[mixins]]
-config = "the_beyond_stellarity_compat.mixins.json"
-[[mixins]]
 config = "the_beyond_compass_compat.mixins.json"
-[[mixins]]
-config = "the_beyond_quark_compat.mixins.json"
 [[mixins]]
 config = "the_beyond_sable_compat.mixins.json"
 [[mixins]]
 config = "the_beyond_jade_compat.mixins.json"
-[[mixins]]
-config = "the_beyond_astrological_compat.mixins.json"
-[[mixins]]
-config = "the_beyond_phantasm_compat.mixins.json"
-[[mixins]]
-config = "the_beyond_bclib_compat.mixins.json"
 [[mixins]]
 config = "the_beyond_simulated_compat.mixins.json"
 
@@ -54,9 +40,3 @@ versionRange="${minecraft_version_range}"
 ordering="NONE"
 side="BOTH"
 
-[[dependencies.${mod_id}]]
-modId="astrological"
-type="optional"
-versionRange="*"
-ordering="BEFORE"
-side="BOTH"
