@@ -339,7 +339,7 @@ public class EnderglopEntity extends Mob implements Enemy {
                 }
 
                 this.playSound(this.getSquishSound(), this.getSoundVolume(), ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) / 0.8F);
-                this.playSound(BeyondSoundEvents.ENDERGLOP_VIBRATE.get(), 1, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) / 0.8F);
+                if (this.getIsArmored()) this.playSound(BeyondSoundEvents.ENDERGLOP_VIBRATE.get(), 1, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) / 0.8F);
                 this.targetSquish = -0.5F;
             } else if (!this.onGround() && this.wasOnGround) {
                 this.targetSquish = 1.0F;
