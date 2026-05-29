@@ -131,5 +131,99 @@
       "the_beyond:block/plated_end_stone/light4"
     ],
     "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "entity.enderglop.death": {
+    "sounds": [
+      "mob/slime/big1",
+      "mob/slime/big2",
+      "mob/slime/big3",
+      "mob/slime/big4"
+    ],
+    "subtitle": "subtitles.entity.enderglop.death"
+  },
+  "entity.enderglop.death_small": {
+    "sounds": [
+      "mob/slime/small1",
+      "mob/slime/small2",
+      "mob/slime/small3",
+      "mob/slime/small4",
+      "mob/slime/small5"
+    ],
+    "subtitle": "subtitles.entity.enderglop.death"
+  },
+  "entity.enderglop.hurt": {
+    "sounds": [
+      "mob/slime/big1",
+      "mob/slime/big2",
+      "mob/slime/big3",
+      "mob/slime/big4"
+    ],
+    "subtitle": "subtitles.entity.enderglop.hurt"
+  },
+  "entity.enderglop.hurt_small": {
+    "sounds": [
+      "mob/slime/small1",
+      "mob/slime/small2",
+      "mob/slime/small3",
+      "mob/slime/small4",
+      "mob/slime/small5"
+    ],
+    "subtitle": "subtitles.entity.enderglop.hurt"
+  },
+  "entity.enderglop.jump": {
+    "sounds": [
+      "mob/magmacube/jump1",
+      "mob/magmacube/jump2",
+      "mob/magmacube/jump3",
+      "mob/magmacube/jump4"
+    ],
+    "subtitle": "subtitles.entity.enderglop.squish"
+  },
+  "entity.enderglop.squish": {
+    "sounds": [
+      "mob/magmacube/big1",
+      "mob/magmacube/big2",
+      "mob/magmacube/big3",
+      "mob/magmacube/big4"
+    ],
+    "subtitle": "subtitles.entity.enderglop.squish"
+  },
+  "entity.enderglop.squish_small": {
+    "sounds": [
+      "mob/magmacube/small1",
+      "mob/magmacube/small2",
+      "mob/magmacube/small3",
+      "mob/magmacube/small4",
+      "mob/magmacube/small5"
+    ],
+    "subtitle": "subtitles.entity.enderglop.squish"
+  },
+  "entity.enderglop.vibrate": {
+    "sounds": [
+      "the_beyond:mob/enderglop/vibrate",
+      "the_beyond:mob/enderglop/vibrate2",
+      "the_beyond:mob/enderglop/vibrate3"
+    ],
+    "subtitle": "subtitles.entity.enderglop.vibrate"
+  },
+  "entity.enderglop.armor": {
+    "sounds": [
+      "the_beyond:mob/enderglop/armor",
+      "the_beyond:mob/enderglop/armor2"
+    ],
+    "subtitle": "subtitles.entity.enderglop.armor"
+  },
+  "entity.enderglop.armor_hurt": {
+    "sounds": [
+      "the_beyond:mob/enderglop/armor_hurt",
+      "the_beyond:mob/enderglop/armor_hurt2"
+    ],
+    "subtitle": "subtitles.entity.enderglop.armor_hurt"
+  },
+  "entity.enderglop.armor_break": {
+    "sounds": [
+      "the_beyond:mob/enderglop/armor_break"
+    ],
+    "subtitle": "subtitles.entity.enderglop.armor_break"
   }
 }
