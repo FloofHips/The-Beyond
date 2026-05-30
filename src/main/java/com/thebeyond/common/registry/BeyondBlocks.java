@@ -41,7 +41,7 @@ public class BeyondBlocks {
     public static final DeferredBlock<Block> VOID_CRYSTAL = registerBlockWithoutItem("void_crystal",
             () -> new VoidCrystalBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_PURPLE)
-                    .sound(SoundType.SHROOMLIGHT)
+                    .sound(BeyondSoundTypes.VOID_CRYSTAL)
                     .noOcclusion()
                     .strength(1.0F, 0.1F)
                     .offsetType(BlockBehaviour.OffsetType.XZ)

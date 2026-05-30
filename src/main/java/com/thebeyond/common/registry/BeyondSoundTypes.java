@@ -29,6 +29,14 @@ public class BeyondSoundTypes {
             BeyondSoundEvents.PLATE_BLOCK_FALL
     );
 
+    public static SoundType VOID_CRYSTAL = new DeferredSoundType(1.0F, 1.0F,
+            BeyondSoundEvents.VOID_CRYSTAL_BREAK,
+            BeyondSoundEvents.VOID_CRYSTAL_STEP,
+            BeyondSoundEvents.VOID_CRYSTAL_PLACE,
+            BeyondSoundEvents.VOID_CRYSTAL_HIT,
+            BeyondSoundEvents.VOID_CRYSTAL_FALL
+    );
+
     public static SoundType POLAR_ANTENNA = new DeferredSoundType(1.0F, 2F,
             BeyondSoundEvents.PLATE_BLOCK_BREAK,
             BeyondSoundEvents.PLATE_BLOCK_STEP,

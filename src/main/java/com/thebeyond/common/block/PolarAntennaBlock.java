@@ -2,6 +2,7 @@ package com.thebeyond.common.block;
 
 import com.mojang.serialization.MapCodec;
 import com.thebeyond.common.block.blockstates.StabilityProperty;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.util.IMagneticReceiver;
 import com.thebeyond.util.RandomUtils;
 import net.minecraft.core.BlockPos;
@@ -101,7 +102,7 @@ public class PolarAntennaBlock extends Block implements IMagneticReceiver {
     @Override
     public void receiveSignal(BlockPos pos, BlockState state, Level level, @Nullable BlockState senderState) {
         level.scheduleTick(pos, this, DELAY);
-        level.playSound(null, pos, SoundEvents.BREEZE_CHARGE, SoundSource.BLOCKS, 1, level.random.nextFloat()*2);
+        level.playSound(null, pos, BeyondSoundEvents.POLAR_CHARGE.get(), SoundSource.BLOCKS, 1, level.random.nextFloat()*2);
         level.setBlock(pos, state.setValue(COOLDOWN, true).setValue(STABILITY, StabilityProperty.SEEKING), 3);
     }
 
@@ -113,7 +114,7 @@ public class PolarAntennaBlock extends Block implements IMagneticReceiver {
     @Override
     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         StabilityProperty nextStability = StabilityProperty.values()[state.getValue(STABILITY).ordinal() - 1];
-        level.playSound(null, pos, SoundEvents.SWEET_BERRY_BUSH_PICK_BERRIES, SoundSource.BLOCKS, 1, level.random.nextFloat()*2);
+        level.playSound(null, pos, BeyondSoundEvents.POLAR_COOL.get(), SoundSource.BLOCKS, 1, level.random.nextFloat()*2);
         level.setBlock(pos, state.setValue(STABILITY, nextStability), 3);
     }
 

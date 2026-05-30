@@ -5,6 +5,7 @@ import com.thebeyond.client.particle.SmokeColorTransitionOptions;
 import com.thebeyond.common.entity.EnderglopEntity;
 import com.thebeyond.common.registry.BeyondEntityTypes;
 import com.thebeyond.common.registry.BeyondParticleTypes;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.util.ColorUtils;
 import com.thebeyond.util.RandomUtils;
 import net.minecraft.core.BlockPos;
@@ -65,7 +66,7 @@ public class PolarBulbBlock extends Block {
         if (state.getValue(GLOP_CHARGE) == 4) {
             level.setBlock(pos, state.setValue(GLOP_CHARGE, 0), 3);
 
-            level.playSound(null, pos, SoundEvents.BREEZE_DEFLECT, SoundSource.BLOCKS, 3, level.random.nextFloat());
+            level.playSound(null, pos, BeyondSoundEvents.POLAR_EMERGE.get(), SoundSource.BLOCKS, 3, 0.5f + level.random.nextFloat());
             EnderglopEntity enderglop = new EnderglopEntity(BeyondEntityTypes.ENDERGLOP.get(), level);
             enderglop.setPos(pos.getX()+0.5, pos.getY()+0.8, pos.getZ()+0.5);
             enderglop.setSize(level.isRaining() ? 3 : 2, false);

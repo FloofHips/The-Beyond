@@ -132,6 +132,57 @@
     ],
     "subtitle": "subtitles.block.generic.footsteps"
   },
+  "block.void_crystal.break": {
+    "sounds": [
+      "the_beyond:block/void_crystal/heavy1",
+      "the_beyond:block/void_crystal/heavy2",
+      "the_beyond:block/void_crystal/heavy3",
+      "the_beyond:block/void_crystal/heavy4"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.void_crystal.fall": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.void_crystal.break",
+        "type": "event"
+      }
+    ]
+  },
+  "block.void_crystal.hit": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.void_crystal.step",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.void_crystal.place": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.void_crystal.break",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.void_crystal.step": {
+    "sounds": [
+      "the_beyond:block/void_crystal/light1",
+      "the_beyond:block/void_crystal/light2",
+      "the_beyond:block/void_crystal/light3",
+      "the_beyond:block/void_crystal/light4"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.void_crystal.shatter": {
+    "sounds": [
+      "the_beyond:block/void_crystal/shatter",
+      "the_beyond:block/void_crystal/shatter2"
+    ],
+    "subtitle": "subtitles.block.void_crystal.shatter"
+  },
   "entity.enderglop.death": {
     "sounds": [
       "mob/slime/big1",
@@ -225,5 +276,27 @@
       "the_beyond:mob/enderglop/armor_break"
     ],
     "subtitle": "subtitles.entity.enderglop.armor_break"
+  },
+  "block.polar.charge": {
+    "sounds": [
+      "the_beyond:block/polar/charge",
+      "the_beyond:block/polar/charge2",
+      "the_beyond:block/polar/charge3"
+    ],
+    "subtitle": "subtitles.block.polar.charge"
+  },
+  "block.polar.cool": {
+    "sounds": [
+      "the_beyond:block/polar/cool",
+      "the_beyond:block/polar/cool2"
+    ],
+    "subtitle": "subtitles.block.polar.cool"
+  },
+  "block.polar.emerge": {
+    "sounds": [
+      "the_beyond:block/polar/emerge",
+      "the_beyond:block/polar/emerge2"
+    ],
+    "subtitle": "subtitles.block.polar.emerge"
   }
 }

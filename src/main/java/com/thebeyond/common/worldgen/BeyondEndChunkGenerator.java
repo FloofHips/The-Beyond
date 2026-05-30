@@ -516,8 +516,8 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         if (override != null) return override;
         // Period 1 M blocks: keeps in-view cycleHeight variation under one divisor
         // step so cyclicDensity's divisor discontinuities don't pile up in a scene.
-        double freq = 0.000001 * cycleHeightFrequencyMultiplier;
-        return globalNoiseOffset(10, 50, x * freq, z * freq, noise);
+        double freq = 0.00005 * cycleHeightFrequencyMultiplier;
+        return globalNoiseOffset(5, 100, x * freq, z * freq, noise);
     }
 
 
