@@ -200,7 +200,7 @@
       "mob/slime/small4",
       "mob/slime/small5"
     ],
-    "subtitle": "subtitles.entity.enderglop.death"
+    "subtitle": "subtitles.entity.enderglop.death_small"
   },
   "entity.enderglop.hurt": {
     "sounds": [
@@ -219,7 +219,7 @@
       "mob/slime/small4",
       "mob/slime/small5"
     ],
-    "subtitle": "subtitles.entity.enderglop.hurt"
+    "subtitle": "subtitles.entity.enderglop.hurt_small"
   },
   "entity.enderglop.jump": {
     "sounds": [
@@ -247,15 +247,14 @@
       "mob/magmacube/small4",
       "mob/magmacube/small5"
     ],
-    "subtitle": "subtitles.entity.enderglop.squish"
+    "subtitle": "subtitles.entity.enderglop.squish_small"
   },
   "entity.enderglop.vibrate": {
     "sounds": [
       "the_beyond:mob/enderglop/vibrate",
       "the_beyond:mob/enderglop/vibrate2",
       "the_beyond:mob/enderglop/vibrate3"
-    ],
-    "subtitle": "subtitles.entity.enderglop.vibrate"
+    ]
   },
   "entity.enderglop.armor": {
     "sounds": [
@@ -298,5 +297,23 @@
       "the_beyond:block/polar/emerge2"
     ],
     "subtitle": "subtitles.block.polar.emerge"
+  },
+  "item.magnet.success": {
+    "sounds": [
+      "the_beyond:item/magnet/success"
+    ],
+    "subtitle": "subtitles.item.magnet.success"
+  },
+  "item.magnet.fail": {
+    "sounds": [
+      "the_beyond:item/magnet/fail"
+    ],
+    "subtitle": "subtitles.item.magnet.fail"
+  },
+  "item.magnet.pull": {
+    "sounds": [
+      "the_beyond:item/magnet/pull"
+    ],
+    "subtitle": "subtitles.item.magnet.pull"
   }
 }

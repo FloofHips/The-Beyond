@@ -186,7 +186,7 @@ public class EnderglopEntity extends Mob implements Enemy {
     }
 
     public static AttributeSupplier.Builder createAttributes() {
-        return Monster.createMonsterAttributes().add(Attributes.MOVEMENT_SPEED, 0.20000000298023224);
+        return Monster.createMonsterAttributes().add(Attributes.MOVEMENT_SPEED, 0.20000000298023224).add(Attributes.MAX_HEALTH, 10);
     }
 
     public void jumpFromGround() {

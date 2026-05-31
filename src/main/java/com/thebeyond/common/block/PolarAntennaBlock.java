@@ -102,7 +102,7 @@ public class PolarAntennaBlock extends Block implements IMagneticReceiver {
     @Override
     public void receiveSignal(BlockPos pos, BlockState state, Level level, @Nullable BlockState senderState) {
         level.scheduleTick(pos, this, DELAY);
-        level.playSound(null, pos, BeyondSoundEvents.POLAR_CHARGE.get(), SoundSource.BLOCKS, 1, level.random.nextFloat()*2);
+        level.playSound(null, pos, BeyondSoundEvents.POLAR_CHARGE.get(), SoundSource.BLOCKS, 0.5f + level.random.nextFloat() * 0.5f, level.random.nextFloat()*2);
         level.setBlock(pos, state.setValue(COOLDOWN, true).setValue(STABILITY, StabilityProperty.SEEKING), 3);
     }
 

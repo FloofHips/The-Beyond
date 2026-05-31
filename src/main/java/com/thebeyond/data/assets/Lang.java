@@ -94,6 +94,25 @@ public class Lang extends LanguageProvider {
 
         add("itemGroup.the_beyond", "The Beyond");
 
+        // Sounds
+        add("subtitles.block.void_crystal.shatter", "Crystal shatters");
+        add("subtitles.entity.enderglop.death", "Enderglop dies");
+        add("subtitles.entity.enderglop.death_small", "Enderdrop dies");
+        add("subtitles.entity.enderglop.hurt", "Enderglop hurts");
+        add("subtitles.entity.enderglop.hurt_small", "Enderdrop hurts");
+        add("subtitles.entity.enderglop.squish", "Enderglop squishes");
+        add("subtitles.entity.enderglop.squish_small", "Enderdrop squishes");
+        add("subtitles.entity.enderglop.armor", "Enderglop armors up");
+        add("subtitles.entity.enderglop.armor_hurt", "Enderglop's armor hurts");
+        add("subtitles.entity.enderglop.armor_break", "Enderglop's armor shatters");
+
+        add("subtitles.block.polar.emerge", "Enderglop emerges");
+        add("subtitles.block.polar.charge", "Polar charge rises up");
+        add("subtitles.block.polar.cool", "Polar charge cools down");
+
+        add("subtitles.item.magnet.success", "Magnet latches on");
+        add("subtitles.item.magnet.fail", "Magnet falls short");
+
         // Advancements
         //add("advancements.the_beyond.root.title", "The Beyond");
         //add("advancements.the_beyond.root.description", "");
@@ -108,7 +127,7 @@ public class Lang extends LanguageProvider {
         add("advancements.the_beyond.ectoplasmic_ignition.description", "Use ectoplasm on a lit bonfire to create a live flame");
 
         add("advancements.the_beyond.ectoplasmic_ignition_2.title", "Speedrun");
-        add("advancements.the_beyond.ectoplasmic_ignition_2.description", "Use ectoplasm on a purple fire bonfire to create a livid flame");
+        add("advancements.the_beyond.ectoplasmic_ignition_2.description", "Use ectoplasm on a void fire bonfire to create a livid flame");
 
         add("advancements.the_beyond.pass_the_torch.title", "Pass the Torch");
         add("advancements.the_beyond.pass_the_torch.description", "Carry a live flame to an unlit bonfire and light it");
@@ -123,13 +142,13 @@ public class Lang extends LanguageProvider {
         add("advancements.the_beyond.memories_returned.description", "Offer 5 remembrances to a fountain");
 
         add("advancements.the_beyond.defying_the_void.title", "Defying the Void");
-        add("advancements.the_beyond.defying_the_void.description", "Obtain a Totem of Respite - hold it when you die to keep your items");
+        add("advancements.the_beyond.defying_the_void.description", "Hold a Totem of Respite on death to keep your items");
 
         add("advancements.the_beyond.so_below.title", "So Below");
-        add("advancements.the_beyond.so_below.description", "Walk on the void river with Pathfinder Boots");
+        add("advancements.the_beyond.so_below.description", "Walk on Auroracite using Pathfinder Boots");
 
         add("advancements.the_beyond.as_above.title", "As Above");
-        add("advancements.the_beyond.as_above.description", "Soar through a migration storm using your elytra");
+        add("advancements.the_beyond.as_above.description", "Soar through a migration storm");
 
         add("advancements.the_beyond.gift_enadrake.title", "Building Blocks");
         add("advancements.the_beyond.gift_enadrake.description", "Gift an enadrake an item");

@@ -47,6 +47,10 @@ public class BeyondSoundEvents {
     public static final DeferredHolder<SoundEvent, SoundEvent> ENDERGLOP_ARMOR_HURT = SOUND_EVENTS.register("entity.enderglop.armor_hurt", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> ENDERGLOP_ARMOR_BREAK = SOUND_EVENTS.register("entity.enderglop.armor_break", SoundEvent::createVariableRangeEvent);
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> PULL = SOUND_EVENTS.register("item.magnet.pull", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> MAGNET_FAIL = SOUND_EVENTS.register("item.magnet.fail", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> MAGNET_SUCCESS = SOUND_EVENTS.register("item.magnet.success", SoundEvent::createVariableRangeEvent);
+
     public static final DeferredHolder<SoundEvent, SoundEvent> POLAR_CHARGE = SOUND_EVENTS.register("block.polar.charge", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> POLAR_COOL = SOUND_EVENTS.register("block.polar.cool", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> POLAR_EMERGE = SOUND_EVENTS.register("block.polar.emerge", SoundEvent::createVariableRangeEvent);

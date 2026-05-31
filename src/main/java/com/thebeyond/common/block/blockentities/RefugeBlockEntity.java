@@ -3,6 +3,7 @@ package com.thebeyond.common.block.blockentities;
 import com.google.common.cache.LoadingCache;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.minecraft.client.MinecraftClient;
+import com.thebeyond.client.particle.CrosshairColorTransitionOptions;
 import com.thebeyond.common.block.RefugeBlock;
 import com.thebeyond.common.registry.BeyondAttachments;
 import com.thebeyond.common.registry.BeyondBlockEntities;
@@ -53,6 +54,7 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -84,6 +86,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
     public float rot = 0;
 
     public byte currentMode = -1;
+    public boolean hasBeenUsed = false;
     public byte animating = 0;
     public String[][] pattern;
 
@@ -312,6 +315,11 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         } else {
             this.currentMode = -1;
         }
+        if (tag.contains("hasBeenUsed")) {
+            this.hasBeenUsed = tag.getBoolean("hasBeenUsed");
+        } else {
+            this.hasBeenUsed = false;
+        }
         if (tag.contains("Pattern")) {
             this.pattern = decode(tag.getString("Pattern"));
         } else {
@@ -332,6 +340,9 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         if (currentMode != -1) {
             tag.putByte("CurrentMode", currentMode);
         }
+
+        tag.putBoolean("hasBeenUsed", hasBeenUsed);
+
         if (pattern != null) {
             tag.putString("Pattern", flattenPattern(pattern));
         }
@@ -354,6 +365,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
 
     public void setMode(byte i, RefugeBlockEntity be) {
         be.updateAllChunks(i);
+        if (!be.hasBeenUsed) hasBeenUsed = true;
     }
     public byte getMode() {
         return currentMode;
@@ -562,8 +574,24 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
                 }
             }
         }
+
+        if (shouldPing(state, be)) {
+            Vec3 center = be.worldPosition.getCenter();
+            level.playSound(null, center.x, center.y, center.z, SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 1, 1);
+
+            if (level instanceof ServerLevel serverLevel) {
+                serverLevel.sendParticles(new CrosshairColorTransitionOptions(
+                        new Vector3f(0.7f, 0.0f, 0.9f),
+                        new Vector3f(1f, 0.1f, 1f),
+                        0.1f
+                ), center.x+0.001f, center.y, center.z+0.001f, 1,0,0, 0,0);
+            }
+        }
     }
 
+    public static boolean shouldPing(BlockState state, RefugeBlockEntity be) {
+        return state.getValue(RefugeBlock.POWERED) && be.tickCounter % 20 == 0 && !be.hasBeenUsed;
+    }
 
     public static void rotAnimationTick(Level level, BlockPos pos, BlockState state, RefugeBlockEntity be) {
         if (!RefugeBlock.isActive(state)) return;

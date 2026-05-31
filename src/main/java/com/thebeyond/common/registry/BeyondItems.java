@@ -40,7 +40,7 @@ public class BeyondItems {
         public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
             super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
             tooltipComponents.add(Component.literal("On Death:").withStyle(ChatFormatting.GRAY));
-            tooltipComponents.add(Component.literal(" Preserve items held").withStyle(ChatFormatting.BLUE));
+            tooltipComponents.add(Component.literal(" Preserve items held").withStyle(ChatFormatting.AQUA));
         }
     });
     public static final DeferredItem<Item> ETHER_CLOAK = registerItem("ether_cloak", () -> new ModelArmorItem(BeyondArmorMaterials.SHROUD_ARMOR, ArmorItem.Type.HELMET, new Item.Properties().durability(ArmorItem.Type.BOOTS.getDurability(10)).stacksTo(1), EtherCloakModel::new) {
@@ -48,16 +48,24 @@ public class BeyondItems {
         public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
             super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
             tooltipComponents.add(Component.literal("Passive:").withStyle(ChatFormatting.GRAY));
-            tooltipComponents.add(Component.literal(" Float when falling").withStyle(ChatFormatting.BLUE));
+            tooltipComponents.add(Component.literal(" Hide Nametag").withStyle(ChatFormatting.BLUE));
+            tooltipComponents.add(Component.literal(" Lower Aggro Distance").withStyle(ChatFormatting.BLUE));
         }
     });
-    public static final DeferredItem<Item> ANCHOR_LEGGINGS = registerItem("anchor_leggings", () -> new AnchorLeggingsItem(BeyondArmorMaterials.ANCHOR_ARMOR, ArmorItem.Type.LEGGINGS, new Item.Properties().durability(ArmorItem.Type.LEGGINGS.getDurability(10)).stacksTo(1).rarity(Rarity.EPIC), AnchorLeggingsModel::new) {});
+    public static final DeferredItem<Item> ANCHOR_LEGGINGS = registerItem("anchor_leggings", () -> new AnchorLeggingsItem(BeyondArmorMaterials.ANCHOR_ARMOR, ArmorItem.Type.LEGGINGS, new Item.Properties().durability(ArmorItem.Type.LEGGINGS.getDurability(10)).stacksTo(1).rarity(Rarity.EPIC), AnchorLeggingsModel::new) {
+        @Override
+        public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+            super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+            tooltipComponents.add(Component.literal("On Crouch Mid Air:").withStyle(ChatFormatting.GRAY));
+            tooltipComponents.add(Component.literal(" Land with KnockBack Impact").withStyle(ChatFormatting.LIGHT_PURPLE));
+        }
+    });
     public static final DeferredItem<Item> PATHFINDER_BOOTS = registerItem("pathfinder_boots", () -> new ModelArmorItem(BeyondArmorMaterials.SHROUD_ARMOR, ArmorItem.Type.BOOTS, new Item.Properties().durability(ArmorItem.Type.BOOTS.getDurability(10)).stacksTo(1), EtherCloakModel::new) {
         @Override
         public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
             super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
             tooltipComponents.add(Component.literal("Passive:").withStyle(ChatFormatting.GRAY));
-            tooltipComponents.add(Component.literal(" Walk on the void river").withStyle(ChatFormatting.BLUE));
+            tooltipComponents.add(Component.literal(" Walk on Auroracite").withStyle(ChatFormatting.DARK_AQUA));
         }
     });
     public static final DeferredItem<Item> ECTOPLASM = registerItem("ectoplasm", () -> new AirPlaceableBlockItem(BeyondBlocks.ECTOPLASM.get(), new Item.Properties()));
