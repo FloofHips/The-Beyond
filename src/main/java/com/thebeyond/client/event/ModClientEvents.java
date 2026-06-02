@@ -148,6 +148,13 @@ public class ModClientEvents {
     public static float effectFog = 1;
     public static float nomadEyes = 0;
     @SubscribeEvent
+    public static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {
+        // Block models re-bake on resource reload — drop the mirror occluder's cached model geometry.
+        event.registerReloadListener((net.minecraft.server.packs.resources.ResourceManagerReloadListener)
+                rm -> com.thebeyond.client.renderer.MirrorReflection.clearModelCache());
+    }
+
+    @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event){
         EntityRenderers.register(BeyondEntityTypes.ENDERGLOP.get(), EnderglopRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.ENADRAKE.get(), EnadrakeRenderer::new);
@@ -171,6 +178,14 @@ public class ModClientEvents {
         BlockEntityRenderers.register(BeyondBlockEntities.BONFIRE.get(), BonfireRenderer::new);
         BlockEntityRenderers.register(BeyondBlockEntities.MEMOR_FAUCET.get(), MemorFaucetRenderer::new);
         BlockEntityRenderers.register(BeyondBlockEntities.REFUGE.get(), RefugeRenderer::new);
+        // Mirror has no BlockEntityRenderer: its reflection is captured at AFTER_SOLID_BLOCKS and
+        // drawn over the block at AFTER_TRANSLUCENT_BLOCKS (onMirrorReflectionCapture / onMirrorDraw).
+        // Sable compat (isolated, gated): a sub-level-only mirror renderer so a mirror sitting inside a
+        // Sable sub-level draws in that sub-level's moving frame. No-op in the main world; never registered
+        // (and never class-loaded) when Sable is absent, so the base path keeps zero Sable references/cost.
+        if (net.neoforged.fml.ModList.get().isLoaded("sable")) {
+            com.thebeyond.compat.sable.client.BeyondSableClientCompat.registerRenderers();
+        }
     }
 
     @SubscribeEvent
@@ -254,6 +269,9 @@ public class ModClientEvents {
             event.registerShader(new ShaderInstance(event.getResourceProvider(),
                     ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_refuge_gradient"),
                     DefaultVertexFormat.NEW_ENTITY), BeyondShaders::setRefugeGradient);
+            event.registerShader(new ShaderInstance(event.getResourceProvider(),
+                    ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_mirror"),
+                    DefaultVertexFormat.POSITION_COLOR), BeyondShaders::setMirror);
         } catch (Exception exception) {
             TheBeyond.LOGGER.error("The Beyond could not register internal shaders! :(", exception);
         }
@@ -482,6 +500,37 @@ public class ModClientEvents {
     @SubscribeEvent
     public static void renderGui(RegisterGuiLayersEvent event) {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "nomad_eyes"), new NomadsBlessingOverlay());
+    }
+
+    @SubscribeEvent
+    public static void onMirrorReflectionCapture(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS) {
+            return;
+        }
+        if (com.thebeyond.common.block.blockentities.MirrorBlockEntity.LOADED.isEmpty()) {
+            return;
+        }
+        com.thebeyond.client.renderer.MirrorReflection.capture(
+                event.getProjectionMatrix(),
+                event.getModelViewMatrix(),
+                event.getCamera(),
+                event.getFrustum(),
+                event.getPartialTick().getGameTimeDeltaPartialTick(true));
+    }
+
+    @SubscribeEvent
+    public static void onMirrorDraw(RenderLevelStageEvent event) {
+        // Drawn after the pearl block (translucent terrain) so the distance fade blends over it.
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
+            return;
+        }
+        if (com.thebeyond.common.block.blockentities.MirrorBlockEntity.LOADED.isEmpty()) {
+            return;
+        }
+        com.thebeyond.client.renderer.MirrorReflection.draw(
+                event.getCamera(),
+                event.getPoseStack(),
+                event.getPartialTick().getGameTimeDeltaPartialTick(true));
     }
 
     @SubscribeEvent

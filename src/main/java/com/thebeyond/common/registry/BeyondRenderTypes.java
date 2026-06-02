@@ -54,13 +54,7 @@ public class BeyondRenderTypes extends RenderType {
         return create("entity_depth", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536, true, true, compositeState);
     });
 
-    // entityTranslucent variant with back-face culling enabled.
-    // Vanilla entityTranslucent uses NO_CULL, rendering both sides of every quad.
-    // Lantern fins are zero-thickness cubes (e.g. 4×0×7) — Minecraft generates two
-    // coplanar quads facing opposite directions for them. Without culling, both quads
-    // render at the exact same depth, causing z-fighting ("scribbled" artifact).
-    // The original ENTITY_DEPTH and unlitTranslucent both use CULL; this variant
-    // preserves that behavior for the Iris/Oculus shader fallback path.
+    // CULL (vanilla uses NO_CULL): stops coplanar zero-thickness fin quads from z-fighting.
     public static final Function<ResourceLocation, RenderType> ENTITY_TRANSLUCENT_CULLED = Util.memoize((location) -> {
         CompositeState compositeState = CompositeState.builder()
                 .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
@@ -77,14 +71,7 @@ public class BeyondRenderTypes extends RenderType {
         return ENTITY_TRANSLUCENT_CULLED.apply(location);
     }
 
-    // entityTranslucent variant WITHOUT back-face culling.
-    // Used for the Lantern body (solid 3D cube) in the two-pass rendering split:
-    // the body needs NO_CULL so both the front and back faces render, giving the
-    // translucent entity a volumetric look (you see the back-inner surface through
-    // the translucent front). Fins keep CULL via entityTranslucentCulled because
-    // they're zero-thickness quads that would z-fight without it.
-    // Same shader/transparency/lightmap/overlay state as ENTITY_TRANSLUCENT_CULLED,
-    // only the cull state differs — keeps both passes visually consistent.
+    // NO_CULL renders back faces too for a volumetric look through the translucent front.
     public static final Function<ResourceLocation, RenderType> ENTITY_TRANSLUCENT_NO_CULLED = Util.memoize((location) -> {
         CompositeState compositeState = CompositeState.builder()
                 .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
@@ -101,18 +88,7 @@ public class BeyondRenderTypes extends RenderType {
         return ENTITY_TRANSLUCENT_NO_CULLED.apply(location);
     }
 
-    // Unlit NO_CULL variant — same geometry as ENTITY_TRANSLUCENT_NO_CULLED
-    // (back+front faces rendered → volumetric translucent look for the solid
-    // 3D body cube) but uses entity_translucent_unlit instead of the standard
-    // entity_translucent shader. The unlit shader skips Mojang's face-normal
-    // shading (which would make UP ≈ 1.0 / DOWN ≈ 0.4), so coplanar zero-thickness
-    // fin/tail quads render with uniform brightness top and bottom — fixes the
-    // hue mismatch the vanilla translucent shader produces.
-    //
-    // Only safe to use when no Iris/Oculus shaderpack is actively running:
-    // a live pack replaces the entire shader pipeline via G-Buffer, ignoring
-    // custom shader state. Gate via ShaderCompatLib.isShaderPackActive() and
-    // fall back to ENTITY_TRANSLUCENT_NO_CULLED when a pack is in use.
+    // Unlit shader skips face-normal shading so coplanar quads match brightness; no-shaderpack only.
     public static final Function<ResourceLocation, RenderType> ENTITY_TRANSLUCENT_NO_CULLED_UNLIT = Util.memoize((location) -> {
         CompositeState compositeState = CompositeState.builder()
                 .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_UNLIT_SHADER)
@@ -129,10 +105,7 @@ public class BeyondRenderTypes extends RenderType {
         return ENTITY_TRANSLUCENT_NO_CULLED_UNLIT.apply(location);
     }
 
-    // entityTranslucentEmissive variant with back-face culling.
-    // Triggers Iris shader pack bloom/glow effects while preventing z-fighting on
-    // zero-thickness fin quads. Uses COLOR_WRITE (no depth write) like vanilla
-    // entityTranslucentEmissive — the base pass already established depth.
+    // COLOR_WRITE, no depth-write: base pass already set depth; CULL stops fin z-fighting.
     public static final Function<ResourceLocation, RenderType> ENTITY_TRANSLUCENT_EMISSIVE_CULLED = Util.memoize((location) -> {
         CompositeState compositeState = CompositeState.builder()
                 .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER)
@@ -149,24 +122,7 @@ public class BeyondRenderTypes extends RenderType {
         return ENTITY_TRANSLUCENT_EMISSIVE_CULLED.apply(location);
     }
 
-    // entityTranslucentEmissive variant WITHOUT back-face culling.
-    // SAFE ONLY for atlases whose zero-thickness fin/tail DOWN UV regions are
-    // fully transparent (α=0) — otherwise the two coplanar quads (UP and DOWN)
-    // both rasterize opaque content at the same depth, producing the
-    // "scribble" z-fighting artifact that COLOR_WRITE doesn't prevent (it
-    // suppresses depth-buffer flicker, not rasterizer coverage overlap).
-    //
-    // In this mod: use ONLY for the Leviathan lantern — its leviathan_lantern.png
-    // was confirmed via .backups/DumpAtlasUVs to have α=0% DOWN UV on every
-    // fin/tail face. Small / Medium / Large lanterns all have DOWN UV identical
-    // to UP with opaque content (confirmed via .backups/DumpSmallerLanternUVs),
-    // so they MUST keep entityTranslucentEmissiveCulled.
-    //
-    // Purpose: under an active Iris shaderpack, CULL from below strips the UP
-    // face (back-facing from camera), and the DOWN face being transparent on
-    // the Leviathan means zero bloom contribution on the underside of fins/tail.
-    // NO_CULL renders the UP face from its back side too, so its opaque pixels
-    // project bloom uniformly top and bottom.
+    // NO_CULL projects bloom on both sides; safe ONLY for fully-transparent DOWN UV, else quads z-fight.
     public static final Function<ResourceLocation, RenderType> ENTITY_TRANSLUCENT_EMISSIVE_NO_CULLED = Util.memoize((location) -> {
         CompositeState compositeState = CompositeState.builder()
                 .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER)
@@ -182,4 +138,72 @@ public class BeyondRenderTypes extends RenderType {
     public static RenderType entityTranslucentEmissiveNoCulled(ResourceLocation location) {
         return ENTITY_TRANSLUCENT_EMISSIVE_NO_CULLED.apply(location);
     }
+
+    static RenderStateShard.ShaderStateShard MIRROR_SHADER_STATE = new RenderStateShard.ShaderStateShard(BeyondShaders::getMirror);
+
+    public static final Function<ResourceLocation, RenderType> MIRROR = Util.memoize((location) -> {
+        CompositeState compositeState = CompositeState.builder()
+                .setShaderState(MIRROR_SHADER_STATE)
+                .setTextureState(new TextureStateShard(location, false, false))
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                // COLOR_WRITE, no depth-write: occluded by real geometry; coplanar faces never cull each other.
+                .setWriteMaskState(COLOR_WRITE)
+                // CONSTANT offset, not VIEW_OFFSET_Z_LAYERING whose distance-scaled bias collapses up close.
+                .setLayeringState(POLYGON_OFFSET_LAYERING)
+                .createCompositeState(false);
+        return create("mirror", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 1536, false, false, compositeState);
+    });
+
+    public static RenderType mirror(ResourceLocation location) {
+        return MIRROR.apply(location);
+    }
+
+    // Iris-compatible path: vanilla shader, COLOR_WRITE no depth-write as in MIRROR.
+    public static final Function<ResourceLocation, RenderType> MIRROR_PACK = Util.memoize((location) -> {
+        CompositeState compositeState = CompositeState.builder()
+                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+                .setTextureState(new TextureStateShard(location, false, false))
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                .setWriteMaskState(COLOR_WRITE)
+                .setLightmapState(LIGHTMAP)
+                .setOverlayState(OVERLAY)
+                .createCompositeState(true);
+        return create("mirror_pack", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536, true, true, compositeState);
+    });
+
+    public static RenderType mirrorPack(ResourceLocation location) {
+        return MIRROR_PACK.apply(location);
+    }
+
+    // Depth-only reflection-FBO occluder; NO_CULL because the reflection matrix flips winding.
+    public static final RenderType MIRROR_OCCLUDER = create(
+            "mirror_occluder",
+            DefaultVertexFormat.POSITION,
+            VertexFormat.Mode.QUADS,
+            1536,
+            false,
+            false,
+            CompositeState.builder()
+                    .setShaderState(POSITION_SHADER)
+                    .setWriteMaskState(DEPTH_WRITE)
+                    .setCullState(NO_CULL)
+                    .createCompositeState(false));
+
+    // Soft dark blob at the occluder coverage limit; VIEW_OFFSET_Z_LAYERING wins LEQUAL over the coplanar occluder.
+    public static final RenderType MIRROR_OUTLINE = create(
+            "mirror_shade",
+            DefaultVertexFormat.POSITION_COLOR,
+            VertexFormat.Mode.QUADS,
+            2048,
+            false,
+            false,
+            CompositeState.builder()
+                    .setShaderState(POSITION_COLOR_SHADER)
+                    .setLayeringState(VIEW_OFFSET_Z_LAYERING)
+                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .setCullState(NO_CULL)
+                    .createCompositeState(false));
 }

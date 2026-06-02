@@ -281,6 +281,15 @@ public class BeyondBlocks {
                     .strength(2.0F, 2.0F)
                     .sound(SoundType.GRAVEL))
     );
+
+    // Pearlescent Expanse — glassy "mirror" test block
+    public static final DeferredBlock<Block> PEARL_MIRROR = registerBlock("pearl_mirror",
+            () -> new MirrorBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.TERRACOTTA_WHITE)
+                    .sound(SoundType.AMETHYST)
+                    .strength(1.0F, 1.0F)
+                    .noOcclusion()));
+
     //public static final DeferredBlock<Block> PEARL = registerBlock("pearl",
     //        () -> new Block(BlockBehaviour.Properties.of()
     //                .mapColor(MapColor.TERRACOTTA_WHITE)

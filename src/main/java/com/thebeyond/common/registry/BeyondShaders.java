@@ -8,6 +8,7 @@ import javax.annotation.Nullable;
 public class BeyondShaders {
     private static ShaderInstance ENTITY_DEPTH_SHADER;
     private static ShaderInstance REFUGE_GRADIENT_SHADER;
+    private static ShaderInstance MIRROR_SHADER;
 
     @Nullable
     public static ShaderInstance getRenderTypeDepthOverlay() {
@@ -25,5 +26,14 @@ public class BeyondShaders {
 
     public static void setRefugeGradient(ShaderInstance instance) {
         REFUGE_GRADIENT_SHADER = instance;
+    }
+
+    @Nullable
+    public static ShaderInstance getMirror() {
+        return MIRROR_SHADER;
+    }
+
+    public static void setMirror(ShaderInstance instance) {
+        MIRROR_SHADER = instance;
     }
 }
