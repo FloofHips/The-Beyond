@@ -1,5 +1,6 @@
 package com.thebeyond.common.item;
 
+import com.thebeyond.api.compat.BeyondCompatHooks;
 import com.thebeyond.client.particle.CircleColorTransitionOptions;
 import com.thebeyond.client.particle.CrosshairColorTransitionOptions;
 import com.thebeyond.common.item.components.Components;
@@ -74,7 +75,7 @@ public class MagnetItem extends Item {
                 if (state.is(BeyondTags.METAL_BLOCKS)) {
 
                     Vec3 playerPos = player.position();
-                    Vec3 blockCenter = Vec3.atCenterOf(pos);
+                    Vec3 blockCenter = BeyondCompatHooks.visibleOrCenter(level, pos);
                     Vec3 distance = blockCenter.subtract(playerPos);
                     Vec3 direction = distance.normalize();
 
