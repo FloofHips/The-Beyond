@@ -8,6 +8,7 @@ import dev.ryanhcode.sable.companion.math.BoundingBox3d;
 import dev.ryanhcode.sable.sublevel.SubLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3d;
 
@@ -42,6 +43,22 @@ public final class BeyondSableCompat {
                 return BlockPos.containing(v.x, v.y, v.z);
             }
             return null;
+        }
+
+        @Override
+        public Vec3 toVisibleAny(Level level, BlockPos storedPos) {
+            SubLevel sub = Sable.HELPER.getContaining(level, storedPos);
+            if (sub == null) return null;
+            return Sable.HELPER.projectOutOfSubLevel(level, storedPos.getCenter());
+        }
+
+        @Override
+        public Vec3 toLocal(Level level, BlockPos containedPos, Vec3 worldPoint) {
+            SubLevel sub = Sable.HELPER.getContaining(level, containedPos);
+            if (sub == null) return null;
+            Vector3d v = new Vector3d(worldPoint.x, worldPoint.y, worldPoint.z);
+            sub.logicalPose().transformPositionInverse(v);
+            return new Vec3(v.x, v.y, v.z);
         }
     }
 }

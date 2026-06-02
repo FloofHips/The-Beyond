@@ -47,4 +47,18 @@ public final class BeyondCompatHooks {
     public static BlockPos storedForVisible(Level level, BlockPos visiblePos) {
         return storedForVisible(level, visiblePos.getCenter());
     }
+
+    /** Visible/world center of {@code storedPos} when inside a sub-level (any Level, client-safe); {@code null} otherwise. */
+    @Nullable
+    public static Vec3 visibleOnAnyLevel(Level level, BlockPos storedPos) {
+        LocationTranslator t = locationTranslator;
+        return t == null ? null : t.toVisibleAny(level, storedPos);
+    }
+
+    /** World point projected into the local frame of the sub-level containing {@code containedPos}; {@code null} if none. */
+    @Nullable
+    public static Vec3 toLocalFrame(Level level, BlockPos containedPos, Vec3 worldPoint) {
+        LocationTranslator t = locationTranslator;
+        return t == null ? null : t.toLocal(level, containedPos, worldPoint);
+    }
 }

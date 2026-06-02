@@ -601,13 +601,31 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
             be.animating--;
 
         be.oRot = be.rot;
-        Player player = level.getNearestPlayer((double)pos.getX() + (double)0.5F, (double)pos.getY() + (double)0.5F, (double)pos.getZ() + (double)0.5F, (double)16.0F, false);
+
+        // Inside a sub-level (Sable/Aeronautics contraption) the block sits at far-off grid coordinates:
+        // search for the player at the contraption's real-world position, and measure the facing angle in the
+        // contraption's local frame (its render pose rotates the model), so the refuge still turns to the player.
+        Vec3 visible = com.thebeyond.api.compat.BeyondCompatHooks.visibleOnAnyLevel(level, pos);
+        double searchX = visible != null ? visible.x : (double) pos.getX() + 0.5D;
+        double searchY = visible != null ? visible.y : (double) pos.getY() + 0.5D;
+        double searchZ = visible != null ? visible.z : (double) pos.getZ() + 0.5D;
+
+        Player player = level.getNearestPlayer(searchX, searchY, searchZ, 16.0D, false);
 
         if (player != null && level.random.nextFloat() < 0.01) {
-            double d0 = player.getX() - ((double)pos.getX() + (double)0.5F);
-            double d1 = player.getZ() - ((double)pos.getZ() + (double)0.5F);
-            be.tRot = (float)Mth.atan2(d1, d0);
-            level.playSound(player, pos, SoundEvents.ROOTS_BREAK, SoundSource.BLOCKS, 1, 1);
+            double targetX = player.getX();
+            double targetZ = player.getZ();
+            if (visible != null) {
+                Vec3 local = com.thebeyond.api.compat.BeyondCompatHooks.toLocalFrame(level, pos, player.position());
+                if (local != null) {
+                    targetX = local.x;
+                    targetZ = local.z;
+                }
+            }
+            double d0 = targetX - ((double) pos.getX() + 0.5D);
+            double d1 = targetZ - ((double) pos.getZ() + 0.5D);
+            be.tRot = (float) Mth.atan2(d1, d0);
+            level.playSound(player, searchX, searchY, searchZ, SoundEvents.ROOTS_BREAK, SoundSource.BLOCKS, 1, 1);
         }
 
         while(be.rot >= (float)Math.PI) {

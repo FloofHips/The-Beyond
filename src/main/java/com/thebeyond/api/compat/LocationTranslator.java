@@ -2,6 +2,7 @@ package com.thebeyond.api.compat;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -15,4 +16,11 @@ public interface LocationTranslator {
 
     /** Visible Vec3 → stored BlockPos (or {@code null} when not inside any sub-level). */
     @Nullable BlockPos toStored(ServerLevel level, Vec3 visiblePos);
+
+    /** Stored pos → visible/world center on any Level (client-safe); {@code null} when not in a sub-level. */
+    @Nullable default Vec3 toVisibleAny(Level level, BlockPos storedPos) { return null; }
+
+    /** World point → the local (stored) frame of the sub-level containing {@code containedPos};
+     *  {@code null} when not in a sub-level. */
+    @Nullable default Vec3 toLocal(Level level, BlockPos containedPos, Vec3 worldPoint) { return null; }
 }

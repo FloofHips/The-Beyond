@@ -41,17 +41,17 @@ public abstract class SableSubLevelContainerMixin {
 
     @Inject(method = "inBounds(II)Z", at = @At("HEAD"), cancellable = true, remap = false)
     private void the_beyond$safeInBounds(int x, int z, CallbackInfoReturnable<Boolean> cir) {
-        if (the_beyond$GUARD.get() || the_beyond$initFailed) return;
+        if (the_beyond$initFailed) return;
 
-        // Outside the plotgrid footprint inBounds is false for every caller, so the
-        // guard cannot change the result — skip the stack walk (same math as inBounds).
+        // Cheap footprint reject before the costly guard/walk; re-entrant getPlot calls are in-footprint and reach the guard.
         int plotX = (x >> this.logPlotSize) - this.originX;
         int plotZ = (z >> this.logPlotSize) - this.originZ;
         int side = 1 << this.logSideLength;
         if (plotX < 0 || plotX >= side || plotZ < 0 || plotZ >= side) return;
 
-        if (!the_beyond$isChunkSystem()) return;
+        if (the_beyond$GUARD.get()) return;
 
+        // Resolve the plot before the caller-identity walk: only an empty cell needs the override.
         the_beyond$GUARD.set(true);
         try {
             if (the_beyond$cachedGetPlot == null) {
@@ -59,7 +59,7 @@ public abstract class SableSubLevelContainerMixin {
             }
 
             Object plot = the_beyond$cachedGetPlot.invoke(this, x, z);
-            if (plot == null) {
+            if (plot == null && the_beyond$isChunkSystem()) {
                 cir.setReturnValue(false);
             }
         } catch (Exception e) {
