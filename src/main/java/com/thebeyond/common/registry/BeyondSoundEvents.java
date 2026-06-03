@@ -16,6 +16,12 @@ public class BeyondSoundEvents {
     public static final DeferredHolder<SoundEvent, SoundEvent> END_STONE_HIT = SOUND_EVENTS.register("block.end_stone.hit", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> END_STONE_FALL = SOUND_EVENTS.register("block.end_stone.fall", SoundEvent::createVariableRangeEvent);
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> AURORACITE_BREAK = SOUND_EVENTS.register("block.auroracite.break", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> AURORACITE_STEP = SOUND_EVENTS.register("block.auroracite.step", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> AURORACITE_PLACE = SOUND_EVENTS.register("block.auroracite.place", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> AURORACITE_HIT = SOUND_EVENTS.register("block.auroracite.hit", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> AURORACITE_FALL = SOUND_EVENTS.register("block.auroracite.fall", SoundEvent::createVariableRangeEvent);
+
     public static final DeferredHolder<SoundEvent, SoundEvent> PLATED_END_STONE_BREAK = SOUND_EVENTS.register("block.plated_end_stone.break", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> PLATED_END_STONE_STEP = SOUND_EVENTS.register("block.plated_end_stone.step", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> PLATED_END_STONE_PLACE = SOUND_EVENTS.register("block.plated_end_stone.place", SoundEvent::createVariableRangeEvent);

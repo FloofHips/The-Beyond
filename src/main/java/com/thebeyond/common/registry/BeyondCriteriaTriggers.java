@@ -21,7 +21,7 @@ public class BeyondCriteriaTriggers {
     public static final Supplier<PlayerTrigger> GIVE_REMEMBRANCE = TRIGGERS.register("give_remembrance", PlayerTrigger::new);
     public static final Supplier<PlayerTrigger> RIDE_NOMAD = TRIGGERS.register("ride_nomad", PlayerTrigger::new);
     public static final Supplier<PlayerTrigger> FOUNTAIN_OFFERING = TRIGGERS.register("fountain_offering", PlayerTrigger::new);
-    public static final Supplier<PlayerTrigger> WALK_VOID_RIVER = TRIGGERS.register("walk_void_river", PlayerTrigger::new);
+    public static final Supplier<PlayerTrigger> WALK_AURORACITE = TRIGGERS.register("walk_auroracite", PlayerTrigger::new);
     public static final Supplier<PlayerTrigger> MIGRATION_STORM = TRIGGERS.register("migration_storm", PlayerTrigger::new);
     public static final Supplier<PlayerTrigger> GIFT_ENADRAKE = TRIGGERS.register("gift_enadrake", PlayerTrigger::new);
     public static final Supplier<PlayerTrigger> GIFT_RARE_ENADRAKE = TRIGGERS.register("gift_rare_enadrake", PlayerTrigger::new);

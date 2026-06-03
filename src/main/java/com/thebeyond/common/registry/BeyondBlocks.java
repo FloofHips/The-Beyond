@@ -124,7 +124,7 @@ public class BeyondBlocks {
             () -> new AuroraciteBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_LIGHT_BLUE)
                     .strength(-1, 3600000F)
-                    .sound(SoundType.AMETHYST)
+                    .sound(BeyondSoundTypes.AURORACITE)
                     .isSuffocating((s, l, p) -> false)
                     .isViewBlocking((s, l, p) -> false))
     );

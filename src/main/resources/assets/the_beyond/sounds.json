@@ -43,6 +43,49 @@
       "the_beyond:block/end_stone/light5"
     ],
     "subtitle": "subtitles.block.generic.footsteps"
+  },"block.auroracite.break": {
+  "sounds": [
+    "the_beyond:block/auroracite/heavy1",
+    "the_beyond:block/auroracite/heavy2",
+    "the_beyond:block/auroracite/heavy3"
+  ],
+  "subtitle": "subtitles.block.generic.break"
+},
+  "block.auroracite.fall": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.auroracite.break",
+        "type": "event"
+      }
+    ]
+  },
+  "block.auroracite.hit": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.auroracite.step",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.auroracite.place": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.auroracite.break",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.auroracite.step": {
+    "sounds": [
+      "the_beyond:block/auroracite/light1",
+      "the_beyond:block/auroracite/light2",
+      "the_beyond:block/auroracite/light3",
+      "the_beyond:block/auroracite/light4",
+      "the_beyond:block/auroracite/light5"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
   },
   "block.plate_block.break": {
     "sounds": [
@@ -313,7 +356,6 @@
   "item.magnet.pull": {
     "sounds": [
       "the_beyond:item/magnet/pull"
-    ],
-    "subtitle": "subtitles.item.magnet.pull"
+    ]
   }
 }
