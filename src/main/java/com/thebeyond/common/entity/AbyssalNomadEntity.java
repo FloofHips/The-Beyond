@@ -240,7 +240,8 @@ public class AbyssalNomadEntity extends PathfinderMob {
         handlePray();
         handleLook();
 
-        if (tickCount % 500 + random.nextInt(50) == 0) this.playSound(BeyondSoundEvents.ABYSSAL_NOMAD_IDLE.get(), 1, 1);
+        if ((this.tickCount % (500 + random.nextInt(30))) == 0)
+            this.playSound(BeyondSoundEvents.ABYSSAL_NOMAD_IDLE.get(), 1, 0.8f + random.nextFloat()*0.5f);
 
         // Only search for prayer sites in the End dimension. In non-End dimensions
         // (e.g. player riding nomad through a portal), the structure tag doesn't exist
