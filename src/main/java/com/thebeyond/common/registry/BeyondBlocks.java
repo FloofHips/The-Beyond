@@ -71,17 +71,17 @@ public class BeyondBlocks {
             .mapColor(MapColor.WOOL)
             .requiresCorrectToolForDrops()
             .strength(-1, 3600000F)
-            .sound(SoundType.ANCIENT_DEBRIS))
+            .sound(BeyondSoundTypes.MEMOR))
     );
     public static final DeferredBlock<Block> CHISELED_MEMOR = registerBlock("chiseled_memor", () -> new Block(
-            BlockBehaviour.Properties.ofFullCopy(MEMOR.get()).sound(SoundType.NETHER_BRICKS)));
+            BlockBehaviour.Properties.ofFullCopy(MEMOR.get())));
     public static final DeferredBlock<Block> MEMOR_PILLAR = registerBlock("memor_pillar", () -> new RotatedPillarBlock(
-            BlockBehaviour.Properties.ofFullCopy(MEMOR.get()).sound(SoundType.NETHER_BRICKS)));
+            BlockBehaviour.Properties.ofFullCopy(MEMOR.get())));
     public static final DeferredBlock<Block> MEMOR_STAIRS = registerBlock("memor_stairs", () -> new StairBlock(
             MEMOR.get().defaultBlockState(),
-            BlockBehaviour.Properties.ofFullCopy(MEMOR.get()).sound(SoundType.ANCIENT_DEBRIS)));
+            BlockBehaviour.Properties.ofFullCopy(MEMOR.get())));
     public static final DeferredBlock<Block> MEMOR_FAUCET = registerBlock("memor_faucet", () -> new MemorFaucetBlock(
-            BlockBehaviour.Properties.ofFullCopy(MEMOR.get()).noOcclusion().sound(SoundType.NETHER_BRICKS)), Rarity.EPIC);
+            BlockBehaviour.Properties.ofFullCopy(MEMOR.get()).noOcclusion()), Rarity.EPIC);
 
     //STRUCTURES
     public static final DeferredBlock<Block> BONFIRE = registerBlock("bonfire", () -> new BonfireBlock(BlockBehaviour.Properties.of()

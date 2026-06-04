@@ -18,6 +18,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.FluidTags;
@@ -50,6 +51,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.EventHooks;
 import net.neoforged.neoforge.event.entity.EntityTeleportEvent;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.injection.At;
 
 import java.util.EnumSet;
@@ -198,6 +200,16 @@ public class AbyssalNomadEntity extends PathfinderMob {
         return Monster.createMonsterAttributes().add(Attributes.MOVEMENT_SPEED, 0.2);
     }
 
+    @Override
+    protected @Nullable SoundEvent getDeathSound() {
+        return BeyondSoundEvents.ABYSSAL_NOMAD_DEATH.get();
+    }
+
+    @Override
+    protected @Nullable SoundEvent getHurtSound(DamageSource damageSource) {
+        return BeyondSoundEvents.ABYSSAL_NOMAD_HURT.get();
+    }
+
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new RandomStrollGoal(this, 1) {
             @Override
@@ -228,6 +240,8 @@ public class AbyssalNomadEntity extends PathfinderMob {
         handlePray();
         handleLook();
 
+        if (tickCount % 500 + random.nextInt(50) == 0) this.playSound(BeyondSoundEvents.ABYSSAL_NOMAD_IDLE.get(), 1, 1);
+
         // Only search for prayer sites in the End dimension. In non-End dimensions
         // (e.g. player riding nomad through a portal), the structure tag doesn't exist
         // and findNearestMapStructure would waste CPU returning null every tick.
@@ -256,6 +270,7 @@ public class AbyssalNomadEntity extends PathfinderMob {
 
             if (dropCounter == 59) level().broadcastEntityEvent(this, DROP);
             if (dropCounter == 58) {
+                this.playSound(BeyondSoundEvents.ABYSSAL_NOMAD_THANK.get(), 1, 1);
                 level().broadcastEntityEvent(this, STAND_UP);
                 this.setSitting(false);
             }
@@ -275,7 +290,7 @@ public class AbyssalNomadEntity extends PathfinderMob {
                 if (level() instanceof ServerLevel serverLevel)
                     serverLevel.sendParticles(ColorUtils.auroraOptions, itementity.getX(), itementity.getY(), itementity.getZ(), 3 + random.nextInt(5), 0.05, 0.05, 0.05, 0.03);
 
-                this.playSound(SoundEvents.AXE_STRIP, 1, 0.5f);
+                this.playSound(BeyondSoundEvents.ABYSSAL_NOMAD_TEAR.get(), 1, 1);
             }
 
             if (dropCounter == 2) lookAt = null;
@@ -289,7 +304,7 @@ public class AbyssalNomadEntity extends PathfinderMob {
             if(getCorruption() != 0) {
                 this.setYHeadRot(getYHeadRot()+(random.nextInt(-50, 50)));
                 setCorruption((int) Mth.lerp(random.nextFloat(), Math.min(getCorruption() * 3, 255), 0));
-                this.playSound(SoundEvents.NOTE_BLOCK_DIDGERIDOO.value(), 1, random.nextFloat()*2);
+                this.playSound(BeyondSoundEvents.ABYSSAL_NOMAD_DECRYPT.get(), 1, random.nextFloat()*2);
             }
 
             if (sitDownCounter == 36) {
@@ -297,8 +312,7 @@ public class AbyssalNomadEntity extends PathfinderMob {
                 level().broadcastEntityEvent(this, NOD);
                 if (level() instanceof ServerLevel serverLevel)
                     serverLevel.sendParticles(ParticleTypes.EFFECT, getX(), getEyeY(), getZ(), 3 + random.nextInt(5), 0.1, 0.1, 0.1, 0.001);
-                this.playSound(SoundEvents.SHIELD_BREAK, 1, 0.5f);
-                this.playSound(SoundEvents.CONDUIT_DEACTIVATE, 1, 0.5f);
+                this.playSound(BeyondSoundEvents.ABYSSAL_NOMAD_HEAL.get(), 1, 0.9f + random.nextFloat()*0.3f);
             }
             if (sitDownCounter == 26) setSitting(true);
             if (sitDownCounter == 21) level().broadcastEntityEvent(this, SIT_DOWN);
@@ -311,36 +325,13 @@ public class AbyssalNomadEntity extends PathfinderMob {
         }
     }
 
-    private void handleUncorrupt() {
-        if (uncorruptCounter > 0 && getCorruption() > 0) {
-            uncorruptCounter--;
-
-            if(getCorruption() != 0) {
-                this.setYHeadRot(getYHeadRot()+(random.nextInt(-50, 50)));
-                setCorruption((int) Mth.lerp(random.nextFloat(), Math.min(getCorruption() * 3, 255), 0));
-                this.playSound(SoundEvents.NOTE_BLOCK_DIDGERIDOO.value(), 1, random.nextFloat()*2);
-            }
-
-            if (uncorruptCounter == 20) {
-                setCorruption(1);
-                level().broadcastEntityEvent(this, NOD);
-                if (level() instanceof ServerLevel serverLevel)
-                    serverLevel.sendParticles(ParticleTypes.EFFECT, getX(), getEyeY(), getZ(), 3 + random.nextInt(5), 0.1, 0.1, 0.1, 0.001);
-                this.playSound(SoundEvents.SHIELD_BREAK, 1, 0.5f);
-                this.playSound(SoundEvents.CONDUIT_DEACTIVATE, 1, 0.5f);
-            }
-            if (uncorruptCounter == 0) {
-                setCorruption(0);
-            }
-        }
-    }
-
     private void handleAttack() {
         if (attackCounter == 51) {
+            this.playSound(BeyondSoundEvents.ABYSSAL_NOMAD_DANGER.get(), 1, 1);
             level().broadcastEntityEvent(this, ATTACK);
         }
         if (attackCounter == 21) {
-            this.playSound(SoundEvents.SHIELD_BREAK, 1, 0.5f);
+            this.playSound(BeyondSoundEvents.ABYSSAL_NOMAD_ATTACK.get(), 1, 1);
             AOEManager.nomadKnockback(level(), this);
         }
 
@@ -492,7 +483,7 @@ public class AbyssalNomadEntity extends PathfinderMob {
             //if (getCorruption()!=255) {
                 nomad.setYHeadRot(getYHeadRot()+(random.nextInt(-50, 50)));
                 nomad.setCorruption((int) Mth.lerp(random.nextFloat(), getCorruption() / 3f, 255));
-                nomad.playSound(SoundEvents.NOTE_BLOCK_DIDGERIDOO.value(), 1, random.nextFloat()*2);
+                nomad.playSound(BeyondSoundEvents.ABYSSAL_NOMAD_DECRYPT.get(), 1, random.nextFloat()*2);
             //}
 
             if (nomad.getTarget() != null && nomad.getTarget().position().subtract(nomad.position()).length() < 5) {
@@ -603,8 +594,8 @@ public class AbyssalNomadEntity extends PathfinderMob {
                 if (flag2) {
                     this.level().gameEvent(GameEvent.TELEPORT, vec3, GameEvent.Context.of(this));
                     if (!this.isSilent()) {
-                        this.level().playSound((Player)null, this.xo, this.yo, this.zo, SoundEvents.ENDERMAN_TELEPORT, this.getSoundSource(), 1.0F, 1.0F);
-                        this.playSound(SoundEvents.ENDERMAN_TELEPORT, 1.0F, 1.0F);
+                        this.level().playSound((Player)null, this.xo, this.yo, this.zo, BeyondSoundEvents.ABYSSAL_NOMAD_TELEPORT.get(), this.getSoundSource(), 1.0F, 1.0F);
+                        this.playSound(BeyondSoundEvents.ABYSSAL_NOMAD_TELEPORT.get(), 1.0F, 1.0F);
                     }
                 }
 

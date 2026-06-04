@@ -96,6 +96,7 @@ public class Lang extends LanguageProvider {
 
         // Sounds
         add("subtitles.block.void_crystal.shatter", "Crystal shatters");
+
         add("subtitles.entity.enderglop.death", "Enderglop dies");
         add("subtitles.entity.enderglop.death_small", "Enderdrop dies");
         add("subtitles.entity.enderglop.hurt", "Enderglop hurts");
@@ -106,9 +107,27 @@ public class Lang extends LanguageProvider {
         add("subtitles.entity.enderglop.armor_hurt", "Enderglop's armor hurts");
         add("subtitles.entity.enderglop.armor_break", "Enderglop's armor shatters");
 
+        add("subtitles.entity.abyssal_nomad.death", "Abyssal Nomad dies");
+        add("subtitles.entity.abyssal_nomad.hurt", "Abyssal Nomad hurts");
+        add("subtitles.entity.abyssal_nomad.attack", "Abyssal Nomad attacks");
+        add("subtitles.entity.abyssal_nomad.danger", "Abyssal Nomad alerts");
+        add("subtitles.entity.abyssal_nomad.heal", "Abyssal Nomad remembers");
+        add("subtitles.entity.abyssal_nomad.idle", "Abyssal Nomad bellows");
+        add("subtitles.entity.abyssal_nomad.nod", "Abyssal Nomad is pleased");
+        add("subtitles.entity.abyssal_nomad.remember", "Abyssal Nomad is remembering");
+        add("subtitles.entity.abyssal_nomad.tear", "Abyssal Nomad offers");
+        add("subtitles.entity.abyssal_nomad.teleport", "Abyssal Nomad teleports");
+        add("subtitles.entity.abyssal_nomad.thank", "Abyssal Nomad is thankful");
+
         add("subtitles.block.polar.emerge", "Enderglop emerges");
         add("subtitles.block.polar.charge", "Polar charge rises up");
         add("subtitles.block.polar.cool", "Polar charge cools down");
+
+        add("subtitles.block.memor_faucet.open", "Faucet opens");
+        add("subtitles.block.memor_faucet.close", "Faucet closes");
+        add("subtitles.block.memor_faucet.power", "Faucet powers up");
+        add("subtitles.block.memor_faucet.power_final", "Faucet unlocks");
+        add("subtitles.block.memor_faucet.absorb", "Faucet accepts offering");
 
         add("subtitles.item.magnet.success", "Magnet latches on");
         add("subtitles.item.magnet.fail", "Magnet falls short");

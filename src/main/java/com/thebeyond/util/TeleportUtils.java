@@ -1,7 +1,9 @@
 package com.thebeyond.util;
 
 import com.thebeyond.common.block.AuroraciteBlock;
+import com.thebeyond.common.entity.AbyssalNomadEntity;
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
@@ -45,7 +47,7 @@ public class TeleportUtils {
                 if (entityLiving.randomTeleport(event.getTargetX(), event.getTargetY(), event.getTargetZ(), true)) {
                     level.gameEvent(GameEvent.TELEPORT, vec3, GameEvent.Context.of(entityLiving));
 
-                    SoundEvent soundevent = SoundEvents.CHORUS_FRUIT_TELEPORT;
+                    SoundEvent soundevent = entityLiving instanceof AbyssalNomadEntity ? BeyondSoundEvents.ABYSSAL_NOMAD_TELEPORT.get() : SoundEvents.CHORUS_FRUIT_TELEPORT;
                     SoundSource soundsource = entityLiving.getSoundSource();
 
 

@@ -1,5 +1,7 @@
 package com.thebeyond.common.block.blockentities;
 
+import com.thebeyond.client.particle.CircleColorTransitionOptions;
+import com.thebeyond.client.particle.PixelColorTransitionOptions;
 import com.thebeyond.common.block.MemorFaucetBlock;
 import com.thebeyond.api.compat.BeyondCompatHooks;
 import com.thebeyond.common.entity.AbyssalNomadEntity;
@@ -39,6 +41,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -107,7 +110,7 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
 
         be.tickCounter++;
 
-        if (be.tickCounter >= CHECK_INTERVAL) {
+        if (be.tickCounter == CHECK_INTERVAL) {
             be.checkForActivation(level, pos);
             be.consumeItems(level, pos);
         }
@@ -119,7 +122,7 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
             }
         }
 
-        if (be.tickCounter >= CHECK_INTERVAL + 5) {
+        if (be.tickCounter == CHECK_INTERVAL + 5) {
             be.tickCounter = 0;
             BlockPos a = anchor(level, pos);
             AABB detectionBox = new AABB(a).inflate(20);
@@ -200,7 +203,7 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
         if (active) return;
         active = true;
         BlockPos a = anchor(level, pos);
-        level.playSound(null, a, SoundEvents.VAULT_ACTIVATE, SoundSource.BLOCKS, 1.0F, 1.0F);
+        level.playSound(null, a, BeyondSoundEvents.MEMOR_FAUCET_OPEN.get(), SoundSource.BLOCKS, 1.0F, 0.8f + level.random.nextFloat() * 0.5f);
 
         if (level instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(ParticleTypes.ENCHANT, a.getX() + 0.5, a.getY() + 1.0, a.getZ() + 0.5, 10, 0.5, 0.5, 0.5, 0.1);
@@ -215,7 +218,7 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
     private void deactivateFaucet(Level level, BlockPos pos) {
         if (!active) return;
         active = false;
-        level.playSound(null, anchor(level, pos), SoundEvents.VAULT_DEACTIVATE, SoundSource.BLOCKS, 1.0F, 1.0F);
+        level.playSound(null, anchor(level, pos), BeyondSoundEvents.MEMOR_FAUCET_CLOSE.get(), SoundSource.BLOCKS, 1.0F, 0.8f + level.random.nextFloat() * 0.5f);
 
         setChanged();
         if (!level.isClientSide) {
@@ -282,8 +285,7 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
                 itemEntity.discard();
             }
 
-            level.playSound(null, a, SoundEvents.RESPAWN_ANCHOR_CHARGE, SoundSource.BLOCKS, 1, 1);
-            level.playSound(null, a, SoundEvents.ALLAY_ITEM_TAKEN, SoundSource.BLOCKS, 0.5F, 1.0F);
+            level.playSound(null, a, BeyondSoundEvents.MEMOR_FAUCET_ABSORB.get(), SoundSource.BLOCKS, 1, 1);
 
             if (level instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(ParticleTypes.POOF, itemEntity.getX(), itemEntity.getY(), itemEntity.getZ(), 5, 0.2, 0.2, 0.2, 0.05);
@@ -299,24 +301,42 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
     private void increaseAge(Level level, BlockPos pos) {
         BlockState currentState = level.getBlockState(pos);
         int currentAge = currentState.getValue(AGE);
+        BlockPos a = anchor(level, pos);
 
         if (currentAge < MemorFaucetBlock.MAX_AGE) {
             int newAge = currentAge + 1;
             level.setBlock(pos, currentState.setValue(AGE, newAge), 3);
+
             if (newAge == 1) {
+                level.playSound(null, a, BeyondSoundEvents.MEMOR_FAUCET_POWER1.get(), SoundSource.BLOCKS, 1, 1);
                 spawnNomads(level, pos);
                 affectNomads(level, pos, (byte) 2);
                 return;
             }
-            //if (newAge == 2) {
-            //    affectNomads(level, pos, (byte) 2);
-            //    return;
-            //}
+
+            if (newAge == 2) {
+                level.playSound(null, a, BeyondSoundEvents.MEMOR_FAUCET_POWER2.get(), SoundSource.BLOCKS, 1, 1);
+                affectNomads(level, pos, (byte) 3);
+                return;
+            }
+
+            if (newAge == 3) {
+                level.playSound(null, a, BeyondSoundEvents.MEMOR_FAUCET_POWER3.get(), SoundSource.BLOCKS, 1, 1);
+                affectNomads(level, pos, (byte) 3);
+                return;
+            }
+
+            if (newAge == 4) {
+                level.playSound(null, a, BeyondSoundEvents.MEMOR_FAUCET_POWER4.get(), SoundSource.BLOCKS, 1, 1);
+                affectNomads(level, pos, (byte) 3);
+                return;
+            }
+
             if (newAge >= MemorFaucetBlock.MAX_AGE) {
+                level.playSound(null, a, BeyondSoundEvents.MEMOR_FAUCET_POWER_UP.get(), SoundSource.BLOCKS, 1, 1);
                 affectNomads(level, pos, (byte) 4);
                 return;
             }
-            affectNomads(level, pos, (byte) 3);
         }
     }
 
@@ -402,24 +422,34 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
             for (AbyssalNomadEntity nomad : nomads) {
                 nomad.lookAt = a;
                 nomad.level().broadcastEntityEvent(nomad, (byte) 69);
+                level.playSound(null, a, BeyondSoundEvents.ABYSSAL_NOMAD_NOD.get(), SoundSource.BLOCKS, 1, 1);
             }
         }
 
         if (b == (byte) 4) {
             this.birthday = (int) (level.getDayTime() / 24000);
             if (level instanceof ServerLevel serverLevel) {
-                serverLevel.sendParticles(ColorUtils.auroraOptions, a.getX() + 0.5, a.getY() - 0.5, a.getZ() + 0.5, 5, 0.1, 0.1, 0.1, 0.05);
+                serverLevel.sendParticles(new CircleColorTransitionOptions(
+                        new Vector3f(0.0f, 0.9f, 0.9f),
+                        new Vector3f(0.0f, 0.5f, 0.5f),
+                        0.5f
+                ), a.getX() + 0.5, a.getY() + 0.5, a.getZ() + 0.5, 1, 0, 0, 0, 0.05);serverLevel.sendParticles(new CircleColorTransitionOptions(
+                        new Vector3f(0.0f, 0.9f, 0.9f),
+                        new Vector3f(0.0f, 0.0f, 0.0f),
+                        0.8f
+                ), a.getX() + 0.5, a.getY() + 0.5, a.getZ() + 0.5, 1, 0, 0, 0, 0.05);
             }
 
-            level.playSound(null, a, SoundEvents.TRIAL_SPAWNER_OMINOUS_ACTIVATE, SoundSource.BLOCKS, 1, 1);
+            //level.playSound(null, a, BeyondSoundEvents.MEMOR_FAUCET_OPEN.get(), SoundSource.BLOCKS, 1, 1);
 
             for (AbyssalNomadEntity nomad : nomads) {
                 nomad.lookAt = a;
-                level.playSound(null, nomad.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 0.5F, 0.8F);
+                //level.playSound(null, nomad.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 0.5F, 0.8F);
                 if (level instanceof ServerLevel serverLevel) {
                     serverLevel.sendParticles(BeyondParticleTypes.AURORACITE_STEP.get(), nomad.position().x, nomad.position().y + nomad.getEyeHeight() + 0.1, nomad.position().z, 1, 0, 0, 0, 0);
                 }
                 nomad.dropCounter = 60 + nomad.level().random.nextInt(0, 20);
+                level.playSound(null, a, BeyondSoundEvents.ABYSSAL_NOMAD_THANK.get(), SoundSource.BLOCKS, 1, 1);
             }
 
             Player nearestPlayer = level.getNearestPlayer(a.getX(), a.getY(), a.getZ(), 16, false);

@@ -22,6 +22,21 @@ public class BeyondSoundEvents {
     public static final DeferredHolder<SoundEvent, SoundEvent> AURORACITE_HIT = SOUND_EVENTS.register("block.auroracite.hit", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> AURORACITE_FALL = SOUND_EVENTS.register("block.auroracite.fall", SoundEvent::createVariableRangeEvent);
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> MEMOR_BREAK = SOUND_EVENTS.register("block.memor.break", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> MEMOR_STEP = SOUND_EVENTS.register("block.memor.step", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> MEMOR_PLACE = SOUND_EVENTS.register("block.memor.place", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> MEMOR_HIT = SOUND_EVENTS.register("block.memor.hit", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> MEMOR_FALL = SOUND_EVENTS.register("block.memor.fall", SoundEvent::createVariableRangeEvent);
+
+    public static final DeferredHolder<SoundEvent, SoundEvent> MEMOR_FAUCET_ABSORB = SOUND_EVENTS.register("block.memor_faucet.absorb", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> MEMOR_FAUCET_OPEN = SOUND_EVENTS.register("block.memor_faucet.open", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> MEMOR_FAUCET_CLOSE = SOUND_EVENTS.register("block.memor_faucet.close", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> MEMOR_FAUCET_POWER1 = SOUND_EVENTS.register("block.memor_faucet.power1", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> MEMOR_FAUCET_POWER2 = SOUND_EVENTS.register("block.memor_faucet.power2", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> MEMOR_FAUCET_POWER3 = SOUND_EVENTS.register("block.memor_faucet.power3", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> MEMOR_FAUCET_POWER4 = SOUND_EVENTS.register("block.memor_faucet.power4", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> MEMOR_FAUCET_POWER_UP = SOUND_EVENTS.register("block.memor_faucet.power_final", SoundEvent::createVariableRangeEvent);
+
     public static final DeferredHolder<SoundEvent, SoundEvent> PLATED_END_STONE_BREAK = SOUND_EVENTS.register("block.plated_end_stone.break", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> PLATED_END_STONE_STEP = SOUND_EVENTS.register("block.plated_end_stone.step", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> PLATED_END_STONE_PLACE = SOUND_EVENTS.register("block.plated_end_stone.place", SoundEvent::createVariableRangeEvent);
@@ -52,6 +67,19 @@ public class BeyondSoundEvents {
     public static final DeferredHolder<SoundEvent, SoundEvent> ENDERGLOP_ARMOR = SOUND_EVENTS.register("entity.enderglop.armor", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> ENDERGLOP_ARMOR_HURT = SOUND_EVENTS.register("entity.enderglop.armor_hurt", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> ENDERGLOP_ARMOR_BREAK = SOUND_EVENTS.register("entity.enderglop.armor_break", SoundEvent::createVariableRangeEvent);
+
+    public static final DeferredHolder<SoundEvent, SoundEvent> ABYSSAL_NOMAD_DEATH = SOUND_EVENTS.register("entity.abyssal_nomad.death", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ABYSSAL_NOMAD_HURT = SOUND_EVENTS.register("entity.abyssal_nomad.hurt", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ABYSSAL_NOMAD_ATTACK = SOUND_EVENTS.register("entity.abyssal_nomad.attack", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ABYSSAL_NOMAD_DANGER = SOUND_EVENTS.register("entity.abyssal_nomad.danger", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ABYSSAL_NOMAD_HEAL = SOUND_EVENTS.register("entity.abyssal_nomad.heal", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ABYSSAL_NOMAD_IDLE = SOUND_EVENTS.register("entity.abyssal_nomad.idle", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ABYSSAL_NOMAD_NOD = SOUND_EVENTS.register("entity.abyssal_nomad.nod", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ABYSSAL_NOMAD_THANK = SOUND_EVENTS.register("entity.abyssal_nomad.thank", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ABYSSAL_NOMAD_TELEPORT = SOUND_EVENTS.register("entity.abyssal_nomad.teleport", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ABYSSAL_NOMAD_TEAR = SOUND_EVENTS.register("entity.abyssal_nomad.tear", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ABYSSAL_NOMAD_REMEMBER = SOUND_EVENTS.register("entity.abyssal_nomad.remember", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ABYSSAL_NOMAD_DECRYPT = SOUND_EVENTS.register("entity.abyssal_nomad.decrypt", SoundEvent::createVariableRangeEvent);
 
     public static final DeferredHolder<SoundEvent, SoundEvent> PULL = SOUND_EVENTS.register("item.magnet.pull", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> MAGNET_FAIL = SOUND_EVENTS.register("item.magnet.fail", SoundEvent::createVariableRangeEvent);

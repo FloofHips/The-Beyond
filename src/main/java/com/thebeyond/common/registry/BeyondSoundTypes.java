@@ -45,6 +45,14 @@ public class BeyondSoundTypes {
             BeyondSoundEvents.AURORACITE_FALL
     );
 
+    public static SoundType MEMOR = new DeferredSoundType(1.0F, 1.0F,
+            BeyondSoundEvents.MEMOR_BREAK,
+            BeyondSoundEvents.MEMOR_STEP,
+            BeyondSoundEvents.MEMOR_PLACE,
+            BeyondSoundEvents.MEMOR_HIT,
+            BeyondSoundEvents.MEMOR_FALL
+    );
+
     public static SoundType POLAR_ANTENNA = new DeferredSoundType(1.0F, 2F,
             BeyondSoundEvents.PLATE_BLOCK_BREAK,
             BeyondSoundEvents.PLATE_BLOCK_STEP,
