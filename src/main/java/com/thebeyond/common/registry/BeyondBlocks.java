@@ -102,6 +102,13 @@ public class BeyondBlocks {
             .strength(1.5F, 6.0F)
             .sound(SoundType.NETHER_BRICKS))
     );
+    public static final DeferredBlock<Block> BELLOW = registerBlock("bellow", () -> new BellowBlock(BlockBehaviour.Properties.of()
+            .mapColor(MapColor.COLOR_GRAY)
+            .requiresCorrectToolForDrops()
+            .strength(1.5F, 6.0F)
+            .noOcclusion()
+            .sound(SoundType.NETHER_BRICKS))
+    );
     public static final DeferredBlock<Block> PORTELAIN_PILLAR = registerBlock("portelain_pillar", () -> new RotatedPillarBlock(
             BlockBehaviour.Properties.ofFullCopy(PORTELAIN.get()).sound(SoundType.NETHER_BRICKS)));
     public static final DeferredBlock<Block> AMPHORA = registerBlock("amphora", () -> new AmphoraBlock(

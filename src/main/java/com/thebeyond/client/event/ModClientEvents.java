@@ -247,6 +247,9 @@ public class ModClientEvents {
         event.registerSpriteSet(BeyondParticleTypes.SMOKE.get(),
                 sprites -> new SmokeParticle.Provider(sprites));
 
+        event.registerSpriteSet(BeyondParticleTypes.BELLOW_JET.get(),
+                sprites -> new com.thebeyond.client.particle.BellowJetParticle.Provider(sprites));
+
         event.registerSpriteSet(BeyondParticleTypes.PIXEL.get(),
                 sprites -> new PixelParticle.Provider(sprites));
 

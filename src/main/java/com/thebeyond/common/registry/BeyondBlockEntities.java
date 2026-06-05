@@ -1,6 +1,7 @@
 package com.thebeyond.common.registry;
 
 import com.thebeyond.TheBeyond;
+import com.thebeyond.common.block.blockentities.BellowBlockEntity;
 import com.thebeyond.common.block.blockentities.BonfireBlockEntity;
 import com.thebeyond.common.block.blockentities.EnadrakeHutBlockEntity;
 import com.thebeyond.common.block.blockentities.MemorFaucetBlockEntity;
@@ -28,5 +29,8 @@ public class BeyondBlockEntities {
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MirrorBlockEntity>> MIRROR = BLOCK_ENTITY_TYPES.
             register("mirror", () -> BlockEntityType.Builder.of(MirrorBlockEntity::new, BeyondBlocks.PEARL_MIRROR.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BellowBlockEntity>> BELLOW = BLOCK_ENTITY_TYPES.
+            register("bellow", () -> BlockEntityType.Builder.of(BellowBlockEntity::new, BeyondBlocks.BELLOW.get()).build(null));
 
 }

@@ -38,6 +38,7 @@ public class BeyondBlockLoot extends BlockLootSubProvider {
         dropSelf(BeyondBlocks.PORTELAIN_MOSAIC.get());
         dropSelf(BeyondBlocks.PORTELAIN_TILES.get());
         dropSelf(BeyondBlocks.GUSTER.get());
+        dropSelf(BeyondBlocks.BELLOW.get());
         dropSelf(BeyondBlocks.OBIROOT_SPROUT.get());
         dropSelf(BeyondBlocks.XYLEM.get());
 
