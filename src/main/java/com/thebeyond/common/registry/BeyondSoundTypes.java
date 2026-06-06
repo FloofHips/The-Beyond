@@ -61,6 +61,14 @@ public class BeyondSoundTypes {
             BeyondSoundEvents.BONFIRE_FALL
     );
 
+    public static SoundType ECTOPLASM = new DeferredSoundType(1.0F, 1.0F,
+            BeyondSoundEvents.ECTOPLASM_BREAK,
+            BeyondSoundEvents.ECTOPLASM_STEP,
+            BeyondSoundEvents.ECTOPLASM_PLACE,
+            BeyondSoundEvents.ECTOPLASM_HIT,
+            BeyondSoundEvents.ECTOPLASM_FALL
+    );
+
     public static SoundType POLAR_ANTENNA = new DeferredSoundType(1.0F, 2F,
             BeyondSoundEvents.PLATE_BLOCK_BREAK,
             BeyondSoundEvents.PLATE_BLOCK_STEP,

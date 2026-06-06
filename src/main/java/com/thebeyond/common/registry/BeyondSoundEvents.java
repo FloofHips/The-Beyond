@@ -34,6 +34,14 @@ public class BeyondSoundEvents {
     public static final DeferredHolder<SoundEvent, SoundEvent> BONFIRE_HIT = SOUND_EVENTS.register("block.bonfire.hit", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> BONFIRE_FALL = SOUND_EVENTS.register("block.bonfire.fall", SoundEvent::createVariableRangeEvent);
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> ECTOPLASM_BREAK = SOUND_EVENTS.register("block.ectoplasm.break", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ECTOPLASM_STEP = SOUND_EVENTS.register("block.ectoplasm.step", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ECTOPLASM_PLACE = SOUND_EVENTS.register("block.ectoplasm.place", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ECTOPLASM_HIT = SOUND_EVENTS.register("block.ectoplasm.hit", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ECTOPLASM_FALL = SOUND_EVENTS.register("block.ectoplasm.fall", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ECTOPLASM_WARN = SOUND_EVENTS.register("block.ectoplasm.warn", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ECTOPLASM_POP = SOUND_EVENTS.register("block.ectoplasm.pop", SoundEvent::createVariableRangeEvent);
+
     public static final DeferredHolder<SoundEvent, SoundEvent> BONFIRE_IDLE = SOUND_EVENTS.register("block.bonfire.idle", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> BONFIRE_IDLE_CORRUPTED = SOUND_EVENTS.register("block.bonfire.corrupted_idle", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> BONFIRE_IGNITE = SOUND_EVENTS.register("block.bonfire.ignite", SoundEvent::createVariableRangeEvent);

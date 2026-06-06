@@ -64,7 +64,7 @@ public class BeyondBlocks {
     );
     public static final DeferredBlock<Block> ECTOPLASM = registerBlockWithoutItem("ectoplasm", () -> new EctoplasmBlock(BlockBehaviour.Properties.of()
             .mapColor(MapColor.SNOW)
-            .sound(SoundType.COBWEB)
+            .sound(BeyondSoundTypes.ECTOPLASM)
             .noOcclusion())
     );
     public static final DeferredBlock<Block> MEMOR = registerBlock("memor", () -> new Block(BlockBehaviour.Properties.of()

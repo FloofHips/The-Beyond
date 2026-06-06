@@ -1,5 +1,8 @@
 package com.thebeyond.common.block;
 
+import com.thebeyond.client.particle.CircleColorTransitionOptions;
+import com.thebeyond.client.particle.PixelColorTransitionOptions;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -19,6 +22,7 @@ import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.joml.Vector3f;
 
 public class EctoplasmBlock extends HalfTransparentBlock {
     public static final IntegerProperty AGE;
@@ -33,14 +37,27 @@ public class EctoplasmBlock extends HalfTransparentBlock {
         level.scheduleTick(pos, this, Mth.nextInt(random, 60, 120));
         this.slightlyDie(state, level, pos);
     }
-    private boolean slightlyDie(BlockState state, Level level, BlockPos pos) {
+    private boolean slightlyDie(BlockState state, ServerLevel level, BlockPos pos) {
         int i = state.getValue(AGE);
+
+        level.sendParticles(new PixelColorTransitionOptions(
+                new Vector3f(0.6f, 0.8f, 0.9f),
+                new Vector3f(1.0f, 1.0f, 1.0f),
+                1f
+        ), pos.getX()+0.5, pos.getY()+0.5, pos.getZ()+0.5, 2+level.random.nextInt(5),0.25,0.5,0.25,1);
+
+
         if (i < 2) {
-            level.playSound(null, pos, SoundEvents.BREEZE_INHALE, SoundSource.BLOCKS,1,1);
+            level.playSound(null, pos, BeyondSoundEvents.ECTOPLASM_WARN.get(), SoundSource.BLOCKS,1,1);
             level.setBlock(pos, state.setValue(AGE, i + 1), 2);
             return false;
         } else {
-            level.playSound(null, pos, SoundEvents.BREEZE_DEATH, SoundSource.BLOCKS,1,1);
+            level.playSound(null, pos, BeyondSoundEvents.ECTOPLASM_POP.get(), SoundSource.BLOCKS,1,0.8f+level.random.nextFloat()*0.3f);
+            level.sendParticles(new CircleColorTransitionOptions(
+                    new Vector3f(0.6f, 0.8f, 0.9f),
+                    new Vector3f(1.0f, 1.0f, 1.0f),
+                    0.5f
+            ), pos.getX()+0.5, pos.getY()+0.5, pos.getZ()+0.5, 1,0,0,0,1);
             this.die(state, level, pos);
             return true;
         }

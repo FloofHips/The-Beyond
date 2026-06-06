@@ -433,7 +433,9 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
                         new Vector3f(0.0f, 0.9f, 0.9f),
                         new Vector3f(0.0f, 0.5f, 0.5f),
                         0.5f
-                ), a.getX() + 0.5, a.getY() + 0.5, a.getZ() + 0.5, 1, 0, 0, 0, 0.05);serverLevel.sendParticles(new CircleColorTransitionOptions(
+                ), a.getX() + 0.5, a.getY() + 0.5, a.getZ() + 0.5, 1, 0, 0, 0, 0.05);
+
+                serverLevel.sendParticles(new CircleColorTransitionOptions(
                         new Vector3f(0.0f, 0.9f, 0.9f),
                         new Vector3f(1.0f, 1.0f, 1.0f),
                         0.8f

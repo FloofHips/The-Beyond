@@ -87,6 +87,63 @@
     ],
     "subtitle": "subtitles.block.generic.footsteps"
   },
+  "block.ectoplasm.fall": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.ectoplasm.break",
+        "type": "event"
+      }
+    ]
+  },
+  "block.ectoplasm.hit": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.ectoplasm.step",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.ectoplasm.place": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.ectoplasm.break",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.ectoplasm.step": {
+    "sounds": [
+      "the_beyond:block/ectoplasm/light1",
+      "the_beyond:block/ectoplasm/light2",
+      "the_beyond:block/ectoplasm/light3"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.ectoplasm.break": {
+    "sounds": [
+      "the_beyond:block/ectoplasm/heavy1",
+      "the_beyond:block/ectoplasm/heavy2",
+      "the_beyond:block/ectoplasm/heavy3",
+      "the_beyond:block/ectoplasm/heavy4"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.ectoplasm.warn": {
+    "sounds": [
+      "the_beyond:block/ectoplasm/warn1",
+      "the_beyond:block/ectoplasm/warn2",
+      "the_beyond:block/ectoplasm/warn3"
+    ],
+    "subtitle": "subtitles.block.ectoplasm.warn"
+  },
+  "block.ectoplasm.pop": {
+    "sounds": [
+      "the_beyond:block/ectoplasm/pop"
+    ],
+    "subtitle": "subtitles.block.ectoplasm.pop"
+  },
   "block.plate_block.break": {
     "sounds": [
       "the_beyond:block/plate_block/heavy1",
