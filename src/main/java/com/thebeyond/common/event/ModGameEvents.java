@@ -171,9 +171,9 @@ public class ModGameEvents {
             boolean flag = item.is(BeyondItems.LIVE_FLAME);
 
             if (event.getPlayer().level() instanceof ServerLevel serverLevel) {
-                serverLevel.playSound(null, event.getEntity().blockPosition(), SoundEvents.FIRE_EXTINGUISH, SoundSource.NEUTRAL, 1, 0.8f + serverLevel.random.nextFloat());
-                serverLevel.playSound(null, event.getEntity().blockPosition(), SoundEvents.ENDER_EYE_DEATH, SoundSource.NEUTRAL, 1, 0.8f + serverLevel.random.nextFloat());
-                serverLevel.sendParticles(!flag ? BeyondParticleTypes.VOID_FLAME.get() : ParticleTypes.SOUL_FIRE_FLAME, event.getEntity().getX(), event.getEntity().getY(), event.getEntity().getZ(), 10, 0.05, 0.1, 0.05, 0.05);
+                serverLevel.playSound(null, event.getEntity().blockPosition(), BeyondSoundEvents.FLAME_FAIL.get(), SoundSource.NEUTRAL, 1, 0.8f + serverLevel.random.nextFloat());
+
+                serverLevel.sendParticles(!flag ? BeyondParticleTypes.VOID_FLAME.get() : ParticleTypes.SOUL_FIRE_FLAME, event.getEntity().getX(), event.getEntity().getY(), event.getEntity().getZ(), 15, 0.5, 1, 0.5, 0.05);
                 serverLevel.sendParticles(new ItemParticleOption(ParticleTypes.ITEM, item), event.getEntity().getX(), event.getEntity().getY(), event.getEntity().getZ(), 16, 0.02, 0.02, 0.02, 0.1);
             }
 

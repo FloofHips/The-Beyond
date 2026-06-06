@@ -2,6 +2,7 @@ package com.thebeyond.common.item;
 
 import com.thebeyond.common.registry.BeyondItems;
 import com.thebeyond.common.registry.BeyondParticleTypes;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -12,6 +13,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
 
 public class LiveFlameItem extends Item {
     public LiveFlameItem(Properties properties) {
@@ -38,8 +40,8 @@ public class LiveFlameItem extends Item {
     }
 
     @Override
-    public SoundEvent getBreakingSound() {
-        return SoundEvents.FIRECHARGE_USE;
+    public @NotNull SoundEvent getBreakingSound() {
+        return BeyondSoundEvents.FLAME_FAIL.get();
     }
 
     @Override

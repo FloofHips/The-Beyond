@@ -332,6 +332,87 @@
       "the_beyond:block/void_crystal/shatter2"
     ],
     "subtitle": "subtitles.block.void_crystal.shatter"
+  },"block.bonfire.break": {
+  "sounds": [
+    "the_beyond:block/bonfire/heavy1",
+    "the_beyond:block/bonfire/heavy2",
+    "the_beyond:block/bonfire/heavy3"
+  ],
+  "subtitle": "subtitles.block.generic.break"
+},
+  "block.bonfire.fall": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.bonfire.break",
+        "type": "event"
+      }
+    ]
+  },
+  "block.bonfire.hit": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.bonfire.step",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.bonfire.place": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.bonfire.break",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.bonfire.step": {
+    "sounds": [
+      "the_beyond:block/bonfire/light1",
+      "the_beyond:block/bonfire/light2",
+      "the_beyond:block/bonfire/light3"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.bonfire.activate": {
+    "sounds": [
+      "the_beyond:block/bonfire/activate1",
+      "the_beyond:block/bonfire/activate2",
+      "the_beyond:block/bonfire/activate3"
+    ],
+    "subtitle": "subtitles.block.bonfire.activate"
+  },
+  "block.bonfire.idle": {
+    "sounds": [
+      "the_beyond:block/bonfire/idle1",
+      "the_beyond:block/bonfire/idle2",
+      "the_beyond:block/bonfire/idle3",
+      "the_beyond:block/bonfire/idle4"
+    ],
+    "subtitle": "subtitles.block.bonfire.idle"
+  },
+  "block.bonfire.corrupted_idle": {
+    "sounds": [
+      "the_beyond:block/bonfire/corrupted_idle1",
+      "the_beyond:block/bonfire/corrupted_idle2",
+      "the_beyond:block/bonfire/corrupted_idle3",
+      "the_beyond:block/bonfire/corrupted_idle4"
+    ],
+    "subtitle": "subtitles.block.bonfire.corrupted_idle"
+  },
+  "block.bonfire.ignite": {
+    "sounds": [
+      "the_beyond:block/bonfire/ignite1",
+      "the_beyond:block/bonfire/ignite2"
+    ],
+    "subtitle": "subtitles.block.bonfire.ignite"
+  },
+  "block.bonfire.search": {
+    "sounds": [
+      "the_beyond:block/bonfire/search1",
+      "the_beyond:block/bonfire/search2"
+    ],
+    "subtitle": "subtitles.block.bonfire.search"
   },
   "entity.enderglop.death": {
     "sounds": [
@@ -619,5 +700,12 @@
     "sounds": [
       "the_beyond:item/magnet/pull"
     ]
+  },
+  "item.flame.fail": {
+    "sounds": [
+      "the_beyond:item/flame/fail1",
+      "the_beyond:item/flame/fail2"
+    ],
+    "subtitle": "subtitles.item.flame.fail"
   }
 }

@@ -53,6 +53,14 @@ public class BeyondSoundTypes {
             BeyondSoundEvents.MEMOR_FALL
     );
 
+    public static SoundType BONFIRE = new DeferredSoundType(1.0F, 1.0F,
+            BeyondSoundEvents.BONFIRE_BREAK,
+            BeyondSoundEvents.BONFIRE_STEP,
+            BeyondSoundEvents.BONFIRE_PLACE,
+            BeyondSoundEvents.BONFIRE_HIT,
+            BeyondSoundEvents.BONFIRE_FALL
+    );
+
     public static SoundType POLAR_ANTENNA = new DeferredSoundType(1.0F, 2F,
             BeyondSoundEvents.PLATE_BLOCK_BREAK,
             BeyondSoundEvents.PLATE_BLOCK_STEP,

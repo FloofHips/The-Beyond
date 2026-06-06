@@ -1,8 +1,10 @@
 package com.thebeyond.common.block.blockentities;
 
 import com.thebeyond.api.compat.BeyondCompatHooks;
+import com.thebeyond.common.block.BonfireBlock;
 import com.thebeyond.common.entity.LanternEntity;
 import com.thebeyond.common.registry.BeyondBlockEntities;
+import com.thebeyond.common.registry.BeyondBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
@@ -97,6 +99,10 @@ public class BonfireBlockEntity extends BlockEntity {
             }
 
             be.setChanged();
+        }
+
+        if (be.getBlockState().getValue(LIT) && level.random.nextBoolean()) {
+            level.addAlwaysVisibleParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE, true, (double)pos.getX() + (double)0.5F + level.random.nextDouble() / (double)3.0F * (double)(level.random.nextBoolean() ? 1 : -1), (double)pos.getY() + level.random.nextDouble() + level.random.nextDouble(), (double)pos.getZ() + (double)0.5F + level.random.nextDouble() / (double)3.0F * (double)(level.random.nextBoolean() ? 1 : -1), (double)0.0F, 0.07, (double)0.0F);
         }
     }
 

@@ -3,6 +3,7 @@ package com.thebeyond.data.assets;
 import com.thebeyond.TheBeyond;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.BlockItem;
@@ -130,6 +131,11 @@ public class Lang extends LanguageProvider {
         add("subtitles.entity.respite_totem.shatter", "Totem of Respite shatters");
         add("subtitles.entity.respite_totem.spawn", "Totem of Respite has appeared");
 
+        add("subtitles.block.bonfire.idle", "Bonfire sings");
+        add("subtitles.block.bonfire.idle_corrupted", "Bonfire screams");
+        add("subtitles.block.bonfire.ignite", "Item ignited");
+        add("subtitles.block.bonfire.search", "Bonfire is searching for twin");
+        add("subtitles.block.bonfire.activate", "Bonfire lights up");
 
         add("subtitles.block.polar.emerge", "Enderglop emerges");
         add("subtitles.block.polar.charge", "Polar charge rises up");
@@ -143,6 +149,8 @@ public class Lang extends LanguageProvider {
 
         add("subtitles.item.magnet.success", "Magnet latches on");
         add("subtitles.item.magnet.fail", "Magnet falls short");
+
+        add("subtitles.item.flame.fail", "Flame extinguishes");
 
         // Advancements
         //add("advancements.the_beyond.root.title", "The Beyond");

@@ -86,7 +86,7 @@ public class BonfireBlock extends BaseEntityBlock {
             if (stack.is(BeyondItems.LIVID_FLAME.asItem()) || stack.is(BeyondItems.LIVE_FLAME.asItem())) {
                 if (!player.isCreative()) stack.shrink(1);
 
-                level.playSound(null, pos, SoundEvents.RESPAWN_ANCHOR_CHARGE, SoundSource.BLOCKS, 1, 1);
+                level.playSound(null, pos,  BeyondSoundEvents.BONFIRE_ACTIVATE.get(), SoundSource.BLOCKS, 1, 1);
                 level.setBlockAndUpdate(pos, state.setValue(LIT, true));
 
                 if (level instanceof ServerLevel serverLevel)
@@ -110,7 +110,7 @@ public class BonfireBlock extends BaseEntityBlock {
                 flameStack.set(BeyondComponents.COLOR_COMPONENT, colors);
                 player.addItem(flameStack);
 
-                level.playSound(null, pos, SoundEvents.FIRECHARGE_USE, SoundSource.BLOCKS, 1, 1);
+                level.playSound(null, pos, BeyondSoundEvents.BONFIRE_IGNITE.get(), SoundSource.BLOCKS, 1, 0.8f + level.random.nextFloat()*0.3f);
 
                 if (player instanceof ServerPlayer serverPlayer) {
                     if (level.isRaining()) {
@@ -147,7 +147,7 @@ public class BonfireBlock extends BaseEntityBlock {
                     sendBeam(level, pos, player, serverLevel, sisterStructure, true);
                     return InteractionResult.CONSUME;
                 } else {
-                    level.playSound(null, pos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F, 1.0F);
+                    level.playSound(null, pos,  BeyondSoundEvents.BONFIRE_SEARCH.get(), SoundSource.BLOCKS, 1.0F, 0.8f + level.random.nextFloat()*0.3f);
                     return InteractionResult.CONSUME;
                 }
             }
@@ -158,8 +158,8 @@ public class BonfireBlock extends BaseEntityBlock {
 
     private static void sendBeam(Level level, BlockPos pos, Player player, ServerLevel serverLevel, BlockPos sisterPos, boolean structure) {
 
-        level.playSound(null, pos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F, 1.0F);
-        level.playSound(null, sisterPos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F, 1.0F);
+        level.playSound(null, pos, BeyondSoundEvents.BONFIRE_SEARCH.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
+        level.playSound(null, sisterPos, BeyondSoundEvents.BONFIRE_SEARCH.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
 
         particleBeam(serverLevel, player, pos, sisterPos, structure);
     }
@@ -225,12 +225,14 @@ public class BonfireBlock extends BaseEntityBlock {
     @Override
     public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
         if (state.getValue(LIT)) {
+            if (random.nextInt(5) == 0) level.playLocalSound((double)pos.getX() + (double)0.5F, (double)pos.getY() + (double)0.5F, (double)pos.getZ() + (double)0.5F, level.isRaining() ? BeyondSoundEvents.BONFIRE_IDLE_CORRUPTED.get() : BeyondSoundEvents.BONFIRE_IDLE.get(), SoundSource.BLOCKS, 1.0F + random.nextFloat(), random.nextFloat() * 0.7F + 0.3F, false);
+
             for (Direction d : Direction.values()) {
                 if (d == Direction.UP || d == Direction.DOWN) continue;
                 spawnBabyFlames(level, Vec3.atCenterOf(pos).add(d.getStepX()*0.7, 0.2, d.getStepZ()*0.7), random);
             }
-            level.addAlwaysVisibleParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE, true, (double)pos.getX() + (double)0.5F + random.nextDouble() / (double)3.0F * (double)(random.nextBoolean() ? 1 : -1), (double)pos.getY() + random.nextDouble() + random.nextDouble(), (double)pos.getZ() + (double)0.5F + random.nextDouble() / (double)3.0F * (double)(random.nextBoolean() ? 1 : -1), (double)0.0F, 0.07, (double)0.0F);
         }
+
         super.animateTick(state, level, pos, random);
     }
 

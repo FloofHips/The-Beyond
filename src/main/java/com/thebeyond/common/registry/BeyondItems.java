@@ -39,8 +39,8 @@ public class BeyondItems {
         @Override
         public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
             super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
-            tooltipComponents.add(Component.literal("On Death:").withStyle(ChatFormatting.GRAY));
-            tooltipComponents.add(Component.literal(" Preserve items held").withStyle(ChatFormatting.AQUA));
+            tooltipComponents.add(Component.literal("When in Hand:").withStyle(ChatFormatting.GRAY));
+            tooltipComponents.add(Component.literal(" Preserve items on Death").withStyle(ChatFormatting.AQUA));
         }
     });
     public static final DeferredItem<Item> ETHER_CLOAK = registerItem("ether_cloak", () -> new ModelArmorItem(BeyondArmorMaterials.SHROUD_ARMOR, ArmorItem.Type.HELMET, new Item.Properties().durability(ArmorItem.Type.BOOTS.getDurability(10)).stacksTo(1), EtherCloakModel::new) {

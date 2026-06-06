@@ -28,6 +28,19 @@ public class BeyondSoundEvents {
     public static final DeferredHolder<SoundEvent, SoundEvent> MEMOR_HIT = SOUND_EVENTS.register("block.memor.hit", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> MEMOR_FALL = SOUND_EVENTS.register("block.memor.fall", SoundEvent::createVariableRangeEvent);
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> BONFIRE_BREAK = SOUND_EVENTS.register("block.bonfire.break", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> BONFIRE_STEP = SOUND_EVENTS.register("block.bonfire.step", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> BONFIRE_PLACE = SOUND_EVENTS.register("block.bonfire.place", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> BONFIRE_HIT = SOUND_EVENTS.register("block.bonfire.hit", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> BONFIRE_FALL = SOUND_EVENTS.register("block.bonfire.fall", SoundEvent::createVariableRangeEvent);
+
+    public static final DeferredHolder<SoundEvent, SoundEvent> BONFIRE_IDLE = SOUND_EVENTS.register("block.bonfire.idle", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> BONFIRE_IDLE_CORRUPTED = SOUND_EVENTS.register("block.bonfire.corrupted_idle", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> BONFIRE_IGNITE = SOUND_EVENTS.register("block.bonfire.ignite", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> BONFIRE_SEARCH = SOUND_EVENTS.register("block.bonfire.search", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> BONFIRE_ACTIVATE = SOUND_EVENTS.register("block.bonfire.activate", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> FLAME_FAIL = SOUND_EVENTS.register("item.flame.fail", SoundEvent::createVariableRangeEvent);
+
     public static final DeferredHolder<SoundEvent, SoundEvent> MEMOR_FAUCET_ABSORB = SOUND_EVENTS.register("block.memor_faucet.absorb", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> MEMOR_FAUCET_OPEN = SOUND_EVENTS.register("block.memor_faucet.open", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> MEMOR_FAUCET_CLOSE = SOUND_EVENTS.register("block.memor_faucet.close", SoundEvent::createVariableRangeEvent);

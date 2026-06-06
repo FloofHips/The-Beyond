@@ -88,7 +88,7 @@ public class BeyondBlocks {
             .mapColor(MapColor.GLOW_LICHEN)
             .strength(50, 50)
             .noOcclusion()
-            .sound(SoundType.LANTERN))
+            .sound(BeyondSoundTypes.BONFIRE))
     );
     public static final DeferredBlock<Block> PORTELAIN = registerBlock("portelain", () -> new Block(BlockBehaviour.Properties.of()
             .mapColor(MapColor.ICE)
