@@ -81,6 +81,17 @@ public class BeyondSoundEvents {
     public static final DeferredHolder<SoundEvent, SoundEvent> ABYSSAL_NOMAD_REMEMBER = SOUND_EVENTS.register("entity.abyssal_nomad.remember", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> ABYSSAL_NOMAD_DECRYPT = SOUND_EVENTS.register("entity.abyssal_nomad.decrypt", SoundEvent::createVariableRangeEvent);
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> LANTERN_HURT = SOUND_EVENTS.register("entity.lantern.hurt", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> LANTERN_IDLE = SOUND_EVENTS.register("entity.lantern.idle", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> LANTERN_SHED = SOUND_EVENTS.register("entity.lantern.shed", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> LANTERN_SPAWN = SOUND_EVENTS.register("entity.lantern.spawn", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> LANTERN_TELEPORT = SOUND_EVENTS.register("entity.lantern.teleport", SoundEvent::createVariableRangeEvent);
+
+    public static final DeferredHolder<SoundEvent, SoundEvent> RESPITE_TOTEM_ACTIVATE = SOUND_EVENTS.register("entity.respite_totem.activate", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> RESPITE_TOTEM_FLOAT = SOUND_EVENTS.register("entity.respite_totem.float", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> RESPITE_TOTEM_SHATTER = SOUND_EVENTS.register("entity.respite_totem.shatter", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> RESPITE_TOTEM_SPAWN = SOUND_EVENTS.register("entity.respite_totem.spawn", SoundEvent::createVariableRangeEvent);
+
     public static final DeferredHolder<SoundEvent, SoundEvent> PULL = SOUND_EVENTS.register("item.magnet.pull", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> MAGNET_FAIL = SOUND_EVENTS.register("item.magnet.fail", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> MAGNET_SUCCESS = SOUND_EVENTS.register("item.magnet.success", SoundEvent::createVariableRangeEvent);

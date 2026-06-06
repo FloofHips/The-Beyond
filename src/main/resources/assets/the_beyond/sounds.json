@@ -510,6 +510,77 @@
       "the_beyond:mob/abyssal_nomad/decrypt"
     ]
   },
+  "entity.lantern.hurt": {
+    "sounds": [
+      "the_beyond:mob/lantern/hurt1",
+      "the_beyond:mob/lantern/hurt2",
+      "the_beyond:mob/lantern/hurt3"
+    ],
+    "subtitle": "subtitles.entity.lantern.hurt"
+  },
+  "entity.lantern.idle": {
+    "sounds": [
+      "the_beyond:mob/lantern/idle1",
+      "the_beyond:mob/lantern/idle2",
+      "the_beyond:mob/lantern/idle3",
+      "the_beyond:mob/lantern/idle4",
+      "the_beyond:mob/lantern/idle5",
+      "the_beyond:mob/lantern/idle6"
+    ],
+    "subtitle": "subtitles.entity.lantern.idle"
+  },
+  "entity.lantern.shed": {
+    "sounds": [
+      "the_beyond:mob/lantern/shed1",
+      "the_beyond:mob/lantern/shed2",
+      "the_beyond:mob/lantern/shed3"
+    ],
+    "subtitle": "subtitles.entity.lantern.shed"
+  },
+  "entity.lantern.spawn": {
+    "sounds": [
+      "the_beyond:mob/lantern/spawn1",
+      "the_beyond:mob/lantern/spawn2",
+      "the_beyond:mob/lantern/spawn3"
+    ],
+    "subtitle": "subtitles.entity.lantern.spawn"
+  },
+  "entity.lantern.teleport": {
+    "sounds": [
+      "the_beyond:mob/lantern/teleport1",
+      "the_beyond:mob/lantern/teleport2",
+      "the_beyond:mob/lantern/teleport3"
+    ],
+    "subtitle": "subtitles.entity.lantern.teleport"
+  },
+  "entity.respite_totem.activate": {
+    "sounds": [
+      "the_beyond:mob/respite_totem/activate1",
+      "the_beyond:mob/respite_totem/activate2",
+      "the_beyond:mob/respite_totem/activate3"
+    ],
+    "subtitle": "subtitles.entity.respite_totem.activate"
+  },
+  "entity.respite_totem.float": {
+    "sounds": [
+      "the_beyond:mob/respite_totem/float1",
+      "the_beyond:mob/respite_totem/float2",
+      "the_beyond:mob/respite_totem/float3"
+    ],
+    "subtitle": "subtitles.entity.respite_totem.float"
+  },
+  "entity.respite_totem.shatter": {
+    "sounds": [
+      "the_beyond:mob/respite_totem/shatter"
+    ],
+    "subtitle": "subtitles.entity.respite_totem.shatter"
+  },
+  "entity.respite_totem.spawn": {
+    "sounds": [
+      "the_beyond:mob/respite_totem/spawn"
+    ],
+    "subtitle": "subtitles.entity.respite_totem.spawn"
+  },
   "block.polar.charge": {
     "sounds": [
       "the_beyond:block/polar/charge",

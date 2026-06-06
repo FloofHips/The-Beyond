@@ -119,6 +119,18 @@ public class Lang extends LanguageProvider {
         add("subtitles.entity.abyssal_nomad.teleport", "Abyssal Nomad teleports");
         add("subtitles.entity.abyssal_nomad.thank", "Abyssal Nomad is thankful");
 
+        add("subtitles.entity.lantern.hurt", "Lantern hurts");
+        add("subtitles.entity.lantern.idle", "Wind blows quietly");
+        add("subtitles.entity.lantern.teleport", "Lantern teleports");
+        add("subtitles.entity.lantern.shed", "Lantern sheds");
+        add("subtitles.entity.lantern.spawn", "Lantern has appeared");
+
+        add("subtitles.entity.respite_totem.activate", "Totem of Respite has activated");
+        add("subtitles.entity.respite_totem.float", "Totem of Respite floats by");
+        add("subtitles.entity.respite_totem.shatter", "Totem of Respite shatters");
+        add("subtitles.entity.respite_totem.spawn", "Totem of Respite has appeared");
+
+
         add("subtitles.block.polar.emerge", "Enderglop emerges");
         add("subtitles.block.polar.charge", "Polar charge rises up");
         add("subtitles.block.polar.cool", "Polar charge cools down");

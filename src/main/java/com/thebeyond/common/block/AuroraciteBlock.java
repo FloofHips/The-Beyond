@@ -113,7 +113,7 @@ public class AuroraciteBlock extends Block {
             level.setBlockAndUpdate(pos, state.setValue(POWERED, true));
             level.scheduleTick(pos, this, 20);
             serverLevel.sendParticles(BeyondParticleTypes.AURORACITE_STEP.get(), pos.getX() + 0.5, pos.getY() + 1.01, pos.getZ() + 0.5, 1, 0, 0.1, 0, 0);
-            serverLevel.playSound(null, pos, BeyondSoundEvents.AURORACITE_STEP.get(), SoundSource.BLOCKS, 0.4f, level.random.nextFloat()*2f);
+            serverLevel.playSound(null, pos, BeyondSoundEvents.AURORACITE_STEP.get(), SoundSource.BLOCKS, 0.2f, level.random.nextFloat()*2f);
 
             if (entity instanceof ServerPlayer serverPlayer && serverPlayer.getItemBySlot(EquipmentSlot.FEET).is(BeyondItems.PATHFINDER_BOOTS.get())) {
                 BeyondCriteriaTriggers.WALK_AURORACITE.get().trigger(serverPlayer);

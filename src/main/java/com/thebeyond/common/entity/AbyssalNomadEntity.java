@@ -210,6 +210,11 @@ public class AbyssalNomadEntity extends PathfinderMob {
         return BeyondSoundEvents.ABYSSAL_NOMAD_HURT.get();
     }
 
+    @Override
+    protected @Nullable SoundEvent getAmbientSound() {
+        return BeyondSoundEvents.ABYSSAL_NOMAD_IDLE.get();
+    }
+
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new RandomStrollGoal(this, 1) {
             @Override
@@ -239,9 +244,6 @@ public class AbyssalNomadEntity extends PathfinderMob {
         handleAttack();
         handlePray();
         handleLook();
-
-        if ((this.tickCount % (500 + random.nextInt(30))) == 0)
-            this.playSound(BeyondSoundEvents.ABYSSAL_NOMAD_IDLE.get(), 1, 0.8f + random.nextFloat()*0.5f);
 
         // Only search for prayer sites in the End dimension. In non-End dimensions
         // (e.g. player riding nomad through a portal), the structure tag doesn't exist
@@ -291,7 +293,7 @@ public class AbyssalNomadEntity extends PathfinderMob {
                 if (level() instanceof ServerLevel serverLevel)
                     serverLevel.sendParticles(ColorUtils.auroraOptions, itementity.getX(), itementity.getY(), itementity.getZ(), 3 + random.nextInt(5), 0.05, 0.05, 0.05, 0.03);
 
-                this.playSound(BeyondSoundEvents.ABYSSAL_NOMAD_TEAR.get(), 1, 1);
+                this.playSound(BeyondSoundEvents.ABYSSAL_NOMAD_TEAR.get(), 1, 0.5f);
             }
 
             if (dropCounter == 2) lookAt = null;
@@ -322,6 +324,7 @@ public class AbyssalNomadEntity extends PathfinderMob {
                 setSitting(true);
                 level().broadcastEntityEvent(this, SIT);
                 this.setPersistenceRequired();
+                this.playSound(BeyondSoundEvents.ABYSSAL_NOMAD_REMEMBER.get(), 1, 0.9f + random.nextFloat()*0.2f);
             }
         }
     }
