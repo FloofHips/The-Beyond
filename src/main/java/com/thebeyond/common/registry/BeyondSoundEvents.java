@@ -102,6 +102,16 @@ public class BeyondSoundEvents {
     public static final DeferredHolder<SoundEvent, SoundEvent> ABYSSAL_NOMAD_REMEMBER = SOUND_EVENTS.register("entity.abyssal_nomad.remember", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> ABYSSAL_NOMAD_DECRYPT = SOUND_EVENTS.register("entity.abyssal_nomad.decrypt", SoundEvent::createVariableRangeEvent);
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> ENATIOUS_TOTEM_DEATH = SOUND_EVENTS.register("entity.enatious_totem.death", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ENATIOUS_TOTEM_HURT = SOUND_EVENTS.register("entity.enatious_totem.hurt", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ENATIOUS_TOTEM_TELEPORT = SOUND_EVENTS.register("entity.enatious_totem.teleport", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ENATIOUS_TOTEM_LEAVE = SOUND_EVENTS.register("entity.enatious_totem.leave", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ENATIOUS_TOTEM_READY = SOUND_EVENTS.register("entity.enatious_totem.ready", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ROOTS_CREAKING = SOUND_EVENTS.register("entity.enatious_totem.roots_creaking", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ENATIOUS_TOTEM_SHOCKWAVE = SOUND_EVENTS.register("entity.enatious_totem.shockwave", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ENATIOUS_TOTEM_SPAWN = SOUND_EVENTS.register("entity.enatious_totem.spawn", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ENATIOUS_TOTEM_SHOOT = SOUND_EVENTS.register("entity.enatious_totem.shoot", SoundEvent::createVariableRangeEvent);
+
     public static final DeferredHolder<SoundEvent, SoundEvent> LANTERN_HURT = SOUND_EVENTS.register("entity.lantern.hurt", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> LANTERN_IDLE = SOUND_EVENTS.register("entity.lantern.idle", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> LANTERN_SHED = SOUND_EVENTS.register("entity.lantern.shed", SoundEvent::createVariableRangeEvent);

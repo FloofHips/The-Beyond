@@ -47,9 +47,8 @@ public class TeleportUtils {
                 if (entityLiving.randomTeleport(event.getTargetX(), event.getTargetY(), event.getTargetZ(), true)) {
                     level.gameEvent(GameEvent.TELEPORT, vec3, GameEvent.Context.of(entityLiving));
 
-                    SoundEvent soundevent = entityLiving instanceof AbyssalNomadEntity ? BeyondSoundEvents.ABYSSAL_NOMAD_TELEPORT.get() : SoundEvents.CHORUS_FRUIT_TELEPORT;
+                    SoundEvent soundevent = entityLiving instanceof ITeleportingEntity entity ? entity.getTeleportingSound() : SoundEvents.CHORUS_FRUIT_TELEPORT;
                     SoundSource soundsource = entityLiving.getSoundSource();
-
 
                     level.playSound((Player)null, entityLiving.getX(), entityLiving.getY(), entityLiving.getZ(), soundevent, soundsource);
                     entityLiving.resetFallDistance();

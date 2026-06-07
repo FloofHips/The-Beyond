@@ -3,6 +3,7 @@ package com.thebeyond.common.entity;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.util.ColorUtils;
+import com.thebeyond.util.ITeleportingEntity;
 import com.thebeyond.util.TeleportUtils;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
@@ -12,6 +13,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
@@ -32,11 +34,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumSet;
 import java.util.List;
 
-public class EnatiousTotemEntity extends Mob implements Enemy {
+public class EnatiousTotemEntity extends Mob implements Enemy, ITeleportingEntity {
 
     private static final int MAX_COOLDOWN = 80;
     public final AnimationState spawnAnimationState = new AnimationState();
@@ -143,7 +146,7 @@ public class EnatiousTotemEntity extends Mob implements Enemy {
     }
 
     public void spawn() {
-        this.playSound(SoundEvents.WARDEN_DIG, 2.0F, (this.random.nextFloat()) + 1F);
+        this.playSound(BeyondSoundEvents.ENATIOUS_TOTEM_SPAWN.get(), 1.5F, 0.8f + this.random.nextFloat()*0.3f);
         this.level().broadcastEntityEvent(this, SPAWN);
     }
 
@@ -186,7 +189,7 @@ public class EnatiousTotemEntity extends Mob implements Enemy {
                 ((ServerLevel)this.level()).sendParticles(ColorUtils.dustOptions, this.getX(), this.getY(0.6666666666666666), this.getZ(), 25, (double)(this.getBbWidth() / 4.0F), (double)(this.getBbHeight() / 4.0F), (double)(this.getBbWidth() / 4.0F), 0.01);
                 discard();
             }
-            this.playSound(SoundEvents.WOOD_BREAK, 2.0F, (this.random.nextFloat()) * 2F);
+            this.playSound(BeyondSoundEvents.ENATIOUS_TOTEM_LEAVE.get(), 1.0F, 0.7f + (this.random.nextFloat()) * 0.5F);
         }
 
         if (this.level() instanceof ServerLevel serverLevel) {
@@ -204,7 +207,7 @@ public class EnatiousTotemEntity extends Mob implements Enemy {
         }
 
         if (getCooldown() < MAX_COOLDOWN / 2)
-            this.playSound(SoundEvents.WOOD_BREAK, 2.0F, (this.random.nextFloat()) * 2F);
+            this.playSound(BeyondSoundEvents.ROOTS_CREAKING.get(), 1.0F, (this.random.nextFloat()) * 2F);
 
         if (getCooldown() == MAX_COOLDOWN / 2) {
             AABB pushArea = getBoundingBox().inflate(5);
@@ -233,13 +236,12 @@ public class EnatiousTotemEntity extends Mob implements Enemy {
             }
         }
 
-        if (getCooldown() == MAX_COOLDOWN / 2){
-            this.playSound(SoundEvents.BREEZE_DEFLECT, 2.0F, (this.random.nextFloat() - this.random.nextFloat()) * 2F);
-            this.playSound(SoundEvents.FIRECHARGE_USE, 2.0F, (this.random.nextFloat()) * 2F);
+        if (getCooldown() == ((MAX_COOLDOWN / 2) - 20)){
+            this.playSound(BeyondSoundEvents.ENATIOUS_TOTEM_SHOCKWAVE.get(), 1.5F, 0.9f + this.random.nextFloat() * 0.2F);
         }
 
         if (getCooldown() == MAX_COOLDOWN - 1) {
-            this.playSound(SoundEvents.ELDER_GUARDIAN_CURSE, 2.0F, (this.random.nextFloat()) * 2F);
+            this.playSound(BeyondSoundEvents.ENATIOUS_TOTEM_READY.get(), 1.5F, 0.9f + this.random.nextFloat() * 0.2F);
             if (this.level() instanceof ServerLevel serverLevel) {
                 ((ServerLevel)this.level()).sendParticles(ColorUtils.dustOptions, this.getX(), this.getY(0.6666666666666666), this.getZ(), 10, (double)(this.getBbWidth() / 4.0F), (double)(this.getBbHeight() / 4.0F), (double)(this.getBbWidth() / 4.0F), 0.05);
             }
@@ -248,7 +250,6 @@ public class EnatiousTotemEntity extends Mob implements Enemy {
 
 
     private void shoot(LivingEntity target, int i) {
-        this.playSound(BeyondSoundEvents.END_STONE_BREAK.get(), 2.0F, (this.random.nextFloat()) * 2F);
         this.lookAt(target, 10,10);
 
         //top
@@ -275,8 +276,22 @@ public class EnatiousTotemEntity extends Mob implements Enemy {
             }
         }
 
-        this.playSound(SoundEvents.SHULKER_SHOOT, 2.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
         this.setDeltaMovement(0, 0.1, 0);
+    }
+
+    @Override
+    public SoundEvent getTeleportingSound() {
+        return BeyondSoundEvents.ENATIOUS_TOTEM_TELEPORT.get();
+    }
+
+    @Override
+    protected @Nullable SoundEvent getHurtSound(DamageSource damageSource) {
+        return BeyondSoundEvents.ENATIOUS_TOTEM_HURT.get();
+    }
+
+    @Override
+    protected @Nullable SoundEvent getDeathSound() {
+        return BeyondSoundEvents.ENATIOUS_TOTEM_DEATH.get();
     }
 
     class EnatiousTotemAttackGoal extends Goal {
@@ -308,7 +323,7 @@ public class EnatiousTotemEntity extends Mob implements Enemy {
         public void start() {
             super.start();
             this.mob.setCountdown(0);
-            this.mob.playSound(SoundEvents.SHULKER_SHOOT, 2.0F, (this.mob.random.nextFloat()) * 2);
+            this.mob.playSound(BeyondSoundEvents.ROOTS_CREAKING.get(), 1.0F, (this.mob.random.nextFloat()) * 2);
             this.mob.getLookControl().setLookAt(this.target, 30.0F, 30.0F);
         }
 
@@ -325,15 +340,15 @@ public class EnatiousTotemEntity extends Mob implements Enemy {
                 this.mob.level().broadcastEntityEvent(this.mob, SHOOT);
             }
             if (this.mob.getCountdown()==10 && this.target instanceof LivingEntity living1){
-                this.mob.playSound(SoundEvents.ITEM_BREAK, 2.0F, 0.5f);
+                this.mob.playSound(BeyondSoundEvents.ENATIOUS_TOTEM_SHOOT.get(), 2.0F, 0.8f);
                 this.mob.shoot(living1, 1);
             }
             if (this.mob.getCountdown()==15 && this.target instanceof LivingEntity living2){
-                this.mob.playSound(SoundEvents.ITEM_BREAK, 2.0F, 1);
+                this.mob.playSound(BeyondSoundEvents.ENATIOUS_TOTEM_SHOOT.get(), 2.0F, 1);
                 this.mob.shoot(living2, 2);
             }
             if (this.mob.getCountdown()==20 && this.target instanceof LivingEntity living3){
-                this.mob.playSound(SoundEvents.ITEM_BREAK, 2.0F, 2);
+                this.mob.playSound(BeyondSoundEvents.ENATIOUS_TOTEM_SHOOT.get(), 2.0F, 1.2f);
                 this.mob.shoot(living3, 3);
             }
         }
@@ -344,7 +359,7 @@ public class EnatiousTotemEntity extends Mob implements Enemy {
             this.mob.setCooldown(0);
             this.mob.level().broadcastEntityEvent(this.mob, RECHARGE);
             this.mob.setCountdown(0);
-            this.mob.playSound(SoundEvents.CONDUIT_DEACTIVATE, 2.0F, (this.mob.random.nextFloat()) * 2);
+            this.mob.playSound(BeyondSoundEvents.ENATIOUS_TOTEM_LEAVE.get(), 2.0F, 0.8f + (this.mob.random.nextFloat()) * 0.5f);
         }
     }
 }

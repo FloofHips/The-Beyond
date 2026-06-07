@@ -618,7 +618,7 @@
     "sounds": [
       "the_beyond:mob/abyssal_nomad/remember1",
       "the_beyond:mob/abyssal_nomad/remember2",
-      "the_beyond:mob/abyssal_nomad/remember2"
+      "the_beyond:mob/abyssal_nomad/remember3"
     ],
     "subtitle": "subtitles.entity.abyssal_nomad.remember"
   },
@@ -647,6 +647,67 @@
     "sounds": [
       "the_beyond:mob/abyssal_nomad/decrypt"
     ]
+  },
+  "entity.enatious_totem.death": {
+    "sounds": [
+      "the_beyond:mob/enatious_totem/death"
+    ],
+    "subtitle": "subtitles.entity.enatious_totem.death"
+  },
+  "entity.enatious_totem.hurt": {
+    "sounds": [
+      "the_beyond:mob/enatious_totem/hurt1",
+      "the_beyond:mob/enatious_totem/hurt2"
+    ],
+    "subtitle": "subtitles.entity.enatious_totem.hurt"
+  },
+  "entity.enatious_totem.leave": {
+    "sounds": [
+      "the_beyond:mob/enatious_totem/leave1",
+      "the_beyond:mob/enatious_totem/leave2",
+      "the_beyond:mob/enatious_totem/leave3"
+    ],
+    "subtitle": "subtitles.entity.enatious_totem.leave"
+  },
+  "entity.enatious_totem.ready": {
+    "sounds": [
+      "the_beyond:mob/enatious_totem/ready1",
+      "the_beyond:mob/enatious_totem/ready2"
+    ],
+    "subtitle": "subtitles.entity.enatious_totem.ready"
+  },
+  "entity.enatious_totem.roots_creaking": {
+    "sounds": [
+      "the_beyond:mob/enatious_totem/roots_creaking"
+    ],
+    "subtitle": "subtitles.entity.enatious_totem.roots_creaking"
+  },
+  "entity.enatious_totem.shockwave": {
+    "sounds": [
+      "the_beyond:mob/enatious_totem/shockwave"
+    ],
+    "subtitle": "subtitles.entity.enatious_totem.shockwave"
+  },
+  "entity.enatious_totem.shoot": {
+    "sounds": [
+      "the_beyond:mob/enatious_totem/shoot1",
+      "the_beyond:mob/enatious_totem/shoot2",
+      "the_beyond:mob/enatious_totem/shoot3"
+    ],
+    "subtitle": "subtitles.entity.enatious_totem.shoot"
+  },
+  "entity.enatious_totem.spawn": {
+    "sounds": [
+      "the_beyond:mob/enatious_totem/spawn"
+    ],
+    "subtitle": "subtitles.entity.enatious_totem.spawn"
+  },
+  "entity.enatious_totem.teleport": {
+    "sounds": [
+      "the_beyond:mob/enatious_totem/teleport1",
+      "the_beyond:mob/enatious_totem/teleport2"
+    ],
+    "subtitle": "subtitles.entity.enatious_totem.teleport"
   },
   "entity.lantern.hurt": {
     "sounds": [

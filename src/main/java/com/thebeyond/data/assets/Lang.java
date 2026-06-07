@@ -120,6 +120,17 @@ public class Lang extends LanguageProvider {
         add("subtitles.entity.abyssal_nomad.teleport", "Abyssal Nomad teleports");
         add("subtitles.entity.abyssal_nomad.thank", "Abyssal Nomad is thankful");
 
+        add("subtitles.entity.enatious_totem.death", "Enatious Totem dies");
+        add("subtitles.entity.enatious_totem.hurt", "Enatious Totem hurts");
+        add("subtitles.entity.enatious_totem.leave", "Enatious Totem retreats");
+        add("subtitles.entity.enatious_totem.ready", "Enatious Totem readies up");
+        add("subtitles.entity.enatious_totem.roots_creaking", "Roots creak ominously");
+        add("subtitles.entity.enatious_totem.shockwave", "Enatious Totem pushes");
+        add("subtitles.entity.enatious_totem.shoot", "Enatious Totem shoots");
+        add("subtitles.entity.enatious_totem.spawn", "Enatious Totem emerges");
+        add("subtitles.entity.enatious_totem.teleport", "Enatious Totem teleports");
+
+
         add("subtitles.entity.lantern.hurt", "Lantern hurts");
         add("subtitles.entity.lantern.idle", "Wind blows quietly");
         add("subtitles.entity.lantern.teleport", "Lantern teleports");

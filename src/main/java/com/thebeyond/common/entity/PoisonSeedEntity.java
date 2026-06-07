@@ -71,7 +71,7 @@ public class PoisonSeedEntity extends AbstractSeedEntity {
     }
 
     public void SpawnCloud() {
-        this.playSound(SoundEvents.ALLAY_HURT, 2.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+        //this.playSound(SoundEvents.ALLAY_HURT, 2.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
         AreaEffectCloud areaeffectcloud = new AreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ());
         areaeffectcloud.addEffect(new MobEffectInstance(MobEffects.POISON, 300));
 

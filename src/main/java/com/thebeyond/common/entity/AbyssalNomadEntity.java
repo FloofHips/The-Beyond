@@ -5,6 +5,7 @@ import com.thebeyond.common.entity.util.SlowRotMoveControl;
 import com.thebeyond.common.item.components.Components;
 import com.thebeyond.common.registry.*;
 import com.thebeyond.api.worldgen.BeyondTerrainState;
+import com.thebeyond.util.ITeleportingEntity;
 import net.minecraft.server.level.ServerPlayer;
 import com.thebeyond.util.AOEManager;
 import com.thebeyond.util.ColorUtils;
@@ -57,7 +58,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import java.util.EnumSet;
 import java.util.List;
 
-public class AbyssalNomadEntity extends PathfinderMob {
+public class AbyssalNomadEntity extends PathfinderMob implements ITeleportingEntity {
 
     private static final byte SIT = 67;
     private static final byte SIT_DOWN = 68;
@@ -213,6 +214,11 @@ public class AbyssalNomadEntity extends PathfinderMob {
     @Override
     protected @Nullable SoundEvent getAmbientSound() {
         return BeyondSoundEvents.ABYSSAL_NOMAD_IDLE.get();
+    }
+
+    @Override
+    public SoundEvent getTeleportingSound() {
+        return BeyondSoundEvents.ABYSSAL_NOMAD_TELEPORT.get();
     }
 
     protected void registerGoals() {
@@ -397,6 +403,7 @@ public class AbyssalNomadEntity extends PathfinderMob {
     public boolean isPushable() {
         return false;
     }
+
 
     class NomadBodyRotationControl extends BodyRotationControl {
         public NomadBodyRotationControl(AbyssalNomadEntity nomad) {
