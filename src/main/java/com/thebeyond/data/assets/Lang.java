@@ -130,6 +130,13 @@ public class Lang extends LanguageProvider {
         add("subtitles.entity.enatious_totem.spawn", "Enatious Totem emerges");
         add("subtitles.entity.enatious_totem.teleport", "Enatious Totem teleports");
 
+        add("subtitles.entity.seed.knockback_burst", "Knockback seed bursts");
+        add("subtitles.entity.seed.poison_bounce", "Poison seed skips");
+        add("subtitles.entity.seed.poison_land", "Poison seed bursts");
+        add("subtitles.entity.seed.unstable_burst", "Unstable seed bursts");
+        add("subtitles.entity.seed.unstable_fail", "Unstable seed wastes away");
+        add("subtitles.entity.seed.unstable_fly", "Unstable seed twirls");
+
 
         add("subtitles.entity.lantern.hurt", "Lantern hurts");
         add("subtitles.entity.lantern.idle", "Wind blows quietly");

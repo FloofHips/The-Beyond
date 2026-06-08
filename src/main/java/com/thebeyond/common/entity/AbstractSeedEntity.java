@@ -118,14 +118,14 @@ public abstract class AbstractSeedEntity extends Projectile {
     @Override
     protected void onHitBlock(BlockHitResult result) {
         super.onHitBlock(result);
-        this.playSound(SoundEvents.SHROOMLIGHT_BREAK, 2.0F, (this.random.nextFloat()) * 0.2F + 1.0F);
+        //this.playSound(SoundEvents.SHROOMLIGHT_BREAK, 2.0F, (this.random.nextFloat()) * 0.2F + 1.0F);
         discard();
     }
 
     @Override
     protected void onHitEntity(EntityHitResult result) {
         super.onHitEntity(result);
-        this.playSound(SoundEvents.SHROOMLIGHT_BREAK, 2.0F, (this.random.nextFloat()) * 0.2F + 1.0F);
+        //this.playSound(SoundEvents.SHROOMLIGHT_BREAK, 2.0F, (this.random.nextFloat()) * 0.2F + 1.0F);
         discard();
     }
 }

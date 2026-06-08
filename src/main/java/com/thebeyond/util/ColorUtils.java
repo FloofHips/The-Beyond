@@ -32,6 +32,7 @@ public class ColorUtils {
             new Vector3f(0.85f, 0.95f, 0.85f),
             1.5f
     );
+
     public static SmokeColorTransitionOptions poisonOptions = new SmokeColorTransitionOptions(
             new Vector3f(0.2f, 1.0f, 0.3f),
             new Vector3f(0.8f, 1.0f, 0.3f),

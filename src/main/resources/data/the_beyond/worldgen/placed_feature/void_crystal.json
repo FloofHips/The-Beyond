@@ -1,9 +1,9 @@
 {
-    "feature": "the_beyond:ceiling_void_crystal",
+    "feature": "the_beyond:void_crystal",
     "placement": [
         {
             "type": "minecraft:count_on_every_layer",
-            "count": 40
+            "count": 256
         },
         {
             "type": "minecraft:biome"
@@ -13,14 +13,58 @@
             "direction_of_search": "down",
             "max_steps": 1,
             "target_condition": {
-                "type": "minecraft:matching_blocks",
+                "type": "minecraft:has_sturdy_face",
                 "offset": [
                     0,
                     -1,
                     0
                 ],
-                "blocks": [
-                    "the_beyond:gellid_void_block"
+                "direction": "down"
+            }
+        },
+        {
+            "type": "minecraft:environment_scan",
+            "direction_of_search": "down",
+            "max_steps": 1,
+            "target_condition": {
+                "type": "minecraft:any_of",
+                "predicates": [
+                    {
+                        "type": "minecraft:matching_blocks",
+                        "offset": [
+                            -1,
+                            -1,
+                            0
+                        ],
+                        "blocks": "the_beyond:gellid_void_block"
+                    },
+                    {
+                        "type": "minecraft:matching_blocks",
+                        "offset": [
+                            0,
+                            -1,
+                            -1
+                        ],
+                        "blocks": "the_beyond:gellid_void_block"
+                    },
+                    {
+                        "type": "minecraft:matching_blocks",
+                        "offset": [
+                            1,
+                            -1,
+                            0
+                        ],
+                        "blocks": "the_beyond:gellid_void_block"
+                    },
+                    {
+                        "type": "minecraft:matching_blocks",
+                        "offset": [
+                            1,
+                            -1,
+                            0
+                        ],
+                        "blocks": "the_beyond:gellid_void_block"
+                    }
                 ]
             }
         }

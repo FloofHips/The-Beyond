@@ -112,6 +112,14 @@ public class BeyondSoundEvents {
     public static final DeferredHolder<SoundEvent, SoundEvent> ENATIOUS_TOTEM_SPAWN = SOUND_EVENTS.register("entity.enatious_totem.spawn", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> ENATIOUS_TOTEM_SHOOT = SOUND_EVENTS.register("entity.enatious_totem.shoot", SoundEvent::createVariableRangeEvent);
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> SEED_KNOCKBACK_BURST = SOUND_EVENTS.register("entity.seed.knockback_burst", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> SEED_POISON_BOUNCE = SOUND_EVENTS.register("entity.seed.poison_bounce", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> SEED_POISON_LAND = SOUND_EVENTS.register("entity.seed.poison_land", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> SEED_UNSTABLE_BURST = SOUND_EVENTS.register("entity.seed.unstable_burst", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> SEED_UNSTABLE_FAIL = SOUND_EVENTS.register("entity.seed.unstable_fail", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> SEED_UNSTABLE_FLY = SOUND_EVENTS.register("entity.seed.unstable_fly", SoundEvent::createVariableRangeEvent);
+
+
     public static final DeferredHolder<SoundEvent, SoundEvent> LANTERN_HURT = SOUND_EVENTS.register("entity.lantern.hurt", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> LANTERN_IDLE = SOUND_EVENTS.register("entity.lantern.idle", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> LANTERN_SHED = SOUND_EVENTS.register("entity.lantern.shed", SoundEvent::createVariableRangeEvent);

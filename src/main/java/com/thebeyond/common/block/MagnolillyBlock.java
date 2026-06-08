@@ -2,11 +2,15 @@ package com.thebeyond.common.block;
 
 import com.thebeyond.common.entity.RisingBlockEntity;
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
@@ -26,6 +30,12 @@ public class MagnolillyBlock extends Block {
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return SHAPE;
+    }
+
+    @Override
+    public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
+        super.animateTick(state, level, pos, random);
+        if (level.getRandom().nextInt(20) == 0) level.playSound(null, pos,  BeyondSoundEvents.ENDERGLOP_VIBRATE.get(), SoundSource.AMBIENT, level.random.nextFloat() * 2, 0.8f + level.random.nextFloat() * 0.5f);
     }
 
     protected boolean mayPlaceOn(BlockState state, BlockGetter level, BlockPos pos) {

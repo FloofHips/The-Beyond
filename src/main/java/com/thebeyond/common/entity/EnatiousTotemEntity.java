@@ -206,7 +206,7 @@ public class EnatiousTotemEntity extends Mob implements Enemy, ITeleportingEntit
             this.setYBodyRot(this.yBodyRotO);
         }
 
-        if (getCooldown() < MAX_COOLDOWN / 2)
+        if ((getCooldown() < MAX_COOLDOWN / 2) && tickCount % 5 == 0)
             this.playSound(BeyondSoundEvents.ROOTS_CREAKING.get(), 1.0F, (this.random.nextFloat()) * 2F);
 
         if (getCooldown() == MAX_COOLDOWN / 2) {
@@ -237,7 +237,7 @@ public class EnatiousTotemEntity extends Mob implements Enemy, ITeleportingEntit
         }
 
         if (getCooldown() == ((MAX_COOLDOWN / 2) - 20)){
-            this.playSound(BeyondSoundEvents.ENATIOUS_TOTEM_SHOCKWAVE.get(), 1.5F, 0.9f + this.random.nextFloat() * 0.2F);
+            this.playSound(BeyondSoundEvents.ENATIOUS_TOTEM_SHOCKWAVE.get(), 2.0F, 0.9f + this.random.nextFloat() * 0.2F);
         }
 
         if (getCooldown() == MAX_COOLDOWN - 1) {

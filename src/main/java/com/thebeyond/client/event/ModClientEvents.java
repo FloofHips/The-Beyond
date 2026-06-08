@@ -308,8 +308,7 @@ public class ModClientEvents {
         if (cameraEntity == null) return;
         // Gated by enableCustomFog clientside config — when disabled, the vanilla
         // fog for the End runs unchanged. Mirrors FogRendererMixin's gate.
-        if (cameraEntity.level().dimension() == Level.END
-                && BeyondConfig.ENABLE_CUSTOM_FOG.get()) {
+        if (cameraEntity.level().dimension() == Level.END && BeyondConfig.ENABLE_CUSTOM_FOG.get()) {
             event.setCanceled(true);
             event.setFogShape(FogShape.SPHERE);
 
@@ -321,7 +320,7 @@ public class ModClientEvents {
 
             float fogEnd = Math.max((y*2 + 30) * finalFog, 30 * finalFog);
             event.setFarPlaneDistance(fogEnd);
-            event.setNearPlaneDistance(15 * finalFog);
+            event.setNearPlaneDistance(Mth.lerp(bossFog,15 * finalFog,0));
        }
     }
 

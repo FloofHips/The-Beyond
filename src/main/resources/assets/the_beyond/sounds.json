@@ -678,7 +678,11 @@
   },
   "entity.enatious_totem.roots_creaking": {
     "sounds": [
-      "the_beyond:mob/enatious_totem/roots_creaking"
+      "the_beyond:mob/enatious_totem/roots_creaking1",
+      "the_beyond:mob/enatious_totem/roots_creaking2",
+      "the_beyond:mob/enatious_totem/roots_creaking3",
+      "the_beyond:mob/enatious_totem/roots_creaking4",
+      "the_beyond:mob/enatious_totem/roots_creaking5"
     ],
     "subtitle": "subtitles.entity.enatious_totem.roots_creaking"
   },
@@ -708,6 +712,49 @@
       "the_beyond:mob/enatious_totem/teleport2"
     ],
     "subtitle": "subtitles.entity.enatious_totem.teleport"
+  },
+  "entity.seed.knockback_burst": {
+    "sounds": [
+      "the_beyond:mob/seed/knockback_burst1",
+      "the_beyond:mob/seed/knockback_burst2"
+    ],
+    "subtitle": "subtitles.entity.seed.knockback_burst"
+  },
+  "entity.seed.poison_bounce": {
+    "sounds": [
+      "the_beyond:mob/seed/poison_bounce1",
+      "the_beyond:mob/seed/poison_bounce2",
+      "the_beyond:mob/seed/poison_bounce3"
+    ],
+    "subtitle": "subtitles.entity.seed.poison_bounce"
+  },
+  "entity.seed.poison_land": {
+    "sounds": [
+      "the_beyond:mob/seed/poison_land1",
+      "the_beyond:mob/seed/poison_land2",
+      "the_beyond:mob/seed/poison_land3"
+    ],
+    "subtitle": "subtitles.entity.seed.poison_land"
+  },
+  "entity.seed.unstable_burst": {
+    "sounds": [
+      "the_beyond:mob/seed/unstable_burst1",
+      "the_beyond:mob/seed/unstable_burst2"
+    ],
+    "subtitle": "subtitles.entity.seed.unstable_burst"
+  },
+  "entity.seed.unstable_fail": {
+    "sounds": [
+      "the_beyond:mob/seed/unstable_fail1",
+      "the_beyond:mob/seed/unstable_fail2"
+    ],
+    "subtitle": "subtitles.entity.seed.unstable_fail"
+  },
+  "entity.seed.unstable_fly": {
+    "sounds": [
+      "the_beyond:mob/seed/unstable_fly"
+    ],
+    "subtitle": "subtitles.entity.seed.unstable_fly"
   },
   "entity.lantern.hurt": {
     "sounds": [

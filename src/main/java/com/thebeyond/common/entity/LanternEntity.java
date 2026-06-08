@@ -218,13 +218,22 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
         if (isFlying()) {
             if (this.getY() > 190 && this.getY() < 200) {
                 navigation.stop();
-                float x = getSize() == 3 ? (((int)this.getX()/16)-1)*16 : (float) getX();
-                navigation.moveTo(x, 197f, this.getZ()-10, 0.7);
+
+                if (getSize() == 3) {
+                    float x = ((int)this.getBlockX()/8)*8;
+                    navigation.moveTo(x, 197f, this.getBlockZ() - 10, 0.7);
+                }
+
+                else navigation.moveTo(getX(), 197f, this.getZ()-10, 0.7);
             } else {
                 if (tickCount % 40 == 0) {
                     navigation.stop();
-                    float x = getSize() == 3 ? (((int)this.getX()/16)-1)*16 : (float) getX();
-                    navigation.moveTo(x, 197f, this.getZ()-10, 0.7);
+
+                    if (getSize() == 3) {
+                        navigation.moveTo(this.getBlockX(), 197f, this.getBlockZ() - 10, 0.7);
+                    }
+
+                    else navigation.moveTo(getX(), 197f, this.getZ()-10, 0.7);
                 }
             }
         }
