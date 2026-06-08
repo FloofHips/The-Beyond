@@ -75,7 +75,8 @@ public abstract class JigsawStructureMixin {
         if (context.chunkGenerator() instanceof BeyondEndChunkGenerator beg)
             beg.computeNoisesIfNotPresent(context.randomState());
 
-        // jump_platform: floats midpoint between pancakes (small footprint waypoint).
+        // jump_platform: outer waypoints float midpoint between pancakes. The central jump_platform_island uses
+        // a separate pool (no branch here) so it falls through to vanilla placement at its own start_height.
         if ("misc/jump_platform".equals(path)) {
             int centerX = chunkPos.getMinBlockX();
             int centerZ = chunkPos.getMinBlockZ();
