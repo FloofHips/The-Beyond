@@ -8,19 +8,10 @@ public class BeyondConfig {
     public static ModConfigSpec COMMON_CONFIG;
     public static ModConfigSpec CLIENT_CONFIG;
 
-    /**
-     * When true, Beyond overrides the End dimension's fog distances with its custom
-     * Y-dependent atmospheric fog. When false, vanilla End fog is used.
-     * Consumed by {@link com.thebeyond.mixin.client.FogRendererMixin} and {@code ModClientEvents}.
-     */
+    /** Override End fog with Beyond's Y-dependent atmospheric fog. */
     public static ModConfigSpec.BooleanValue ENABLE_CUSTOM_FOG;
 
-    /**
-     * Master toggle for progressive discovery: Farlands biomes, structures, items and
-     * creative-tab entries are hidden until the player reaches the corresponding region.
-     * When false, all content is visible regardless of progression.
-     * Consumed by {@link com.thebeyond.common.knowledge.BeyondKnowledge#gateEnabled()}.
-     */
+    /** Hide Farlands content until the player reaches each region; see {@link com.thebeyond.common.knowledge.BeyondKnowledge#gateEnabled()}. */
     public static ModConfigSpec.BooleanValue HIDE_UNDISCOVERED_CONTENT;
 
     /**

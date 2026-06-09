@@ -1,6 +1,7 @@
 package com.thebeyond.common.entity;
 
 import com.thebeyond.common.registry.BeyondItems;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
@@ -20,6 +21,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.Containers;
@@ -85,7 +87,7 @@ public class TotemOfRespiteEntity extends Entity {
         if (items.isEmpty()) this.spawnAtLocation(new ItemStack(BeyondItems.TOTEM_OF_RESPITE.get(), 1));
         else Containers.dropContents(this.level(), this.blockPosition(), items);
 
-        this.playSound(SoundEvents.ENDER_EYE_DEATH, 1.0F, 1.0F);
+        this.playSound(BeyondSoundEvents.RESPITE_TOTEM_SHATTER.get(), 1.0F, 1.0F);
 
         for(int i = 0; (float)i < 16.0F; ++i) {
             float f2 = this.random.nextFloat() * ((float)Math.PI * 2F);
@@ -119,13 +121,18 @@ public class TotemOfRespiteEntity extends Entity {
             explode();
         }
 
+        if (getLifeSpan() == 3595) this.level().playSound(null, this.blockPosition(), BeyondSoundEvents.RESPITE_TOTEM_ACTIVATE.get(), SoundSource.NEUTRAL, 0.3F, 1.0F);
+
         Vec3 vec3 = this.getDeltaMovement();
         double d0 = this.getX() + vec3.x;
         double d1 = this.getY() + vec3.y;
         double d2 = this.getZ() + vec3.z;
 
-        if (level().isClientSide)
+        if (level().isClientSide) {
             level().addParticle(ParticleTypes.PORTAL, d0, d1 + (this.random.nextFloat() - 0.5) * 0.2, d2, this.random.nextFloat() - 0.5, this.random.nextFloat() - 0.6, this.random.nextFloat() - 0.5);
+        }
+
+        if (this.tickCount % (100 + random.nextInt(100)) == 0) this.level().playSound(null, this.blockPosition(), BeyondSoundEvents.RESPITE_TOTEM_FLOAT.get(), SoundSource.NEUTRAL, 0.5F, 1.0F);
 
         if (this.isInWater()) {
             for(int i = 0; i < 4; ++i) {

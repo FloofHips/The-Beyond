@@ -159,10 +159,16 @@ public class VoronoiNoise {
         for (int zCur = zInt - 2; zCur <= zInt + 2; zCur++) {
             for (int xCur = xInt - 2; xCur <= xInt + 2; xCur++) {
                 long cellSeed = (long)xCur * 1619L + (long)zCur * 6971L + this.seed;
-                Random cellRandom = new Random(cellSeed);
+                // Inlined Random(cellSeed).nextLong() — identical output, no allocation.
+                long s = (cellSeed ^ 0x5DEECE66DL) & 0xFFFFFFFFFFFFL;
+                s = (s * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFFL;
+                int h = (int)(s >>> 16);
+                s = (s * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFFL;
+                int l = (int)(s >>> 16);
+                long seed1 = ((long) h << 32) + l;
 
                 double xPos = xCur + valueNoise2D(xCur, zCur, cellSeed);
-                double zPos = zCur + valueNoise2D(xCur, zCur, cellRandom.nextLong());
+                double zPos = zCur + valueNoise2D(xCur, zCur, seed1);
 
                 double xDist = xPos - x;
                 double zDist = zPos - z;
@@ -210,11 +216,22 @@ public class VoronoiNoise {
                             + (long)zCur * 6971L
                             + this.seed;
 
-                    Random cellRandom = new Random(cellSeed);
+                    // Inlined Random(cellSeed).nextLong() × 2 — identical output, no allocation.
+                    long s = (cellSeed ^ 0x5DEECE66DL) & 0xFFFFFFFFFFFFL;
+                    s = (s * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFFL;
+                    int h1 = (int)(s >>> 16);
+                    s = (s * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFFL;
+                    int l1 = (int)(s >>> 16);
+                    long seed1 = ((long) h1 << 32) + l1;
+                    s = (s * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFFL;
+                    int h2 = (int)(s >>> 16);
+                    s = (s * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFFL;
+                    int l2 = (int)(s >>> 16);
+                    long seed2 = ((long) h2 << 32) + l2;
 
                     double xPos = xCur + valueNoise3D(xCur, yCur, zCur, cellSeed);
-                    double yPos = yCur + valueNoise3D(xCur, yCur, zCur, cellRandom.nextLong());
-                    double zPos = zCur + valueNoise3D(xCur, yCur, zCur, cellRandom.nextLong());
+                    double yPos = yCur + valueNoise3D(xCur, yCur, zCur, seed1);
+                    double zPos = zCur + valueNoise3D(xCur, yCur, zCur, seed2);
 
                     double xDist = xPos - x;
                     double yDist = yPos - y;

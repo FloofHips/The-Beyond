@@ -2,6 +2,7 @@ package com.thebeyond.common.entity;
 
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondParticleTypes;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -185,7 +186,7 @@ public class EnderglopEntity extends Mob implements Enemy {
     }
 
     public static AttributeSupplier.Builder createAttributes() {
-        return Monster.createMonsterAttributes().add(Attributes.MOVEMENT_SPEED, 0.20000000298023224);
+        return Monster.createMonsterAttributes().add(Attributes.MOVEMENT_SPEED, 0.20000000298023224).add(Attributes.MAX_HEALTH, 10);
     }
 
     public void jumpFromGround() {
@@ -205,15 +206,15 @@ public class EnderglopEntity extends Mob implements Enemy {
     }
 
     protected SoundEvent getHurtSound(DamageSource damageSource) {
-        return this.isTiny() ? SoundEvents.MAGMA_CUBE_HURT_SMALL : (this.getIsArmored() ? SoundEvents.SHIELD_BLOCK : SoundEvents.MAGMA_CUBE_HURT);
+        return this.isTiny() ? BeyondSoundEvents.ENDERGLOP_HURT_SMALL.get() : BeyondSoundEvents.ENDERGLOP_HURT.get();
     }
 
     protected SoundEvent getDeathSound() {
-        return this.isTiny() ? SoundEvents.MAGMA_CUBE_DEATH_SMALL : SoundEvents.MAGMA_CUBE_DEATH;
+        return this.isTiny() ? BeyondSoundEvents.ENDERGLOP_DEATH_SMALL.get() : BeyondSoundEvents.ENDERGLOP_DEATH.get();
     }
 
     protected SoundEvent getSquishSound() {
-        return this.isTiny() ? SoundEvents.MAGMA_CUBE_SQUISH_SMALL : (this.getIsArmored() ? SoundEvents.NETHERITE_BLOCK_BREAK : SoundEvents.MAGMA_CUBE_SQUISH);
+        return this.isTiny() ? BeyondSoundEvents.ENDERGLOP_SQUISH_SMALL.get() : BeyondSoundEvents.ENDERGLOP_SQUISH.get();
     }
 
     @Override
@@ -222,7 +223,7 @@ public class EnderglopEntity extends Mob implements Enemy {
     }
 
     protected SoundEvent getJumpSound() {
-        return SoundEvents.MAGMA_CUBE_JUMP;
+        return BeyondSoundEvents.ENDERGLOP_JUMP.get();
     }
 
     private boolean canForm() {
@@ -247,7 +248,7 @@ public class EnderglopEntity extends Mob implements Enemy {
                         if (level() instanceof ServerLevel serverLevel) {
                             serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.PLATE_BLOCK.get().defaultBlockState()), this.getX(), this.getY(), this.getZ(), 30, 1.0F, 1.0F, 1.0F, 0.2F);
                         }
-                        this.level().playSound(null, this.blockPosition(), SoundEvents.SHIELD_BREAK, SoundSource.HOSTILE, 1.0F, 1.0F);
+                        this.level().playSound(null, this.blockPosition(), BeyondSoundEvents.ENDERGLOP_ARMOR_BREAK.get(), SoundSource.HOSTILE, 1.0F, 1.0F);
                         setIsArmored(false);
                     }
                     if (level() instanceof ServerLevel serverLevel) {
@@ -256,7 +257,7 @@ public class EnderglopEntity extends Mob implements Enemy {
                     return super.hurt(source, amount);
 
                 } else if (Math.abs(yawDiff) < 60) {
-                    this.level().playSound(null, this.blockPosition(), SoundEvents.IRON_GOLEM_HURT, SoundSource.HOSTILE, 1.0F, 1.0F);
+                    this.level().playSound(null, this.blockPosition(), BeyondSoundEvents.ENDERGLOP_ARMOR_HURT.get(), SoundSource.HOSTILE, 1.0F, 0.7F + this.random.nextFloat());
                     if (amount > 3) {
                         for(int i = 0; i < 20; ++i) {
                             this.level().addParticle(ParticleTypes.CRIT, this.getRandomX(2.5), this.getRandomY(), this.getRandomZ(2.5), 0, 0, 0);
@@ -266,7 +267,7 @@ public class EnderglopEntity extends Mob implements Enemy {
                     }
                     return super.hurt(source, 0.1F);
                 } else {
-                    this.level().playSound(null, this.blockPosition(), SoundEvents.IRON_GOLEM_HURT, SoundSource.HOSTILE, 1.0F, 1.0F);
+                    this.level().playSound(null, this.blockPosition(), BeyondSoundEvents.ENDERGLOP_ARMOR_HURT.get(), SoundSource.HOSTILE, 1.0F, 0.7F + this.random.nextFloat());
                     return super.hurt(source, 0.5F);
                 }
             }
@@ -299,6 +300,7 @@ public class EnderglopEntity extends Mob implements Enemy {
             int pastChargeTicks = this.getChargingTicks();
             this.setChargingTicks(pastChargeTicks-1);
             this.setTarget(null);
+            this.playSound(BeyondSoundEvents.ENDERGLOP_VIBRATE.get(), 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
         }
 
         if (this.getIsCharging() && this.getChargingTicks()==0){
@@ -337,6 +339,7 @@ public class EnderglopEntity extends Mob implements Enemy {
                 }
 
                 this.playSound(this.getSquishSound(), this.getSoundVolume(), ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) / 0.8F);
+                if (this.getIsArmored()) this.playSound(BeyondSoundEvents.ENDERGLOP_VIBRATE.get(), 1, ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) / 0.8F);
                 this.targetSquish = -0.5F;
             } else if (!this.onGround() && this.wasOnGround) {
                 this.targetSquish = 1.0F;
@@ -348,7 +351,7 @@ public class EnderglopEntity extends Mob implements Enemy {
     }
 
     public void armorUp(){
-        this.playSound(SoundEvents.ARMOR_EQUIP_NETHERITE.value(), 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+        this.playSound(BeyondSoundEvents.ENDERGLOP_ARMOR.get(), 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
         this.setIsArmored(true);
     }
 

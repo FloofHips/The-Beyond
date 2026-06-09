@@ -1,6 +1,9 @@
 package com.thebeyond.common.entity;
 
+import com.thebeyond.client.particle.CircleColorTransitionOptions;
+import com.thebeyond.client.particle.SmokeColorTransitionOptions;
 import com.thebeyond.common.registry.BeyondEntityTypes;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.util.ColorUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
@@ -22,6 +25,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3f;
 
 import javax.annotation.Nullable;
 import java.util.Iterator;
@@ -67,11 +71,11 @@ public class PoisonSeedEntity extends AbstractSeedEntity {
         this.setJumps(getJumps() - 1);
         Vec3 targetPos = entity.position();
         SpawnCloud();
+        this.playSound(BeyondSoundEvents.SEED_POISON_BOUNCE.get(), 0.5F, 0.8F + this.random.nextFloat() * 0.3F);
         this.setDeltaMovement((targetPos.x - this.position().x)/20, 0.1 * getJumps(), (targetPos.z - this.position().z)/20);
     }
 
     public void SpawnCloud() {
-        this.playSound(SoundEvents.ALLAY_HURT, 2.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
         AreaEffectCloud areaeffectcloud = new AreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ());
         areaeffectcloud.addEffect(new MobEffectInstance(MobEffects.POISON, 300));
 
@@ -80,12 +84,16 @@ public class PoisonSeedEntity extends AbstractSeedEntity {
         areaeffectcloud.setWaitTime(10);
         areaeffectcloud.setDuration(areaeffectcloud.getDuration() / 2);
         areaeffectcloud.setRadiusPerTick(-areaeffectcloud.getRadius() / (float)areaeffectcloud.getDuration());
-        
+
         this.level().addFreshEntity(areaeffectcloud);
     }
     
     public void tick() {
         super.tick();
+        if (this.onGround()) {
+            explode(true);
+            discard();
+        };
         this.applyGravity();
         this.move(MoverType.SELF, this.getDeltaMovement());
 
@@ -96,28 +104,33 @@ public class PoisonSeedEntity extends AbstractSeedEntity {
 
     @Override
     protected ParticleOptions getParticleType() {
-        return ColorUtils.pixelPoisonOptions;
+        return new CircleColorTransitionOptions(new Vector3f(0.2f, 1.0f, 0.3f), new Vector3f(0.8f, 1.0f, 0.3f), 0.1f + level().random.nextFloat()*0.05f);
     }
 
     @Override
     protected void onHitEntity(EntityHitResult result) {
         super.onHitEntity(result);
 
-        if (level() instanceof ServerLevel serverLevel) {
-            serverLevel.sendParticles(ColorUtils.poisonOptions, this.getX() + 0.5, this.getY(), this.getZ() + 0.5, level().random.nextInt(10, 20), 0.02,0.2,0.02,0.04);
-        }
-
-        SpawnCloud();
+        explode(false);
     }
 
     @Override
     protected void onHitBlock(BlockHitResult result) {
         super.onHitBlock(result);
+        explode(true);
+    }
 
+    private void explode(boolean block) {
         if (level() instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(ColorUtils.poisonOptions, this.getX() + 0.5, this.getY(), this.getZ() + 0.5, level().random.nextInt(10, 20), 0.02,0.2,0.02,0.04);
+            if (block) serverLevel.sendParticles(new CircleColorTransitionOptions(
+                    new Vector3f(0.2f, 1.0f, 0.3f),
+                    new Vector3f(0.8f, 1.0f, 0.3f),
+                    1.0f
+            ), this.getX() + 0.5, this.getY(), this.getZ() + 0.5, 1, 0,0,0,0.04);
         }
 
+        this.playSound(BeyondSoundEvents.SEED_POISON_LAND.get(), 0.5F, 0.8F + this.random.nextFloat() * 0.3F);
         SpawnCloud();
     }
 }

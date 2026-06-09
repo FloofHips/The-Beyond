@@ -6,13 +6,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Fixes isThundering() in the End dimension.
- *
- * Vanilla checks dimensionType().hasSkyLight() which is false for the End,
- * causing isThundering() to always return false. This breaks Beyond entity
- * goals (lantern migration, bonfire splits) that depend on thunder.
- */
+/** Lets {@code isThundering} return true in the End — vanilla gates on hasSkyLight
+ *  (false here), breaking lantern migration / bonfire splits that depend on thunder. */
 @Mixin(Level.class)
 public class EndWeatherMixin {
 

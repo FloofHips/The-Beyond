@@ -29,21 +29,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.CompletableFuture;
 
-/**
- * {@code /beyond_noise_dump} — samples {@link BeyondEndChunkGenerator#getTerrainDensity}
- * on a grid and writes a PNG to {@code <world>/beyond_noise_dumps/} for diagnosing
- * stretching/streaking at large {@code |X|}. Permission level 2.
- *
- * <p>Syntax: {@code /beyond_noise_dump [vertical] (here|at <pos>) [<size> [<stride>]] [normal|no_warp|no_wrap]}.
- * Horizontal is XZ at fixed Y; {@code vertical} is XY at fixed Z (exposes {@code cyclicDensity}
- * Y-periodicity invisible in horizontal dumps). Defaults: size=200, stride=2.
- * Modes {@code no_warp}/{@code no_wrap} progressively neutralize warp then wrap to
- * isolate the contribution of each transform.
- *
- * <p>Sampling and PNG write run via {@link CompletableFuture#runAsync}; the parameterized
- * {@code getTerrainDensity(x,y,z,params)} overload avoids swapping
- * {@link BeyondEndChunkGenerator#activeTerrainParams} (would race with chunk-gen workers).
- */
+/** Samples {@link BeyondEndChunkGenerator#getTerrainDensity} on a grid and writes a PNG;
+ *  flags toggle slice orientation and transform layers. Runs async via the parameterized
+ *  density overload to avoid racing chunk-gen workers. */
 @EventBusSubscriber(modid = TheBeyond.MODID)
 public final class BeyondNoiseDumpCommand {
 
@@ -61,13 +49,8 @@ public final class BeyondNoiseDumpCommand {
 
     private static final DateTimeFormatter TS = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
-    /**
-     * Sampling plane orientation. {@code HORIZONTAL_XZ} is the XZ slice at fixed Y
-     * (heightmap-style view); {@code VERTICAL_XY} is the XY slice at fixed Z (side
-     * view — required to observe {@code cyclicDensity}'s Y-periodic modulation and
-     * any divisor seams where {@code cycleHeight} crosses {@code y % cycleHeight}
-     * discontinuities, both invisible in a horizontal dump).
-     */
+    /** XZ slice at fixed Y (heightmap view) or XY slice at fixed Z (side view — needed to
+     *  see {@code cyclicDensity} Y-periodicity and seams). */
     private enum Plane {
         HORIZONTAL_XZ("xz"),
         VERTICAL_XY("xy");
@@ -240,17 +223,9 @@ public final class BeyondNoiseDumpCommand {
         return 1;
     }
 
-    /**
-     * Samples density on a {@code size × size} grid oriented by {@code plane}, emitting
-     * grayscale-density PNG with red tint on solid cells (matches horizontal dump palette).
-     *
-     * <p>For {@link Plane#HORIZONTAL_XZ}: X runs across image columns, Z across rows (flipped
-     * so +Z points down — JourneyMap convention), Y is constant at {@code cy}. For
-     * {@link Plane#VERTICAL_XY}: X across columns, Y across rows (flipped so +Y points up —
-     * world-space convention), Z is constant at {@code cz}. Sample Y may fall outside the
-     * dim build height — {@code edgeGradient} inside {@code getTerrainDensity} clamps
-     * density near the floor/ceiling so rows far above/below the world appear black.
-     */
+    /** Samples density on a {@code size × size} grid oriented by {@code plane} and writes a
+     *  grayscale-with-red-solid-tint PNG. Horizontal flips +Z down (JourneyMap convention);
+     *  vertical flips +Y up. Samples outside dim height appear black via {@code edgeGradient}. */
     private static Result sampleAndWrite(int cx, int cy, int cz, int size, int stride,
                                          BeyondTerrainParams params, File outFile,
                                          Plane plane) throws IOException {

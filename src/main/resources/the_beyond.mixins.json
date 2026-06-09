@@ -9,7 +9,6 @@
     "BlockBehaviourMixin",
     "FallingBlockEntityAccessor",
     "PistonStructureResolverMixin",
-    "NoiseGeneratorSettingsAccessor",
     "RandomStateMixin",
     "RefugeHungerMixin",
     "BiomeSourceSanitizerMixin",
@@ -17,17 +16,20 @@
     "MultiNoiseBiomeSourceMixin",
     "EndWeatherMixin",
     "EndWeatherSyncMixin",
-    "TheEndBiomeSourceMixin",
-    "MultiPackResourceManagerMixin",
-    "EndPodiumFeatureMixin",
-    "WoverChunkGeneratorMixin",
-    "WoverSurfaceRuleUtilMixin",
+    "ServerLevelLightningSuppressMixin",
     "JigsawStructureMixin",
+    "JigsawPlacementMixin",
     "AuroraciteLayerProtectionMixin",
-    "AuroraciteLayerFillMixin"
+    "AuroraciteLayerFillMixin",
+    "HeightmapPlacementMultiSurfaceMixin",
+    "CountOnEveryLayerPlacementMixin",
+    "EnvironmentScanPlacementMixin",
+    "BeehiveDecoratorEmptyLogsMixin",
+    "CocoaDecoratorEmptyLogsMixin"
   ],
   "client": [
-    "client.BossHealthOverlayAccessor"
+    "client.BossHealthOverlayAccessor",
+    "client.LevelRendererWeatherSuppressMixin"
   ],
   "server": [],
   "injectors": {

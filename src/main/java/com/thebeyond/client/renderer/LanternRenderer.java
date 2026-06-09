@@ -94,10 +94,6 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
         // Magenta/pink tint as finalAlpha drops — the ghostly fade aesthetic.
         int color = (finalAlpha << 24) | (0xFF << 16) | (finalAlpha << 8) | 0xFF;
 
-        // Lantern is an unlit ethereal entity — FULL_BRIGHT + standard
-        // entity_translucent shader gives identical output in vanilla and Iris.
-        int lightLevel = LightTexture.FULL_BRIGHT;
-
         // Split-pass: body NO_CULL (volumetric translucent — back face then front),
         // fins CULL (zero-thickness quads z-fight without culling). Selection is
         // driven by each model's getRoot()/getMainPart().
@@ -111,9 +107,9 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
         RenderType leviathanRenderType = ShaderCompatLib.isShaderPackActive()
                 ? BeyondRenderTypes.entityTranslucentNoCulled(textureLocation)
                 : BeyondRenderTypes.entityTranslucentNoCulledUnlit(textureLocation);
-        RenderType smallRenderType = BeyondRenderTypes.entityTranslucentCulled(textureLocation);
+        RenderType smallRenderType = BeyondRenderTypes.unlitTranslucent(textureLocation);
 
-        model.renderToBuffer(poseStack, buffer.getBuffer(entity.getSize()==3 ? leviathanRenderType : smallRenderType), lightLevel, OverlayTexture.NO_OVERLAY, color);
+        model.renderToBuffer(poseStack, buffer.getBuffer(entity.getSize()==3 ? leviathanRenderType : smallRenderType), packedLight, OverlayTexture.NO_OVERLAY, color);
 
         // Additive bloom halo for shader-mod setups; emissive render type lets
         // the pack apply bloom on top of the base pass. Size gates CULL to

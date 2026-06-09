@@ -5,6 +5,8 @@ import com.thebeyond.common.worldgen.features.AuroraciteLayerDTFeature;
 import com.thebeyond.common.worldgen.features.AuroraciteLayerFeature;
 import com.thebeyond.common.worldgen.features.EnadrakeVillageFeature;
 import com.thebeyond.common.worldgen.features.ObirootFeature;
+import com.thebeyond.common.worldgen.features.compat.AuroraCrystalClusterFeature;
+import com.thebeyond.common.worldgen.features.compat.PancakeLakeFeature;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -20,5 +22,7 @@ public class BeyondFeatures {
     public static final DeferredHolder<Feature<?>, EnadrakeVillageFeature> ENADRAKE_VILLAGE = FEATURES.register("enadrake_village", () -> new EnadrakeVillageFeature(NoneFeatureConfiguration.CODEC));
     public static final DeferredHolder<Feature<?>, AuroraciteLayerFeature> AURORACITE_LAYER = FEATURES.register("auroracite_layer", () -> new AuroraciteLayerFeature(NoneFeatureConfiguration.CODEC));
     public static final DeferredHolder<Feature<?>, AuroraciteLayerDTFeature> AURORACITE_LAYER_DT = FEATURES.register("auroracite_layer_dt", () -> new AuroraciteLayerDTFeature(NoneFeatureConfiguration.CODEC));
+    public static final DeferredHolder<Feature<?>, PancakeLakeFeature> PANCAKE_LAKE = FEATURES.register("compat/pancake_lake", () -> new PancakeLakeFeature(NoneFeatureConfiguration.CODEC));
+    public static final DeferredHolder<Feature<?>, AuroraCrystalClusterFeature> AURORA_CRYSTAL_CLUSTER = FEATURES.register("compat/aurora_crystal_cluster", () -> new AuroraCrystalClusterFeature(NoneFeatureConfiguration.CODEC));
 
 }

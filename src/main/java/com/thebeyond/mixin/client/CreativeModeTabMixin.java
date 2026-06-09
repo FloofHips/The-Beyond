@@ -13,14 +13,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.ArrayList;
 import java.util.Collection;
 
-/**
- * Filters hidden items out of creative inventory tab display. Wired to per-player
- * {@link HiddenContentFilter}; search-bar tab is skipped (handled by
- * {@link CreativeModeInventoryScreenMixin}). {@code require = 0} so a target-signature
- * change silently skips rather than crashes mod load.
- *
- * <p>Adapted from Malum ({@code com.sammy.malum.mixin.client.CreativeModeTabMixin}).
- */
+/** Filters hidden items out of creative tab display via per-player
+ *  {@link HiddenContentFilter}. Search bar handled by {@link CreativeModeInventoryScreenMixin}. */
 @Mixin(CreativeModeTab.class)
 public class CreativeModeTabMixin {
 

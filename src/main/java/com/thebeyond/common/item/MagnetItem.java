@@ -1,10 +1,11 @@
 package com.thebeyond.common.item;
 
+import com.thebeyond.api.compat.BeyondCompatHooks;
+import com.thebeyond.client.particle.CircleColorTransitionOptions;
+import com.thebeyond.client.particle.CrosshairColorTransitionOptions;
 import com.thebeyond.common.item.components.Components;
-import com.thebeyond.common.registry.BeyondComponents;
-import com.thebeyond.common.registry.BeyondCriteriaTriggers;
-import com.thebeyond.common.registry.BeyondParticleTypes;
-import com.thebeyond.common.registry.BeyondTags;
+import com.thebeyond.common.registry.*;
+import com.thebeyond.util.ColorUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -38,6 +39,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.common.data.BlockTagsProvider;
+import org.joml.Vector3f;
 
 public class MagnetItem extends Item {
     public final double range;
@@ -73,7 +75,7 @@ public class MagnetItem extends Item {
                 if (state.is(BeyondTags.METAL_BLOCKS)) {
 
                     Vec3 playerPos = player.position();
-                    Vec3 blockCenter = Vec3.atCenterOf(pos);
+                    Vec3 blockCenter = BeyondCompatHooks.visibleOrCenter(level, pos);
                     Vec3 distance = blockCenter.subtract(playerPos);
                     Vec3 direction = distance.normalize();
 
@@ -81,25 +83,42 @@ public class MagnetItem extends Item {
                     player.hurtMarked = true;
 
                     if (level instanceof ServerLevel serverLevel) {
-                        serverLevel.sendParticles(BeyondParticleTypes.GLOP.get(), blockCenter.x, blockCenter.y, blockCenter.z, 20, 0.5, 0.5, 0.5, 0.1);
+                        serverLevel.sendParticles(new CircleColorTransitionOptions(
+                                new Vector3f(1, 1, 1),
+                                new Vector3f(0.7f, 0.0f, 0.9f),
+                                (float) (0.1*distance.length())
+                        ), blockCenter.x, blockCenter.y, blockCenter.z, 1, 0, 0, 0, 0);
+
+                        serverLevel.sendParticles(new CrosshairColorTransitionOptions(
+                                new Vector3f(0.7f, 0.0f, 0.9f),
+                                new Vector3f(0.1f, 0.1f, 0.3f),
+                                (float) (0.2*distance.length()/15f)
+                        ), blockCenter.x+0.001f, blockCenter.y, blockCenter.z+0.001f, 1, 0, 0, 0, 0);
 
                         for (int i = 0; i < 15; i++) {
                             double lerp = i / 15.0;
-                            Vec3 particlePos = playerPos.lerp(blockCenter, lerp);
-                            serverLevel.sendParticles(ParticleTypes.ELECTRIC_SPARK, particlePos.x, particlePos.y + (level.random.nextGaussian()), particlePos.z, 2, 0.1, 0.1, 0.1, 0);
+                            Vec3 particlePos = playerPos.add(0,1,0).lerp(blockCenter, lerp);
+                            level.playSound(null, player.getX(), player.getY(), player.getZ(), BeyondSoundEvents.PULL.get(), SoundSource.NEUTRAL, 1f, (float) i/7.5f);
+                            serverLevel.sendParticles(new CircleColorTransitionOptions(
+                                            new Vector3f(0.7f, 0.0f, 0.9f),
+                                            new Vector3f(1, 1, 1),
+                                            ((float) (lerp*lerp) + 0.05f) * 0.5f
+                                    ), particlePos.x, particlePos.y, particlePos.z, 1, 0, 0, 0, 0);
                         }
 
                         if (distance.length() > 31 && player instanceof ServerPlayer serverPlayer) BeyondCriteriaTriggers.FULL_POWER_MAGNET.get().trigger(serverPlayer);
                     }
 
+                    level.playSound(null, player.getX(), player.getY(), player.getZ(), BeyondSoundEvents.MAGNET_SUCCESS.get(), SoundSource.NEUTRAL, 1f, 0.5f + level.random.nextFloat());
+
                     player.awardStat(Stats.ITEM_USED.get(this));
                     player.getCooldowns().addCooldown(this, 10);
                     return InteractionResultHolder.success(itemstack);
                 } else {
-                    level.playLocalSound(player, SoundEvents.VAULT_DEACTIVATE, SoundSource.PLAYERS, 1, 1);
+                    level.playSound(null, player.getX(), player.getY(), player.getZ(), BeyondSoundEvents.MAGNET_FAIL.get(), SoundSource.PLAYERS, 1, 0.5f + level.random.nextFloat());
                 }
             } else {
-                level.playLocalSound(player, SoundEvents.VAULT_DEACTIVATE, SoundSource.PLAYERS, 1, 1);
+                level.playSound(null, player.getX(), player.getY(), player.getZ(), BeyondSoundEvents.MAGNET_FAIL.get(), SoundSource.PLAYERS, 1, 0.5f + level.random.nextFloat());
             }
         }
 
@@ -108,6 +127,9 @@ public class MagnetItem extends Item {
 
     @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
+
+        if (slotId > 8 && slotId != 40) return;
+
         double halfRange = range/2;
         level.getEntitiesOfClass(ItemEntity.class, new AABB(entity.position().subtract(halfRange, halfRange, halfRange), entity.position().add(halfRange, halfRange, halfRange)))
                 .forEach(itemEntity -> {

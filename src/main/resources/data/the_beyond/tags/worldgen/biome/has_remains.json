@@ -1,8 +1,9 @@
 {
   "values": [
-    "minecraft:end_highlands",
-    "minecraft:end_midlands",
-    "minecraft:end_barrens",
-    "the_beyond:peer_lands"
+    "#the_beyond:is_tainted"
+  ],
+  "remove": [
+    "the_beyond:the_paths",
+    "#the_beyond:is_farlands"
   ]
 }

@@ -224,36 +224,37 @@ public class EnadrakeEntity extends PathfinderMob {
         ItemStack itemstack = player.getItemInHand(hand);
 
         if (!level().isClientSide) {
-            if (!this.getMainHandItem().isEmpty() && !itemstack.isEmpty()) {
-
-                ItemEntity itementity = new ItemEntity(this.level(), this.getX(), this.getEyeY(), this.getZ(), this.getMainHandItem());
-                itementity.setDeltaMovement(itementity.getDeltaMovement().add(0,0.2,0));
-                this.level().addFreshEntity(itementity);
-
-                this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(itemstack.getItem(), 1));
-                itemstack.consume(1, player);
-
-                if (player instanceof ServerPlayer serverPlayer) {
-                    BeyondCriteriaTriggers.GIFT_ENADRAKE.get().trigger(serverPlayer);
-                }
-
-                return InteractionResult.SUCCESS;
-            }
-
             if (itemstack.is(Items.BONE_MEAL)) {
                 itemstack.consume(1, player);
                 if(this.level() instanceof ServerLevel level)
                     this.growUp(level);
                 return InteractionResult.SUCCESS;
-            } else if (!itemstack.isEmpty()) {
-                ItemStack playerItem = new ItemStack(itemstack.getItem(), 1);
+            }
+
+            if (isHoldingItem()) {
+                ItemEntity itementity = new ItemEntity(this.level(), this.getX(), this.getEyeY(), this.getZ(), this.getMainHandItem());
+                itementity.setDeltaMovement(itementity.getDeltaMovement().add(0,0.2,0));
+                this.level().addFreshEntity(itementity);
+                playSound(BeyondSoundEvents.ROOTS_CREAKING.get());
+
+                if (level() instanceof ServerLevel serverLevel)
+                    serverLevel.sendParticles(ParticleTypes.ANGRY_VILLAGER, position().x, position().y+0.6, position().z, random.nextInt(1,3), 0.1, 0.2, 0.1, 0.01);
+
+                this.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                this.setHoldingItem(false);
+
+                return InteractionResult.SUCCESS;
+            } else {
+                if (itemstack.isEmpty()) return InteractionResult.FAIL;
+                this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(itemstack.getItem(), 1));
+                this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
                 itemstack.consume(1, player);
-                this.setItemInHand(InteractionHand.MAIN_HAND, playerItem);
+                playSound(BeyondSoundEvents.ROOTS_CREAKING.get());
+                this.setHoldingItem(true);
 
                 if (player instanceof ServerPlayer serverPlayer) {
                     BeyondCriteriaTriggers.GIFT_ENADRAKE.get().trigger(serverPlayer);
                 }
-
                 return InteractionResult.SUCCESS;
             }
         }
@@ -289,6 +290,7 @@ public class EnadrakeEntity extends PathfinderMob {
     protected void pickUpItem(ItemEntity itemEntity) {
         ItemStack itemstack = itemEntity.getItem();
         if (this.canHoldItem(itemstack)) {
+            if (tickCount % 20 != 0) return;
             this.onItemPickup(itemEntity);
             this.setItemSlot(EquipmentSlot.MAINHAND, itemstack.split(1));
             this.setGuaranteedDrop(EquipmentSlot.MAINHAND);

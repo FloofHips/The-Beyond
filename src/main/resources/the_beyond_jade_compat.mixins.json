@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "com.thebeyond.mixin.compat.jade",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "the_beyond.refmap.json",
+  "mixins": [
+    "JadeRayTracingMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

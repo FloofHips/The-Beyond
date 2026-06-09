@@ -2,6 +2,7 @@ package com.thebeyond.common.entity;
 
 import com.thebeyond.common.registry.BeyondEffects;
 import com.thebeyond.common.registry.BeyondEntityTypes;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.util.ColorUtils;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -69,7 +70,7 @@ public class KnockbackSeedEntity extends AbstractSeedEntity {
     }
     protected void explode() {
         this.level().explode(this, (DamageSource)null, new SimpleExplosionDamageCalculator(true, false, Optional.of(3F), BuiltInRegistries.BLOCK.getTag(BlockTags.BLOCKS_WIND_CHARGE_EXPLOSIONS).map(Function.identity()))
-                , this.getX(), this.getY(0.0625), this.getZ(), 2F, false, Level.ExplosionInteraction.TRIGGER, ParticleTypes.GUST_EMITTER_SMALL, ParticleTypes.GUST_EMITTER_LARGE, SoundEvents.WIND_CHARGE_BURST);
+                , this.getX(), this.getY(0.0625), this.getZ(), 2F, false, Level.ExplosionInteraction.TRIGGER, ParticleTypes.GUST_EMITTER_SMALL, ParticleTypes.GUST_EMITTER_LARGE, BeyondSoundEvents.SEED_KNOCKBACK_BURST);
     }
     public void setFuse(int life) {
         this.entityData.set(DATA_FUSE_ID, life);
@@ -117,19 +118,19 @@ public class KnockbackSeedEntity extends AbstractSeedEntity {
     @Override
     protected void onHitEntity(EntityHitResult result) {
         Entity source = result.getEntity();
-        this.level().playLocalSound(this, SoundEvents.ANVIL_FALL, SoundSource.HOSTILE, 2, 2);
+        //this.level().playLocalSound(this, SoundEvents.ANVIL_FALL, SoundSource.HOSTILE, 2, 2);
         this.setDeltaMovement(getDeltaMovement().add(0, 0.7, 0));
 
         if(source instanceof LivingEntity livingEntity){
             if(livingEntity.level().isClientSide){
-                livingEntity.level().playLocalSound(livingEntity, SoundEvents.BELL_RESONATE, SoundSource.HOSTILE, 2, 2);
+                //livingEntity.level().playLocalSound(livingEntity, SoundEvents.BELL_RESONATE, SoundSource.HOSTILE, 2, 2);
             }
             LivingEntity owner = getOwner() instanceof LivingEntity le ? le : null;
             DamageSource damagesource = this.damageSources().mobProjectile(this, owner);
             livingEntity.setDeltaMovement(getDeltaMovement().add(0, 0.5, 0).scale(-1));
             livingEntity.hurt(damagesource,1);
             livingEntity.hurtMarked = true;
-            //livingEntity.addEffect(new MobEffectInstance(BeyondEffects.DEAFENED, 200));
+            livingEntity.addEffect(new MobEffectInstance(BeyondEffects.DEAFENED, 200));
         }
     }
 }

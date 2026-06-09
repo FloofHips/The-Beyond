@@ -29,12 +29,8 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 public class AnchorLeggingsItem extends ModelArmorItem {
-    /**
-     * Tracks accumulated fall distance for creative-mode players.
-     * In creative, {@code ServerPlayer.causeFallDamage()} short-circuits before
-     * {@code LivingFallEvent} fires, so we compute fall distance manually from
-     * downward velocity each tick.
-     */
+    /** Accumulated fall distance for creative players: their {@code causeFallDamage}
+     *  short-circuits before {@code LivingFallEvent}, so we integrate velocity. */
     private static final Map<UUID, Float> creativeFallDistance = new HashMap<>();
 
     public AnchorLeggingsItem(Holder<ArmorMaterial> material, Type type, Properties properties, Supplier<MultipartArmorModel> modelSupplier) {
@@ -60,18 +56,16 @@ public class AnchorLeggingsItem extends ModelArmorItem {
             Holder<Enchantment> powerHolder = enchantmentRegistry.getHolderOrThrow(Enchantments.POWER);
             int powerLevel = EnchantmentHelper.getItemEnchantmentLevel(powerHolder, stack);
 
-            // Downward velocity boost only while airborne — on the ground, the constant
-            // push + hurtMarked causes the player to micro-fall every tick, making the
-            // client play landing sounds in a rapid loop.
+            // Downward boost only while airborne: on ground the constant push + hurtMarked
+            // micro-falls every tick, looping landing sounds.
             if (player.isShiftKeyDown() && !player.onGround()) {
                 player.stopFallFlying();
                 player.setDeltaMovement(player.getDeltaMovement().subtract(0, 0.08 * (1 + 0.5 * powerLevel), 0));
                 player.hurtMarked = true;
             }
 
-            // Creative-mode slam: ServerPlayer.causeFallDamage() returns immediately when
-            // abilities.mayfly is true, so LivingFallEvent never fires. Track fall distance
-            // manually from downward velocity and trigger slam on landing.
+            // Creative-mode slam: causeFallDamage() returns early when mayfly, so LivingFallEvent
+            // never fires. Track fall distance from downward velocity, trigger slam on landing.
             if (!level.isClientSide && player instanceof ServerPlayer serverPlayer
                     && player.getAbilities().mayfly) {
                 UUID uuid = player.getUUID();
@@ -109,7 +103,7 @@ public class AnchorLeggingsItem extends ModelArmorItem {
         AOEManager.knockback(serverLevel, player, player, powerLevel + 1);
     }
 
-    /** Called from {@link com.thebeyond.common.event.ServerWorldEvents} on server stop. */
+    /** Called from {@link com.thebeyond.common.event.BeyondCoreLifecycle} on server stop. */
     public static void clearCreativeTracking() {
         creativeFallDistance.clear();
     }

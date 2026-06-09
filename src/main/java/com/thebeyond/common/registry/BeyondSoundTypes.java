@@ -29,6 +29,46 @@ public class BeyondSoundTypes {
             BeyondSoundEvents.PLATE_BLOCK_FALL
     );
 
+    public static SoundType VOID_CRYSTAL = new DeferredSoundType(1.0F, 1.0F,
+            BeyondSoundEvents.VOID_CRYSTAL_BREAK,
+            BeyondSoundEvents.VOID_CRYSTAL_STEP,
+            BeyondSoundEvents.VOID_CRYSTAL_PLACE,
+            BeyondSoundEvents.VOID_CRYSTAL_HIT,
+            BeyondSoundEvents.VOID_CRYSTAL_FALL
+    );
+
+    public static SoundType AURORACITE = new DeferredSoundType(1.0F, 1.0F,
+            BeyondSoundEvents.AURORACITE_BREAK,
+            BeyondSoundEvents.AURORACITE_STEP,
+            BeyondSoundEvents.AURORACITE_PLACE,
+            BeyondSoundEvents.AURORACITE_HIT,
+            BeyondSoundEvents.AURORACITE_FALL
+    );
+
+    public static SoundType MEMOR = new DeferredSoundType(1.0F, 1.0F,
+            BeyondSoundEvents.MEMOR_BREAK,
+            BeyondSoundEvents.MEMOR_STEP,
+            BeyondSoundEvents.MEMOR_PLACE,
+            BeyondSoundEvents.MEMOR_HIT,
+            BeyondSoundEvents.MEMOR_FALL
+    );
+
+    public static SoundType BONFIRE = new DeferredSoundType(1.0F, 1.0F,
+            BeyondSoundEvents.BONFIRE_BREAK,
+            BeyondSoundEvents.BONFIRE_STEP,
+            BeyondSoundEvents.BONFIRE_PLACE,
+            BeyondSoundEvents.BONFIRE_HIT,
+            BeyondSoundEvents.BONFIRE_FALL
+    );
+
+    public static SoundType ECTOPLASM = new DeferredSoundType(1.0F, 1.0F,
+            BeyondSoundEvents.ECTOPLASM_BREAK,
+            BeyondSoundEvents.ECTOPLASM_STEP,
+            BeyondSoundEvents.ECTOPLASM_PLACE,
+            BeyondSoundEvents.ECTOPLASM_HIT,
+            BeyondSoundEvents.ECTOPLASM_FALL
+    );
+
     public static SoundType POLAR_ANTENNA = new DeferredSoundType(1.0F, 2F,
             BeyondSoundEvents.PLATE_BLOCK_BREAK,
             BeyondSoundEvents.PLATE_BLOCK_STEP,

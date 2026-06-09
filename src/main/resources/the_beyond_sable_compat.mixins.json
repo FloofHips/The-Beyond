@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "com.thebeyond.mixin.compat.sable",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "the_beyond.refmap.json",
+  "mixins": [
+    "SableEntityGetterLogThrottleMixin",
+    "SableVoxelNeighborhoodStateMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

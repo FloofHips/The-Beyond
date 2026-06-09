@@ -3,6 +3,7 @@ package com.thebeyond.data.assets;
 import com.thebeyond.TheBeyond;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.BlockItem;
@@ -94,6 +95,81 @@ public class Lang extends LanguageProvider {
 
         add("itemGroup.the_beyond", "The Beyond");
 
+        // Sounds
+        add("subtitles.block.void_crystal.shatter", "Crystal shatters");
+
+        add("subtitles.entity.enderglop.death", "Enderglop dies");
+        add("subtitles.entity.enderglop.death_small", "Enderdrop dies");
+        add("subtitles.entity.enderglop.hurt", "Enderglop hurts");
+        add("subtitles.entity.enderglop.hurt_small", "Enderdrop hurts");
+        add("subtitles.entity.enderglop.squish", "Enderglop squishes");
+        add("subtitles.entity.enderglop.squish_small", "Enderdrop squishes");
+        add("subtitles.entity.enderglop.armor", "Enderglop armors up");
+        add("subtitles.entity.enderglop.armor_hurt", "Enderglop's armor hurts");
+        add("subtitles.entity.enderglop.armor_break", "Enderglop's armor shatters");
+
+        add("subtitles.entity.abyssal_nomad.death", "Abyssal Nomad dies");
+        add("subtitles.entity.abyssal_nomad.hurt", "Abyssal Nomad hurts");
+        add("subtitles.entity.abyssal_nomad.attack", "Abyssal Nomad attacks");
+        add("subtitles.entity.abyssal_nomad.danger", "Abyssal Nomad alerts");
+        add("subtitles.entity.abyssal_nomad.heal", "Abyssal Nomad remembers");
+        add("subtitles.entity.abyssal_nomad.idle", "Abyssal Nomad bellows");
+        add("subtitles.entity.abyssal_nomad.nod", "Abyssal Nomad is pleased");
+        add("subtitles.entity.abyssal_nomad.remember", "Abyssal Nomad is remembering");
+        add("subtitles.entity.abyssal_nomad.tear", "Abyssal Nomad offers");
+        add("subtitles.entity.abyssal_nomad.teleport", "Abyssal Nomad teleports");
+        add("subtitles.entity.abyssal_nomad.thank", "Abyssal Nomad is thankful");
+
+        add("subtitles.entity.enatious_totem.death", "Enatious Totem dies");
+        add("subtitles.entity.enatious_totem.hurt", "Enatious Totem hurts");
+        add("subtitles.entity.enatious_totem.leave", "Enatious Totem retreats");
+        add("subtitles.entity.enatious_totem.ready", "Enatious Totem readies up");
+        add("subtitles.entity.enatious_totem.roots_creaking", "Roots creak ominously");
+        add("subtitles.entity.enatious_totem.shockwave", "Enatious Totem pushes");
+        add("subtitles.entity.enatious_totem.shoot", "Enatious Totem shoots");
+        add("subtitles.entity.enatious_totem.spawn", "Enatious Totem emerges");
+        add("subtitles.entity.enatious_totem.teleport", "Enatious Totem teleports");
+
+        add("subtitles.entity.seed.knockback_burst", "Knockback seed bursts");
+        add("subtitles.entity.seed.poison_bounce", "Poison seed skips");
+        add("subtitles.entity.seed.poison_land", "Poison seed bursts");
+        add("subtitles.entity.seed.unstable_burst", "Unstable seed bursts");
+        add("subtitles.entity.seed.unstable_fail", "Unstable seed wastes away");
+        add("subtitles.entity.seed.unstable_fly", "Unstable seed twirls");
+
+
+        add("subtitles.entity.lantern.hurt", "Lantern hurts");
+        add("subtitles.entity.lantern.idle", "Wind blows quietly");
+        add("subtitles.entity.lantern.teleport", "Lantern teleports");
+        add("subtitles.entity.lantern.shed", "Lantern sheds");
+        add("subtitles.entity.lantern.spawn", "Lantern has appeared");
+
+        add("subtitles.entity.respite_totem.activate", "Totem of Respite has activated");
+        add("subtitles.entity.respite_totem.float", "Totem of Respite floats by");
+        add("subtitles.entity.respite_totem.shatter", "Totem of Respite shatters");
+        add("subtitles.entity.respite_totem.spawn", "Totem of Respite has appeared");
+
+        add("subtitles.block.bonfire.idle", "Bonfire sings");
+        add("subtitles.block.bonfire.idle_corrupted", "Bonfire screams");
+        add("subtitles.block.bonfire.ignite", "Item ignited");
+        add("subtitles.block.bonfire.search", "Bonfire is searching for twin");
+        add("subtitles.block.bonfire.activate", "Bonfire lights up");
+
+        add("subtitles.block.polar.emerge", "Enderglop emerges");
+        add("subtitles.block.polar.charge", "Polar charge rises up");
+        add("subtitles.block.polar.cool", "Polar charge cools down");
+
+        add("subtitles.block.memor_faucet.open", "Faucet opens");
+        add("subtitles.block.memor_faucet.close", "Faucet closes");
+        add("subtitles.block.memor_faucet.power", "Faucet powers up");
+        add("subtitles.block.memor_faucet.power_final", "Faucet unlocks");
+        add("subtitles.block.memor_faucet.absorb", "Faucet accepts offering");
+
+        add("subtitles.item.magnet.success", "Magnet latches on");
+        add("subtitles.item.magnet.fail", "Magnet falls short");
+
+        add("subtitles.item.flame.fail", "Flame extinguishes");
+
         // Advancements
         //add("advancements.the_beyond.root.title", "The Beyond");
         //add("advancements.the_beyond.root.description", "");
@@ -108,7 +184,7 @@ public class Lang extends LanguageProvider {
         add("advancements.the_beyond.ectoplasmic_ignition.description", "Use ectoplasm on a lit bonfire to create a live flame");
 
         add("advancements.the_beyond.ectoplasmic_ignition_2.title", "Speedrun");
-        add("advancements.the_beyond.ectoplasmic_ignition_2.description", "Use ectoplasm on a purple fire bonfire to create a livid flame");
+        add("advancements.the_beyond.ectoplasmic_ignition_2.description", "Use ectoplasm on a void fire bonfire to create a livid flame");
 
         add("advancements.the_beyond.pass_the_torch.title", "Pass the Torch");
         add("advancements.the_beyond.pass_the_torch.description", "Carry a live flame to an unlit bonfire and light it");
@@ -123,13 +199,13 @@ public class Lang extends LanguageProvider {
         add("advancements.the_beyond.memories_returned.description", "Offer 5 remembrances to a fountain");
 
         add("advancements.the_beyond.defying_the_void.title", "Defying the Void");
-        add("advancements.the_beyond.defying_the_void.description", "Obtain a Totem of Respite - hold it when you die to keep your items");
+        add("advancements.the_beyond.defying_the_void.description", "Hold a Totem of Respite on death to keep your items");
 
         add("advancements.the_beyond.so_below.title", "So Below");
-        add("advancements.the_beyond.so_below.description", "Walk on the void river with Pathfinder Boots");
+        add("advancements.the_beyond.so_below.description", "Walk on Auroracite using Pathfinder Boots");
 
         add("advancements.the_beyond.as_above.title", "As Above");
-        add("advancements.the_beyond.as_above.description", "Soar through a migration storm using your elytra");
+        add("advancements.the_beyond.as_above.description", "Soar through a migration storm");
 
         add("advancements.the_beyond.gift_enadrake.title", "Building Blocks");
         add("advancements.the_beyond.gift_enadrake.description", "Gift an enadrake an item");
@@ -144,12 +220,8 @@ public class Lang extends LanguageProvider {
         add("advancements.the_beyond.full_power_magnet.description", "Use a magnet to pull yourself somewhere 32 blocks away");
     }
 
-    /**
-     * Like {@link #add(String, String)} but silently skips the key if it was already
-     * registered by the automatic registry loops above. Avoids the
-     * {@code IllegalStateException("Duplicate translation key")} that LanguageProvider
-     * throws on repeated keys.
-     */
+    /** Tracks keys already registered so {@link #add(String, String)} can skip duplicates
+     *  instead of triggering LanguageProvider's {@code IllegalStateException}. */
     private final Set<String> addedKeys = new java.util.HashSet<>();
 
     @Override

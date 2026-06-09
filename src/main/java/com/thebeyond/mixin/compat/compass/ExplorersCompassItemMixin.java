@@ -16,14 +16,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Per-player filter on Explorer's Compass. Wraps all three {@code StructureUtils}
- * queries in {@code use()} — filtering only the list leaves hidden names leaking
- * through the group maps (client uses the forward multimap for group search).
- *
- * <p>{@code @Pseudo}/{@code require=0}/{@code remap=false} — inert when the mod is
- * absent or the injection point moves. Empty tags → {@link HiddenContentFilter} short-circuits.
- */
+/** Filters Explorer's Compass results per-player. Wraps all three {@code StructureUtils}
+ *  queries in {@code use()} so hidden names don't leak via the group multimaps. */
 @Pseudo
 @Mixin(targets = "com.chaosthedude.explorerscompass.items.ExplorersCompassItem", remap = false)
 public abstract class ExplorersCompassItemMixin {

@@ -2,6 +2,7 @@ package com.thebeyond.common.entity;
 
 import com.thebeyond.common.registry.BeyondEffects;
 import com.thebeyond.common.registry.BeyondEntityTypes;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.util.ColorUtils;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -58,8 +59,7 @@ public class UnstableSeedEntity extends AbstractSeedEntity {
         this.move(MoverType.SELF, this.getDeltaMovement());
 
         if (this.finalTarget != null) {
-            if (this.tickCount % 2 == 0)
-                this.playSound(SoundEvents.TRIDENT_THROW.value(), 1.0F, (this.random.nextFloat()) * 1.5F + 0.5f);
+            if (this.tickCount % 5 == 0) this.playSound(BeyondSoundEvents.SEED_UNSTABLE_FLY.get(), 0.5F, this.random.nextFloat()*2);
             this.setDeltaMovement((finalTarget.position().x - this.position().x)/10, this.getDeltaMovement().y, (finalTarget.position().z - this.position().z)/10);
         }
     }
@@ -73,7 +73,7 @@ public class UnstableSeedEntity extends AbstractSeedEntity {
             DamageSource damagesource = this.damageSources().mobProjectile(this, owner);
             entity.hurt(damagesource,1);
             entity.hurtMarked = true;
-            this.playSound(SoundEvents.SHROOMLIGHT_BREAK, 2.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+            this.playSound(BeyondSoundEvents.SEED_UNSTABLE_BURST.get(), 0.5F, 0.8F + this.random.nextFloat() * 0.3F);
             ((LivingEntity) entity).addEffect(new MobEffectInstance(BeyondEffects.UNSTABLE, 300));
             if (level() instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(ColorUtils.voidOptions, this.getX() + 0.5, this.getY(), this.getZ() + 0.5, level().random.nextInt(10, 20), 0.2,0.2,0.2,0.05);
@@ -90,7 +90,7 @@ public class UnstableSeedEntity extends AbstractSeedEntity {
     @Override
     protected void onHitBlock(BlockHitResult result) {
         super.onHitBlock(result);
-        this.playSound(SoundEvents.LAVA_EXTINGUISH, 2.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+        this.playSound(BeyondSoundEvents.SEED_UNSTABLE_FAIL.get(), 0.5F, 0.8F + this.random.nextFloat() * 0.3F);
         if (level() instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(ColorUtils.pixelWhiteOptions, this.getX() + 0.5, this.getY(), this.getZ() + 0.5, level().random.nextInt(30, 50), 1,1,1,0.1);
         }

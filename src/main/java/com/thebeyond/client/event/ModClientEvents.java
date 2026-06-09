@@ -13,10 +13,7 @@ import com.thebeyond.client.model.*;
 
 import com.thebeyond.client.model.equipment.ArmorModel;
 import com.thebeyond.client.model.equipment.MultipartArmorModel;
-import com.thebeyond.client.particle.AuroraciteStepParticle;
-import com.thebeyond.client.particle.GlopParticle;
-import com.thebeyond.client.particle.PixelParticle;
-import com.thebeyond.client.particle.SmokeParticle;
+import com.thebeyond.client.particle.*;
 import com.thebeyond.client.renderer.*;
 import com.thebeyond.client.renderer.blockentities.BonfireRenderer;
 import com.thebeyond.client.renderer.blockentities.MemorFaucetRenderer;
@@ -166,6 +163,10 @@ public class ModClientEvents {
 
         ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID.get(), RenderType.cutoutMipped());
         ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID_FLOWING.get(), RenderType.cutoutMipped());
+        // Fire textures have alpha-channel transparency; without cutout the default solid layer
+        // renders the alpha=0 pixels as opaque void, exposing the sky/render-behind through the
+        // flame and making the block underneath look transparent.
+        ItemBlockRenderTypes.setRenderLayer(BeyondBlocks.VOID_FLAME.get(), RenderType.cutout());
 
         BlockEntityRenderers.register(BeyondBlockEntities.BONFIRE.get(), BonfireRenderer::new);
         BlockEntityRenderers.register(BeyondBlockEntities.MEMOR_FAUCET.get(), MemorFaucetRenderer::new);
@@ -233,6 +234,12 @@ public class ModClientEvents {
 
         event.registerSpriteSet(BeyondParticleTypes.PIXEL.get(),
                 sprites -> new PixelParticle.Provider(sprites));
+
+        event.registerSpriteSet(BeyondParticleTypes.CIRCLE.get(),
+                sprites -> new CircleParticle.Provider(sprites));
+
+        event.registerSpriteSet(BeyondParticleTypes.CROSSHAIR.get(),
+                sprites -> new CrosshairParticle.Provider(sprites));
     }
     public static void addModelArmor(ModelArmorItem item) {
         MODEL_ARMOR.add(item);
@@ -301,8 +308,7 @@ public class ModClientEvents {
         if (cameraEntity == null) return;
         // Gated by enableCustomFog clientside config — when disabled, the vanilla
         // fog for the End runs unchanged. Mirrors FogRendererMixin's gate.
-        if (cameraEntity.level().dimension() == Level.END
-                && BeyondConfig.ENABLE_CUSTOM_FOG.get()) {
+        if (cameraEntity.level().dimension() == Level.END && BeyondConfig.ENABLE_CUSTOM_FOG.get()) {
             event.setCanceled(true);
             event.setFogShape(FogShape.SPHERE);
 
@@ -311,9 +317,10 @@ public class ModClientEvents {
             float y = (float) cameraEntity.position().y;
             // Clamp minimum fog end to 30 blocks so fog stays valid at negative Y
             // (Enderscape extends End min height to y=-64)
-            float fogEnd = Math.max((y + 30) * finalFog, 30 * finalFog);
+
+            float fogEnd = Math.max((y*2 + 30) * finalFog, 30 * finalFog);
             event.setFarPlaneDistance(fogEnd);
-            event.setNearPlaneDistance(15 * finalFog);
+            event.setNearPlaneDistance(Mth.lerp(bossFog,15 * finalFog,0));
        }
     }
 

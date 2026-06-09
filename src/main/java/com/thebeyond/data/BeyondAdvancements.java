@@ -216,8 +216,8 @@ public class BeyondAdvancements extends AdvancementProvider {
                             AdvancementType.CHALLENGE,
                             true, true, false
                     )
-                    .addCriterion("walk_void_river",
-                            BeyondCriteriaTriggers.WALK_VOID_RIVER.get().createCriterion(
+                    .addCriterion("walk_auroracite",
+                            BeyondCriteriaTriggers.WALK_AURORACITE.get().createCriterion(
                                     new PlayerTrigger.TriggerInstance(Optional.empty())))
                     .save(consumer, "the_beyond:the_beyond/so_below");
 

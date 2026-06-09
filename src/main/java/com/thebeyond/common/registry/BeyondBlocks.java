@@ -10,7 +10,6 @@ import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
-import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -31,13 +30,18 @@ public class BeyondBlocks {
             () -> new VoidFlameBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_PURPLE)
                     .sound(SoundType.SHROOMLIGHT)
-                    .mapColor(MapColor.COLOR_PURPLE))
+                    .replaceable()
+                    .noCollission()
+                    .instabreak()
+                    .noOcclusion()
+                    .noLootTable()
+                    .lightLevel(state -> 15))
 
     );
     public static final DeferredBlock<Block> VOID_CRYSTAL = registerBlockWithoutItem("void_crystal",
             () -> new VoidCrystalBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_PURPLE)
-                    .sound(SoundType.SHROOMLIGHT)
+                    .sound(BeyondSoundTypes.VOID_CRYSTAL)
                     .noOcclusion()
                     .strength(1.0F, 0.1F)
                     .offsetType(BlockBehaviour.OffsetType.XZ)
@@ -60,31 +64,31 @@ public class BeyondBlocks {
     );
     public static final DeferredBlock<Block> ECTOPLASM = registerBlockWithoutItem("ectoplasm", () -> new EctoplasmBlock(BlockBehaviour.Properties.of()
             .mapColor(MapColor.SNOW)
-            .sound(SoundType.COBWEB)
+            .sound(BeyondSoundTypes.ECTOPLASM)
             .noOcclusion())
     );
     public static final DeferredBlock<Block> MEMOR = registerBlock("memor", () -> new Block(BlockBehaviour.Properties.of()
             .mapColor(MapColor.WOOL)
             .requiresCorrectToolForDrops()
             .strength(-1, 3600000F)
-            .sound(SoundType.ANCIENT_DEBRIS))
+            .sound(BeyondSoundTypes.MEMOR))
     );
     public static final DeferredBlock<Block> CHISELED_MEMOR = registerBlock("chiseled_memor", () -> new Block(
-            BlockBehaviour.Properties.ofFullCopy(MEMOR.get()).sound(SoundType.NETHER_BRICKS)));
+            BlockBehaviour.Properties.ofFullCopy(MEMOR.get())));
     public static final DeferredBlock<Block> MEMOR_PILLAR = registerBlock("memor_pillar", () -> new RotatedPillarBlock(
-            BlockBehaviour.Properties.ofFullCopy(MEMOR.get()).sound(SoundType.NETHER_BRICKS)));
+            BlockBehaviour.Properties.ofFullCopy(MEMOR.get())));
     public static final DeferredBlock<Block> MEMOR_STAIRS = registerBlock("memor_stairs", () -> new StairBlock(
             MEMOR.get().defaultBlockState(),
-            BlockBehaviour.Properties.ofFullCopy(MEMOR.get()).sound(SoundType.ANCIENT_DEBRIS)));
+            BlockBehaviour.Properties.ofFullCopy(MEMOR.get())));
     public static final DeferredBlock<Block> MEMOR_FAUCET = registerBlock("memor_faucet", () -> new MemorFaucetBlock(
-            BlockBehaviour.Properties.ofFullCopy(MEMOR.get()).noOcclusion().sound(SoundType.NETHER_BRICKS)), Rarity.EPIC);
+            BlockBehaviour.Properties.ofFullCopy(MEMOR.get()).noOcclusion()), Rarity.EPIC);
 
     //STRUCTURES
     public static final DeferredBlock<Block> BONFIRE = registerBlock("bonfire", () -> new BonfireBlock(BlockBehaviour.Properties.of()
             .mapColor(MapColor.GLOW_LICHEN)
             .strength(50, 50)
             .noOcclusion()
-            .sound(SoundType.LANTERN))
+            .sound(BeyondSoundTypes.BONFIRE))
     );
     public static final DeferredBlock<Block> PORTELAIN = registerBlock("portelain", () -> new Block(BlockBehaviour.Properties.of()
             .mapColor(MapColor.ICE)
@@ -120,7 +124,9 @@ public class BeyondBlocks {
             () -> new AuroraciteBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_LIGHT_BLUE)
                     .strength(-1, 3600000F)
-                    .sound(SoundType.AMETHYST))
+                    .sound(BeyondSoundTypes.AURORACITE)
+                    .isSuffocating((s, l, p) -> false)
+                    .isViewBlocking((s, l, p) -> false))
     );
     public static final DeferredBlock<Block> STARDUST = registerBlock("stardust",
             () -> new StardustBlock(BlockBehaviour.Properties.of()
@@ -315,34 +321,11 @@ public class BeyondBlocks {
         return (DeferredBlock<T>) toReturn;
     }
 
-    @SuppressWarnings("unchecked")
-    private static <T extends Block> DeferredBlock<T> registerIntegrationBlockWithoutItem(String name, Supplier<? extends Block> block, String modId) {
-        if (!ModList.get().isLoaded(modId)) return null;
-        DeferredBlock<Block> toReturn = BLOCKS.register(name, block);
-        return (DeferredBlock<T>) toReturn;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T extends Block> DeferredBlock<T> registerIntegrationBlock(String name, Supplier<? extends Block> block, String modId) {
-        if (!ModList.get().isLoaded(modId)) return null;
-        DeferredBlock<Block> toReturn = BLOCKS.register(name, block);
-        CREATIVE_TAB_ITEMS.add(registerIntegrationBlockItem(name, toReturn));
-        return (DeferredBlock<T>) toReturn;
-    }
-//    private static <T extends Block> DeferredBlock<Block> registerSpecial(String name, Supplier<? extends T> supp) {
-//        DeferredBlock<Block> toReturn = BLOCKS.register(name, supp);
-//        CREATIVE_TAB_ITEMS.add(registerBlockItem(name, toReturn));
-//        return toReturn;
-//    }
-        private static DeferredHolder<Item, BlockItem> registerBlockItem(String name, Supplier<? extends Block> block) {
+    private static DeferredHolder<Item, BlockItem> registerBlockItem(String name, Supplier<? extends Block> block) {
         return BeyondItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties()));
     }
 
     private static DeferredHolder<Item, BlockItem> registerBlockItem(String name, Supplier<? extends Block> block, Rarity rarity) {
         return BeyondItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties().rarity(rarity)));
-    }
-
-    private static DeferredHolder<Item, BlockItem> registerIntegrationBlockItem(String name, Supplier<? extends Block> block) {
-        return BeyondItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties()));
     }
 }

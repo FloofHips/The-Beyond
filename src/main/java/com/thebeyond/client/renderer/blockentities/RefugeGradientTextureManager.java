@@ -12,14 +12,9 @@ import org.lwjgl.opengl.GL11;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * CPU-side gradient map processor for player skin textures.
- * Used as a fallback when shader mods (Iris/Oculus) are present,
- * since our custom refuge_gradient shader would be overridden.
- *
- * Replicates the same gradient map from rendertype_refuge_gradient.fsh
- * but applies it per-pixel on the CPU, caching the result as a DynamicTexture.
- */
+/** CPU-side gradient-map processor used as a fallback when shader mods override the
+ *  custom {@code refuge_gradient} shader. Mirrors {@code rendertype_refuge_gradient.fsh}
+ *  per-pixel and caches the result as a {@code DynamicTexture}. */
 public class RefugeGradientTextureManager {
 
     private static final Map<ResourceLocation, CachedTexture> cache = new HashMap<>();

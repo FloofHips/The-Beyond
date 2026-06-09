@@ -109,8 +109,9 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         } else {
             result = biomeFogColor.multiply(
                     Mth.lerp(bossFog, 1, 0.3F),
-                    Mth.lerp(bossFog, 1, 0.4F),
-                    Mth.lerp(bossFog, 1, 0.4F));
+                    Mth.lerp(bossFog, 1, 0.2F),
+                    Mth.lerp(bossFog, 1, 0.5F)
+            );
         }
 
         // Embeddium/Sodium compat: out-of-range float channels wrap modulo-style
@@ -150,20 +151,20 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
 
         float rain = level.getRainLevel(partialTicks);
         float thunder = level.getThunderLevel(partialTicks);
-//
+
         Player localPlayer = Minecraft.getInstance().player;
         float position = localPlayer != null
                 ? Mth.clamp((float) (((localPlayer.position().y) - 100) / 100), 0, 1)
                 : 0f;
-//
+
         if (thunder > 0) {
             float time = (level.getGameTime() + partialTicks) * 0.05f;
-//
+
             float red = Mth.clamp(Mth.sin(time) * 0.7f + 0.7f, 0f, 1f);
             float blue = Mth.clamp(Mth.sin(time + Mth.TWO_PI*2f/3f) * 0.8f + 0.5f, 0f, 1f);
-//
+
             float strength = skyLight * 2;
-//
+
             if (level.isRaining())
                 colors.set(
                         Mth.lerp(thunder, colors.x(), Mth.lerp(position, colors.x() + skyLight,Mth.clamp(colors.x() + 2 * red * strength, 0, 1))),
@@ -182,15 +183,15 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
                     Mth.lerp(rain, Mth.clamp(colors.y() * 1.1f, 0, 1), colors.y() * 0.7f),
                     colors.z()
             );
-        } else {
-            ////i think the skylight is being fucked with by thunderstorms... or ambient light
-//
-            colors.set(
-                    Mth.lerp(bossFog, colors.x() * 0.9f, colors.x() * 0.3 + 0.22983016),
-                    Mth.lerp(bossFog, Mth.clamp(colors.y() * 1.1f, 0, 1), colors.y() * 0.4),
-                    Mth.lerp(bossFog, colors.z() * 0.9f, colors.z() * 0.4 + 0.22983016)
-            );
         }
+            ////i think the skylight is being fucked with by thunderstorms... or ambient light
+
+        colors.set(
+                Mth.lerp(bossFog, colors.x() * 0.9f, colors.x() * 0.3 + 0.22983016),
+                Mth.lerp(bossFog, Mth.clamp(colors.y() * 1.1f, 0, 1), colors.y() * 0.4),
+                Mth.lerp(bossFog, colors.z() * 0.9f, colors.z() * 0.4 + 0.22983016)
+        );
+
 
         // Embeddium/Sodium compat: out-of-range float channels wrap modulo-style
         // instead of clamping like vanilla (e.g. -0.3 -> 0.7, 1.3 -> 0.3), which
@@ -212,13 +213,8 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         return color.lerp(new Vec3(0,0,0), 1-ModClientEvents.effectFog);
     }
 
-    /**
-     * Detects whether a boss fight is active. Checks {@code shouldCreateWorldFog()} first
-     * (vanilla dragon), then falls back to checking if the {@link BossHealthOverlay} has any
-     * entries. Stellarity uses command boss bars ({@code /bossbar add}) which don't set the
-     * {@code createWorldFog} flag — without this fallback, the fog/lightmap tinting never
-     * triggers during Stellarity's dragon fight.
-     */
+    /** Vanilla {@code shouldCreateWorldFog} first, then any boss-bar entry (Stellarity's
+     *  {@code /bossbar add} doesn't set the createWorldFog flag). */
     private static boolean isBossFightActive() {
         var overlay = Minecraft.getInstance().gui.getBossOverlay();
         if (overlay.shouldCreateWorldFog()) return true;

@@ -1,6 +1,7 @@
 package com.thebeyond.common.block;
 
 import com.mojang.serialization.MapCodec;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.util.IMagneticReceiver;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -16,7 +17,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.ticks.TickPriority;
-import oshi.util.tuples.Pair;
+import com.mojang.datafixers.util.Pair;
 
 import javax.annotation.Nullable;
 import java.util.function.ToIntFunction;
@@ -54,17 +55,17 @@ public class PolarPillarBlock extends Block implements IMagneticReceiver {
     private final VoxelShape FULL_CUBE = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D);
 
     public void activatePillar(BlockPos pos, BlockState state, Level level) {
-        Pair<BlockPos, BlockState> lastPillar = new Pair<>(pos, state);
+        Pair<BlockPos, BlockState> lastPillar = Pair.of(pos, state);
 
         for (int offset = 1; offset <= 8; offset++) {
-            Pair<BlockPos, BlockState> newBlockFound = new Pair<>(new BlockPos(pos.getX(), pos.getY() - offset, pos.getZ()), level.getBlockState(new BlockPos(pos.getX(), pos.getY() - offset, pos.getZ())));
+            Pair<BlockPos, BlockState> newBlockFound = Pair.of(new BlockPos(pos.getX(), pos.getY() - offset, pos.getZ()), level.getBlockState(new BlockPos(pos.getX(), pos.getY() - offset, pos.getZ())));
 
-            if (newBlockFound.getB().getBlock() instanceof PolarPillarBlock || newBlockFound.getB().getBlock() instanceof PolarBulbBlock) {
-                if (!(newBlockFound.getB().getBlock() instanceof PolarBulbBlock)) lastPillar = newBlockFound;
+            if (newBlockFound.getSecond().getBlock() instanceof PolarPillarBlock || newBlockFound.getSecond().getBlock() instanceof PolarBulbBlock) {
+                if (!(newBlockFound.getSecond().getBlock() instanceof PolarBulbBlock)) lastPillar = newBlockFound;
             } else {
-                level.playSound(null, pos, SoundEvents.BREEZE_CHARGE, SoundSource.BLOCKS, 1, level.random.nextFloat()*2);
-                level.setBlock(lastPillar.getA(), lastPillar.getB().setValue(POLAR_CHARGE, 1), 3);
-                level.scheduleTick(lastPillar.getA(), lastPillar.getB().getBlock(), TICK_DELAY, TickPriority.HIGH);
+                level.playSound(null, pos, BeyondSoundEvents.POLAR_CHARGE.get(), SoundSource.BLOCKS, 1, level.random.nextFloat());
+                level.setBlock(lastPillar.getFirst(), lastPillar.getSecond().setValue(POLAR_CHARGE, 1), 3);
+                level.scheduleTick(lastPillar.getFirst(), lastPillar.getSecond().getBlock(), TICK_DELAY, TickPriority.HIGH);
                 break;
             }
         }

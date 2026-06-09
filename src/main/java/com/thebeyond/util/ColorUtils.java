@@ -1,5 +1,7 @@
 package com.thebeyond.util;
 
+import com.thebeyond.client.particle.CircleColorTransitionOptions;
+import com.thebeyond.client.particle.CrosshairColorTransitionOptions;
 import com.thebeyond.client.particle.PixelColorTransitionOptions;
 import com.thebeyond.client.particle.SmokeColorTransitionOptions;
 import net.minecraft.core.BlockPos;
@@ -30,11 +32,13 @@ public class ColorUtils {
             new Vector3f(0.85f, 0.95f, 0.85f),
             1.5f
     );
+
     public static SmokeColorTransitionOptions poisonOptions = new SmokeColorTransitionOptions(
             new Vector3f(0.2f, 1.0f, 0.3f),
             new Vector3f(0.8f, 1.0f, 0.3f),
             1.5f
     );
+
     public static PixelColorTransitionOptions pixelAuroraOptions = new PixelColorTransitionOptions(
             new Vector3f(0.0f, 0.9f, 0.9f),
             new Vector3f(0.0f, 0.5f, 0.5f),

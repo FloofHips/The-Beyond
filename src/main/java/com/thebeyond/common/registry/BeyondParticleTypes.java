@@ -2,6 +2,8 @@ package com.thebeyond.common.registry;
 
 import com.mojang.serialization.MapCodec;
 import com.thebeyond.TheBeyond;
+import com.thebeyond.client.particle.CircleColorTransitionOptions;
+import com.thebeyond.client.particle.CrosshairColorTransitionOptions;
 import com.thebeyond.client.particle.PixelColorTransitionOptions;
 import com.thebeyond.client.particle.SmokeColorTransitionOptions;
 import net.minecraft.core.particles.ParticleType;
@@ -21,6 +23,8 @@ public class BeyondParticleTypes {
 
     public static final DeferredHolder<ParticleType<?>, ParticleType<SmokeColorTransitionOptions>> SMOKE = PARTICLE_TYPES.register("smoke", BeyondParticleTypes::createSmokeParticleType);
     public static final DeferredHolder<ParticleType<?>, ParticleType<PixelColorTransitionOptions>> PIXEL = PARTICLE_TYPES.register("pixel", BeyondParticleTypes::createPixelParticleType);
+    public static final DeferredHolder<ParticleType<?>, ParticleType<CrosshairColorTransitionOptions>> CROSSHAIR = PARTICLE_TYPES.register("crosshair", BeyondParticleTypes::createCrosshairParticleType);
+    public static final DeferredHolder<ParticleType<?>, ParticleType<CircleColorTransitionOptions>> CIRCLE = PARTICLE_TYPES.register("circle", BeyondParticleTypes::createCircleParticleType);
 
     private static ParticleType<SmokeColorTransitionOptions> createSmokeParticleType() {
         return new ParticleType<SmokeColorTransitionOptions>(false) {
@@ -46,6 +50,34 @@ public class BeyondParticleTypes {
             @Override
             public StreamCodec<? super RegistryFriendlyByteBuf, PixelColorTransitionOptions> streamCodec() {
                 return PixelColorTransitionOptions.STREAM_CODEC;
+            }
+        };
+    }
+
+    private static ParticleType<CrosshairColorTransitionOptions> createCrosshairParticleType() {
+        return new ParticleType<CrosshairColorTransitionOptions>(false) {
+            @Override
+            public MapCodec<CrosshairColorTransitionOptions> codec() {
+                return CrosshairColorTransitionOptions.CODEC;
+            }
+
+            @Override
+            public StreamCodec<? super RegistryFriendlyByteBuf, CrosshairColorTransitionOptions> streamCodec() {
+                return CrosshairColorTransitionOptions.STREAM_CODEC;
+            }
+        };
+    }
+
+    private static ParticleType<CircleColorTransitionOptions> createCircleParticleType() {
+        return new ParticleType<CircleColorTransitionOptions>(false) {
+            @Override
+            public MapCodec<CircleColorTransitionOptions> codec() {
+                return CircleColorTransitionOptions.CODEC;
+            }
+
+            @Override
+            public StreamCodec<? super RegistryFriendlyByteBuf, CircleColorTransitionOptions> streamCodec() {
+                return CircleColorTransitionOptions.STREAM_CODEC;
             }
         };
     }

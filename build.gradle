@@ -24,6 +24,13 @@ repositories {
         url "https://maven.blamejared.com/"
         content { includeGroup "mezz.jei" }
     }
+    maven {
+        url "https://maven.ryanhcode.dev/releases"
+        content {
+            includeGroup "dev.ryanhcode.sable"
+            includeGroup "dev.ryanhcode.sable-companion"
+        }
+    }
     // JUnit and other standard test/build dependencies. Scoped after cursemaven
     // so the explicit `includeGroup` above keeps curse artifacts routed correctly.
     mavenCentral()
@@ -112,6 +119,11 @@ dependencies {
     // so no NoClassDefFoundError — the class file sits inert in the jar.
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
+
+    // Optional compat: Create + Sable. compileOnly — not on runClient. Gated by ModList at runtime.
+    compileOnly "curse.maven:create-328085:7963363"
+    compileOnly "curse.maven:sable-1312371:8007005"
+    compileOnly "dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:1.6.0"
 
     // --- Unit tests ---
     // JUnit 5 for pure-function tests (pingPongWrap, computeWrappedCoords contract,

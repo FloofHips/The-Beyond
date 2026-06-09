@@ -65,14 +65,24 @@ public class ModGameEvents {
         // chunksToUpdateFutures. An unloaded chunk has no refuge data anyway, so null
         // is treated as "no protection".
         ChunkAccess chunk = level.getChunkSource().getChunk(pos.getX() >> 4, pos.getZ() >> 4, false);
+        if (chunk != null) {
+            RefugeChunkData data = chunk.getData(BeyondAttachments.REFUGE_DATA);
+            if (data.shouldPreventHunger() || data.shouldPreventExplosion()
+                    || data.shouldPreventMobSpawn() || data.shouldPreventFallDamage()) {
+                return data;
+            }
+        }
+        // Sub-level fallback: refuge attachment lives at the remote plot storage offset.
+        BlockPos stored = com.thebeyond.api.compat.BeyondCompatHooks.storedForVisible(level, pos);
+        if (stored != null) {
+            ChunkAccess sChunk = level.getChunkSource().getChunk(stored.getX() >> 4, stored.getZ() >> 4, false);
+            if (sChunk != null) return sChunk.getData(BeyondAttachments.REFUGE_DATA);
+        }
         return chunk == null ? null : chunk.getData(BeyondAttachments.REFUGE_DATA);
     }
 
-    /**
-     * Pushes the authoritative "known" set to the client on login. NeoForge does not
-     * S2C-sync attachments, so the server sends a {@code replace=true} snapshot: the
-     * world set in SHARED_WORLD mode, otherwise the player's attachment.
-     */
+    /** Pushes the authoritative known set to the client on login (NeoForge doesn't
+     *  S2C-sync attachments). World set in SHARED_WORLD mode, else the player's. */
     @SubscribeEvent
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer sp)) return;
@@ -161,9 +171,9 @@ public class ModGameEvents {
             boolean flag = item.is(BeyondItems.LIVE_FLAME);
 
             if (event.getPlayer().level() instanceof ServerLevel serverLevel) {
-                serverLevel.playSound(null, event.getEntity().blockPosition(), SoundEvents.FIRE_EXTINGUISH, SoundSource.NEUTRAL, 1, 0.8f + serverLevel.random.nextFloat());
-                serverLevel.playSound(null, event.getEntity().blockPosition(), SoundEvents.ENDER_EYE_DEATH, SoundSource.NEUTRAL, 1, 0.8f + serverLevel.random.nextFloat());
-                serverLevel.sendParticles(!flag ? BeyondParticleTypes.VOID_FLAME.get() : ParticleTypes.SOUL_FIRE_FLAME, event.getEntity().getX(), event.getEntity().getY(), event.getEntity().getZ(), 10, 0.05, 0.1, 0.05, 0.05);
+                serverLevel.playSound(null, event.getEntity().blockPosition(), BeyondSoundEvents.FLAME_FAIL.get(), SoundSource.NEUTRAL, 1, 0.8f + serverLevel.random.nextFloat());
+
+                serverLevel.sendParticles(!flag ? BeyondParticleTypes.VOID_FLAME.get() : ParticleTypes.SOUL_FIRE_FLAME, event.getEntity().getX(), event.getEntity().getY(), event.getEntity().getZ(), 15, 0.5, 1, 0.5, 0.05);
                 serverLevel.sendParticles(new ItemParticleOption(ParticleTypes.ITEM, item), event.getEntity().getX(), event.getEntity().getY(), event.getEntity().getZ(), 16, 0.02, 0.02, 0.02, 0.1);
             }
 

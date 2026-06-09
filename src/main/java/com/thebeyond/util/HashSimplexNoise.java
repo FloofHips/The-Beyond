@@ -3,37 +3,9 @@ package com.thebeyond.util;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 
-/**
- * SimplexNoise variant that replaces the permutation table with a seeded 64-bit hash
- * function. Drop-in replacement for
- * {@link net.minecraft.world.level.levelgen.synth.SimplexNoise}.
- *
- * <p>Mojang's SimplexNoise uses a 256-entry array with {@code & 0xFF} lookup, giving a
- * period of 256 scaled units. This class eliminates the table entirely: each call to
- * {@code p(index)} is a pure function of {@code index} and a per-instance 64-bit seed,
- * computed via <a href="https://nullprogram.com/blog/2018/07/31/">SplitMix64-style
- * mixing</a>. The effective period is {@code 2^64} — larger than any coordinate a
- * {@code double} can represent without losing integer precision.
- *
- * <p>Eliminating the permutation period does NOT eliminate the {@code double}
- * precision issue inside the Simplex skew/unskew math. Expressions like
- * {@code x - (floor(x + d0) - (i + j) * G2)} subtract two large values to obtain a
- * small fractional — when {@code x} is in the millions, the subtraction loses ~7
- * digits of precision, quantizing cell-local coordinates and producing visible
- * directional stretching. Callers should still apply a wrap (e.g. ping-pong) to keep
- * raw inputs within, say, ±500k blocks. This class guarantees the noise itself never
- * repeats within that range; the wrap guarantees the math stays accurate.
- *
- * <p>Cost vs a table-based Simplex: zero bytes of permutation storage (vs 2 KB for
- * vanilla's 8-bit table, or 256 KB for a hypothetical 16-bit table); negligible init
- * (no Fisher-Yates); ~5 ALU ops per permutation lookup instead of a single array
- * index — comparable in cycles on modern out-of-order CPUs and immune to L2/L3 misses
- * a large table can incur under memory pressure.
- *
- * <p>Given the same {@link RandomSource} the output is deterministic. Noise values
- * differ from vanilla SimplexNoise — this is a different sampling of the infinite
- * noise field.
- */
+/** SimplexNoise variant with the 256-entry permutation table replaced by SplitMix64
+ *  hashing — period grows to 2^64. Callers should still wrap inputs (~±500k) so the
+ *  skew/unskew math doesn't lose precision in {@code double}. */
 public class HashSimplexNoise {
     protected static final int[][] GRADIENT = new int[][]{
             {1, 1, 0},
@@ -75,15 +47,7 @@ public class HashSimplexNoise {
         this.seed = hi | lo;
     }
 
-    /**
-     * SplitMix64-style finalizer. Produces a high-quality 64-bit hash of
-     * {@code index} mixed with the per-instance seed, then masks to the 16-bit
-     * range the Simplex cell algorithm expects for downstream index arithmetic.
-     *
-     * <p>The output range [0, 65536) gives the subsequent
-     * {@code (... + 1 + p(...)) % 12} gradient-index math enough variation to
-     * behave identically to a table-based Simplex — no algorithm tuning needed.
-     */
+    /** SplitMix64 hash of {@code (index ^ seed)} masked to [0, 65536). */
     private int p(int index) {
         long h = ((long) index) ^ this.seed;
         h ^= h >>> 30;

@@ -62,9 +62,10 @@ public class ParanoiaBlock extends Block {
             }
         }
 
-        if(paranoiaChance(level) && !block.isAir()){
-            level.playSound(null, pos, block.getSoundType(level, pos.below(), null).getStepSound(), SoundSource.AMBIENT, level.random.nextFloat() * 2, level.random.nextFloat() * 2);
-        }
+        //if(paranoiaChance(level) && !block.isAir()){
+        //    level.playSound(null, pos, block.getSoundType(level, pos.below(), null).getStepSound(), SoundSource.AMBIENT, level.random.nextFloat() * 2, level.random.nextFloat() * 2);
+        //}
+
         super.randomTick(state, level, pos, random);
     }
 

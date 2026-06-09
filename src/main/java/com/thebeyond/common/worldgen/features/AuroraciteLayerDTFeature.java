@@ -18,16 +18,9 @@ import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import net.minecraft.world.level.levelgen.synth.SimplexNoise;
 
-/**
- * Dimensional-Tears-aware variant of the auroracite layer. Places 2-layer auroracite where
- * {@code SimplexNoise(x*0.1, z*0.1) > 0} and fills the remaining cells at {@code minY} with
- * Dimensional Tears' source fluid, producing auroracite islands that protrude one block above
- * the fluid surface. Mutual exclusion with {@link AuroraciteLayerFeature} is enforced via
- * {@code mod_loaded}/{@code not(mod_loaded)} conditions on the biome_modifier.
- *
- * <p>The DT fluid block is looked up lazily and cached. If DT is absent, falls back to air
- * (no fluid in the gaps) so manual wiring without the condition guard degrades gracefully.
- */
+/** DT variant of {@link AuroraciteLayerFeature}: auroracite islands above DT's source fluid
+ *  in the noise-gap cells. Biome modifier {@code mod_loaded} conditions enforce mutual
+ *  exclusion with the vanilla variant. Falls back to air when DT is absent. */
 public class AuroraciteLayerDTFeature extends Feature<NoneFeatureConfiguration> {
 
     private static final ResourceLocation DT_FLUID_ID = ResourceLocation.parse("dimensional_tears:dimensional_tears");

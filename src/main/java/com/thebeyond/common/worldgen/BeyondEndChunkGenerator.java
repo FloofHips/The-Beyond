@@ -1,13 +1,18 @@
 package com.thebeyond.common.worldgen;
 
+import com.thebeyond.api.worldgen.BeyondTerrainState;
+import com.thebeyond.internal.worldgen.BeyondTerrainStateInternal;
 import com.google.common.annotations.VisibleForTesting;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.thebeyond.util.HashSimplexNoise;
 import com.thebeyond.util.WorldSeedHolder;
+import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectListIterator;
 import net.minecraft.core.*;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.WorldGenRegion;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.util.RandomSource;
@@ -15,10 +20,18 @@ import net.minecraft.world.level.*;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
 import net.minecraft.world.level.levelgen.*;
+import net.minecraft.world.level.levelgen.Beardifier;
+import net.minecraft.world.level.levelgen.DensityFunction;
+import net.minecraft.world.level.levelgen.structure.TerrainAdjustment;
+import net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece;
+import net.minecraft.world.level.levelgen.structure.StructurePiece;
+import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.world.level.levelgen.blending.Blender;
 import net.minecraft.world.level.levelgen.structure.*;
 import net.minecraft.world.level.levelgen.structure.pools.JigsawJunction;
@@ -72,11 +85,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     private static final double PERSISTENCE = 0.5;
     private static final int TERRAIN_Y_OFFSET = 32;
 
-    /**
-     * Per-octave wrap-range factors for mirror-seam decorrelation. Octave 0 stays at
-     * 1.00 (F3/diagnostics use it); octaves 1-3 step down so pivot planes separate.
-     * Length MUST equal {@link #NUM_OCTAVES}; factors MUST be ≤ 1.00.
-     */
+    /** Per-octave wrap-range factors for mirror-seam decorrelation. */
     private static final double[] OCTAVE_WRAP_FACTORS = {1.00, 0.91, 0.83, 0.77};
 
     /** Triangle-wave wrap between min/max. External callers go through {@link #computeWrappedCoords}. */
@@ -100,11 +109,8 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     /** Default wrap range — test reference only; production uses {@link #activeTerrainParams}. */
     static final int WRAP_RANGE = BeyondTerrainParams.DEFAULTS.wrapRange();
 
-    /**
-     * Single source of truth for the wrap+warp transform. Packs wrappedX (high 32b)
-     * + wrappedZ (low 32b). All density samplers, biome source, and heightmap queries
-     * MUST route through this — inlining it elsewhere causes structures to float.
-     */
+    /** Single source of truth for the wrap+warp transform; packs wrappedX:wrappedZ as
+     *  high:low 32b. All density/biome/heightmap queries MUST route through this. */
     public static long computeWrappedCoords(int globalX, int globalZ) {
         return computeWrappedCoords(globalX, globalZ, activeTerrainParams);
     }
@@ -155,11 +161,8 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     public static int unpackWrappedX(long packed) { return (int) (packed >> 32); }
     public static int unpackWrappedZ(long packed) { return (int) packed; }
 
-    /**
-     * Fills per-octave wrap+scale arrays (length {@link #NUM_OCTAVES}). {@code hScales[k]}
-     * is sampled at {@code (wrappedXs[k], wrappedZs[k])} — mismatched coords break the
-     * per-octave anti-cancellation invariant. Frequency is baked into {@code hScales}/{@code vScales}.
-     */
+    /** Fills per-octave wrap+scale arrays (length {@link #NUM_OCTAVES}); coords and scales
+     *  MUST be paired index-wise or the anti-cancellation invariant breaks. */
     private static void computeOctaveFields(
             int globalX, int globalZ,
             BeyondTerrainParams params,
@@ -273,7 +276,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     @Override
     public void createStructures(RegistryAccess registryAccess, ChunkGeneratorStructureState structureState, StructureManager structureManager, ChunkAccess chunk, StructureTemplateManager structureTemplateManager) {
         computeNoisesIfNotPresent(structureState.getLevelSeed());
-        BeyondTerrainState.setDimBounds(chunk.getMinBuildHeight(), chunk.getMaxBuildHeight());
+        BeyondTerrainStateInternal.setDimBounds(chunk.getMinBuildHeight(), chunk.getMaxBuildHeight());
         super.createStructures(registryAccess, structureState, structureManager, chunk, structureTemplateManager);
     }
 
@@ -282,7 +285,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         computeNoisesIfNotPresent(randomState);
         // Publish dim bounds before super triggers biome sampling (BeyondEndBiomeSource consumes
         // them to anchor the bottom_biome band and scale worldHeight).
-        BeyondTerrainState.setDimBounds(chunk.getMinBuildHeight(), chunk.getMaxBuildHeight());
+        BeyondTerrainStateInternal.setDimBounds(chunk.getMinBuildHeight(), chunk.getMaxBuildHeight());
         return super.createBiomes(randomState, blender, structureManager, chunk);
     }
 
@@ -294,21 +297,22 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     @Override
     public int getBaseHeight(int x, int z, Heightmap.Types heightmapType, LevelHeightAccessor level, RandomState randomState) {
         computeNoisesIfNotPresent(randomState);
-        BeyondTerrainState.setDimBounds(level.getMinBuildHeight(), level.getMaxBuildHeight());
+        BeyondTerrainStateInternal.setDimBounds(level.getMinBuildHeight(), level.getMaxBuildHeight());
         float distanceFromOrigin = (float) Math.sqrt((double) x * x + (double) z * z);
 
-        // Scan from just below the dynamic worldHeight (where gradientTop starts ramping down
-        // to 0) down to the dim floor. Beyond-só: worldHeight=192, scan starts at 132 as
-        // before. Combo (bounds pack): worldHeight=288, scan starts at 228 so Beyond-gen
-        // islands that now live up to y~256 are findable by the heightmap query.
+        // Hoist column-invariant state into thread-local scratch — eliminates the 4-array
+        // alloc that the 3-arg getTerrainDensity cold path otherwise makes per Y iteration.
+        ColumnScratch scratch = SCRATCH.get();
+        initColumnScratch(x, z, distanceFromOrigin, scratch);
+
         int scanTop = (int) (getWorldHeight() - 60);
         for (int y = scanTop; y >= level.getMinBuildHeight(); y--) {
-            if (isSolidTerrain(x, y, z, distanceFromOrigin)) {
+            if (isSolidTerrainScratch(y, scratch)) {
                 return y;
             }
         }
 
-        return 0;
+        return level.getMinBuildHeight();
     }
     @Override
     public int getFirstFreeHeight(int x, int z, Heightmap.Types type, LevelHeightAccessor level, RandomState random) {
@@ -409,19 +413,12 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     @VisibleForTesting
     static final int HSCALE_LOCAL_WRAP_RANGE = 50_000;
 
-    /**
-     * Prototype knob: routes {@link #getHorizontalBaseScale} through
-     * {@link #globalNoiseOffsetLocalWrap} (ping-pong wrap range
-     * {@link #HSCALE_LOCAL_WRAP_RANGE}). Bounds the noise input so streak-width stays
-     * small at any distance; amplitude stays full (no 1/r decay like distance-adaptive).
-     */
+    /** Prototype knob: bounds the H-scale noise input via local wrap so streak width
+     *  stays small at any distance (amplitude unchanged, no 1/r decay). */
     @VisibleForTesting
     static volatile boolean hScaleLocalWrap = false;
 
-    // Island-envelope sampler: freezes hScale to a global constant (kills the
-    // X*∂h/∂X streak term) and restores regional island-size variance as an
-    // amplitude envelope at ~2 M-block wavelength. Flag-gated; band-blend
-    // below is the preferred sampler (preserves wavelength variation).
+    // Flag-gated alt sampler: constant hScale + amplitude envelope (band-blend preferred).
 
     /** Forces constant hScale + amplitude envelope. Mutually exclusive with {@link #useBandBlend}. */
     @VisibleForTesting
@@ -451,13 +448,9 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         return envelopeLow + (envelopeHigh - envelopeLow) * ((v + 1.0) * 0.5);
     }
 
-    // Band-blend sampler: replaces the streak-producing `sampleX = X*hScale(X,Z)`
-    // with a 2-sample lerp over adjacent fixed frequencies h_lo, h_hi picked
-    // from BB_BAND_FREQUENCIES by an O(1) log-space lookup on hBase. h_i is a
-    // global constant so the X*∂h/∂X Jacobian term vanishes; C¹ smoothstep blend
-    // avoids band seams. K=17 log-spaced bands give <5% wavelength error vs
-    // continuous hBase. Column-invariant state (bbLoIdx, bbT) is hoisted out of
-    // the y-loop which then runs 2 simplex samples + a lerp per octave.
+    // Band-blend sampler: 2-sample lerp over fixed-frequency bands instead of
+    // X*hScale(X,Z); constant h_i removes the X*∂h/∂X streak term, smoothstep
+    // blend avoids band seams. Column-invariant state (bbLoIdx, bbT) is hoisted.
 
     /** K=17 log-spaced band frequencies spanning [0.005, 0.015]. O(1) indexed by {@link #computeBBState}. */
     private static final int BB_BAND_COUNT = 17;
@@ -480,11 +473,8 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     @VisibleForTesting
     static volatile boolean useBandBlend = true;
 
-    /**
-     * Column-invariant BB state. Fills {@code bbLoIdx[k]} (low-band index) and
-     * {@code bbT[k]} (pre-smoothstepped blend weight) from {@code hScales[k]}.
-     * Call ONCE per column; y-loop then just samples 2 simplexes + lerps.
-     */
+    /** Column-invariant BB state: fills band index + blend weight per octave. Call once
+     *  per column so the y-loop is just two simplex samples and a lerp. */
     static void computeBBState(double[] hScales, int[] bbLoIdx, double[] bbT) {
         double frequencyMult = 1.0;
         for (int k = 0; k < NUM_OCTAVES; k++) {
@@ -526,9 +516,10 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         if (override != null) return override;
         // Period 1 M blocks: keeps in-view cycleHeight variation under one divisor
         // step so cyclicDensity's divisor discontinuities don't pile up in a scene.
-        double freq = 0.000001 * cycleHeightFrequencyMultiplier;
-        return globalNoiseOffset(10, 100, x * freq, z * freq, noise);
+        double freq = 0.00005 * cycleHeightFrequencyMultiplier;
+        return globalNoiseOffset(5, 100, x * freq, z * freq, noise);
     }
+
 
     /**
      * Base threshold for density vs void. Pass WRAPPED (x,z) to align with the
@@ -583,7 +574,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             }
         }
 
-        // cycleHeight sampled at octave-0's wrap — matches F3 debug readout and getThreshold.
+        // cycleHeight sampled at octave-0's wrap (consistent with getThreshold).
         double cycleHeight = getCycleHeight(wrappedXs[0], wrappedZs[0], cNoise);
 
         double density = getTerrainDensity(globalY, hScales, vScales, cycleHeight, wrappedXs, wrappedZs);
@@ -596,10 +587,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         return density;
     }
 
-    /**
-     * Hot-path density sampler. Caller MUST hoist the column-invariant arrays out of
-     * the y-loop. {@code hScales[k]}/{@code vScales[k]} have frequency baked in.
-     */
     public static double getTerrainDensity(
             int globalY,
             double[] hScales,
@@ -607,23 +594,20 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             double cycleHeight,
             int[] wrappedXs,
             int[] wrappedZs) {
-        // Back-compat wrapper. Hot callers use the 8-arg form with column-hoisted bb state.
+        final int dimMinY = BeyondTerrainState.getDimMinY();
+        final int dimMaxY = BeyondTerrainState.getDimMaxY();
         if (useBandBlend) {
             int[] bbLoIdx = new int[NUM_OCTAVES];
             double[] bbT = new double[NUM_OCTAVES];
             computeBBState(hScales, bbLoIdx, bbT);
             return getTerrainDensity(globalY, hScales, vScales, cycleHeight,
-                    wrappedXs, wrappedZs, bbLoIdx, bbT);
+                    wrappedXs, wrappedZs, bbLoIdx, bbT, dimMinY, dimMaxY);
         }
         return getTerrainDensity(globalY, hScales, vScales, cycleHeight,
-                wrappedXs, wrappedZs, null, null);
+                wrappedXs, wrappedZs, null, null, dimMinY, dimMaxY);
     }
 
-    /**
-     * Hot-path sampler with column-hoisted BB state. Pass {@code bbLoIdx}/{@code bbT}
-     * populated by {@link #computeBBState} when {@link #useBandBlend} is active, or
-     * {@code null} for both otherwise.
-     */
+    /** Hot-path sampler. Caller hoists BB state ({@code bbLoIdx}/{@code bbT}, or {@code null}) and dim bounds. */
     public static double getTerrainDensity(
             int globalY,
             double[] hScales,
@@ -632,7 +616,9 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             int[] wrappedXs,
             int[] wrappedZs,
             int[] bbLoIdx,
-            double[] bbT) {
+            double[] bbT,
+            int dimMinY,
+            int dimMaxY) {
         int shiftedY = globalY + TERRAIN_Y_OFFSET;
         HashSimplexNoise noise = simplexNoise;
 
@@ -686,7 +672,77 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         double densityModifier = cyclicDensity(shiftedY, cycleHeight);
         noiseValue *= densityModifier;
 
-        return edgeGradient(shiftedY, getWorldHeight(), noiseValue);
+        return edgeGradient(shiftedY, noiseValue, dimMinY, dimMaxY);
+    }
+
+    /** Per-column scratch reused across the Y-loop; init once per (x,z) via
+     *  {@link #initColumnScratch} then sample {@link #isSolidTerrainScratch}. */
+    public static final class ColumnScratch {
+        public final double[] hScales = new double[NUM_OCTAVES];
+        public final double[] vScales = new double[NUM_OCTAVES];
+        public final int[] wrappedXs = new int[NUM_OCTAVES];
+        public final int[] wrappedZs = new int[NUM_OCTAVES];
+        public final int[] bbLoIdx = new int[NUM_OCTAVES];
+        public final double[] bbT = new double[NUM_OCTAVES];
+        public double cycleHeight;
+        public double threshold;
+        public double islandEnvelope;
+        public int dimMinY;
+        public int dimMaxY;
+    }
+
+    private static final ThreadLocal<ColumnScratch> SCRATCH =
+            ThreadLocal.withInitial(ColumnScratch::new);
+    /** Per-worker reused cursor — chunk fill is single-threaded per worker; set() overwrites
+     *  all coords before each setBlockState and the pos isn't retained. */
+    private static final ThreadLocal<BlockPos.MutableBlockPos> MUTABLE =
+            ThreadLocal.withInitial(BlockPos.MutableBlockPos::new);
+
+    /** Returns the per-thread scratch instance — caller must init via {@link #initColumnScratch}. */
+    public static ColumnScratch getColumnScratch() {
+        return SCRATCH.get();
+    }
+
+    /** Populate {@code scratch} with column-invariant state for (x, z); call before the Y-loop. */
+    public static void initColumnScratch(int globalX, int globalZ, float distanceFromOrigin, ColumnScratch s) {
+        PerlinSimplexNoise hNoise = globalHOffsetNoise;
+        PerlinSimplexNoise vNoise = globalVOffsetNoise;
+        PerlinSimplexNoise cNoise = globalCOffsetNoise;
+
+        computeOctaveFields(globalX, globalZ, activeTerrainParams,
+                s.hScales, s.vScales, s.wrappedXs, s.wrappedZs, hNoise, vNoise);
+
+        if (useIslandEnvelope) {
+            double h = islandEnvelopeHScale;
+            double freq = 1.0;
+            for (int k = 0; k < NUM_OCTAVES; k++) {
+                s.hScales[k] = h * freq;
+                freq *= LACUNARITY;
+            }
+        }
+
+        if (useBandBlend) {
+            computeBBState(s.hScales, s.bbLoIdx, s.bbT);
+        }
+
+        s.cycleHeight = getCycleHeight(s.wrappedXs[0], s.wrappedZs[0], cNoise);
+        s.threshold = getThreshold(s.wrappedXs[0], s.wrappedZs[0], distanceFromOrigin);
+        s.islandEnvelope = useIslandEnvelope ? getIslandEnvelope(globalX, globalZ) : 1.0;
+        s.dimMinY = BeyondTerrainState.getDimMinY();
+        s.dimMaxY = BeyondTerrainState.getDimMaxY();
+    }
+
+    /** Per-Y density with no allocation. Caller hoists {@code scratch} via {@link #initColumnScratch}. */
+    public static double getTerrainDensityScratch(int globalY, ColumnScratch s) {
+        double density = getTerrainDensity(globalY, s.hScales, s.vScales, s.cycleHeight,
+                s.wrappedXs, s.wrappedZs, useBandBlend ? s.bbLoIdx : null,
+                useBandBlend ? s.bbT : null, s.dimMinY, s.dimMaxY);
+        return density * s.islandEnvelope;
+    }
+
+    /** Per-Y solid check with no allocation. Mirrors {@link #isSolidTerrain} semantics. */
+    public static boolean isSolidTerrainScratch(int globalY, ColumnScratch s) {
+        return getTerrainDensityScratch(globalY, s) > s.threshold;
     }
 
     public static boolean isSolidTerrain(int globalX, int globalY, int globalZ, float distanceFromOrigin) {
@@ -703,7 +759,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     @Override
     public CompletableFuture<ChunkAccess> fillFromNoise(Blender blender, RandomState randomState, StructureManager structureManager, ChunkAccess chunk) {
         computeNoisesIfNotPresent(randomState);
-        BeyondTerrainState.setDimBounds(chunk.getMinBuildHeight(), chunk.getMaxBuildHeight());
+        BeyondTerrainStateInternal.setDimBounds(chunk.getMinBuildHeight(), chunk.getMaxBuildHeight());
         return CompletableFuture.supplyAsync(() -> {
             ChunkPos chunkPos = chunk.getPos();
             int startX = chunkPos.getMinBlockX();
@@ -720,6 +776,8 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             }
             if (validStarts == null) validStarts = Collections.emptyList();
 
+            Beardifier beard = Beardifier.forStructuresInChunk(structureManager, chunkPos);
+
             for (int x = 0; x < 16; x++) {
                 for (int z = 0; z < 16; z++) {
                     int globalX = startX + x;
@@ -733,7 +791,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                     }
 
                     else if (distanceFromOrigin >= 650) {
-                      generateEndTerrain(chunk, globalX, globalZ, distanceFromOrigin, validStarts);
+                      generateEndTerrain(chunk, globalX, globalZ, distanceFromOrigin, validStarts, beard);
                     }
                 }
             }
@@ -746,7 +804,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         islandRadius += 50;
         int height = 40;
         float threshold = 1;
-        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
+        BlockPos.MutableBlockPos mutable = MUTABLE.get();
 
         for (int y = 0; y <= 40; y++) {
             double noiseValue = simplexNoise.getValue(globalX * 0.03, y * 0.1, globalZ * 0.03);
@@ -771,57 +829,59 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
     }
 
-    private void generateEndTerrain(ChunkAccess chunk, int globalX, int globalZ, float distanceFromOrigin, List<StructureStart> validStarts) {
-        // Column-invariant values resolved once per (globalX, globalZ); y-loop reuses them.
-        PerlinSimplexNoise hNoise = globalHOffsetNoise;
-        PerlinSimplexNoise vNoise = globalVOffsetNoise;
-        PerlinSimplexNoise cNoise = globalCOffsetNoise;
+    private void generateEndTerrain(ChunkAccess chunk, int globalX, int globalZ, float distanceFromOrigin, List<StructureStart> validStarts, Beardifier beard) {
+        // Column-invariant scratch: computeOctaveFields warp + cycle/threshold + band state
+        // (shared with getBaseHeight; same args ⇒ identical values).
+        ColumnScratch s = SCRATCH.get();
+        initColumnScratch(globalX, globalZ, distanceFromOrigin, s);
+        double cycleHeight = s.cycleHeight;
+        double baseThreshold = s.threshold;
 
-        // Snapshot terrain params once per column (datapack reload safety).
-        BeyondTerrainParams params = activeTerrainParams;
+        BlockPos.MutableBlockPos mutable = MUTABLE.get();
 
-        double[] hScales = new double[NUM_OCTAVES];
-        double[] vScales = new double[NUM_OCTAVES];
-        int[] wrappedXs = new int[NUM_OCTAVES];
-        int[] wrappedZs = new int[NUM_OCTAVES];
-        computeOctaveFields(globalX, globalZ, params,
-                hScales, vScales, wrappedXs, wrappedZs, hNoise, vNoise);
+        final int dimMinY = BeyondTerrainState.getDimMinY();
+        final int dimMaxY = BeyondTerrainState.getDimMaxY();
+        // useBandBlend is constant during a column — hoist to drop the per-Y volatile read+branch.
+        final boolean bb = useBandBlend;
+        final int[] bbLo = bb ? s.bbLoIdx : null;
+        final double[] bbT = bb ? s.bbT : null;
+        // Reused per-column context (Beardifier.compute reads only blockX/Y/Z) — no per-Y alloc.
+        final BeardCtx bc = new BeardCtx();
+        bc.x = globalX;
+        bc.z = globalZ;
+        // Skip the 32-block edgeGradient zero bands at top/bottom — density is forced 0 there.
+        final int loopStart = dimMinY + 33;
+        final int loopEnd = dimMaxY - 32;
+        for (int y = loopStart; y < loopEnd; y++) {
+            double density = getTerrainDensity(y, s.hScales, s.vScales, cycleHeight,
+                    s.wrappedXs, s.wrappedZs, bbLo, bbT, dimMinY, dimMaxY);
 
-        // cycleHeight + baseThreshold use octave-0's wrap (matches F3 debug + WrappedCoordsContractTest).
-        double cycleHeight = getCycleHeight(wrappedXs[0], wrappedZs[0], cNoise);
-        double baseThreshold = getThreshold(wrappedXs[0], wrappedZs[0], distanceFromOrigin);
+            // Vanilla beardification (additive): solidify columns under structure pieces
+            // with terrain_adaptation != none, alongside Beyond's pancake stamp.
+            bc.y = y;
+            double beardDelta = beard.compute(bc);
+            double finalDensity = density + beardDelta;
 
-        // BB-3a: column-hoisted band state keeps log/divide/smoothstep out of the y-loop.
-        int[] bbLoIdx = null;
-        double[] bbT = null;
-        if (useBandBlend) {
-            bbLoIdx = new int[NUM_OCTAVES];
-            bbT = new double[NUM_OCTAVES];
-            computeBBState(hScales, bbLoIdx, bbT);
-        }
-
-        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
-
-        // Loop cap at (worldHeight - 32): edgeGradient zeroes beyond.
-        final int loopEnd = (int) (getWorldHeight() - 32);
-        for (int y = 1; y < loopEnd; y++) {
-            //double structureAdaptation = calculateStructureAdaptation(validStarts, globalX, y, globalZ);
-
-            double density = getTerrainDensity(y, hScales, vScales, cycleHeight, wrappedXs, wrappedZs, bbLoIdx, bbT);
-            //// REMOVED BEARDIFICATION AS IT DID NOT WORK AS EXPECTED
-            // Beardification: pull threshold down + density up near structure bounds so
-            // terrain extends to support them (prevents floating structures).
-            //double adaptedThreshold = baseThreshold - structureAdaptation * 0.15;
-            //double adaptedDensity = density + structureAdaptation * 0.1;
-
-            if (density > baseThreshold) {
+            if (finalDensity > baseThreshold) {
                 chunk.setBlockState(mutable.set(globalX, y, globalZ), Blocks.END_STONE.defaultBlockState(), false);
             }
         }
     }
 
+    /** Mutable {@link DensityFunction.FunctionContext} reused down a column; Beardifier.compute
+     *  reads only blockX/Y/Z so a per-Y allocation is unnecessary. */
+    private static final class BeardCtx implements DensityFunction.FunctionContext {
+        int x, y, z;
+        @Override public int blockX() { return x; }
+        @Override public int blockY() { return y; }
+        @Override public int blockZ() { return z; }
+    }
+
     private static double cyclicDensity(int y, double cycleHeight) {
-        double normalizedY = (y % cycleHeight) / cycleHeight;
+        // Math.floorMod-style for double: keeps normalizedY in [0, 1) for negative y too.
+        // Java's % returns sign of dividend, which would invert density modifier below y=0.
+        double mod = ((y % cycleHeight) + cycleHeight) % cycleHeight;
+        double normalizedY = mod / cycleHeight;
         if (normalizedY < 0.8) {
             return Math.sin((normalizedY / 0.8) * (Math.PI / 2));
         } else {
@@ -829,21 +889,26 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         }
     }
 
-    private static double edgeGradient(double y, double worldHeight, double noiseValue) {
+    private static double edgeGradient(double y, double noiseValue, int dimMinY, int dimMaxY) {
+        // 32-block buffer + 64-block fade at top/bottom (shiftedY = globalY+32).
+        final double bottomZeroY = dimMinY + 64;
+        final double bottomFadeEnd = bottomZeroY + 64;
+        final double topZeroY = dimMaxY;
+        final double topFadeStart = topZeroY - 64;
         double gradientBottom = 1.0;
         double gradientTop = 1.0;
 
-        if (y <= 64) {
-            gradientBottom = (y - 32) / 32.0;
-            if (y < 32) {
+        if (y <= bottomFadeEnd) {
+            gradientBottom = (y - bottomZeroY) / 64.0;
+            if (y < bottomZeroY) {
                 gradientBottom = 0.0;
             }
         }
 
-        if (y >= (worldHeight - 64)) {
-            // Clamp to [0, 1]: y > worldHeight would otherwise flip the sign and leak
+        if (y >= topFadeStart) {
+            // Clamp to [0, 1]: y above topZeroY would otherwise flip sign and leak
             // phantom solid biomes at high y in BeyondEndBiomeSource queries.
-            gradientTop = Math.max(0.0, (worldHeight - y) / 64.0);
+            gradientTop = Math.max(0.0, (topZeroY - y) / 64.0);
         }
 
         return gradientBottom * gradientTop * noiseValue;
@@ -938,38 +1003,33 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
     @Override
     public void applyCarvers(WorldGenRegion level, long seed, RandomState random, BiomeManager biomeManager, StructureManager structureManager, ChunkAccess chunk, GenerationStep.Carving step) {
-        BeyondTerrainState.setDimBounds(level.getMinBuildHeight(), level.getMaxBuildHeight());
+        BeyondTerrainStateInternal.setDimBounds(level.getMinBuildHeight(), level.getMaxBuildHeight());
         super.applyCarvers(level, seed, random, biomeManager, structureManager, chunk, step);
     }
 
     @Override
     public NoiseColumn getBaseColumn(int x, int z, LevelHeightAccessor height, RandomState random) {
         computeNoisesIfNotPresent(random);
-        BeyondTerrainState.setDimBounds(height.getMinBuildHeight(), height.getMaxBuildHeight());
+        BeyondTerrainStateInternal.setDimBounds(height.getMinBuildHeight(), height.getMaxBuildHeight());
         return super.getBaseColumn(x, z, height, random);
     }
 
     @Override
     public void buildSurface(WorldGenRegion level, StructureManager structureManager, RandomState random, ChunkAccess chunk) {
         computeNoisesIfNotPresent(random);
-        BeyondTerrainState.setDimBounds(level.getMinBuildHeight(), level.getMaxBuildHeight());
+        BeyondTerrainStateInternal.setDimBounds(level.getMinBuildHeight(), level.getMaxBuildHeight());
         super.buildSurface(level, structureManager, random, chunk);
     }
 
     @Override
     public void applyBiomeDecoration(WorldGenLevel level, ChunkAccess chunk, StructureManager structureManager) {
-        BeyondTerrainState.setDimBounds(level.getMinBuildHeight(), level.getMaxBuildHeight());
+        BeyondTerrainStateInternal.setDimBounds(level.getMinBuildHeight(), level.getMaxBuildHeight());
         super.applyBiomeDecoration(level, chunk, structureManager);
         // Auroracite floor: owned by AuroraciteLayerFeature + AuroraciteLayerProtectionMixin.
 
-        // Exit-portal column sweep: EndDragonFight.spawnExitPortal reads the
-        // MOTION_BLOCKING_NO_LEAVES heightmap at (0,0) to place the obsidian
-        // podium. In enlarged-dim combos foreign decorators push that column's
-        // heightmap to build limit, spawning the portal at y≈319. Clear column
-        // (0,0) from y=60 (just above Beyond's central island dome) to dim top
-        // so the heightmap re-primes onto Beyond's END_STONE at y≈59. Scoped to
-        // one column (platforms survive) and gated on isActive() (soup mode
-        // leaves foreign owners alone).
+        // Clear column (0,0) above the central dome so the (0,0) heightmap re-primes
+        // onto Beyond's END_STONE — else the exit portal spawns at the foreign-pushed
+        // column top. One column only; gated on isActive().
         if (BeyondTerrainState.isActive()) {
             ChunkPos cp = chunk.getPos();
             if (cp.x == 0 && cp.z == 0) {

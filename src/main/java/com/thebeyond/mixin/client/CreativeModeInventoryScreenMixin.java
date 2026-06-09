@@ -9,13 +9,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Filters hidden items out of the creative inventory search. The search tab populates via
- * {@code NonNullList#addAll}, so {@code menu.items} is filtered after that call.
- * {@code require = 0} so a target-signature change silently skips rather than crashes.
- *
- * <p>Adapted from Malum ({@code com.sammy.malum.mixin.client.CreativeModeInventoryScreenMixin}).
- */
+/** Filters hidden items out of the creative inventory search by post-filtering
+ *  {@code menu.items} after {@code NonNullList#addAll}. {@code require = 0} for safety. */
 @Mixin(CreativeModeInventoryScreen.class)
 public class CreativeModeInventoryScreenMixin {
 

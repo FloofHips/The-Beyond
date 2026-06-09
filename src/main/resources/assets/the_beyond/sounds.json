@@ -43,6 +43,106 @@
       "the_beyond:block/end_stone/light5"
     ],
     "subtitle": "subtitles.block.generic.footsteps"
+  },"block.auroracite.break": {
+  "sounds": [
+    "the_beyond:block/auroracite/heavy1",
+    "the_beyond:block/auroracite/heavy2",
+    "the_beyond:block/auroracite/heavy3"
+  ],
+  "subtitle": "subtitles.block.generic.break"
+},
+  "block.auroracite.fall": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.auroracite.break",
+        "type": "event"
+      }
+    ]
+  },
+  "block.auroracite.hit": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.auroracite.step",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.auroracite.place": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.auroracite.break",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.auroracite.step": {
+    "sounds": [
+      "the_beyond:block/auroracite/light1",
+      "the_beyond:block/auroracite/light2",
+      "the_beyond:block/auroracite/light3",
+      "the_beyond:block/auroracite/light4",
+      "the_beyond:block/auroracite/light5"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.ectoplasm.fall": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.ectoplasm.break",
+        "type": "event"
+      }
+    ]
+  },
+  "block.ectoplasm.hit": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.ectoplasm.step",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.ectoplasm.place": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.ectoplasm.break",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.ectoplasm.step": {
+    "sounds": [
+      "the_beyond:block/ectoplasm/light1",
+      "the_beyond:block/ectoplasm/light2",
+      "the_beyond:block/ectoplasm/light3"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.ectoplasm.break": {
+    "sounds": [
+      "the_beyond:block/ectoplasm/heavy1",
+      "the_beyond:block/ectoplasm/heavy2",
+      "the_beyond:block/ectoplasm/heavy3",
+      "the_beyond:block/ectoplasm/heavy4"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.ectoplasm.warn": {
+    "sounds": [
+      "the_beyond:block/ectoplasm/warn1",
+      "the_beyond:block/ectoplasm/warn2",
+      "the_beyond:block/ectoplasm/warn3"
+    ],
+    "subtitle": "subtitles.block.ectoplasm.warn"
+  },
+  "block.ectoplasm.pop": {
+    "sounds": [
+      "the_beyond:block/ectoplasm/pop"
+    ],
+    "subtitle": "subtitles.block.ectoplasm.pop"
   },
   "block.plate_block.break": {
     "sounds": [
@@ -85,6 +185,113 @@
       "the_beyond:block/plate_block/light2",
       "the_beyond:block/plate_block/light3",
       "the_beyond:block/plate_block/light4"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.memor.break": {
+    "sounds": [
+      "the_beyond:block/memor/heavy1",
+      "the_beyond:block/memor/heavy2",
+      "the_beyond:block/memor/heavy3",
+      "the_beyond:block/memor/heavy4"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.memor.fall": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.memor.break",
+        "type": "event"
+      }
+    ]
+  },
+  "block.memor.hit": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.memor.step",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.memor.place": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.memor.break",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.memor.step": {
+    "sounds": [
+      "the_beyond:block/memor/light1",
+      "the_beyond:block/memor/light2",
+      "the_beyond:block/memor/light3",
+      "the_beyond:block/memor/light4"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.memor_faucet.open": {
+    "sounds": [
+      "the_beyond:block/memor_faucet/open1",
+      "the_beyond:block/memor_faucet/open2",
+      "the_beyond:block/memor_faucet/open3"
+    ],
+    "subtitle": "subtitles.block.memor_faucet.open"
+  },
+  "block.memor_faucet.close": {
+    "sounds": [
+      "the_beyond:block/memor_faucet/close1",
+      "the_beyond:block/memor_faucet/close2",
+      "the_beyond:block/memor_faucet/close3"
+    ],
+    "subtitle": "subtitles.block.memor_faucet.close"
+  },
+  "block.memor_faucet.absorb": {
+    "sounds": [
+      "the_beyond:block/memor_faucet/absorb1",
+      "the_beyond:block/memor_faucet/absorb2",
+      "the_beyond:block/memor_faucet/absorb3"
+    ],
+    "subtitle": "subtitles.block.memor_faucet.absorb"
+  },
+  "block.memor_faucet.power1": {
+    "sounds": [
+      "the_beyond:block/memor_faucet/power1"
+    ],
+    "subtitle": "subtitles.block.memor_faucet.power"
+  },
+  "block.memor_faucet.power2": {
+    "sounds": [
+      "the_beyond:block/memor_faucet/power2"
+    ],
+    "subtitle": "subtitles.block.memor_faucet.power"
+  },
+  "block.memor_faucet.power3": {
+    "sounds": [
+      "the_beyond:block/memor_faucet/power3"
+    ],
+    "subtitle": "subtitles.block.memor_faucet.power"
+  },
+  "block.memor_faucet.power4": {
+    "sounds": [
+      "the_beyond:block/memor_faucet/power4"
+    ],
+    "subtitle": "subtitles.block.memor_faucet.power"
+  },
+  "block.memor_faucet.power_final": {
+    "sounds": [
+      "the_beyond:block/memor_faucet/power_final"
+    ],
+    "subtitle": "subtitles.block.memor_faucet.power_final"
+  },
+  "block.memor_faucet.step": {
+    "sounds": [
+      "the_beyond:block/memor_faucet/light1",
+      "the_beyond:block/memor_faucet/light2",
+      "the_beyond:block/memor_faucet/light3",
+      "the_beyond:block/memor_faucet/light4"
     ],
     "subtitle": "subtitles.block.generic.footsteps"
   },
@@ -131,5 +338,539 @@
       "the_beyond:block/plated_end_stone/light4"
     ],
     "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.void_crystal.break": {
+    "sounds": [
+      "the_beyond:block/void_crystal/heavy1",
+      "the_beyond:block/void_crystal/heavy2",
+      "the_beyond:block/void_crystal/heavy3",
+      "the_beyond:block/void_crystal/heavy4"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.void_crystal.fall": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.void_crystal.break",
+        "type": "event"
+      }
+    ]
+  },
+  "block.void_crystal.hit": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.void_crystal.step",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.void_crystal.place": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.void_crystal.break",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.void_crystal.step": {
+    "sounds": [
+      "the_beyond:block/void_crystal/light1",
+      "the_beyond:block/void_crystal/light2",
+      "the_beyond:block/void_crystal/light3",
+      "the_beyond:block/void_crystal/light4"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.void_crystal.shatter": {
+    "sounds": [
+      "the_beyond:block/void_crystal/shatter",
+      "the_beyond:block/void_crystal/shatter2"
+    ],
+    "subtitle": "subtitles.block.void_crystal.shatter"
+  },"block.bonfire.break": {
+  "sounds": [
+    "the_beyond:block/bonfire/heavy1",
+    "the_beyond:block/bonfire/heavy2",
+    "the_beyond:block/bonfire/heavy3"
+  ],
+  "subtitle": "subtitles.block.generic.break"
+},
+  "block.bonfire.fall": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.bonfire.break",
+        "type": "event"
+      }
+    ]
+  },
+  "block.bonfire.hit": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.bonfire.step",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.bonfire.place": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.bonfire.break",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.bonfire.step": {
+    "sounds": [
+      "the_beyond:block/bonfire/light1",
+      "the_beyond:block/bonfire/light2",
+      "the_beyond:block/bonfire/light3"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.bonfire.activate": {
+    "sounds": [
+      "the_beyond:block/bonfire/activate1",
+      "the_beyond:block/bonfire/activate2",
+      "the_beyond:block/bonfire/activate3"
+    ],
+    "subtitle": "subtitles.block.bonfire.activate"
+  },
+  "block.bonfire.idle": {
+    "sounds": [
+      "the_beyond:block/bonfire/idle1",
+      "the_beyond:block/bonfire/idle2",
+      "the_beyond:block/bonfire/idle3",
+      "the_beyond:block/bonfire/idle4"
+    ],
+    "subtitle": "subtitles.block.bonfire.idle"
+  },
+  "block.bonfire.corrupted_idle": {
+    "sounds": [
+      "the_beyond:block/bonfire/corrupted_idle1",
+      "the_beyond:block/bonfire/corrupted_idle2",
+      "the_beyond:block/bonfire/corrupted_idle3",
+      "the_beyond:block/bonfire/corrupted_idle4"
+    ],
+    "subtitle": "subtitles.block.bonfire.corrupted_idle"
+  },
+  "block.bonfire.ignite": {
+    "sounds": [
+      "the_beyond:block/bonfire/ignite1",
+      "the_beyond:block/bonfire/ignite2"
+    ],
+    "subtitle": "subtitles.block.bonfire.ignite"
+  },
+  "block.bonfire.search": {
+    "sounds": [
+      "the_beyond:block/bonfire/search1",
+      "the_beyond:block/bonfire/search2"
+    ],
+    "subtitle": "subtitles.block.bonfire.search"
+  },
+  "entity.enderglop.death": {
+    "sounds": [
+      "mob/slime/big1",
+      "mob/slime/big2",
+      "mob/slime/big3",
+      "mob/slime/big4"
+    ],
+    "subtitle": "subtitles.entity.enderglop.death"
+  },
+  "entity.enderglop.death_small": {
+    "sounds": [
+      "mob/slime/small1",
+      "mob/slime/small2",
+      "mob/slime/small3",
+      "mob/slime/small4",
+      "mob/slime/small5"
+    ],
+    "subtitle": "subtitles.entity.enderglop.death_small"
+  },
+  "entity.enderglop.hurt": {
+    "sounds": [
+      "mob/slime/big1",
+      "mob/slime/big2",
+      "mob/slime/big3",
+      "mob/slime/big4"
+    ],
+    "subtitle": "subtitles.entity.enderglop.hurt"
+  },
+  "entity.enderglop.hurt_small": {
+    "sounds": [
+      "mob/slime/small1",
+      "mob/slime/small2",
+      "mob/slime/small3",
+      "mob/slime/small4",
+      "mob/slime/small5"
+    ],
+    "subtitle": "subtitles.entity.enderglop.hurt_small"
+  },
+  "entity.enderglop.jump": {
+    "sounds": [
+      "mob/magmacube/jump1",
+      "mob/magmacube/jump2",
+      "mob/magmacube/jump3",
+      "mob/magmacube/jump4"
+    ],
+    "subtitle": "subtitles.entity.enderglop.squish"
+  },
+  "entity.enderglop.squish": {
+    "sounds": [
+      "mob/magmacube/big1",
+      "mob/magmacube/big2",
+      "mob/magmacube/big3",
+      "mob/magmacube/big4"
+    ],
+    "subtitle": "subtitles.entity.enderglop.squish"
+  },
+  "entity.enderglop.squish_small": {
+    "sounds": [
+      "mob/magmacube/small1",
+      "mob/magmacube/small2",
+      "mob/magmacube/small3",
+      "mob/magmacube/small4",
+      "mob/magmacube/small5"
+    ],
+    "subtitle": "subtitles.entity.enderglop.squish_small"
+  },
+  "entity.enderglop.vibrate": {
+    "sounds": [
+      "the_beyond:mob/enderglop/vibrate",
+      "the_beyond:mob/enderglop/vibrate2",
+      "the_beyond:mob/enderglop/vibrate3"
+    ]
+  },
+  "entity.enderglop.armor": {
+    "sounds": [
+      "the_beyond:mob/enderglop/armor",
+      "the_beyond:mob/enderglop/armor2"
+    ],
+    "subtitle": "subtitles.entity.enderglop.armor"
+  },
+  "entity.enderglop.armor_hurt": {
+    "sounds": [
+      "the_beyond:mob/enderglop/armor_hurt",
+      "the_beyond:mob/enderglop/armor_hurt2"
+    ],
+    "subtitle": "subtitles.entity.enderglop.armor_hurt"
+  },
+  "entity.enderglop.armor_break": {
+    "sounds": [
+      "the_beyond:mob/enderglop/armor_break"
+    ],
+    "subtitle": "subtitles.entity.enderglop.armor_break"
+  },
+  "entity.abyssal_nomad.death": {
+    "sounds": [
+      "the_beyond:mob/abyssal_nomad/death"
+    ],
+    "subtitle": "subtitles.entity.abyssal_nomad.death"
+  },
+  "entity.abyssal_nomad.hurt": {
+    "sounds": [
+      "the_beyond:mob/abyssal_nomad/hurt1",
+      "the_beyond:mob/abyssal_nomad/hurt2",
+      "the_beyond:mob/abyssal_nomad/hurt3"
+    ],
+    "subtitle": "subtitles.entity.abyssal_nomad.hurt"
+  },
+  "entity.abyssal_nomad.idle": {
+    "sounds": [
+      "the_beyond:mob/abyssal_nomad/idle1",
+      "the_beyond:mob/abyssal_nomad/idle2",
+      "the_beyond:mob/abyssal_nomad/idle3",
+      "the_beyond:mob/abyssal_nomad/idle4"
+    ],
+    "subtitle": "subtitles.entity.abyssal_nomad.idle"
+  },
+  "entity.abyssal_nomad.heal": {
+    "sounds": [
+      "the_beyond:mob/abyssal_nomad/heal1",
+      "the_beyond:mob/abyssal_nomad/heal2",
+      "the_beyond:mob/abyssal_nomad/heal3"
+    ],
+    "subtitle": "subtitles.entity.abyssal_nomad.heal"
+  },
+  "entity.abyssal_nomad.attack": {
+    "sounds": [
+      "the_beyond:mob/abyssal_nomad/attack"
+    ],
+    "subtitle": "subtitles.entity.abyssal_nomad.attack"
+  },
+  "entity.abyssal_nomad.danger": {
+    "sounds": [
+      "the_beyond:mob/abyssal_nomad/danger"
+    ],
+    "subtitle": "subtitles.entity.abyssal_nomad.danger"
+  },
+  "entity.abyssal_nomad.nod": {
+    "sounds": [
+      "the_beyond:mob/abyssal_nomad/nod1",
+      "the_beyond:mob/abyssal_nomad/nod2"
+    ],
+    "subtitle": "subtitles.entity.abyssal_nomad.nod"
+  },
+  "entity.abyssal_nomad.remember": {
+    "sounds": [
+      "the_beyond:mob/abyssal_nomad/remember1",
+      "the_beyond:mob/abyssal_nomad/remember2",
+      "the_beyond:mob/abyssal_nomad/remember3"
+    ],
+    "subtitle": "subtitles.entity.abyssal_nomad.remember"
+  },
+  "entity.abyssal_nomad.tear": {
+    "sounds": [
+      "the_beyond:mob/abyssal_nomad/tear1",
+      "the_beyond:mob/abyssal_nomad/tear2"
+    ],
+    "subtitle": "subtitles.entity.abyssal_nomad.tear"
+  },
+  "entity.abyssal_nomad.teleport": {
+    "sounds": [
+      "the_beyond:mob/abyssal_nomad/teleport1",
+      "the_beyond:mob/abyssal_nomad/teleport2"
+    ],
+    "subtitle": "subtitles.entity.abyssal_nomad.teleport"
+  },
+  "entity.abyssal_nomad.thank": {
+    "sounds": [
+      "the_beyond:mob/abyssal_nomad/thank1",
+      "the_beyond:mob/abyssal_nomad/thank2"
+    ],
+    "subtitle": "subtitles.entity.abyssal_nomad.thank"
+  },
+  "entity.abyssal_nomad.decrypt": {
+    "sounds": [
+      "the_beyond:mob/abyssal_nomad/decrypt"
+    ]
+  },
+  "entity.enatious_totem.death": {
+    "sounds": [
+      "the_beyond:mob/enatious_totem/death"
+    ],
+    "subtitle": "subtitles.entity.enatious_totem.death"
+  },
+  "entity.enatious_totem.hurt": {
+    "sounds": [
+      "the_beyond:mob/enatious_totem/hurt1",
+      "the_beyond:mob/enatious_totem/hurt2"
+    ],
+    "subtitle": "subtitles.entity.enatious_totem.hurt"
+  },
+  "entity.enatious_totem.leave": {
+    "sounds": [
+      "the_beyond:mob/enatious_totem/leave1",
+      "the_beyond:mob/enatious_totem/leave2",
+      "the_beyond:mob/enatious_totem/leave3"
+    ],
+    "subtitle": "subtitles.entity.enatious_totem.leave"
+  },
+  "entity.enatious_totem.ready": {
+    "sounds": [
+      "the_beyond:mob/enatious_totem/ready1",
+      "the_beyond:mob/enatious_totem/ready2"
+    ],
+    "subtitle": "subtitles.entity.enatious_totem.ready"
+  },
+  "entity.enatious_totem.roots_creaking": {
+    "sounds": [
+      "the_beyond:mob/enatious_totem/roots_creaking1",
+      "the_beyond:mob/enatious_totem/roots_creaking2",
+      "the_beyond:mob/enatious_totem/roots_creaking3",
+      "the_beyond:mob/enatious_totem/roots_creaking4",
+      "the_beyond:mob/enatious_totem/roots_creaking5"
+    ],
+    "subtitle": "subtitles.entity.enatious_totem.roots_creaking"
+  },
+  "entity.enatious_totem.shockwave": {
+    "sounds": [
+      "the_beyond:mob/enatious_totem/shockwave"
+    ],
+    "subtitle": "subtitles.entity.enatious_totem.shockwave"
+  },
+  "entity.enatious_totem.shoot": {
+    "sounds": [
+      "the_beyond:mob/enatious_totem/shoot1",
+      "the_beyond:mob/enatious_totem/shoot2",
+      "the_beyond:mob/enatious_totem/shoot3"
+    ],
+    "subtitle": "subtitles.entity.enatious_totem.shoot"
+  },
+  "entity.enatious_totem.spawn": {
+    "sounds": [
+      "the_beyond:mob/enatious_totem/spawn"
+    ],
+    "subtitle": "subtitles.entity.enatious_totem.spawn"
+  },
+  "entity.enatious_totem.teleport": {
+    "sounds": [
+      "the_beyond:mob/enatious_totem/teleport1",
+      "the_beyond:mob/enatious_totem/teleport2"
+    ],
+    "subtitle": "subtitles.entity.enatious_totem.teleport"
+  },
+  "entity.seed.knockback_burst": {
+    "sounds": [
+      "the_beyond:mob/seed/knockback_burst1",
+      "the_beyond:mob/seed/knockback_burst2"
+    ],
+    "subtitle": "subtitles.entity.seed.knockback_burst"
+  },
+  "entity.seed.poison_bounce": {
+    "sounds": [
+      "the_beyond:mob/seed/poison_bounce1",
+      "the_beyond:mob/seed/poison_bounce2",
+      "the_beyond:mob/seed/poison_bounce3"
+    ],
+    "subtitle": "subtitles.entity.seed.poison_bounce"
+  },
+  "entity.seed.poison_land": {
+    "sounds": [
+      "the_beyond:mob/seed/poison_land1",
+      "the_beyond:mob/seed/poison_land2",
+      "the_beyond:mob/seed/poison_land3"
+    ],
+    "subtitle": "subtitles.entity.seed.poison_land"
+  },
+  "entity.seed.unstable_burst": {
+    "sounds": [
+      "the_beyond:mob/seed/unstable_burst1",
+      "the_beyond:mob/seed/unstable_burst2"
+    ],
+    "subtitle": "subtitles.entity.seed.unstable_burst"
+  },
+  "entity.seed.unstable_fail": {
+    "sounds": [
+      "the_beyond:mob/seed/unstable_fail1",
+      "the_beyond:mob/seed/unstable_fail2"
+    ],
+    "subtitle": "subtitles.entity.seed.unstable_fail"
+  },
+  "entity.seed.unstable_fly": {
+    "sounds": [
+      "the_beyond:mob/seed/unstable_fly"
+    ],
+    "subtitle": "subtitles.entity.seed.unstable_fly"
+  },
+  "entity.lantern.hurt": {
+    "sounds": [
+      "the_beyond:mob/lantern/hurt1",
+      "the_beyond:mob/lantern/hurt2",
+      "the_beyond:mob/lantern/hurt3"
+    ],
+    "subtitle": "subtitles.entity.lantern.hurt"
+  },
+  "entity.lantern.idle": {
+    "sounds": [
+      "the_beyond:mob/lantern/idle1",
+      "the_beyond:mob/lantern/idle2",
+      "the_beyond:mob/lantern/idle3",
+      "the_beyond:mob/lantern/idle4",
+      "the_beyond:mob/lantern/idle5",
+      "the_beyond:mob/lantern/idle6"
+    ],
+    "subtitle": "subtitles.entity.lantern.idle"
+  },
+  "entity.lantern.shed": {
+    "sounds": [
+      "the_beyond:mob/lantern/shed1",
+      "the_beyond:mob/lantern/shed2",
+      "the_beyond:mob/lantern/shed3"
+    ],
+    "subtitle": "subtitles.entity.lantern.shed"
+  },
+  "entity.lantern.spawn": {
+    "sounds": [
+      "the_beyond:mob/lantern/spawn1",
+      "the_beyond:mob/lantern/spawn2",
+      "the_beyond:mob/lantern/spawn3"
+    ],
+    "subtitle": "subtitles.entity.lantern.spawn"
+  },
+  "entity.lantern.teleport": {
+    "sounds": [
+      "the_beyond:mob/lantern/teleport1",
+      "the_beyond:mob/lantern/teleport2",
+      "the_beyond:mob/lantern/teleport3"
+    ],
+    "subtitle": "subtitles.entity.lantern.teleport"
+  },
+  "entity.respite_totem.activate": {
+    "sounds": [
+      "the_beyond:mob/respite_totem/activate1",
+      "the_beyond:mob/respite_totem/activate2",
+      "the_beyond:mob/respite_totem/activate3"
+    ],
+    "subtitle": "subtitles.entity.respite_totem.activate"
+  },
+  "entity.respite_totem.float": {
+    "sounds": [
+      "the_beyond:mob/respite_totem/float1",
+      "the_beyond:mob/respite_totem/float2",
+      "the_beyond:mob/respite_totem/float3"
+    ],
+    "subtitle": "subtitles.entity.respite_totem.float"
+  },
+  "entity.respite_totem.shatter": {
+    "sounds": [
+      "the_beyond:mob/respite_totem/shatter"
+    ],
+    "subtitle": "subtitles.entity.respite_totem.shatter"
+  },
+  "entity.respite_totem.spawn": {
+    "sounds": [
+      "the_beyond:mob/respite_totem/spawn"
+    ],
+    "subtitle": "subtitles.entity.respite_totem.spawn"
+  },
+  "block.polar.charge": {
+    "sounds": [
+      "the_beyond:block/polar/charge",
+      "the_beyond:block/polar/charge2",
+      "the_beyond:block/polar/charge3"
+    ],
+    "subtitle": "subtitles.block.polar.charge"
+  },
+  "block.polar.cool": {
+    "sounds": [
+      "the_beyond:block/polar/cool",
+      "the_beyond:block/polar/cool2"
+    ],
+    "subtitle": "subtitles.block.polar.cool"
+  },
+  "block.polar.emerge": {
+    "sounds": [
+      "the_beyond:block/polar/emerge",
+      "the_beyond:block/polar/emerge2"
+    ],
+    "subtitle": "subtitles.block.polar.emerge"
+  },
+  "item.magnet.success": {
+    "sounds": [
+      "the_beyond:item/magnet/success"
+    ],
+    "subtitle": "subtitles.item.magnet.success"
+  },
+  "item.magnet.fail": {
+    "sounds": [
+      "the_beyond:item/magnet/fail"
+    ],
+    "subtitle": "subtitles.item.magnet.fail"
+  },
+  "item.magnet.pull": {
+    "sounds": [
+      "the_beyond:item/magnet/pull"
+    ]
+  },
+  "item.flame.fail": {
+    "sounds": [
+      "the_beyond:item/flame/fail1",
+      "the_beyond:item/flame/fail2"
+    ],
+    "subtitle": "subtitles.item.flame.fail"
   }
 }

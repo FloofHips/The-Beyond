@@ -3,6 +3,7 @@ package com.thebeyond.common.block.blockentities;
 import com.google.common.cache.LoadingCache;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.minecraft.client.MinecraftClient;
+import com.thebeyond.client.particle.CrosshairColorTransitionOptions;
 import com.thebeyond.common.block.RefugeBlock;
 import com.thebeyond.common.registry.BeyondAttachments;
 import com.thebeyond.common.registry.BeyondBlockEntities;
@@ -53,6 +54,7 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -69,6 +71,8 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
     private int tickCounter;
     public boolean isActive;
     private final Set<ChunkPos> affectedChunks = new HashSet<>();
+    @Nullable
+    private BlockPos appliedPos;
     private ContainerData dataAccess;
 
     private static final Component DEFAULT_NAME = Component.translatable("container.refuge");
@@ -82,6 +86,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
     public float rot = 0;
 
     public byte currentMode = -1;
+    public boolean hasBeenUsed = false;
     public byte animating = 0;
     public String[][] pattern;
 
@@ -310,10 +315,19 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         } else {
             this.currentMode = -1;
         }
+        if (tag.contains("hasBeenUsed")) {
+            this.hasBeenUsed = tag.getBoolean("hasBeenUsed");
+        } else {
+            this.hasBeenUsed = false;
+        }
         if (tag.contains("Pattern")) {
             this.pattern = decode(tag.getString("Pattern"));
         } else {
             this.pattern = createPattern();
+        }
+        if (tag.contains("AppliedPos")) {
+            long packed = tag.getLong("AppliedPos");
+            this.appliedPos = BlockPos.of(packed);
         }
     }
 
@@ -326,8 +340,14 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         if (currentMode != -1) {
             tag.putByte("CurrentMode", currentMode);
         }
+
+        tag.putBoolean("hasBeenUsed", hasBeenUsed);
+
         if (pattern != null) {
             tag.putString("Pattern", flattenPattern(pattern));
+        }
+        if (appliedPos != null) {
+            tag.putLong("AppliedPos", appliedPos.asLong());
         }
     }
 
@@ -345,6 +365,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
 
     public void setMode(byte i, RefugeBlockEntity be) {
         be.updateAllChunks(i);
+        if (!be.hasBeenUsed) hasBeenUsed = true;
     }
     public byte getMode() {
         return currentMode;
@@ -354,6 +375,13 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
     public ResolvableProfile getOwnerProfile() {
         return this.owner;
     }
+    private void safeSendBlockUpdated() {
+        try {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        } catch (UnsupportedOperationException ignored) {
+        }
+    }
+
     public void setOwner(ItemStack stack) {
         if (stack.is(Items.PLAYER_HEAD)) {
             ResolvableProfile resolvableprofile = (ResolvableProfile)stack.get(DataComponents.PROFILE);
@@ -361,7 +389,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
                 this.owner = resolvableprofile;
                 this.updateOwnerProfile();
                 if (level != null && !level.isClientSide) {
-                    level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+                    safeSendBlockUpdated();
                 }
             }
         }
@@ -375,7 +403,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
 
         this.updateOwnerProfile();
         if (level != null && !level.isClientSide) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            safeSendBlockUpdated();
         }
 
         if (level == null) return;
@@ -452,11 +480,13 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         }
 
         currentMode = newMode;
+        appliedPos = worldPosition.immutable();
         //fill();
     }
 
     public void remove() {
         if (level == null || level.isClientSide) return;
+        appliedPos = null;
 
         for (ChunkPos chunkPos : affectedChunks) {
             LevelChunk chunk = level.getChunkSource().getChunk(chunkPos.x, chunkPos.z, false);
@@ -525,8 +555,43 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
                 unregisterRefuge((ServerLevel) level, be);
             }
         }
+
+        // Sub-level pull: mirrors EnadrakeBuildRefugeGoal canUse() gate.
+        if (!state.getValue(RefugeBlock.POWERED) && be.tickCounter % 20 == 0) {
+            Vec3 visible = com.thebeyond.api.compat.BeyondCompatHooks.visibleOnly(level, pos);
+            if (visible != null) {
+                AABB box = AABB.ofSize(visible, 20, 20, 20);
+                for (com.thebeyond.common.entity.EnadrakeEntity e :
+                        level.getEntitiesOfClass(com.thebeyond.common.entity.EnadrakeEntity.class, box)) {
+                    if (e.onAWalkTimer > 0 || e.panic > 0) continue;
+                    net.minecraft.world.item.ItemStack held =
+                            e.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND);
+                    if (held.isEmpty() || held.getRarity() == net.minecraft.world.item.Rarity.EPIC) continue;
+                    be.printPattern();
+                    held.shrink(1);
+                    e.panic = 50;
+                    break;
+                }
+            }
+        }
+
+        if (shouldPing(state, be)) {
+            Vec3 center = be.worldPosition.getCenter();
+            level.playSound(null, center.x, center.y, center.z, SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 1, 1);
+
+            if (level instanceof ServerLevel serverLevel) {
+                serverLevel.sendParticles(new CrosshairColorTransitionOptions(
+                        new Vector3f(0.7f, 0.0f, 0.9f),
+                        new Vector3f(1f, 0.1f, 1f),
+                        0.1f
+                ), center.x+0.001f, center.y, center.z+0.001f, 1,0,0, 0,0);
+            }
+        }
     }
 
+    public static boolean shouldPing(BlockState state, RefugeBlockEntity be) {
+        return state.getValue(RefugeBlock.POWERED) && be.tickCounter % 20 == 0 && !be.hasBeenUsed;
+    }
 
     public static void rotAnimationTick(Level level, BlockPos pos, BlockState state, RefugeBlockEntity be) {
         if (!RefugeBlock.isActive(state)) return;
@@ -536,13 +601,31 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
             be.animating--;
 
         be.oRot = be.rot;
-        Player player = level.getNearestPlayer((double)pos.getX() + (double)0.5F, (double)pos.getY() + (double)0.5F, (double)pos.getZ() + (double)0.5F, (double)16.0F, false);
+
+        // Inside a sub-level (Sable/Aeronautics contraption) the block sits at far-off grid coordinates:
+        // search for the player at the contraption's real-world position, and measure the facing angle in the
+        // contraption's local frame (its render pose rotates the model), so the refuge still turns to the player.
+        Vec3 visible = com.thebeyond.api.compat.BeyondCompatHooks.visibleOnAnyLevel(level, pos);
+        double searchX = visible != null ? visible.x : (double) pos.getX() + 0.5D;
+        double searchY = visible != null ? visible.y : (double) pos.getY() + 0.5D;
+        double searchZ = visible != null ? visible.z : (double) pos.getZ() + 0.5D;
+
+        Player player = level.getNearestPlayer(searchX, searchY, searchZ, 16.0D, false);
 
         if (player != null && level.random.nextFloat() < 0.01) {
-            double d0 = player.getX() - ((double)pos.getX() + (double)0.5F);
-            double d1 = player.getZ() - ((double)pos.getZ() + (double)0.5F);
-            be.tRot = (float)Mth.atan2(d1, d0);
-            level.playSound(player, pos, SoundEvents.ROOTS_BREAK, SoundSource.BLOCKS, 1, 1);
+            double targetX = player.getX();
+            double targetZ = player.getZ();
+            if (visible != null) {
+                Vec3 local = com.thebeyond.api.compat.BeyondCompatHooks.toLocalFrame(level, pos, player.position());
+                if (local != null) {
+                    targetX = local.x;
+                    targetZ = local.z;
+                }
+            }
+            double d0 = targetX - ((double) pos.getX() + 0.5D);
+            double d1 = targetZ - ((double) pos.getZ() + 0.5D);
+            be.tRot = (float) Mth.atan2(d1, d0);
+            level.playSound(player, searchX, searchY, searchZ, SoundEvents.ROOTS_BREAK, SoundSource.BLOCKS, 1, 1);
         }
 
         while(be.rot >= (float)Math.PI) {
@@ -599,6 +682,37 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         if (level instanceof ServerLevel serverLevel && isActive) {
             registerRefuge(serverLevel, this);
         }
+        reapplyIfRelocated();
+    }
+
+    /** Re-runs {@code addRefuge} on relocation; probes the center chunk first to skip
+     *  legacy saves whose counter was already applied in a prior session. */
+    private void reapplyIfRelocated() {
+        if (level == null || level.isClientSide) return;
+        if (currentMode < 0 || currentMode > 3) return;
+        if (worldPosition.equals(appliedPos)) return;
+        makeChunks();
+        LevelChunk centerChunk = level.getChunkSource().getChunk(worldPosition.getX() >> 4, worldPosition.getZ() >> 4, false);
+        boolean alreadyApplied = false;
+        if (centerChunk != null) {
+            RefugeChunkData centerData = centerChunk.getData(BeyondAttachments.REFUGE_DATA);
+            alreadyApplied = switch (currentMode) {
+                case MODE_HUNGER -> centerData.shouldPreventHunger();
+                case MODE_EXPLOSION -> centerData.shouldPreventExplosion();
+                case MODE_MOB_SPAWN -> centerData.shouldPreventMobSpawn();
+                case MODE_FALL_DAMAGE -> centerData.shouldPreventFallDamage();
+                default -> false;
+            };
+        }
+        if (!alreadyApplied) {
+            for (ChunkPos cp : affectedChunks) {
+                LevelChunk chunk = level.getChunkSource().getChunk(cp.x, cp.z, false);
+                if (chunk == null) continue;
+                chunk.getData(BeyondAttachments.REFUGE_DATA).addRefuge(currentMode);
+            }
+        }
+        appliedPos = worldPosition.immutable();
+        setChanged();
     }
 
     public void activate(Player player) {

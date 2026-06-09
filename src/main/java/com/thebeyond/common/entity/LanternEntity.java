@@ -11,6 +11,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -40,6 +41,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumSet;
 import java.util.function.Predicate;
@@ -195,14 +197,8 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
         return new AABB(getX() - 0.7, getY() - 0.8, getZ() - 0.7, getX() + 0.7, getY() + 0.8, getZ() + 0.7);
     }
 
-    /**
-     * Lantern models extend far beyond the collision AABB (Leviathan body ~5b,
-     * tail ~4b vs 1.4b collision). Without this override, frustum culling pops
-     * the entity in/out on sub-block camera movement — under a shaderpack the
-     * bloom/glow drops with it, producing the "halo flicker" artifact.
-     * Per-size inflation covers visual extent + animation swing; extra draw
-     * calls when grazing the frustum are acceptable.
-     */
+    /** Models extend far beyond the collision AABB (Leviathan body ~5b vs 1.4b); without
+     *  this, frustum culling pops the entity in/out and a shaderpack's bloom flickers. */
     @Override
     public AABB getBoundingBoxForCulling() {
         double inflate = switch (getSize()) {
@@ -222,13 +218,22 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
         if (isFlying()) {
             if (this.getY() > 190 && this.getY() < 200) {
                 navigation.stop();
-                float x = getSize() == 3 ? (((int)this.getX()/16)-1)*16 : (float) getX();
-                navigation.moveTo(x, 197f, this.getZ()-10, 0.7);
+
+                if (getSize() == 3) {
+                    float x = ((int)this.getBlockX()/8)*8;
+                    navigation.moveTo(x, 197f, this.getBlockZ() - 10, 0.7);
+                }
+
+                else navigation.moveTo(getX(), 197f, this.getZ()-10, 0.7);
             } else {
                 if (tickCount % 40 == 0) {
                     navigation.stop();
-                    float x = getSize() == 3 ? (((int)this.getX()/16)-1)*16 : (float) getX();
-                    navigation.moveTo(x, 197f, this.getZ()-10, 0.7);
+
+                    if (getSize() == 3) {
+                        navigation.moveTo(this.getBlockX(), 197f, this.getBlockZ() - 10, 0.7);
+                    }
+
+                    else navigation.moveTo(getX(), 197f, this.getZ()-10, 0.7);
                 }
             }
         }
@@ -254,6 +259,34 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
         }
     }
 
+    @Override
+    public void makeSound(@javax.annotation.Nullable SoundEvent sound) {
+        if (sound != null) {
+            this.playSound(sound, this.getSoundVolume(), this.getVoicePitch());
+        }
+    }
+
+    @Override
+    public float getVoicePitch() {
+        return getPitch();
+    }
+
+    @Override
+    protected @Nullable SoundEvent getAmbientSound() {
+        return BeyondSoundEvents.LANTERN_IDLE.get();
+    }
+
+    @Override
+    protected @Nullable SoundEvent getHurtSound(DamageSource damageSource) {
+        return BeyondSoundEvents.LANTERN_HURT.get();
+    }
+
+    public void playSound(SoundEvent sound) {
+        if (!this.isSilent()) {
+            this.playSound(sound, 1.0F, getPitch());
+        }
+    }
+
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);
 
@@ -262,7 +295,7 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
                 this.setAlpha((int) (getAlpha()+150*random.nextFloat()));
                 itemstack.shrink(1);
                 player.addItem(new ItemStack(Items.TORCH));
-                this.playSound(SoundEvents.DOLPHIN_EAT);
+                this.playSound(SoundEvents.SOUL_ESCAPE.value());
                 if (player instanceof ServerPlayer serverPlayer)
                     BeyondCriteriaTriggers.BEFRIEND_LANTERN.get().trigger(serverPlayer);
                 return InteractionResult.SUCCESS;
@@ -274,9 +307,11 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
                 if (!isTrusting()) {
                     this.spawnAtLocation(new ItemStack(BeyondItems.LANTERN_SHED.get(), 1+random.nextInt(0, getSize()+1)));
                     this.gameEvent(GameEvent.ENTITY_INTERACT);
-                    this.playSound(SoundEvents.ARMADILLO_BRUSH);
+                    this.playSound(BeyondSoundEvents.LANTERN_SHED.get());
                     itemstack.hurtAndBreak(16, player, getSlotForHand(hand));
-                    this.playSound(SoundEvents.FOX_TELEPORT);
+                    this.playSound(BeyondSoundEvents.LANTERN_TELEPORT.get());
+
+                    ((ServerLevel) this.level()).sendParticles(ParticleTypes.PORTAL, this.getX() + 0, this.getY() + 0, this.getZ() + 0, 10*(getSize()+1), 0.5*(getSize()+1), 0.5*(getSize()+1), 0.5*(getSize()+1), 0.015);
                     ((ServerLevel) this.level()).sendParticles(ParticleTypes.DUST_PLUME, this.getX(), getY(),getZ(), 5 * (getSize()+1), 0.4*(getSize()+1),0.4*(getSize()+1),0.4*(getSize()+1),0.01);
 
                     this.discard();
@@ -285,7 +320,7 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
 
                 this.spawnAtLocation(new ItemStack(BeyondBlocks.ECTOPLASM.asItem(), 1+random.nextInt(0, (getSize()+1)*2)));
                 this.gameEvent(GameEvent.ENTITY_INTERACT);
-                this.playSound(SoundEvents.ARMADILLO_BRUSH);
+                this.playSound(BeyondSoundEvents.LANTERN_SHED.get());
                 itemstack.hurtAndBreak(16, player, getSlotForHand(hand));
                 ((ServerLevel) this.level()).sendParticles(ParticleTypes.DUST_PLUME, this.getX(), getY(),getZ(), 5 * (getSize()+1), 0.4*(getSize()+1),0.4*(getSize()+1),0.4*(getSize()+1),0.01);
 
@@ -305,6 +340,10 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
         }
 
         return InteractionResult.sidedSuccess(level().isClientSide);
+    }
+
+    private float getPitch() {
+        return Math.max( 0.85f,2 - ((getSize()) / 4f) * 2);
     }
 
     @Override
@@ -391,7 +430,7 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
             Vec3 direction = totem.position().subtract(this.position()).normalize();
             totem.setDeltaMovement(direction.x, direction.y, direction.z);
             level.sendParticles(ParticleTypes.PORTAL, totem.getX() + 0, totem.getY() + 0, totem.getZ() + 0, 10, 0.25, 1, 0.25, 0.015);
-            level.playSound(null, BlockPos.containing(totem.position()), SoundEvents.ALLAY_DEATH, SoundSource.AMBIENT);
+            level.playSound(null, BlockPos.containing(totem.position()), BeyondSoundEvents.RESPITE_TOTEM_SPAWN.get(), SoundSource.AMBIENT);
         }
     }
 
@@ -406,7 +445,7 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
             Vec3 direction = child.position().subtract(this.position()).normalize().scale(0.4f);
             child.setDeltaMovement(direction.x, direction.y, direction.z);
             level.sendParticles(ParticleTypes.PORTAL, child.getX() + 0, child.getY() + 0, child.getZ() + 0, 10, 0.25, 1, 0.25, 0.015);
-            level.playSound(null, BlockPos.containing(child.position()), SoundEvents.ALLAY_DEATH, SoundSource.AMBIENT,1,1);
+            level.playSound(null, BlockPos.containing(child.position()), BeyondSoundEvents.LANTERN_SPAWN.get(), SoundSource.AMBIENT,1,1);
         }
     }
 
@@ -418,12 +457,12 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
 
         if(level.addFreshEntity(lantern)){
 
-            lantern.playSound(SoundEvents.FOX_TELEPORT);
+            lantern.playSound(BeyondSoundEvents.LANTERN_TELEPORT.get());
             Vec3 direction = lantern.position().subtract(player.position()).normalize().scale(0.8f);
             lantern.setDeltaMovement(direction.x, direction.y, direction.z);
             lantern.lookAt(player, 180, 180);
             level.sendParticles(ParticleTypes.PORTAL, lantern.getX() + 0, lantern.getY() + 0, lantern.getZ() + 0, 10, 0.25, 1, 0.25, 0.015);
-            level.playSound(null, BlockPos.containing(lantern.position()), SoundEvents.WIND_CHARGE_BURST.value(), SoundSource.AMBIENT,5,1);
+            //level.playSound(null, BlockPos.containing(lantern.position()), SoundEvents.WIND_CHARGE_BURST.value(), SoundSource.AMBIENT,5,1);
         }
     }
 

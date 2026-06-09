@@ -4,22 +4,8 @@ import net.neoforged.fml.ModList;
 
 import java.lang.reflect.Method;
 
-/**
- * Detects whether shader-altering mods (Iris, Oculus) or alternative renderers
- * (Sodium, Embeddium) are loaded.
- *
- * <p>When shader mods are present, custom RenderTypes with custom shaders break due to
- * G-Buffer/depth-test incompatibilities — we fall back to CPU-side
- * texture processing with vanilla-compatible RenderTypes.</p>
- *
- * <p>When alternative renderers are present, out-of-range fog/lightmap color channels
- * wrap modulo-style instead of clamping (e.g. -0.3 → 0.7), tinting fog green.
- * {@link #isModdedRendererLoaded()} gates explicit [0,1] clamping in
- * {@code EndSpecialEffects} so vanilla-only installs skip the extra work.</p>
- *
- * <p>We check mod PRESENCE, not shader/renderer ACTIVITY, because these mods corrupt
- * OpenGL state even after toggling off mid-session.</p>
- */
+/** Detects loaded shader mods (Iris/Oculus) and alt renderers (Sodium/Embeddium); callers
+ *  fall back to CPU texturing / clamp fog channels accordingly. Presence-based. */
 public class ShaderCompatLib {
     private static Boolean cachedShaderResult = null;
     private static Boolean cachedRendererResult = null;
@@ -43,14 +29,8 @@ public class ShaderCompatLib {
         return cachedShaderResult;
     }
 
-    /**
-     * Returns {@code true} if a shader pack is live (loaded AND enabled). Flips to
-     * {@code false} when the user toggles the pack off mid-session — unlike
-     * {@link #isShaderModLoaded()}, which only reports mod presence.
-     *
-     * <p>Reflective call into {@code IrisApi#isShaderPackInUse()} (runtime-only, not on
-     * the compile classpath) — absence is tolerated.</p>
-     */
+    /** {@code true} only when a pack is loaded AND enabled — unlike {@link #isShaderModLoaded()}
+     *  this flips on/off mid-session via reflective {@code IrisApi#isShaderPackInUse()}. */
     public static boolean isShaderPackActive() {
         if (!isShaderModLoaded()) return false;
         initIrisReflection();
@@ -87,12 +67,8 @@ public class ShaderCompatLib {
         irisReflectionInitialized = true;
     }
 
-    /**
-     * Returns {@code true} if any modded renderer or shader mod is installed
-     * (Sodium, Embeddium, Iris, Oculus). Used to gate fog/lightmap color clamping
-     * in {@code EndSpecialEffects} — vanilla handles out-of-range channels gracefully,
-     * but these mods wrap them modulo-style causing green tinting.
-     */
+    /** True if Sodium/Embeddium/Iris/Oculus is installed; gates fog/lightmap channel
+     *  clamping (these wrap out-of-range modulo and tint the End green otherwise). */
     public static boolean isModdedRendererLoaded() {
         if (cachedRendererResult == null) {
             boolean sodium = ModList.get().isLoaded("sodium");
