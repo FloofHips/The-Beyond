@@ -6,6 +6,7 @@ import com.mojang.math.Axis;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.compat.ShaderCompatLib;
 import com.thebeyond.client.event.ModClientEvents;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -15,7 +16,9 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.CubicSampler;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -33,6 +36,9 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+
 public class EndSpecialEffects extends DimensionSpecialEffects {
     private static final int SKY_GRADIENT_LAYERS = 16;
     private static final float SKY_RADIUS = 100.0F;
@@ -47,7 +53,12 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
     private static final ResourceLocation HORIZON_LOCATION = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/environment/horizon.png");
     private static final ResourceLocation END_SKY_LOCATION = ResourceLocation.withDefaultNamespace("textures/environment/end_sky.png");
 
+    private static final ResourceLocation CRACK_1_LOCATION = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/environment/thunder_1.png");
+    private static final ResourceLocation CRACK_2_LOCATION = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/environment/thunder_2.png");
+    private static final ResourceLocation CRACK_3_LOCATION = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/environment/thunder_3.png");
+
     private float bossFog;
+    public ArrayList<ThunderCrack> thunderCracks = new ArrayList<>();
 
     @javax.annotation.Nullable
     private VertexBuffer starBuffer;
@@ -270,9 +281,60 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         this.renderCloud(level, poseStack, tesselator, .4f,   100);
         this.renderCloud(level, poseStack, tesselator, -.3f,  100);
 
+        if (level.random.nextInt(100) == 0 && level.isRaining()) {
+            this.createCrack(level);
+        }
+
+        if (!thunderCracks.isEmpty()) {
+            Iterator<ThunderCrack> iterator = thunderCracks.iterator();
+            while (iterator.hasNext()) {
+                ThunderCrack crack = iterator.next();
+
+                crack.lifeTime -= level.random.nextFloat()*0.01f;
+
+                if (crack.lifeTime <= 0) {
+                    iterator.remove();
+                } else {
+                    this.renderCrack(level, poseStack, tesselator, crack);
+                }
+            }
+        }
+
         RenderSystem.depthMask(true);
         RenderSystem.disableBlend();
         return true;
+    }
+
+
+
+    private void createCrack(ClientLevel level) {
+        double theta = 2 * Math.PI * level.random.nextDouble();
+        double phi = Math.acos(2 * level.random.nextDouble() - 1);
+        double radius = 500;  // Far enough to appear in sky
+
+        double x = radius * Math.sin(phi) * Math.cos(theta);
+        double y = radius * Math.sin(phi) * Math.sin(theta);
+        double z = radius * Math.cos(phi);
+
+        Vec3 position = new Vec3(x, y + 500, z);
+
+        int size = 10 + level.random.nextInt(70);
+
+        thunderCracks.add(new ThunderCrack(position, level.random.nextFloat(), size));
+
+        playThunderSound(level, size, 0.05f, 0.02f);
+    }
+
+    private static void playThunderSound(ClientLevel level, int size, float loudVolume, float lowVolume) {
+        if (Minecraft.getInstance().isPaused()) return;
+
+        Entity cameraEntity = Minecraft.getInstance().cameraEntity;
+        if (cameraEntity == null) return;
+
+        BlockPos blockPos = cameraEntity.blockPosition();
+        if (blockPos == null) return;
+
+        level.playLocalSound(cameraEntity, BeyondSoundEvents.VOID_BURST.get(), SoundSource.WEATHER, cameraEntity.level().canSeeSky(blockPos) ? loudVolume : lowVolume, (80 - size)/ 80f);
     }
 
     private void drawTopSkyGradient(PoseStack poseStack, Tesselator tesselator, ClientLevel level) {
@@ -390,5 +452,68 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         //RenderSystem.disableBlend();
         RenderSystem.defaultBlendFunc();
         poseStack.popPose();
+    }
+
+
+    private void renderCrack(ClientLevel level, PoseStack poseStack, Tesselator tesselator, ThunderCrack crack) {
+        //stolen from ninni uber
+
+        if (level == null)
+            return;
+
+        if (level.random.nextInt(500) == 0 && crack.lifeTime < 0.6f) {
+            playThunderSound(level, crack.size, 0.1f, 0.05f);
+            crack.lifeTime = 1;
+            crack.size += 20;
+        }
+
+        poseStack.pushPose();
+        RenderSystem.setShaderColor(1, 1, 1, Math.min(crack.lifeTime, 0.8f));
+        //RenderSystem.setShaderColor(1, 1, 1, 0.5f);
+
+        Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+        Vec3 cameraPos = camera.getPosition();
+
+        Vec3 direction = new Vec3(cameraPos.x - crack.position.x, cameraPos.y - crack.position.y, cameraPos.z - crack.position.z).normalize();
+
+        double yaw = Math.toDegrees(Math.atan2(-direction.x, direction.z));
+
+        double pitch = Math.toDegrees(Math.asin(direction.y));
+
+        poseStack.mulPose(Axis.YP.rotationDegrees((float) 90));
+        poseStack.mulPose(Axis.ZP.rotationDegrees((float) 0));
+
+        Matrix4f matrix4f3 = poseStack.last().pose();
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+
+        ResourceLocation loc = crack.lifeTime < 0.3 ? CRACK_3_LOCATION : (crack.lifeTime < 0.6 ? CRACK_2_LOCATION : CRACK_1_LOCATION);
+
+        RenderSystem.setShaderTexture(0, loc);
+
+        BufferBuilder bufferbuilder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+
+        bufferbuilder.addVertex(matrix4f3, (float) crack.position.x - crack.size, (float) crack.position.y, (float) crack.position.z - crack.size).setColor(1,1,1,1).setUv(0.0f, 0.0f);
+        bufferbuilder.addVertex(matrix4f3, (float) crack.position.x + crack.size, (float) crack.position.y, (float) crack.position.z - crack.size).setColor(1,1,1,1).setUv(1.0f, 0.0f);
+        bufferbuilder.addVertex(matrix4f3, (float) crack.position.x + crack.size, (float) crack.position.y, (float) crack.position.z + crack.size).setColor(1,1,1,1).setUv(1.0f, 1.0f);
+        bufferbuilder.addVertex(matrix4f3, (float) crack.position.x - crack.size, (float) crack.position.y, (float) crack.position.z + crack.size).setColor(1,1,1,1).setUv(0.0f, 1.0f);
+
+        BufferUploader.drawWithShader(bufferbuilder.buildOrThrow());
+
+        RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+        //RenderSystem.disableBlend();
+        RenderSystem.defaultBlendFunc();
+        poseStack.popPose();
+    }
+
+    class ThunderCrack {
+        public Vec3 position = Vec3.ZERO;
+        public float lifeTime = 0;
+        public int size = 0;
+
+        ThunderCrack(Vec3 position, float lifeTime, int size) {
+            this.position = position;
+            this.lifeTime = lifeTime;
+            this.size = size;
+        }
     }
 }

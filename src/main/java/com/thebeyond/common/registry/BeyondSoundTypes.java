@@ -13,6 +13,14 @@ public class BeyondSoundTypes {
             BeyondSoundEvents.END_STONE_FALL
     );
 
+    public static SoundType REFUGE = new DeferredSoundType(1.0F, 1.0F,
+            BeyondSoundEvents.REFUGE_BREAK,
+            BeyondSoundEvents.REFUGE_STEP,
+            BeyondSoundEvents.REFUGE_PLACE,
+            BeyondSoundEvents.REFUGE_HIT,
+            BeyondSoundEvents.REFUGE_FALL
+    );
+
     public static SoundType PLATED_END_STONE_BLOCK = new DeferredSoundType(1.0F, 1.0F,
             BeyondSoundEvents.PLATED_END_STONE_BREAK,
             BeyondSoundEvents.PLATED_END_STONE_STEP,

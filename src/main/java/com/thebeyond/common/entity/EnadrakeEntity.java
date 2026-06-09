@@ -23,6 +23,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -54,6 +55,7 @@ import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -144,6 +146,21 @@ public class EnadrakeEntity extends PathfinderMob {
     }
 
     @Override
+    protected @Nullable SoundEvent getDeathSound() {
+        return BeyondSoundEvents.ENADRAKE_DEATH.get();
+    }
+
+    @Override
+    protected @Nullable SoundEvent getHurtSound(DamageSource damageSource) {
+        return BeyondSoundEvents.ENADRAKE_HURT.get();
+    }
+
+    @Override
+    protected @Nullable SoundEvent getAmbientSound() {
+        return BeyondSoundEvents.ROOTS_CREAKING.get();
+    }
+
+    @Override
     public void tick() {
         super.tick();
         if (panic > 0) panic--;
@@ -164,10 +181,7 @@ public class EnadrakeEntity extends PathfinderMob {
     }
 
     public void scream() {
-        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.FOX_SCREECH, SoundSource.HOSTILE, 2, 0.4f);
-        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.FOX_SCREECH, SoundSource.HOSTILE, 2, 0.45f);
-        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.FOX_SCREECH, SoundSource.HOSTILE, 2, 0.5f);
-        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.BELL_RESONATE, SoundSource.HOSTILE, 2, 2);
+        level().playSound(this, BlockPos.containing(this.position()), BeyondSoundEvents.ENADRAKE_SCREECH.get(), SoundSource.HOSTILE, 2, 0.8f + random.nextFloat()*0.4f);
 
         AABB detectionBox = new AABB(getOnPos()).inflate(10);
         TargetingConditions conditions = TargetingConditions.forNonCombat().range(6).ignoreLineOfSight().selector((entity) -> entity instanceof EnadrakeEntity friend && friend.panic == 0);
@@ -367,7 +381,7 @@ public class EnadrakeEntity extends PathfinderMob {
                     Vec3 vec3 = Vec3.atCenterOf(blockpos).add((double)0.0F, (double)1, (double)0.0F);
                     serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.PEEPING_OBIROOT.get().defaultBlockState()), vec3.x, vec3.y, vec3.z, 10, 0.0F, 0.0F, 0.0F, 0.0F);
                 }
-                level().playSound(enadrake, blockpos, SoundEvents.ITEM_BREAK, enadrake.getSoundSource(), 0.5F, 1F);
+                level().playSound(enadrake, blockpos, BeyondBlocks.OBIROOT_SPROUT.get().asItem().getBreakingSound(), enadrake.getSoundSource(), 0.5F, 0.8f + random.nextFloat());
 
                 FallingBlockEntity fallingblockentity = FallingBlockEntity.fall(level(), blockpos, blockstate);
                 fallingblockentity.disableDrop();
@@ -437,7 +451,7 @@ public class EnadrakeEntity extends PathfinderMob {
                     List<ItemEntity> list = EnadrakeEntity.this.level().getEntitiesOfClass(ItemEntity.class, EnadrakeEntity.this.getBoundingBox().inflate((double)8.0F, (double)8.0F, (double)8.0F), EnadrakeEntity.ALLOWED_ITEMS);
                     if (list.size() == 1) {
                         ItemEntity item = list.getFirst();
-                        level().playSound(item, BlockPos.containing(item.position()), SoundEvents.CHORUS_FRUIT_TELEPORT, SoundSource.BLOCKS,1,1);
+                        level().playSound(item, BlockPos.containing(item.position()), BeyondSoundEvents.ENADRAKE_TELEPORT.get(), SoundSource.BLOCKS,0.58f,1);
                         item.moveTo(EnadrakeEntity.this.position());
                     }
                     if (!list.isEmpty()) {
@@ -453,7 +467,7 @@ public class EnadrakeEntity extends PathfinderMob {
                     if (itemstack.isEmpty() && !list.isEmpty()) {
                         if (list.size() == 1) {
                             ItemEntity item = list.getFirst();
-                            level().playSound(item, BlockPos.containing(item.position()), SoundEvents.CHORUS_FRUIT_TELEPORT, SoundSource.BLOCKS, 1, 1);
+                            level().playSound(item, BlockPos.containing(item.position()), BeyondSoundEvents.ENADRAKE_TELEPORT.get(), SoundSource.BLOCKS, 0.5f, 1);
                             item.moveTo(EnadrakeEntity.this.position());
                         } else {
                             EnadrakeEntity.this.getNavigation().moveTo(list.get(0), 1.2);

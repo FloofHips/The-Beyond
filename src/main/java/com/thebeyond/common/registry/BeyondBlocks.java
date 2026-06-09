@@ -246,7 +246,7 @@ public class BeyondBlocks {
                     .mapColor(MapColor.ICE)
                     .strength(4.0F, 32.0F)
                     .noOcclusion()
-                    .sound(SoundType.METAL)),
+                    .sound(BeyondSoundTypes.REFUGE)),
             Rarity.RARE
     );
 

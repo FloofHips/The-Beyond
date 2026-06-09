@@ -1,8 +1,8 @@
 {
   "parent": "the_beyond:the_beyond/memories_returned",
   "criteria": {
-    "walk_void_river": {
-      "trigger": "the_beyond:walk_void_river"
+    "walk_auroracite": {
+      "trigger": "the_beyond:walk_auroracite"
     }
   },
   "display": {
@@ -20,7 +20,7 @@
   },
   "requirements": [
     [
-      "walk_void_river"
+      "walk_auroracite"
     ]
   ],
   "sends_telemetry_event": true

@@ -5,12 +5,16 @@ import com.thebeyond.common.block.blockentities.RefugeBlockEntity;
 import com.thebeyond.common.block.blockentities.RefugeMenu;
 import com.thebeyond.common.knowledge.PlayerKnowledge;
 import com.thebeyond.common.registry.BeyondAttachments;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.compat.jei.JeiCompatBridge;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -65,6 +69,11 @@ public class BeyondNetworking {
                 refuge.animating = 100;
                 refuge.setChanged();
                 level.sendBlockUpdated(pos, refuge.getBlockState(), refuge.getBlockState(), 3);
+
+                for (ChunkPos chunkPos : refuge.getAffectedChunks()) {
+                    BlockPos cpos = new BlockPos(chunkPos.x*16, be.getBlockPos().getY()+1, chunkPos.z*16);
+                    be.getLevel().playSound(null, cpos.getX(), cpos.getY(), cpos.getZ(), BeyondSoundEvents.ROOTS_SPREAD, SoundSource.BLOCKS, 1, 0.8f + be.getLevel().random.nextFloat()*0.5f);
+                }
 
                 PacketDistributor.sendToPlayersTrackingChunk(level, level.getChunk(pos).getPos(),
                         new RefugeActivatePayload(pos, payload.mode()));

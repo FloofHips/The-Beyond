@@ -9,6 +9,7 @@ import com.thebeyond.common.block.blockstates.PillarHeightProperty;
 import com.thebeyond.common.fluid.GellidVoidBlock;
 import com.thebeyond.common.registry.BeyondBlockEntities;
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -135,7 +136,7 @@ public class EnadrakeHutBlock extends BaseEntityBlock {
         }
 
         Vec3 anchor = com.thebeyond.api.compat.BeyondCompatHooks.visibleOrCenter(level, pos);
-        level.playSound(null, BlockPos.containing(anchor), SoundEvents.DECORATED_POT_INSERT, SoundSource.BLOCKS, 1.0F, 0.7F + 0.5F * f);
+        level.playSound(null, BlockPos.containing(anchor), BeyondSoundEvents.ENADRAKE_HUT_POP.get(), SoundSource.BLOCKS, 1.0F, 0.5f + level.random.nextFloat());
         if (level instanceof ServerLevel serverlevel) {
             serverlevel.sendParticles(
                     ParticleTypes.DUST_PLUME,

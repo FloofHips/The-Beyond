@@ -5,10 +5,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.minecraft.client.MinecraftClient;
 import com.thebeyond.client.particle.CrosshairColorTransitionOptions;
 import com.thebeyond.common.block.RefugeBlock;
-import com.thebeyond.common.registry.BeyondAttachments;
-import com.thebeyond.common.registry.BeyondBlockEntities;
-import com.thebeyond.common.registry.BeyondBlocks;
-import com.thebeyond.common.registry.BeyondCriteriaTriggers;
+import com.thebeyond.common.registry.*;
 import com.thebeyond.util.ColorUtils;
 import com.thebeyond.util.RefugeChunkData;
 import net.minecraft.core.BlockPos;
@@ -278,15 +275,15 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     private void placeArm(BlockPos pos) {
-        level.playSound(null, pos, SoundEvents.WOOD_BREAK, SoundSource.BLOCKS);
-        level.playSound(null, this.worldPosition, SoundEvents.AXE_STRIP, SoundSource.BLOCKS);
+        level.playSound(null, pos, BeyondSoundEvents.ARM_PLACE.get(), SoundSource.BLOCKS, 1, 0.8f);
+        level.playSound(null, this.worldPosition, BeyondSoundEvents.ROOTS_CREAKING.get(), SoundSource.BLOCKS);
         level.setBlock(pos, BeyondBlocks.OBIROOT_ARM.get().defaultBlockState(), 3);
         if (level instanceof ServerLevel serverLevel)
             serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.OBIROOT.get().defaultBlockState()), pos.getX(), pos.getY(), pos.getZ(), 10, 0.5, 0.5, 0.5, 0.05);
     }
 
     private void activate() {
-        level.playSound(null, this.worldPosition, SoundEvents.AXE_STRIP, SoundSource.BLOCKS);
+        level.playSound(null, this.worldPosition, BeyondSoundEvents.REFUGE_READY.get(), SoundSource.BLOCKS);
         if (level instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.OBIROOT.get().defaultBlockState()), this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ(), 120, 1f, 3, 1f, 0.05);
             serverLevel.sendParticles(ColorUtils.voidOptions, this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ(), 12, 1f, 3, 1f, 0.05);
@@ -365,6 +362,9 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
 
     public void setMode(byte i, RefugeBlockEntity be) {
         be.updateAllChunks(i);
+        if (i != (byte)-1) {
+            be.level.playSound(null, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), BeyondSoundEvents.REFUGE_ACTIVATE, SoundSource.BLOCKS, 1.5f,1);
+        }
         if (!be.hasBeenUsed) hasBeenUsed = true;
     }
     public byte getMode() {
@@ -407,7 +407,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         }
 
         if (level == null) return;
-        level.playSound(null, this.worldPosition, SoundEvents.AXE_STRIP, SoundSource.BLOCKS);
+        level.playSound(null, this.worldPosition, BeyondSoundEvents.ROOTS_SPREAD.get(), SoundSource.BLOCKS);
         if (level instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.OBIROOT.get().defaultBlockState()), this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ(), 120, 1f, 3, 1f, 0.05);
         }
@@ -577,7 +577,6 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
 
         if (shouldPing(state, be)) {
             Vec3 center = be.worldPosition.getCenter();
-            level.playSound(null, center.x, center.y, center.z, SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 1, 1);
 
             if (level instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(new CrosshairColorTransitionOptions(
@@ -625,7 +624,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
             double d0 = targetX - ((double) pos.getX() + 0.5D);
             double d1 = targetZ - ((double) pos.getZ() + 0.5D);
             be.tRot = (float) Mth.atan2(d1, d0);
-            level.playSound(player, searchX, searchY, searchZ, SoundEvents.ROOTS_BREAK, SoundSource.BLOCKS, 1, 1);
+            level.playSound(player, searchX, searchY, searchZ, BeyondSoundEvents.ROOTS_CREAKING.get(), SoundSource.BLOCKS, 1, 1);
         }
 
         while(be.rot >= (float)Math.PI) {

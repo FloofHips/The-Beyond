@@ -16,6 +16,21 @@ public class BeyondSoundEvents {
     public static final DeferredHolder<SoundEvent, SoundEvent> END_STONE_HIT = SOUND_EVENTS.register("block.end_stone.hit", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> END_STONE_FALL = SOUND_EVENTS.register("block.end_stone.fall", SoundEvent::createVariableRangeEvent);
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> REFUGE_BREAK = SOUND_EVENTS.register("block.refuge.break", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> REFUGE_STEP = SOUND_EVENTS.register("block.refuge.step", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> REFUGE_PLACE = SOUND_EVENTS.register("block.refuge.place", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> REFUGE_HIT = SOUND_EVENTS.register("block.refuge.hit", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> REFUGE_FALL = SOUND_EVENTS.register("block.refuge.fall", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> REFUGE_READY = SOUND_EVENTS.register("block.refuge.ready", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> REFUGE_ACTIVATE = SOUND_EVENTS.register("block.refuge.activate", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ROOTS_SPREAD = SOUND_EVENTS.register("block.refuge.roots_spreading", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARM_PLACE = SOUND_EVENTS.register("block.refuge.branch_place", SoundEvent::createVariableRangeEvent);
+
+    public static final DeferredHolder<SoundEvent, SoundEvent> ENADRAKE_HUT_ENTER = SOUND_EVENTS.register("block.enadrake_hut.enter", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ENADRAKE_HUT_LEAVE = SOUND_EVENTS.register("block.enadrake_hut.leave", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ENADRAKE_HUT_POP = SOUND_EVENTS.register("block.enadrake_hut.pop", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ENADRAKE_HUT_SPREAD = SOUND_EVENTS.register("block.enadrake_hut.spread", SoundEvent::createVariableRangeEvent);
+
     public static final DeferredHolder<SoundEvent, SoundEvent> AURORACITE_BREAK = SOUND_EVENTS.register("block.auroracite.break", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> AURORACITE_STEP = SOUND_EVENTS.register("block.auroracite.step", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> AURORACITE_PLACE = SOUND_EVENTS.register("block.auroracite.place", SoundEvent::createVariableRangeEvent);
@@ -119,6 +134,12 @@ public class BeyondSoundEvents {
     public static final DeferredHolder<SoundEvent, SoundEvent> SEED_UNSTABLE_FAIL = SOUND_EVENTS.register("entity.seed.unstable_fail", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> SEED_UNSTABLE_FLY = SOUND_EVENTS.register("entity.seed.unstable_fly", SoundEvent::createVariableRangeEvent);
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> ENADRAKE_TELEPORT = SOUND_EVENTS.register("entity.enadrake.teleport", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ENADRAKE_DEATH = SOUND_EVENTS.register("entity.enadrake.death", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ENADRAKE_HURT = SOUND_EVENTS.register("entity.enadrake.hurt", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> ENADRAKE_SCREECH = SOUND_EVENTS.register("entity.enadrake.screech", SoundEvent::createVariableRangeEvent);
+
+    public static final DeferredHolder<SoundEvent, SoundEvent> VOID_BURST = SOUND_EVENTS.register("block.gellid_void.burst", SoundEvent::createVariableRangeEvent);
 
     public static final DeferredHolder<SoundEvent, SoundEvent> LANTERN_HURT = SOUND_EVENTS.register("entity.lantern.hurt", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> LANTERN_IDLE = SOUND_EVENTS.register("entity.lantern.idle", SoundEvent::createVariableRangeEvent);
@@ -138,5 +159,8 @@ public class BeyondSoundEvents {
     public static final DeferredHolder<SoundEvent, SoundEvent> POLAR_CHARGE = SOUND_EVENTS.register("block.polar.charge", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> POLAR_COOL = SOUND_EVENTS.register("block.polar.cool", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> POLAR_EMERGE = SOUND_EVENTS.register("block.polar.emerge", SoundEvent::createVariableRangeEvent);
+
+    public static final DeferredHolder<SoundEvent, SoundEvent> MACE_SMASH_GROUND = SOUND_EVENTS.register("item.anchor_leggings.smash_ground", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> MACE_SMASH_GROUND_HEAVY = SOUND_EVENTS.register("item.anchor_leggings.smash_ground_heavy", SoundEvent::createVariableRangeEvent);
 
 }

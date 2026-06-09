@@ -1,6 +1,7 @@
 package com.thebeyond.common.item;
 
 import com.thebeyond.client.model.equipment.MultipartArmorModel;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.util.AOEManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
@@ -96,7 +97,7 @@ public class AnchorLeggingsItem extends ModelArmorItem {
 
         player.setSpawnExtraParticlesOnFall(true);
         SoundEvent sound = fallDistance > 5.0F
-                ? SoundEvents.MACE_SMASH_GROUND_HEAVY : SoundEvents.MACE_SMASH_GROUND;
+                ? BeyondSoundEvents.MACE_SMASH_GROUND_HEAVY.get() : BeyondSoundEvents.MACE_SMASH_GROUND.get();
         serverLevel.playSound(null, player.getX(), player.getY(), player.getZ(),
                 sound, player.getSoundSource(), 1.0F, 1.0F);
 

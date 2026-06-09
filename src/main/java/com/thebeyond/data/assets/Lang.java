@@ -137,6 +137,12 @@ public class Lang extends LanguageProvider {
         add("subtitles.entity.seed.unstable_fail", "Unstable seed wastes away");
         add("subtitles.entity.seed.unstable_fly", "Unstable seed twirls");
 
+        add("subtitles.block.gellid_void.burst", "Void echoes");
+
+        add("subtitles.entity.enadrake.teleport", "Enadrake teleports");
+        add("subtitles.entity.enadrake.death", "Enadrake dies");
+        add("subtitles.entity.enadrake.hurt", "Enadrake hurts");
+        add("subtitles.entity.enadrake.screech", "Enadrake screeches");
 
         add("subtitles.entity.lantern.hurt", "Lantern hurts");
         add("subtitles.entity.lantern.idle", "Wind blows quietly");
@@ -165,10 +171,22 @@ public class Lang extends LanguageProvider {
         add("subtitles.block.memor_faucet.power_final", "Faucet unlocks");
         add("subtitles.block.memor_faucet.absorb", "Faucet accepts offering");
 
+        add("subtitles.block.enadrake_hut.enter", "Enadrake pops in");
+        add("subtitles.block.enadrake_hut.leave", "Enadrake pops out");
+        add("subtitles.block.enadrake_hut.pop", "Insert item");
+        add("subtitles.block.enadrake_hut.spread", "Enadrake hut spreads out");
+
+        add("subtitles.block.refuge.activate", "Refuge protects");
+        add("subtitles.block.refuge.branch_place", "Arm placed");
+        add("subtitles.block.refuge.roots_spreading", "Roots spread");
+        add("subtitles.block.refuge.ready", "Refuge activates");
+
         add("subtitles.item.magnet.success", "Magnet latches on");
         add("subtitles.item.magnet.fail", "Magnet falls short");
 
         add("subtitles.item.flame.fail", "Flame extinguishes");
+
+        add("subtitles.item.anchor_leggings.smash_ground", "Anchors down");
 
         // Advancements
         //add("advancements.the_beyond.root.title", "The Beyond");

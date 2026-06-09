@@ -3,10 +3,7 @@ package com.thebeyond.common.block.blockentities;
 import com.thebeyond.common.block.EnadrakeHutBlock;
 import com.thebeyond.common.block.blockstates.HutHeightProperty;
 import com.thebeyond.common.entity.EnadrakeEntity;
-import com.thebeyond.common.registry.BeyondBlockEntities;
-import com.thebeyond.common.registry.BeyondBlocks;
-import com.thebeyond.common.registry.BeyondEntityTypes;
-import com.thebeyond.common.registry.BeyondTags;
+import com.thebeyond.common.registry.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -273,7 +270,8 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         enadrake.setHutPosition(this.worldPosition);
 
         if (level instanceof ServerLevel serverLevel) {
-            serverLevel.playSound(null, this.getBlockPos(), SoundEvents.BEEHIVE_ENTER, SoundSource.BLOCKS, 1.0F, 0.7F + 0.5F);
+            serverLevel.playSound(null, this.getBlockPos(), BeyondSoundEvents.ENADRAKE_HUT_ENTER.get(), SoundSource.BLOCKS, 1.0F, 0.8f+level.random.nextFloat()*0.5f);
+            serverLevel.playSound(null, this.getBlockPos(), BeyondSoundEvents.ENADRAKE_TELEPORT.get(), SoundSource.BLOCKS, 1.0F, 0.8f+level.random.nextFloat()*0.5f);
             serverLevel.sendParticles(ParticleTypes.PORTAL, enadrake.position().x, enadrake.position().y+0.6, enadrake.position().z, 20, 0.3, 0.3, 0.3, 0.05);
         }
 
@@ -300,7 +298,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
                 com.thebeyond.api.compat.BeyondCompatHooks.visibleOnly(serverLevel, this.worldPosition);
         BlockPos exitPos = visible != null ? BlockPos.containing(visible).above() : this.findExitPosition();
 
-        serverLevel.playSound(null, this.getBlockPos(), SoundEvents.BEEHIVE_EXIT, SoundSource.BLOCKS, 1.0F, 0.7F + 0.5F);
+        serverLevel.playSound(null, this.getBlockPos(), BeyondSoundEvents.ENADRAKE_HUT_LEAVE.get(), SoundSource.BLOCKS, 1.0F, 0.8f+level.random.nextFloat()*0.5f);
 
         Entity entity = EntityType.loadEntityRecursive(nbt, serverLevel, (e) -> {
             e.moveTo(exitPos.getX() + 0.5, exitPos.getY(), exitPos.getZ() + 0.5, e.getYRot(), e.getXRot());
@@ -314,6 +312,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
             serverLevel.addFreshEntity(enadrake);
 
             serverLevel.sendParticles(ParticleTypes.PORTAL, enadrake.position().x, enadrake.position().y+0.6, enadrake.position().z, 20, 0.3, 0.3, 0.3, 0.05);
+            serverLevel.playSound(null, this.getBlockPos(), BeyondSoundEvents.ENADRAKE_TELEPORT.get(), SoundSource.BLOCKS, 1.0F, 0.8f+level.random.nextFloat()*0.5f);
 
             if (angerOne)
                 enadrake.panic = 220;
@@ -482,7 +481,6 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
 
     private boolean tryExpandHut(ServerLevel level) {
         if (canExpandUpward()) {
-            level.playSound(null, this.getBlockPos(), SoundEvents.DECORATED_POT_INSERT, SoundSource.BLOCKS, 1.0F, 0.7F + 0.5F);
             return expandUpward(level);
         }
 
@@ -506,6 +504,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
             placeBlock(level, facing, newPos);
         }
 
+        level.playSound(null, this.getBlockPos(), BeyondSoundEvents.ENADRAKE_HUT_SPREAD.get(), SoundSource.BLOCKS, 1.0F, 0.8f + level.random.nextFloat()*0.3f);
         return true;
     }
 
@@ -649,7 +648,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
 
             placeBlock(level, facing, newPos);
 
-            level.playSound(null, this.getBlockPos(), SoundEvents.DECORATED_POT_INSERT, SoundSource.BLOCKS, 1.0F, 0.7F + 0.5F);
+            level.playSound(null, this.getBlockPos(), BeyondSoundEvents.ENADRAKE_HUT_SPREAD.get(), SoundSource.BLOCKS, 1.0F, 0.8f + level.random.nextFloat()*0.3f);
             return true;
         }
 

@@ -3,6 +3,7 @@ package com.thebeyond.common.block;
 import com.thebeyond.common.entity.EnadrakeEntity;
 import com.thebeyond.common.registry.BeyondConfigFeatures;
 import com.thebeyond.common.registry.BeyondEntityTypes;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.common.registry.BeyondTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -59,7 +60,8 @@ public class ObirootSproutBlock extends Block implements BonemealableBlock, Fall
                 enadrake.setPos(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
                 enadrake.setDeltaMovement(0, 0.3, 0);
                 level.addFreshEntity(enadrake);
-                level.playSound(null, pos, SoundEvents.BEEHIVE_ENTER, SoundSource.BLOCKS);
+                level.playSound(null, pos, BeyondSoundEvents.ENADRAKE_HUT_LEAVE.get(), SoundSource.BLOCKS, 1, 1.5f);
+                level.playSound(null, pos, BeyondSoundEvents.ROOTS_SPREAD.get(), SoundSource.BLOCKS, 1, 2f);
                 level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
                 return;
             }
