@@ -3,6 +3,9 @@ package com.thebeyond.common.event;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.entity.*;
 import com.thebeyond.common.registry.BeyondEntityTypes;
+import com.thebeyond.common.camera.Grade;
+import com.thebeyond.common.camera.Grades;
+import net.neoforged.neoforge.registries.DataPackRegistryEvent;
 import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -40,5 +43,11 @@ public class ModEvents {
                 AbyssalNomadEntity::checkMonsterSpawnRules,
                 RegisterSpawnPlacementsEvent.Operation.OR
         );
+    }
+
+    /** Custom synced datapack registry for snapshot filters; entries load from data/<ns>/the_beyond/grade/*.json. */
+    @SubscribeEvent
+    public static void registerDatapackRegistries(DataPackRegistryEvent.NewRegistry event) {
+        event.dataPackRegistry(Grades.REGISTRY, Grade.CODEC, Grade.NETWORK_CODEC);
     }
 }

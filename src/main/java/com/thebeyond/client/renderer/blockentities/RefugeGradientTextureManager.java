@@ -12,9 +12,7 @@ import org.lwjgl.opengl.GL11;
 import java.util.HashMap;
 import java.util.Map;
 
-/** CPU-side gradient-map processor used as a fallback when shader mods override the
- *  custom {@code refuge_gradient} shader. Mirrors {@code rendertype_refuge_gradient.fsh}
- *  per-pixel and caches the result as a {@code DynamicTexture}. */
+/** CPU mirror of {@code rendertype_refuge_gradient.fsh}; stops/weights below must stay in sync with it. */
 public class RefugeGradientTextureManager {
 
     private static final Map<ResourceLocation, CachedTexture> cache = new HashMap<>();
@@ -29,14 +27,13 @@ public class RefugeGradientTextureManager {
         }
     }
 
-    // Gradient map colors (matching the fragment shader exactly)
-    // NativeImage pixel format is ABGR: [A:31-24][B:23-16][G:15-8][R:7-0]
+    // EDIT HERE (Java is the source of truth), then mirror these 5 hex colors into rendertype_refuge_gradient.fsh.
     private static final int[][] GRADIENT_STOPS = {
-            {12, 8, 38},    // #0c0826 at t=0.00
-            {49, 51, 75},   // #31334b at t=0.30
-            {121, 137, 169},// #7989a9 at t=0.75
-            {135, 177, 218},// #87b1da at t=0.92
-            {232, 244, 255} // #e8f4ff at t=1.00
+            {0x0C, 0x08, 0x26}, // #0C0826
+            {0x31, 0x33, 0x4B}, // #31334B
+            {0x79, 0x89, 0xA9}, // #7989A9
+            {0x87, 0xB1, 0xDA}, // #87B1DA
+            {0xE8, 0xF4, 0xFF}  // #E8F4FF
     };
     private static final float[] GRADIENT_POSITIONS = {0.00f, 0.30f, 0.75f, 0.92f, 1.00f};
 
@@ -68,25 +65,21 @@ public class RefugeGradientTextureManager {
                 for (int x = 0; x < width; x++) {
                     int pixel = source.getPixelRGBA(x, y);
 
-                    // Extract ABGR components
                     int r = pixel & 0xFF;
                     int g = (pixel >> 8) & 0xFF;
                     int b = (pixel >> 16) & 0xFF;
                     int a = (pixel >> 24) & 0xFF;
 
-                    // Discard transparent pixels (alpha < 0.1 * 255 ≈ 25)
                     if (a < 25) {
                         result.setPixelRGBA(x, y, 0x00000000);
                         continue;
                     }
 
-                    // Luminance (same formula as the shader)
+                    // Luminance weights must match the shader.
                     float brightness = (0.299f * r + 0.587f * g + 0.114f * b) / 255.0f;
 
-                    // Apply gradient map
                     int[] mapped = gradientMap(brightness);
 
-                    // Write back in ABGR format
                     int newPixel = (a << 24) | (mapped[2] << 16) | (mapped[1] << 8) | mapped[0];
                     result.setPixelRGBA(x, y, newPixel);
                 }
@@ -113,7 +106,6 @@ public class RefugeGradientTextureManager {
     private static int[] gradientMap(float brightness) {
         brightness = Math.max(0.0f, Math.min(1.0f, brightness));
 
-        // Find the two stops to interpolate between
         for (int i = 0; i < GRADIENT_POSITIONS.length - 1; i++) {
             if (brightness <= GRADIENT_POSITIONS[i + 1]) {
                 float t = (brightness - GRADIENT_POSITIONS[i]) / (GRADIENT_POSITIONS[i + 1] - GRADIENT_POSITIONS[i]);
@@ -126,8 +118,12 @@ public class RefugeGradientTextureManager {
             }
         }
 
-        // Fallback to last color
         return GRADIENT_STOPS[GRADIENT_STOPS.length - 1].clone();
+    }
+
+    public static int rampAbgr(float brightness, int alpha) {
+        int[] rgb = gradientMap(brightness);
+        return ((alpha & 0xFF) << 24) | (rgb[2] << 16) | (rgb[1] << 8) | rgb[0];
     }
 
     public static void clearCache() {

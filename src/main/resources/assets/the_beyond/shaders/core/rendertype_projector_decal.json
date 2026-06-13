@@ -1,0 +1,23 @@
+{
+  "vertex": "the_beyond:rendertype_projector_decal",
+  "fragment": "the_beyond:rendertype_projector_decal",
+  "attributes": [
+    "Position"
+  ],
+  "samplers": [
+    { "name": "Sampler0" },
+    { "name": "Sampler1" },
+    { "name": "Sampler2" },
+    { "name": "Sampler3" }
+  ],
+  "uniforms": [
+    { "name": "InverseViewProj", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+    { "name": "ProjectorViewProj", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+    { "name": "ProjectorEye", "type": "float", "count": 3, "values": [ 0.0, 0.0, 0.0 ] },
+    { "name": "ScreenSize", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+    { "name": "ConeParams", "type": "float", "count": 4, "values": [ 0.25, 16.0, 0.01, 0.001953125 ] },
+    { "name": "ImageRegion", "type": "float", "count": 4, "values": [ 0.0, 0.0, 1.0, 1.0 ] },
+    { "name": "Flags", "type": "float", "count": 4, "values": [ 0.0, 0.0, 1.0, 0.0 ] },
+    { "name": "DebugMode", "type": "float", "count": 1, "values": [ 0.0 ] }
+  ]
+}

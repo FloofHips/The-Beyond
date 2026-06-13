@@ -24,8 +24,12 @@ public final class SableReflectionFrame {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS) {
             return;
         }
-        // Skip Iris' shadow pass: it fires this stage with the light's view, not the main camera.
+        // Iris shadow pass fires this stage with the light's view, not the main camera.
         if (com.thebeyond.client.compat.ShaderCompatLib.isShadowPass()) {
+            return;
+        }
+        // A block-camera offscreen POV would overwrite the real frame's mirror matrices.
+        if (com.thebeyond.client.renderer.BlockCameraCapture.isCapturing()) {
             return;
         }
         Minecraft mc = Minecraft.getInstance();

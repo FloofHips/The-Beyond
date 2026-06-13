@@ -28,12 +28,10 @@ import java.util.Optional;
 
 @Mod(TheBeyond.MODID)
 public class TheBeyond {
-    // Define mod id in a common place for everything to reference
     public static final String MODID = "the_beyond";
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    // The constructor for the mod class is the first code that is run when your mod is loaded.
-    // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
+    // FML injects these constructor params.
     public TheBeyond(IEventBus modEventBus, ModContainer modContainer) {
         modEventBus.addListener(this::commonSetup);
 
@@ -61,6 +59,7 @@ public class TheBeyond {
 
         modEventBus.addListener(BeyondTabs::addCreative);
         modEventBus.addListener(BeyondNetworking::onRegisterPayloads);
+        modEventBus.addListener(com.thebeyond.common.data.BeyondDataMapTypes::onRegisterDataMaps);
         modEventBus.addListener(this::addBuiltinPacks);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, BeyondConfig.COMMON_CONFIG);
@@ -77,14 +76,12 @@ public class TheBeyond {
                     PackSource.DEFAULT, Optional.empty());
             Pack.ResourcesSupplier supplier = new PathPackResources.PathResourcesSupplier(resourcePath);
 
-            // Always applied. Visible & player-toggleable (opt into soup mode) only when
-            // Convergence is present; otherwise required + hidden from the datapack UI.
+            // Toggleable only with Convergence (isleweaver); else required and hidden.
             boolean convergencePresent = ModList.get().isLoaded("isleweaver");
             PackSelectionConfig selection =
                     new PackSelectionConfig(!convergencePresent, Pack.Position.TOP, false);
 
-            // Bounds-override compat children (rewrite End dim-type y-bounds) attached to beyond_terrain:
-            // UI-hidden, lifecycle-bound, win dim_type resolution; resolveWinner picks one by priority.
+            // Addons contribute compat child packs (rewriting End dim-type y-bounds); highest priority wins.
             com.thebeyond.api.event.BeyondTerrainPackAssembleEvent assembleEvent =
                     new com.thebeyond.api.event.BeyondTerrainPackAssembleEvent(event);
             net.neoforged.fml.ModLoader.postEvent(assembleEvent);
@@ -126,8 +123,7 @@ public class TheBeyond {
             com.thebeyond.compat.sable.BeyondSableCompat.register();
         }
 
-        // Notify addons Beyond's common-setup is done so they can register compat modules.
-        // Fires on the mod event bus; subscribers self-register.
+        // Lets addons register compat modules now that common-setup is done.
         net.neoforged.fml.ModLoader.postEvent(new com.thebeyond.api.event.BeyondCommonSetupEvent());
     }
 }

@@ -52,8 +52,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
-/** Mirror renderer for sub-level mirrors. Capture is split out to {@link #captureAll} because an offscreen FBO
- *  capture mid-frame corrupts the in-progress render under Iris/Veil/Sodium. */
+/** Capture lives in {@link #captureAll}: a mid-frame offscreen FBO capture corrupts the in-progress render under Iris/Veil/Sodium. */
 public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBlockEntity> {
 
     private static final int TINT_R = 202, TINT_G = 222, TINT_B = 234;
@@ -65,14 +64,13 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
     private static final int MAX_FBOS = 32;      // also the concurrent-plane cap
     private static final long STALE_TICKS = 5;
     private static final int MAX_SUBDIV = 32;
-    private static final float SUBDIV_TARGET_PX = 24.0f;
     private static final float[] LOD_FRACS = {1.0f, 0.5f, 0.25f, 0.125f};
     private static final double[] LOD_BANDS = {5.0, 6.5, 8.0};
-    private static final double LOD_HYSTERESIS = 0.6; // dead-zone: stops FBO resize-thrash at a band edge on a moving sub-level
+    private static final double LOD_HYSTERESIS = 0.6;
     private static final double OCCLUDER_MARGIN = 2.5;
     private static final int MAX_OCCLUDER_BLOCKS = 512;
     private static final int BORDER_DIM = 32;
-    // skip the contraption's own mounting blocks right in front of the face; a real occluder is deeper in the slab
+    // skip the contraption's own mounting blocks flush with the face; a real occluder sits deeper
     private static final double NEAR_FACE_SKIP = 1.0;
     private static final float BORDER_SHADE = 0.05f;
     private static final int BLOB_TESS = 8;
@@ -87,21 +85,19 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
     private static final Vector3f SCRATCH_V3 = new Vector3f();
     private static final Vector4f SCRATCH_V4 = new Vector4f();
     private static final float[] BLOB_AL = new float[(BLOB_TESS + 1) * (BLOB_TESS + 1)];
-    // shared by ALL LOS rays so each chunk is fetched once, not per ray (Sable taxes every getChunk)
+    // fetch each chunk once per frame, not per ray (Sable taxes every getChunk)
     private static final Long2ObjectOpenHashMap<LevelChunk> LOS_CHUNK_CACHE = new Long2ObjectOpenHashMap<>();
     private static final int ENTITY_REFRESH_TICKS = 4;
     private static final int MAX_LOS_RECOMPUTES_PER_FRAME = 4;
 
     private static boolean loggedActive;
-    // shared slot/FBO per plane so coplanar faces capture once; BER fills, captureAll consumes
     private static final Long2ObjectOpenHashMap<Slot> SLOTS = new Long2ObjectOpenHashMap<>();
     private static final MultiBufferSource.BufferSource FBO_BUFFER =
             MultiBufferSource.immediate(new ByteBufferBuilder(2048));
-    // bounded name pool: keeps BeyondRenderTypes.mirror's per-name memoize bounded (a counter would leak one RenderType per plane ever seen)
+    // bounded name pool: a counter would leak one memoized RenderType per plane ever seen
     private static final boolean[] TEX_SLOT_USED = new boolean[MAX_FBOS];
-    // the light lookup is plane-independent, so resolve once per entity per frame, not per plane
     private static final Object2IntOpenHashMap<Entity> LIGHT_CACHE = new Object2IntOpenHashMap<>();
-    // one transform per sub-level per frame; identity-keyed since sub-levels aren't value-equal
+    // identity-keyed: sub-levels aren't value-equal
     private static final java.util.IdentityHashMap<ClientSubLevel, SubTransform> SUBXF_CACHE = new java.util.IdentityHashMap<>();
     private static int losBudget;
 
@@ -112,7 +108,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         final ResourceLocation texture;
         final FboTexture fboTexture = new FboTexture();
         TextureTarget target;
-        Vec3 worldPoint;   // ABSOLUTE world-space, so captureAll re-derives against the live camera
+        Vec3 worldPoint;   // absolute, so captureAll re-derives against the live camera
         Vec3 worldNormal;
         BlockPos mirrorPos;
         Direction facing;
@@ -122,22 +118,23 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         List<Entity> reflected;
         long reflectedTick = Long.MIN_VALUE;
         boolean packPath;
-        final Matrix4f sampleVP = new Matrix4f(); // MAIN proj·view·(−camPos): absolute world point → screen UV
+        final Matrix4f sampleVP = new Matrix4f(); // main proj·view·(−camPos): world point → screen UV
         int texIndex = -1;
-        int heldBoost;        // brightest handheld-light level among reflected holders
+        int heldBoost;        // brightest handheld-light level among holders
 
         Slot(ResourceLocation texture) {
             this.texture = texture;
         }
     }
 
-    // ---- BER: register the plane + draw the face (no FBO / GL state work) ----
-
     @Override
     public void render(MirrorBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buf,
                        int packedLight, int packedOverlay) {
         Minecraft mc = Minecraft.getInstance();
         if (be.getLevel() == null || mc.level == null) {
+            return;
+        }
+        if (com.thebeyond.client.renderer.BlockCameraCapture.isCapturing()) {
             return;
         }
         SubLevel sub = Sable.HELPER.getContaining(be.getLevel(), be.getBlockPos());
@@ -158,14 +155,14 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         }
 
         Vec3 camPos = SableReflectionFrame.camPos();
-        // Sable baked the sub-level local->render transform into this pose, so the plane already follows the sub-level.
+        // Sable baked the local->render transform into this pose, so the plane already follows the sub-level
         Matrix4f m = pose.last().pose();
         long now = mc.level.getGameTime();
         long subBits = subLevelKeyBits(sub, partialTick);
 
         for (Direction facing : faces) {
             float[] fc = faceCenterLocal(facing);
-            Vector3f p = m.transformPosition(new Vector3f(fc[0], fc[1], fc[2]));   // plane point − camera (camera-relative)
+            Vector3f p = m.transformPosition(new Vector3f(fc[0], fc[1], fc[2]));
             Vector3f nf = m.transformDirection(new Vector3f(
                     facing.getStepX(), facing.getStepY(), facing.getStepZ()));
             double nlen = Math.sqrt(nf.x * nf.x + nf.y * nf.y + nf.z * nf.z);
@@ -176,7 +173,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
             if (planeDist > RENDER_DIST) {
                 continue;
             }
-            // front-of-face cull (p·n < 0 ⇔ camera on +normal side); a back face z-fights the block body as a sliver
+            // front-of-face cull; a back face z-fights the block body
             if (p.x * nf.x + p.y * nf.y + p.z * nf.z >= 0.0) {
                 continue;
             }
@@ -185,7 +182,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
             if (slot == null) {
                 int texIdx = freeTexSlot();
                 if (texIdx < 0) {
-                    continue; // pool full; captureAll frees stale slots so new ones fit later
+                    continue;
                 }
                 slot = new Slot(ResourceLocation.fromNamespaceAndPath(
                         TheBeyond.MODID, "sable_mirror_reflection_" + texIdx));
@@ -193,7 +190,6 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
                 TEX_SLOT_USED[texIdx] = true;
                 SLOTS.put(key, slot);
             }
-            // coplanar faces share one slot; the nearest face anchors the capture
             boolean firstThisFrame = slot.lastSeenTick != now;
             if (firstThisFrame || planeDist < slot.planeDist) {
                 slot.worldPoint = new Vec3(camPos.x + p.x, camPos.y + p.y, camPos.z + p.z);
@@ -212,12 +208,12 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
             float[][] corners = faceQuad(facing, FACE_OUTSET);
             if (slot.packPath) {
                 VertexConsumer vc = buf.getBuffer(BeyondRenderTypes.mirrorPack(slot.texture));
-                // FBO is unlit albedo under a pack, so light from the cell in front of the face; the visible position reads empty sky and pins it full-bright
+                // FBO is unlit albedo under a pack; light from the front cell, since the face cell reads sky and pins full-bright
                 int ambient = LevelRenderer.getLightColor(mc.level, be.getBlockPos().relative(facing));
                 if (slot.heldBoost > 0) {
                     ambient = (Math.max((ambient >> 4) & 0xF, slot.heldBoost) << 4) | (((ambient >> 20) & 0xF) << 20);
                 }
-                // always max-subdivide: per-corner affine UVs diverge from projective at grazing angles and tear along the diagonal
+                // always max-subdivide: per-corner affine UVs diverge from projective at grazing angles and tear
                 int subdiv = MAX_SUBDIV;
                 for (int i = 0; i < subdiv; i++) {
                     for (int j = 0; j < subdiv; j++) {
@@ -238,9 +234,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         }
     }
 
-    // ---- AFTER_SOLID_BLOCKS: capture every registered plane into its FBO (safe between-passes point) ----
-
-    /** Captures every registered plane into its FBO at the safe AFTER_SOLID_BLOCKS between-passes point. */
+    /** Runs at AFTER_SOLID_BLOCKS, a safe between-passes point for an offscreen FBO. */
     static void captureAll(Matrix4f mainProj, Matrix4f mainView, Vec3 camPos, float pt, Frustum frustum) {
         if (SLOTS.isEmpty()) {
             return;
@@ -279,7 +273,6 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
                     it.remove();
                     continue;
                 }
-                // skip capture for off-screen planes (still alive, so they recapture on re-entry); box inflated so an edge-visible face isn't culled
                 if (frustum != null && !frustum.isVisible(new AABB(
                         slot.worldPoint.x - 4.0, slot.worldPoint.y - 4.0, slot.worldPoint.z - 4.0,
                         slot.worldPoint.x + 4.0, slot.worldPoint.y + 4.0, slot.worldPoint.z + 4.0))) {
@@ -313,7 +306,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
 
     private static void captureSlot(Slot slot, Matrix4f mainProj, Matrix4f mainView, Vec3 camPos, float pt,
                                     EntityRenderDispatcher disp, Minecraft mc) {
-        // recompute the plane from THIS frame's transform; the BER's is one frame stale and desyncs FBO from face on a moving sub-level
+        // recompute the plane from this frame's transform; the BER's is one frame stale and desyncs FBO from face
         SubTransform st = resolveSubTransform(slot, camPos, pt, mc);
         if (st != null) {
             float[] fcp = faceCenterLocal(slot.facing);
@@ -337,7 +330,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         Matrix4f modelView = new Matrix4f(mainView).mul(reflect);
         MirrorReflection.applyObliqueNearClip(proj, mainView, n, p0rel);
 
-        // pack overrides our gl_FragCoord shader, so sample via explicit UVs; store MAIN (unclipped) VP with camera baked in
+        // pack overrides our gl_FragCoord shader, so sample via explicit UVs from the main (unclipped) VP
         slot.packPath = ShaderCompatLib.isShaderPackActive();
         if (slot.packPath) {
             slot.sampleVP.set(mainProj).mul(mainView)
@@ -345,7 +338,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         }
 
         long now = mc.level.getGameTime();
-        // first/empty selection bypasses the per-frame budget (still tick-throttled); else an empty list latches as the budget cycles to other planes
+        // first/empty selection bypasses the per-frame budget, else an empty list latches as the budget moves on
         boolean trulyFirst = slot.reflected == null;
         boolean latchedEmpty = !trulyFirst && slot.reflected.isEmpty();
         boolean dueByTick = now - slot.reflectedTick >= ENTITY_REFRESH_TICKS;
@@ -358,9 +351,8 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
             }
         }
         List<Entity> reflected = slot.reflected != null ? slot.reflected : List.of();
-        slot.heldBoost = slot.packPath ? MirrorReflection.heldLightBoost(reflected, slot.worldPoint, pt) : 0; // handheld light is a pack-only feature
+        slot.heldBoost = slot.packPath ? MirrorReflection.heldLightBoost(reflected, slot.worldPoint, pt) : 0;
 
-        // null when the sub-level can't be resolved: entities still reflect, only block occlusion is skipped
         SubBlockFrame sf = resolveSubFrame(st, slot, reflected, camPos, modelView);
 
         slot.target.setClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -370,7 +362,6 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         RenderSystem.setProjectionMatrix(proj, VertexSorting.DISTANCE_TO_ORIGIN);
         Matrix4fStack mvStack = RenderSystem.getModelViewStack();
 
-        // depth-only prepass: sub-level blocks in the slab, so a block covering part of a body hides that part
         if (sf != null) {
             mvStack.set(sf.modelViewB);
             RenderSystem.applyModelViewMatrix();
@@ -379,7 +370,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
 
         mvStack.set(modelView);
         RenderSystem.applyModelViewMatrix();
-        // blocks OUTSIDE the contraption, in the WORLD frame (modelView, not modelViewB); self-flushes its depth before the entities
+        // world-frame occluders (not modelViewB); self-flushes depth before the entities
         MirrorReflection.renderOccluderDepth(FBO_BUFFER, reflected, camPos, mc, n, slot.worldPoint);
         disp.setRenderShadow(false);
         GL11.glFrontFace(GL11.GL_CW); // reflection flips winding
@@ -405,13 +396,13 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         GL11.glFrontFace(GL11.GL_CCW);
         disp.setRenderShadow(true);
 
-        // depth-test, no depth-write — drawn after the entities so reflected bodies still occlude the shade
+        // after the entities, so reflected bodies still occlude the shade (depth-test, no depth-write)
         if (sf != null) {
             mvStack.set(sf.modelViewB);
             RenderSystem.applyModelViewMatrix();
             renderOcclusionShadeSub(sf, mc);
         }
-        // same shade pass for blocks outside the contraption, in the world frame
+        // same shade pass, world-frame occluders
         mvStack.set(modelView);
         RenderSystem.applyModelViewMatrix();
         MirrorReflection.renderOcclusionShade(FBO_BUFFER, reflected, n, slot.worldPoint, camPos, mc);
@@ -420,9 +411,6 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         slot.fboTexture.setId(slot.target.getColorTextureId());
     }
 
-    // ---- shared helpers ----
-
-    /** -1 when all MAX_FBOS names are in use, which also caps concurrent planes. */
     private static int freeTexSlot() {
         for (int i = 0; i < TEX_SLOT_USED.length; i++) {
             if (!TEX_SLOT_USED[i]) {
@@ -432,7 +420,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         return -1;
     }
 
-    /** Per-contraption key bits from the grid pivot; without it two momentarily-coplanar contraptions collide on one slot and ghost each other. */
+    /** Per-contraption key bits, else two momentarily-coplanar contraptions collide on one slot and ghost. */
     private static long subLevelKeyBits(SubLevel sub, float partialTick) {
         if (!(sub instanceof ClientSubLevel csl)) {
             return 0L;
@@ -443,7 +431,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         return h & 0x1FFFFFFFL; // 29 bits, sits above facing(3)+coord(32)
     }
 
-    /** Slot key = pivot + facing + face-plane coord, so all coplanar faces of one contraption map to one slot. */
+    /** Key = pivot + facing + face-plane coord, so coplanar faces share a slot. */
     private static long planeKeyLong(long subBits, BlockPos pos, Direction facing) {
         int coord = switch (facing) {
             case DOWN -> pos.getY();
@@ -456,7 +444,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         return (subBits << 35) | ((long) facing.get3DDataValue() << 32) | (coord & 0xFFFFFFFFL);
     }
 
-    /** Block read via the frame-shared chunk cache (pays Sable's bounds mixin once per chunk, not per cell); valid only within a captureAll frame. */
+    /** Pays Sable's bounds mixin once per chunk, not per cell; valid only within one captureAll. */
     private static BlockState cachedState(net.minecraft.world.level.Level level, BlockPos pos) {
         long ckey = ChunkPos.asLong(pos.getX() >> 4, pos.getZ() >> 4);
         LevelChunk chunk = LOS_CHUNK_CACHE.get(ckey);
@@ -510,7 +498,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         return false;
     }
 
-    /** Voxel walk (only a non-mirror full opaque cube blocks); avoids {@code level.clip()}, whose per-ray cost would dominate capture. */
+    /** Voxel walk (only a non-mirror full opaque cube blocks); level.clip()'s per-ray cost would dominate capture. */
     private static boolean hasLineOfSight(Entity e, Vec3 eye, Vec3 target) {
         var level = e.level();
         double dx = target.x - eye.x, dy = target.y - eye.y, dz = target.z - eye.z;
@@ -518,7 +506,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         if (dist < 1.0e-4) {
             return true;
         }
-        // reject a pathological ray: an entity that changed reference frame this frame spans ~2e7 (millions of steps)
+        // reject a pathological ray: an entity that switched reference frame this frame spans ~2e7
         if (dist > RENDER_DIST * 2.0) {
             return false;
         }
@@ -558,7 +546,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         return Mth.lerp(t, ALPHA_NEAR, ALPHA_FAR);
     }
 
-    /** LOD band for a distance, with a hysteresis dead-zone so a drifting sub-level distance can't resize the FBO every frame at an edge. */
+    /** Hysteresis dead-zone so a drifting distance can't resize the FBO every frame at a band edge. */
     private static int lodBandFor(double dist, int prevBand) {
         int band = 0;
         while (band < LOD_BANDS.length && dist > LOD_BANDS[band]) {
@@ -567,13 +555,12 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         if (prevBand >= 0 && band != prevBand) {
             double edge = LOD_BANDS[Math.min(band, prevBand)];
             if (Math.abs(dist - edge) < LOD_HYSTERESIS) {
-                return prevBand; // inside the dead-zone — keep the current band
+                return prevBand;
             }
         }
         return band;
     }
 
-    /** Face centre in block-local [0..1] (the plane point, before outset). */
     private static float[] faceCenterLocal(Direction f) {
         return switch (f) {
             case NORTH -> new float[]{0.5f, 0.5f, 0.0f};
@@ -585,7 +572,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         };
     }
 
-    /** Unit face quad, outset by {@code e}; must match MirrorReflection's face. */
+    /** Must match MirrorReflection's face. */
     private static float[][] faceQuad(Direction facing, float e) {
         return switch (facing) {
             case SOUTH -> new float[][]{{0, 0, 1 + e}, {1, 0, 1 + e}, {1, 1, 1 + e}, {0, 1, 1 + e}};
@@ -596,8 +583,6 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
             default -> new float[][]{{1, 0, -e}, {0, 0, -e}, {0, 1, -e}, {1, 1, -e}}; // NORTH
         };
     }
-
-    // ---- pack-path helpers: per-corner screen UVs (corner world pos = camPos + M·local) ----
 
     private static void addSubVertex(VertexConsumer vc, Matrix4f m, PoseStack.Pose ps, Direction facing,
                                      float[][] corners, Vec3 camPos, Matrix4f vp, int alpha, int light, float u, float v) {
@@ -623,16 +608,14 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
     }
 
 
-    // ---- sub-level blocks as depth occluders + occlusion shade ----
-    // emit (gridCoord − rotationPoint): raw grid coords ~2e7 lose sub-block precision as float32 (modelViewB = modelView·M maps the de-biased coord; bodies → grid via M⁻¹)
+    // emit (gridCoord − rotationPoint): raw grid coords ~2e7 lose sub-block precision as float32. modelViewB = modelView·M maps the de-biased coord; bodies → grid via M⁻¹.
 
-    /** Per-capture sub-level frame: model-view, grid-space plane, camera in grid space, reflected bodies' grid AABBs. */
     private static final class SubBlockFrame {
         final Matrix4f modelViewB;
         final Vec3 planePoint;
         final Vec3 planeNormal;
         final double camGx, camGy, camGz;
-        final double rpx, rpy, rpz; // rotationPoint; emitted vertices are de-biased by this for float precision
+        final double rpx, rpy, rpz; // rotationPoint
         final List<double[]> boxes; // grid-space AABBs {minX,minY,minZ,maxX,maxY,maxZ}
 
         SubBlockFrame(Matrix4f modelViewB, Vec3 planePoint, Vec3 planeNormal,
@@ -650,7 +633,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         }
     }
 
-    /** M maps (gridCoord − rotationPoint) → camera-relative VISIBLE; minv its inverse; rp* the rotation point. */
+    /** M maps (gridCoord − rotationPoint) → camera-relative visible space. */
     private record SubTransform(Matrix4f m, Matrix4f minv, double rpx, double rpy, double rpz) {
     }
 
@@ -666,7 +649,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         if (cached != null) {
             return cached;
         }
-        csl.renderPose(pt); // populate the interpolated-pose cache for this partial tick
+        csl.renderPose(pt); // side-effect: populate the interpolated-pose cache for this tick
         Vector3dc rp = csl.renderPose().rotationPoint();
         Matrix4f m = csl.getRenderData().getTransformation(camPos.x, camPos.y, camPos.z, new Matrix4f());
         Matrix4f minv = new Matrix4f(m).invert();
@@ -675,7 +658,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         return st;
     }
 
-    /** Null when it can't be built; block occlusion is then skipped and entities still reflect. */
+    /** Null when it can't be built: block occlusion is skipped, entities still reflect. */
     private static SubBlockFrame resolveSubFrame(SubTransform st, Slot slot, List<Entity> reflected, Vec3 camPos,
                                                  Matrix4f modelView) {
         if (st == null || reflected.isEmpty()) {
@@ -685,7 +668,6 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         double rpx = st.rpx(), rpy = st.rpy(), rpz = st.rpz();
         Matrix4f modelViewB = new Matrix4f(modelView).mul(m);
 
-        // camera in grid space: camera-relative origin through M⁻¹, then + rotationPoint
         Vector3f camG = minv.transformPosition(new Vector3f(0.0f, 0.0f, 0.0f));
         double camGx = camG.x + rpx, camGy = camG.y + rpy, camGz = camG.z + rpz;
 
@@ -697,7 +679,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         for (Entity e : reflected) {
             boxes.add(gridAabb(e.getBoundingBox(), minv, camPos, rpx, rpy, rpz));
         }
-        // skip if the transform is degenerate (mid-spawn zero scale → non-finite inverse); entities still reflect
+        // degenerate transform (mid-spawn zero scale → non-finite inverse): skip occlusion
         for (double[] g : boxes) {
             for (double val : g) {
                 if (!Double.isFinite(val)) {
@@ -708,7 +690,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         return new SubBlockFrame(modelViewB, planePoint, planeNormal, camGx, camGy, camGz, rpx, rpy, rpz, boxes);
     }
 
-    /** World-space AABB → its axis-aligned bound in grid space (8 corners through M⁻¹ + rotationPoint). */
+    /** All 8 corners through M⁻¹ since the box rotates. */
     private static double[] gridAabb(AABB b, Matrix4f minv, Vec3 camPos, double rpx, double rpy, double rpz) {
         double minX = Double.POSITIVE_INFINITY, minY = Double.POSITIVE_INFINITY, minZ = Double.POSITIVE_INFINITY;
         double maxX = Double.NEGATIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY, maxZ = Double.NEGATIVE_INFINITY;
@@ -732,7 +714,6 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         return new double[]{minX, minY, minZ, maxX, maxY, maxZ};
     }
 
-    /** Depth-only prepass: sub-level blocks in the front-of-plane slab, drawn into the FBO depth. */
     private static void renderOccluderDepthSub(SubBlockFrame sf, Minecraft mc) {
         List<double[]> boxes = sf.boxes;
         Vec3 n = sf.planeNormal, p0 = sf.planePoint;
@@ -747,7 +728,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
                     + n.z * ((n.z > 0 ? b[5] : b[2]) - p0.z);
             dMax = Math.max(dMax, far);
         }
-        // bound the scan: a degenerate/oversized box would make betweenClosed iterate astronomically and hang
+        // bound the scan: a degenerate/oversized box makes betweenClosed iterate astronomically and hang
         if (!Double.isFinite(maxX - minX) || !Double.isFinite(maxY - minY) || !Double.isFinite(maxZ - minZ)
                 || (maxX - minX) + 2 * OCCLUDER_MARGIN > BORDER_DIM
                 || (maxY - minY) + 2 * OCCLUDER_MARGIN > BORDER_DIM
@@ -773,7 +754,6 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
                 continue;
             }
             if (modelBased) {
-                // the actual rendered model, so a connected fence shows its real gaps
                 float[] quads = MirrorReflection.occluderModelQuads(bs);
                 if (quads.length == 0) {
                     continue;
@@ -800,7 +780,6 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         FBO_BUFFER.endBatch();
     }
 
-    /** Occlusion corner-shade: a soft radial dark blob on the coverage-limit corner of each occluding sub-level block. */
     private static void renderOcclusionShadeSub(SubBlockFrame sf, Minecraft mc) {
         List<double[]> boxes = sf.boxes;
         var level = mc.level;
@@ -863,7 +842,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
                         continue;
                     }
                     int wx = bx + ix, wy = by + iy, wz = bz + iz;
-                    // nearest body decides the coverage-limit edge (per-cell → multiplayer-safe)
+                    // per-cell nearest body (not a global pick) → multiplayer-safe
                     double[] ne = null;
                     double best = Double.MAX_VALUE;
                     for (double[] b : boxes) {
@@ -882,14 +861,14 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
                     double hdx = Math.max(Math.max(ne[0] - hcx, hcx - ne[3]), 0.0);
                     double hdz = Math.max(Math.max(ne[2] - hcz, hcz - ne[5]), 0.0);
                     if (hdx * hdx + hdz * hdz > NEAR_ENTITY * NEAR_ENTITY) {
-                        continue; // not under the body — don't shade distant terrain
+                        continue;
                     }
                     double eCy = (ne[1] + ne[4]) * 0.5, eCx = (ne[0] + ne[3]) * 0.5, eCz = (ne[2] + ne[5]) * 0.5;
                     mp.set(wx, wy, wz);
                     BlockState bs = cachedState(level, mp);
                     VoxelShape vs = bs.getShape(level, mp);
                     AABB sb = vs.bounds();
-                    // exposed horizontal silhouette, shape-aware (air within a cell counts as open) so a stack shows its real edges
+                    // shape-aware (air in a cell counts as open) so a stack shows its real silhouette edges
                     boolean topOpen;
                     if (sb.maxY < 1.0 - 1.0e-4) {
                         topOpen = true;
@@ -907,9 +886,8 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
                         mp.set(wx, wy, wz);
                     }
                     if (!topOpen && !botOpen) {
-                        continue; // interior cell — no exposed silhouette edge
+                        continue;
                     }
-                    // cut the edge along the body's still-visible half
                     boolean coverLower = (wy + 0.5) < eCy;
                     boolean cutTop = coverLower ? topOpen : !botOpen;
                     boolean exNX = !bcell(ix - 1, iy, iz, dx, dy, dz);
@@ -917,13 +895,13 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
                     boolean exNZ = !bcell(ix, iy, iz - 1, dx, dy, dz);
                     boolean exPZ = !bcell(ix, iy, iz + 1, dx, dy, dz);
                     if (!(exNX || exPX || exNZ || exPZ)) {
-                        continue; // interior face — no exposed block edge
+                        continue;
                     }
                     for (AABB a : vs.toAabbs()) {
                         if (blobs >= MAX_BLOB_FACES) {
                             break;
                         }
-                        // radius stays a grid-space (double) distance; emitted coords and falloff centre both de-biased so the in-shader distance matches
+                        // emitted coords and falloff centre both de-biased so the in-shader distance matches the grid radius
                         double rbx = wx - sf.rpx, rby = wy - sf.rpy, rbz = wz - sf.rpz;
                         float aMinX = (float) (rbx + a.minX), aMaxX = (float) (rbx + a.maxX);
                         float aMinY = (float) (rby + a.minY), aMaxY = (float) (rby + a.maxY);
@@ -940,7 +918,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
                         if (exNZ) { blobFace3D(vc, 2, aMinZ, aMinX, aMaxX, aMinY, aMaxY, pcx, cy, pcz, rad, c); blobs++; }
                         if (exPZ) { blobFace3D(vc, 2, aMaxZ, aMinX, aMaxX, aMinY, aMaxY, pcx, cy, pcz, rad, c); blobs++; }
                     }
-                    // a passable block (empty collision) shades the solid surface it's mounted on, not just itself
+                    // a passable block (empty collision) shades the surface it's mounted on, not just itself
                     if (bs.getCollisionShape(level, mp).isEmpty()) {
                         for (Direction sd : Direction.values()) {
                             if (blobs >= MAX_BLOB_FACES) {
@@ -955,12 +933,12 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
                                 case SOUTH -> sb.maxZ >= 0.98;
                             };
                             if (!touch) {
-                                continue; // not mounted on this side
+                                continue;
                             }
                             if (!cachedState(level, mp.set(wx + sd.getStepX(), wy + sd.getStepY(), wz + sd.getStepZ())).canOcclude()) {
-                                continue; // not a solid surface to shade
+                                continue;
                             }
-                            // centre kept in grid space (cc*) for the radius, de-biased only when passed to blobFace3D
+                            // centre kept in grid space (cc*) for the radius, de-biased only at blobFace3D
                             double rbx = wx - sf.rpx, rby = wy - sf.rpy, rbz = wz - sf.rpz;
                             int orient;
                             float fx, fa0, fa1, fb0, fb1;
@@ -985,7 +963,6 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         FBO_BUFFER.endBatch();
     }
 
-    /** The 6 faces of {@code box} as POSITION quads for the depth occluder. */
     private static void addBox(VertexConsumer vc, AABB box, double ox, double oy, double oz) {
         float x0 = (float) (box.minX + ox), y0 = (float) (box.minY + oy), z0 = (float) (box.minZ + oz);
         float x1 = (float) (box.maxX + ox), y1 = (float) (box.maxY + oy), z1 = (float) (box.maxZ + oz);
@@ -997,8 +974,8 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         vc.addVertex(x1, y0, z0); vc.addVertex(x1, y1, z0); vc.addVertex(x1, y1, z1); vc.addVertex(x1, y0, z1);
     }
 
-    /** Soft dark blob on one occluder face; alpha falls off from a shared 3D centre point so darkness wraps seamlessly across faces.
-     *  {@code orient}: 0 = horizontal (y fixed), 1 = X-face (x fixed), 2 = Z-face (z fixed). */
+    /** Alpha falls off from a shared 3D centre so the blob wraps seamlessly across adjacent faces.
+     *  orient: 0 = horizontal (y fixed), 1 = X-face (x fixed), 2 = Z-face (z fixed). */
     private static void blobFace3D(VertexConsumer vc, int orient, float fixed,
                                    float a0, float a1, float b0, float b1,
                                    double px, double py, double pz, float r, float c) {
@@ -1057,7 +1034,6 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         return BORDER_OCC[borderIdx(ix, iy, iz, dy, dz)];
     }
 
-    /** Smootherstep 6t⁵−15t⁴+10t³. */
     private static float smootherstep(float t) {
         return t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f);
     }

@@ -25,7 +25,6 @@ public class BeyondBlocks {
 
     public static LinkedHashSet<DeferredHolder<Item, BlockItem>> CREATIVE_TAB_ITEMS = Sets.newLinkedHashSet();
 
-    //Generic
     public static final DeferredBlock<Block> VOID_FLAME = registerBlockWithoutItem("void_flame",
             () -> new VoidFlameBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_PURPLE)
@@ -83,7 +82,6 @@ public class BeyondBlocks {
     public static final DeferredBlock<Block> MEMOR_FAUCET = registerBlock("memor_faucet", () -> new MemorFaucetBlock(
             BlockBehaviour.Properties.ofFullCopy(MEMOR.get()).noOcclusion()), Rarity.EPIC);
 
-    //STRUCTURES
     public static final DeferredBlock<Block> BONFIRE = registerBlock("bonfire", () -> new BonfireBlock(BlockBehaviour.Properties.of()
             .mapColor(MapColor.GLOW_LICHEN)
             .strength(50, 50)
@@ -102,6 +100,17 @@ public class BeyondBlocks {
             .strength(1.5F, 6.0F)
             .sound(SoundType.NETHER_BRICKS))
     );
+    public static final DeferredBlock<Block> PROJECTOR = registerBlock("projector", () -> new ProjectorBlock(BlockBehaviour.Properties.of()
+            .mapColor(MapColor.TERRACOTTA_WHITE)
+            .strength(1.5F)
+            .noOcclusion()
+            .sound(SoundType.AMETHYST)));
+    // No item: pinhole_camera places this block.
+    public static final DeferredBlock<Block> CAMERA = registerBlockWithoutItem("camera", () -> new CameraBlock(BlockBehaviour.Properties.of()
+            .mapColor(MapColor.COLOR_GRAY)
+            .strength(1.5F)
+            .noOcclusion()
+            .sound(SoundType.METAL)));
     public static final DeferredBlock<Block> BELLOW = registerBlock("bellow", () -> new BellowBlock(BlockBehaviour.Properties.of()
             .mapColor(MapColor.COLOR_GRAY)
             .requiresCorrectToolForDrops()
@@ -126,7 +135,6 @@ public class BeyondBlocks {
     public static final DeferredBlock<Block> PORTELAIN_SLAB = registerBlock("portelain_slab", () -> new SlabBlock(
             BlockBehaviour.Properties.ofFullCopy(PORTELAIN.get()).sound(SoundType.NETHER_BRICKS)));
 
-    //Path
     public static final DeferredBlock<Block> AURORACITE = registerBlock("auroracite",
             () -> new AuroraciteBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_LIGHT_BLUE)
@@ -281,7 +289,6 @@ public class BeyondBlocks {
                     .sound(SoundType.CHERRY_SAPLING)
                     .pushReaction(PushReaction.DESTROY))
     );
-    // Pearlescent Plains
     public static final DeferredBlock<Block> NACRE = registerBlock("nacre",
             () -> new NacreBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_LIGHT_GRAY)
@@ -289,7 +296,7 @@ public class BeyondBlocks {
                     .sound(SoundType.GRAVEL))
     );
 
-    // Pearlescent Expanse — glassy "mirror" test block
+    // Pearlescent Expanse
     public static final DeferredBlock<Block> PEARL_MIRROR = registerBlock("pearl_mirror",
             () -> new MirrorBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.TERRACOTTA_WHITE)

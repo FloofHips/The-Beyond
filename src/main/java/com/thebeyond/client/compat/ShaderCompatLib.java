@@ -8,11 +8,12 @@ public class ShaderCompatLib {
     private static Boolean cachedShaderResult = null;
     private static Boolean cachedRendererResult = null;
 
-    // Cache only the Method refs, never invocation results: pack state flips when the user toggles packs.
+    // Cache Method refs only, never results: pack state flips on toggle.
     private static volatile boolean irisReflectionInitialized = false;
     private static Method irisGetInstance;
     private static Method irisIsPackInUse;
     private static Method irisIsShadowPass;
+    private static boolean irisProperNamespace;
 
     public static boolean isShaderModLoaded() {
         if (cachedShaderResult == null) {
@@ -23,7 +24,7 @@ public class ShaderCompatLib {
         return cachedShaderResult;
     }
 
-    /** Flips on/off mid-session as the user toggles packs, unlike {@link #isShaderModLoaded()}. */
+    /** Flips mid-session as packs toggle, unlike {@link #isShaderModLoaded()}. */
     public static boolean isShaderPackActive() {
         if (!isShaderModLoaded()) return false;
         initIrisReflection();
@@ -43,10 +44,14 @@ public class ShaderCompatLib {
                 "net.irisshaders.iris.api.v0.IrisApi",
                 "net.coderbot.iris.api.v0.IrisApi",
         }) {
-            try { api = Class.forName(candidate); break; } catch (Throwable ignored) {}
+            try {
+                api = Class.forName(candidate);
+                irisProperNamespace = candidate.startsWith("net.irisshaders");
+                break;
+            } catch (Throwable ignored) {}
         }
         if (api != null) {
-            // Resolve each method independently so a missing one (older Iris) doesn't null the others.
+            // Resolve independently: a missing method on older Iris must not null the rest.
             try { irisGetInstance = api.getMethod("getInstance"); } catch (Throwable ignored) { irisGetInstance = null; }
             try { irisIsPackInUse = api.getMethod("isShaderPackInUse"); } catch (Throwable ignored) { irisIsPackInUse = null; }
             try { irisIsShadowPass = api.getMethod("isRenderingShadowPass"); } catch (Throwable ignored) { irisIsShadowPass = null; }
@@ -66,7 +71,13 @@ public class ShaderCompatLib {
         }
     }
 
-    /** Gates fog/lightmap channel clamping; these renderers wrap out-of-range modulo and tint the End green otherwise. */
+    /** False under legacy Oculus, which keeps the conservative fallbacks. */
+    public static boolean isIrisProper() {
+        initIrisReflection();
+        return irisProperNamespace;
+    }
+
+    /** Gates fog/lightmap clamping: these renderers tint the End green without it. */
     public static boolean isModdedRendererLoaded() {
         if (cachedRendererResult == null) {
             boolean sodium = ModList.get().isLoaded("sodium");
