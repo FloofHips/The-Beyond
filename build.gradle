@@ -125,6 +125,9 @@ dependencies {
     compileOnly "curse.maven:sable-1312371:8007005"
     compileOnly "dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:1.6.0"
 
+    // Optional Curios compat (compileOnly, gated by ModList.isLoaded) — Totem of Respite saves curio slots on death.
+    compileOnly "curse.maven:curios-309927:6529130"
+
     // --- Unit tests ---
     // JUnit 5 for pure-function tests (pingPongWrap, computeWrappedCoords contract,
     // HashSimplexNoise determinism). These tests intentionally do NOT spin up

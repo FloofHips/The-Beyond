@@ -40,4 +40,25 @@ public class RenderUtils {
             consumer.setColor(1, 1, 1, 1);
         }
     }
+
+    /** A model resolved once per frame and reused across draws, skipping the per-call ModelManager
+     *  lookup + getRenderPasses() allocation. Re-resolved each frame (no cross-frame cache). */
+    public static final class ResolvedModel {
+        private final List<BakedModel> passes;
+        private ResolvedModel(List<BakedModel> passes) { this.passes = passes; }
+
+        public static ResolvedModel resolve(ResourceLocation loc) {
+            ModelManager manager = Minecraft.getInstance().getModelManager();
+            return new ResolvedModel(manager.getModel(ModelResourceLocation.standalone(loc)).getRenderPasses(ItemStack.EMPTY, true));
+        }
+
+        public void emit(PoseStack poseStack, VertexConsumer consumer, int packedLight, int overlayCoord, float r, float g, float b, float a) {
+            ItemRenderer renderer = Minecraft.getInstance().getItemRenderer();
+            for (BakedModel pass : passes) {
+                consumer.setColor(r, g, b, a);
+                renderer.renderModelLists(pass, ItemStack.EMPTY, packedLight, overlayCoord, poseStack, consumer);
+                consumer.setColor(1, 1, 1, 1);
+            }
+        }
+    }
 }

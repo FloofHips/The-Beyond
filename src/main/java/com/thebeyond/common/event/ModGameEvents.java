@@ -58,6 +58,7 @@ public class ModGameEvents {
 
     private static final String TAG_PENDING_TOTEM = "the_beyond:pendingTotem";
     private static final String TAG_TOTEM_ITEMS = "the_beyond:totemItems";
+    private static final boolean CURIOS_LOADED = net.neoforged.fml.ModList.get().isLoaded("curios");
 
     private static RefugeChunkData getChunkData(ServerLevel level, BlockPos pos) {
         // Do NOT force-load the chunk: these events can fire while the server is inside
@@ -243,10 +244,22 @@ public class ModGameEvents {
                 }
             }
 
+            // Curios sit in a separate handler; onDrop cancels LivingDropsEvent, so capture+clear them into the totem list or they're lost (esp. Corpse).
+            int curiosCount = 0;
+            if (CURIOS_LOADED) {
+                for (ItemStack stack : com.thebeyond.compat.curios.BeyondCuriosCompat.collectAndClear(player)) {
+                    itemsList.add(stack.save(regAccess));
+                    curiosCount++;
+                }
+            }
+
             if (!itemsList.isEmpty()) {
                 persistent.put(TAG_TOTEM_ITEMS, itemsList);
                 persistent.putBoolean(TAG_PENDING_TOTEM, true);
             }
+
+            TheBeyond.LOGGER.info("[TotemRespite] totem captured items={} (curios among them={}) curiosLoaded={} corpse={}",
+                    itemsList.size(), curiosCount, CURIOS_LOADED, net.neoforged.fml.ModList.get().isLoaded("corpse"));
 
             player.getPersistentData().put(Player.PERSISTED_NBT_TAG, persistent);
         }

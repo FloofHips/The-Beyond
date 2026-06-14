@@ -10,16 +10,12 @@ public class ShaderCompatLib {
     private static Boolean cachedShaderResult = null;
     private static Boolean cachedRendererResult = null;
 
-    // Cached reflective handles into Iris/Oculus public API (net.irisshaders.iris.api.v0.IrisApi).
-    // We cache the Method refs (one-shot Class.forName is the expensive part), but never cache
-    // the invocation result — the pack state can flip at runtime when the user toggles packs.
+    // Cached Iris/Oculus API method refs (Class.forName is costly); never cache the result — pack state flips at runtime.
     private static volatile boolean irisReflectionInitialized = false;
     private static Method irisGetInstance;
     private static Method irisIsPackInUse;
 
-    /**
-     * Returns {@code true} if Iris or Oculus is installed (shader mods).
-     */
+    /** {@code true} if a shader mod (Iris/Oculus) is installed. */
     public static boolean isShaderModLoaded() {
         if (cachedShaderResult == null) {
             boolean iris = ModList.get().isLoaded("iris");

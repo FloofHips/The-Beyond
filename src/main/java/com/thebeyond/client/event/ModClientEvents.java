@@ -541,6 +541,12 @@ public class ModClientEvents {
 
         bufferSource.endBatch();
         poseStack.popPose();
+
+        // Sky cracks: drawn here (world pass) only under a shaderpack; no-op otherwise (vanilla uses renderSky).
+        poseStack.pushPose();
+        EndSpecialEffects.renderCracksWorld(poseStack, bufferSource);
+        bufferSource.endBatch();
+        poseStack.popPose();
     }
 
     public static void renderClouds(PoseStack poseStack, float translate, float scale, float time, ResourceLocation model, MultiBufferSource.BufferSource buffer) {

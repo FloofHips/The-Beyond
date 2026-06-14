@@ -14,6 +14,7 @@ import net.minecraft.client.renderer.DimensionSpecialEffects;
 import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Vec3i;
@@ -58,7 +59,8 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
     private static final ResourceLocation CRACK_3_LOCATION = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/environment/thunder_3.png");
 
     private float bossFog;
-    public ArrayList<ThunderCrack> thunderCracks = new ArrayList<>();
+    public static final ArrayList<ThunderCrack> thunderCracks = new ArrayList<>();
+    private static long lastCrackTick = Long.MIN_VALUE;
 
     @javax.annotation.Nullable
     private VertexBuffer starBuffer;
@@ -285,12 +287,16 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
             this.createCrack(level);
         }
 
+        // Decay per game tick (not per render frame) so dissipation is frame-rate-independent.
+        long gameTime = level.getGameTime();
+        int decayTicks = (int) Math.max(0, Math.min(100, gameTime - lastCrackTick));
+        lastCrackTick = gameTime;
         if (!thunderCracks.isEmpty()) {
             Iterator<ThunderCrack> iterator = thunderCracks.iterator();
             while (iterator.hasNext()) {
                 ThunderCrack crack = iterator.next();
 
-                crack.lifeTime -= level.random.nextFloat()*0.01f;
+                crack.lifeTime -= level.random.nextFloat()*0.03f * decayTicks;
 
                 if (crack.lifeTime <= 0) {
                     iterator.remove();
@@ -455,6 +461,31 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
     }
 
 
+    /** Iris-only: a live shaderpack overdraws the custom End sky and eats the cracks drawn in
+     *  {@link #renderSky}, so they're re-drawn here in the world pass. No-op without a pack. */
+    public static void renderCracksWorld(PoseStack poseStack, net.minecraft.client.renderer.MultiBufferSource buffer) {
+        if (thunderCracks.isEmpty() || !ShaderCompatLib.isShaderPackActive()) return;
+        int light = net.minecraft.client.renderer.LightTexture.FULL_BRIGHT;
+        int ov = net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY;
+        for (ThunderCrack crack : thunderCracks) {
+            ResourceLocation tex = crack.lifeTime < 0.3 ? CRACK_3_LOCATION
+                    : (crack.lifeTime < 0.6 ? CRACK_2_LOCATION : CRACK_1_LOCATION);
+            // Emissive translucent: survives the Iris world-pass and alpha-blends; alpha tracks lifeTime.
+            float a = Math.min(crack.lifeTime, 0.8f);
+            VertexConsumer vc = buffer.getBuffer(com.thebeyond.common.registry.BeyondRenderTypes.entityTranslucentEmissiveNoCulled(tex));
+            poseStack.pushPose();
+            poseStack.mulPose(Axis.YP.rotationDegrees(90f));
+            Matrix4f m = poseStack.last().pose();
+            float px = (float) crack.position.x, py = (float) crack.position.y, pz = (float) crack.position.z;
+            float s = crack.size;
+            vc.addVertex(m, px - s, py, pz - s).setColor(1f, 1f, 1f, a).setUv(0f, 0f).setOverlay(ov).setLight(light).setNormal(0f, 1f, 0f);
+            vc.addVertex(m, px + s, py, pz - s).setColor(1f, 1f, 1f, a).setUv(1f, 0f).setOverlay(ov).setLight(light).setNormal(0f, 1f, 0f);
+            vc.addVertex(m, px + s, py, pz + s).setColor(1f, 1f, 1f, a).setUv(1f, 1f).setOverlay(ov).setLight(light).setNormal(0f, 1f, 0f);
+            vc.addVertex(m, px - s, py, pz + s).setColor(1f, 1f, 1f, a).setUv(0f, 1f).setOverlay(ov).setLight(light).setNormal(0f, 1f, 0f);
+            poseStack.popPose();
+        }
+    }
+
     private void renderCrack(ClientLevel level, PoseStack poseStack, Tesselator tesselator, ThunderCrack crack) {
         //stolen from ninni uber
 
@@ -505,7 +536,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         poseStack.popPose();
     }
 
-    class ThunderCrack {
+    public static class ThunderCrack {
         public Vec3 position = Vec3.ZERO;
         public float lifeTime = 0;
         public int size = 0;
