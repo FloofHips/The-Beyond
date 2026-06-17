@@ -3,11 +3,9 @@ package com.thebeyond.common.event;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.entity.TotemOfRespiteEntity;
 import com.thebeyond.common.item.AnchorLeggingsItem;
-import com.thebeyond.common.knowledge.BeyondKnowledge;
-import com.thebeyond.common.knowledge.KnowledgeMode;
-import com.thebeyond.common.knowledge.PlayerKnowledge;
-import com.thebeyond.common.knowledge.WorldKnowledge;
-import com.thebeyond.common.network.PlayerKnowledgeSyncPayload;
+import com.thebeyond.common.awareness.*;
+import com.thebeyond.common.network.GatedStructuresSyncPayload;
+import com.thebeyond.common.network.PlayerAwarenessSyncPayload;
 import com.thebeyond.common.registry.*;
 import com.thebeyond.util.AOEManager;
 import com.thebeyond.util.RefugeChunkData;
@@ -49,10 +47,7 @@ import java.util.Set;
 import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvent;
 
-/**
- * Both-sided event handlers for gameplay mechanics: Refuge protection, Totem of Respite,
- * Anchor Leggings, etc. Must not be Dist.CLIENT-only or dedicated servers will skip them.
- */
+/** Gameplay event handlers that run on both sides - keep off the client-only bus so dedicated servers fire them too. */
 @EventBusSubscriber(modid = TheBeyond.MODID)
 public class ModGameEvents {
 
@@ -61,10 +56,8 @@ public class ModGameEvents {
     private static final boolean CURIOS_LOADED = net.neoforged.fml.ModList.get().isLoaded("curios");
 
     private static RefugeChunkData getChunkData(ServerLevel level, BlockPos pos) {
-        // Do NOT force-load the chunk: these events can fire while the server is inside
-        // DistanceManager.runAllUpdates, where a recursive load throws CME on
-        // chunksToUpdateFutures. An unloaded chunk has no refuge data anyway, so null
-        // is treated as "no protection".
+        // Never force-load: a recursive load during DistanceManager.runAllUpdates throws CME.
+        // An unloaded chunk has no refuge data anyway, so null means "no protection".
         ChunkAccess chunk = level.getChunkSource().getChunk(pos.getX() >> 4, pos.getZ() >> 4, false);
         if (chunk != null) {
             RefugeChunkData data = chunk.getData(BeyondAttachments.REFUGE_DATA);
@@ -73,7 +66,7 @@ public class ModGameEvents {
                 return data;
             }
         }
-        // Sub-level fallback: refuge attachment lives at the remote plot storage offset.
+        // For sub-levels the refuge data lives at the remote plot's storage offset.
         BlockPos stored = com.thebeyond.api.compat.BeyondCompatHooks.storedForVisible(level, pos);
         if (stored != null) {
             ChunkAccess sChunk = level.getChunkSource().getChunk(stored.getX() >> 4, stored.getZ() >> 4, false);
@@ -82,21 +75,42 @@ public class ModGameEvents {
         return chunk == null ? null : chunk.getData(BeyondAttachments.REFUGE_DATA);
     }
 
-    /** Pushes the authoritative known set to the client on login (NeoForge doesn't
-     *  S2C-sync attachments). World set in SHARED_WORLD mode, else the player's. */
+    // NeoForge doesn't sync attachments to the client, so it starts empty on login, respawn, and
+    // dimension change - we re-push the known set on all three or content gets re-hidden.
     @SubscribeEvent
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
-        if (!(event.getEntity() instanceof ServerPlayer sp)) return;
-        if (!BeyondKnowledge.gateEnabled()) return;
+        if (event.getEntity() instanceof ServerPlayer sp) syncAwarenessTo(sp);
+    }
 
+    @SubscribeEvent
+    public static void onPlayerRespawnSyncAwareness(PlayerEvent.PlayerRespawnEvent event) {
+        if (event.getEntity() instanceof ServerPlayer sp) syncAwarenessTo(sp);
+    }
+
+    @SubscribeEvent
+    public static void onPlayerChangedDimensionSyncAwareness(PlayerEvent.PlayerChangedDimensionEvent event) {
+        if (event.getEntity() instanceof ServerPlayer sp) syncAwarenessTo(sp);
+    }
+
+    /** Sends the player's known set to their client - the shared world set in SHARED_WORLD mode, otherwise their own. */
+    private static void syncAwarenessTo(ServerPlayer sp) {
+        if (!BeyondAwareness.gateEnabled()) return;
         Set<ResourceLocation> snapshot;
-        if (BeyondKnowledge.mode() == KnowledgeMode.SHARED_WORLD) {
-            snapshot = Set.copyOf(WorldKnowledge.get(sp.serverLevel()).all());
+        if (BeyondAwareness.mode() == AwarenessMode.SHARED_WORLD) {
+            snapshot = Set.copyOf(WorldAwareness.get(sp.serverLevel()).all());
         } else {
-            PlayerKnowledge pk = sp.getData(BeyondAttachments.PLAYER_KNOWLEDGE);
-            snapshot = Set.copyOf(pk.all());
+            snapshot = Set.copyOf(sp.getData(BeyondAttachments.PLAYER_AWARENESS).all());
         }
-        PacketDistributor.sendToPlayer(sp, new PlayerKnowledgeSyncPayload(snapshot, true));
+        PacketDistributor.sendToPlayer(sp, new PlayerAwarenessSyncPayload(snapshot, true));
+        PacketDistributor.sendToPlayer(sp, new GatedStructuresSyncPayload(HiddenContentFilter.gatedStructureMap(sp)));
+    }
+
+    /** Once a second, unlock whatever gated stuff the player is carrying or standing in. */
+    @SubscribeEvent
+    public static void onPlayerDiscoverNearby(PlayerTickEvent.Post event) {
+        if (!(event.getEntity() instanceof ServerPlayer sp)) return;
+        if (sp.tickCount % 20 != 0) return;
+        HiddenContentFilter.discoverNearby(sp);
     }
 
     @SubscribeEvent
@@ -244,7 +258,7 @@ public class ModGameEvents {
                 }
             }
 
-            // Curios sit in a separate handler; onDrop cancels LivingDropsEvent, so capture+clear them into the totem list or they're lost (esp. Corpse).
+            // onDrop cancels the normal drops, so grab Curios into the totem here or they vanish.
             int curiosCount = 0;
             if (CURIOS_LOADED) {
                 for (ItemStack stack : com.thebeyond.compat.curios.BeyondCuriosCompat.collectAndClear(player)) {

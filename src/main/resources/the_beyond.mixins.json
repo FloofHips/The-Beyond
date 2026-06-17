@@ -25,7 +25,9 @@
     "CountOnEveryLayerPlacementMixin",
     "EnvironmentScanPlacementMixin",
     "BeehiveDecoratorEmptyLogsMixin",
-    "CocoaDecoratorEmptyLogsMixin"
+    "CocoaDecoratorEmptyLogsMixin",
+    "LocateCommandMixin",
+    "ResourceOrTagKeyArgumentMixin"
   ],
   "client": [
     "client.BossHealthOverlayAccessor",

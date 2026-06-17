@@ -482,8 +482,11 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
                         if (filter.test(regular)) {
                             matched = regular;
                         } else {
-                            Holder<Biome> voronoi = this.voronoiCellBiomeIgnoringDensity(blockX, blockY, blockZ);
-                            if (filter.test(voronoi)) matched = voronoi;
+                            float dist = (float) Math.sqrt((double) blockX * blockX + (double) blockZ * blockZ);
+                            if (dist > 690.0f) {
+                                Holder<Biome> voronoi = this.voronoiCellBiomeIgnoringDensity(blockX, blockY, blockZ);
+                                if (filter.test(voronoi)) matched = voronoi;
+                            }
                         }
                         if (matched == null) continue;
 

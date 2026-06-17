@@ -10,7 +10,11 @@
     "CreativeModeTabMixin",
     "EndDimensionEffectsMixin",
     "FogRendererMixin",
-    "ItemRendererMixin"
+    "ItemRendererMixin",
+    "ResourceOrTagArgumentMixin",
+    "ResourceOrTagArgumentParseMixin",
+    "ResourceOrTagKeyArgumentParseMixin",
+    "CommandSuggestionsMixin"
   ],
   "server": [],
   "injectors": {

@@ -1,7 +1,7 @@
-package com.thebeyond.common.knowledge;
+package com.thebeyond.common.awareness;
 
-/** Knowledge-sharing scope, selected via {@code BeyondConfig}. */
-public enum KnowledgeMode {
+/** Awareness-sharing scope, selected via {@code BeyondConfig}. */
+public enum AwarenessMode {
     /** Discovery unlocks content only for the discovering player (default). */
     PER_PLAYER,
     /** Any player's discovery unlocks content for everyone on the server. */

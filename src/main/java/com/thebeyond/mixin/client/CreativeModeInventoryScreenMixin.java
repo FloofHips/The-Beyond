@@ -1,6 +1,6 @@
 package com.thebeyond.mixin.client;
 
-import com.thebeyond.common.knowledge.HiddenContentFilter;
+import com.thebeyond.common.awareness.HiddenContentFilter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.player.LocalPlayer;
