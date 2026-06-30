@@ -1,6 +1,6 @@
 package com.thebeyond.mixin;
 
-import com.thebeyond.api.worldgen.BeyondTerrainState;
+import com.thebeyond.common.worldgen.BeyondEndChunkGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.levelgen.blockpredicates.BlockPredicate;
@@ -30,7 +30,7 @@ public abstract class EnvironmentScanPlacementMixin {
     private void the_beyond$boundedExtendedScan(
             PlacementContext ctx, RandomSource random, BlockPos origin,
             CallbackInfoReturnable<Stream<BlockPos>> cir) {
-        if (!BeyondTerrainState.isActive()) return;
+        if (!(ctx.generator() instanceof BeyondEndChunkGenerator)) return;
 
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos().set(origin);
         int dy = directionOfSearch.getStepY();

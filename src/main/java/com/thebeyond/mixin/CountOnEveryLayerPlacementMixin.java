@@ -1,6 +1,6 @@
 package com.thebeyond.mixin;
 
-import com.thebeyond.api.worldgen.BeyondTerrainState;
+import com.thebeyond.common.worldgen.BeyondEndChunkGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.valueproviders.IntProvider;
@@ -33,7 +33,7 @@ public abstract class CountOnEveryLayerPlacementMixin {
     private void the_beyond$multiLayerScan(
             PlacementContext ctx, RandomSource random, BlockPos origin,
             CallbackInfoReturnable<Stream<BlockPos>> cir) {
-        if (!BeyondTerrainState.isActive()) return;
+        if (!(ctx.generator() instanceof BeyondEndChunkGenerator)) return;
 
         int baseX = origin.getX();
         int baseZ = origin.getZ();

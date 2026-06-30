@@ -114,6 +114,9 @@ dependencies {
     // Sodium: secondary-view block-camera capture. compileOnly (never shipped), gated by ModList + a non-required mixin config.
     compileOnly "curse.maven:sodium-394468:5909717"
 
+    // Optional Curios compat (compileOnly, gated by ModList.isLoaded) — Totem of Respite saves curio slots on death.
+    compileOnly "curse.maven:curios-309927:6529130"
+
     // JUnit 5 for pure-function tests (math/packing logic); they don't spin up Minecraft.
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'

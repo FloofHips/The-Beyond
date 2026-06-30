@@ -39,6 +39,33 @@ public class AuroraBorealisRenderer {
     private static final ResourceLocation AURORA_2_TEX = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_2.png");
     private static final ResourceLocation AURORA_3_TEX = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_3.png");
 
+    // Relative-chunk offsets for the player's chunk; recomputed on chunk-boundary crossing, not per frame.
+    private static final java.util.List<long[]> activeOffsets = new java.util.ArrayList<>();
+    private static long activeKey = Long.MIN_VALUE;
+    private static int activeRd = -1;
+
+    private static void ensureActiveOffsets(ChunkPos playerChunk, int renderDistance) {
+        long key = (((long) playerChunk.x) << 32) ^ (playerChunk.z & 0xFFFFFFFFL);
+        if (key == activeKey && renderDistance == activeRd) return;
+        activeKey = key;
+        activeRd = renderDistance;
+        activeOffsets.clear();
+        for (int x = -renderDistance; x <= renderDistance; x++) {
+            for (int z = -renderDistance; z <= renderDistance; z++) {
+                int cx = playerChunk.x + x;
+                int cz = playerChunk.z + z;
+                if (cz % 2 == 0) continue;
+                if (cx % 2 == 0) continue;
+                if ((cx % 4) + 1 == 0) continue;
+                if ((cx % 4) - 1 == 0) continue;
+                double worldX = (cx << 4) + 8;
+                double worldZ = (cz << 4) + 8;
+                if (Math.sqrt(worldX * worldX + worldZ * worldZ) < 100) continue;
+                activeOffsets.add(new long[]{x, z});
+            }
+        }
+    }
+
     public static void renderAurora(PoseStack poseStack, float yoffset, float time, MultiBufferSource.BufferSource buffer, RenderLevelStageEvent event, Minecraft mc, Player player, Level level) {
         if (!event.getCamera().getEntity().level().isThundering()) return;
         double rainlevel = event.getCamera().getEntity().level().getThunderLevel(time);
@@ -48,17 +75,22 @@ public class AuroraBorealisRenderer {
         ChunkPos playerChunk = player.chunkPosition();
         int yLevel = 192;
 
-        for (int x = -renderDistance; x <= renderDistance; x++) {
-            for (int z = -renderDistance; z <= renderDistance; z++) {
+        ensureActiveOffsets(playerChunk, renderDistance);
+
+        // Resolve the 5 distinct aurora models ONCE per call instead of per tile.
+        RenderUtils.ResolvedModel mCrumbling = RenderUtils.ResolvedModel.resolve(AURORA_CRUMBLING_MODEL);
+        RenderUtils.ResolvedModel m0 = RenderUtils.ResolvedModel.resolve(AURORA_0_MODEL);
+        RenderUtils.ResolvedModel m1 = RenderUtils.ResolvedModel.resolve(AURORA_1_MODEL);
+        RenderUtils.ResolvedModel m2 = RenderUtils.ResolvedModel.resolve(AURORA_2_MODEL);
+        RenderUtils.ResolvedModel m3 = RenderUtils.ResolvedModel.resolve(AURORA_3_MODEL);
+
+        var consumer = buffer.getBuffer(BeyondRenderTypes.cutout());
+
+        for (long[] off : activeOffsets) {
+            int x = (int) off[0];
+            int z = (int) off[1];
+            {
                 ChunkPos chunkPos = new ChunkPos(playerChunk.x + x, playerChunk.z + z);
-                if (chunkPos.z % 2 == 0) continue;
-                if (chunkPos.x % 2 == 0) continue;
-                if ((chunkPos.x % (4))+1 == 0) continue;
-                if ((chunkPos.x % (4))-1 == 0) continue;
-                double worldX = chunkPos.getMiddleBlockX();
-                double worldZ = chunkPos.getMiddleBlockZ();
-                double distanceFromCenter = Math.sqrt(worldX * worldX + worldZ * worldZ);
-                if (distanceFromCenter < 100) continue;
 
                 BlockPos centerPos = new BlockPos(
                         chunkPos.getMiddleBlockX(),
@@ -66,9 +98,10 @@ public class AuroraBorealisRenderer {
                         chunkPos.getMiddleBlockZ()
                 );
 
+                // ~96-block half-extent box bounds the ~32x32 geometry (+ wiggle) so off-screen tiles cull.
                 AABB pickaxeAABB = new AABB(
-                        centerPos.getX() - 128, centerPos.getY() - 128, centerPos.getZ() - 128,
-                        centerPos.getX() + 128, centerPos.getY() + 128, centerPos.getZ() + 128
+                        centerPos.getX() - 96, centerPos.getY() - 96, centerPos.getZ() - 96,
+                        centerPos.getX() + 96, centerPos.getY() + 96, centerPos.getZ() + 96
                 );
 
                 if (frustum.isVisible(pickaxeAABB)) {
@@ -101,7 +134,20 @@ public class AuroraBorealisRenderer {
                     float flash = (Mth.sin(((chunkPos.z+ yoffset)*10) + time/5f) + 1.0f) * 0.5f;
                     int color = (int) (255 * Math.max(l, flash));
 
-                    RenderUtils.renderModel(getAuroraModel(x, z, chunkPos, renderDistance), poseStack, buffer.getBuffer(BeyondRenderTypes.cutout()), color, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
+                    // LOD: a tile whose color rounds to 0 is invisible — skip its transform+emit.
+                    if (color <= 0) {
+                        poseStack.popPose();
+                        continue;
+                    }
+
+                    ResourceLocation modelLoc = getAuroraModel(x, z, chunkPos, renderDistance);
+                    RenderUtils.ResolvedModel rm;
+                    if (modelLoc == AURORA_CRUMBLING_MODEL) rm = mCrumbling;
+                    else if (modelLoc == AURORA_0_MODEL) rm = m0;
+                    else if (modelLoc == AURORA_1_MODEL) rm = m1;
+                    else if (modelLoc == AURORA_2_MODEL) rm = m2;
+                    else rm = m3;
+                    rm.emit(poseStack, consumer, color, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
 
                     poseStack.popPose();
                 }

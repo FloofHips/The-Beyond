@@ -29,28 +29,21 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.CompletableFuture;
 
-/** Samples {@link BeyondEndChunkGenerator#getTerrainDensity} on a grid and writes a PNG;
- *  flags toggle slice orientation and transform layers. Runs async via the parameterized
- *  density overload to avoid racing chunk-gen workers. */
+/** Dumps a PNG of the terrain density over a grid. Runs off-thread so it doesn't fight chunk-gen workers. */
 @EventBusSubscriber(modid = TheBeyond.MODID)
 public final class BeyondNoiseDumpCommand {
 
     private BeyondNoiseDumpCommand() {}
 
-    /** Default grid side in samples (200 -> 40 000 density evaluations). */
     private static final int DEFAULT_SIZE = 200;
-    /** Default spacing in blocks between samples. */
     private static final int DEFAULT_STRIDE = 2;
-    /** Distance-from-origin used when tinting "solid" cells; matches {@code TerrainDensityGridDumpTest}. */
     private static final float DISPLAY_DISTANCE_FROM_ORIGIN = 1500f;
 
-    /** Subfolder under {@code <world>/} where dumps are written. */
     private static final String DUMP_SUBDIR = "beyond_noise_dumps";
 
     private static final DateTimeFormatter TS = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
-    /** XZ slice at fixed Y (heightmap view) or XY slice at fixed Z (side view — needed to
-     *  see {@code cyclicDensity} Y-periodicity and seams). */
+    /** Which way to slice: top-down at a fixed Y, or a side view at a fixed Z. */
     private enum Plane {
         HORIZONTAL_XZ("xz"),
         VERTICAL_XY("xy");
@@ -59,13 +52,10 @@ public final class BeyondNoiseDumpCommand {
         Plane(String suffix) { this.suffix = suffix; }
     }
 
-    /** Diagnostic transform mode. Derives a {@link BeyondTerrainParams} from live params. */
+    /** Lets you turn off warp/wrap to see what each one contributes. */
     private enum Mode {
-        /** Live params. */
         NORMAL,
-        /** Zero warp amplitude, keep live wrap range. */
         NO_WARP,
-        /** Zero warp and lift wrap range to {@link BeyondTerrainParams#MAX_WRAP_RANGE} (identity transform). */
         NO_WRAP;
 
         BeyondTerrainParams derive(BeyondTerrainParams live) {
@@ -83,21 +73,20 @@ public final class BeyondNoiseDumpCommand {
     public static void register(RegisterCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
 
-        // Brigadier requires every terminal node to call .executes(...); the .then() chain
-        // simulates optional args, producing a small but wide tree.
-        LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal("beyond_noise_dump")
-                .requires(src -> src.hasPermission(2));
+        // Each .then() chain fakes optional args by giving every node its own .executes().
+        LiteralArgumentBuilder<CommandSourceStack> noiseDump = Commands.literal("noise_dump");
 
-        // --- here / at branches (horizontal XZ slice, default) ---
-        root.then(buildHereBranch(Plane.HORIZONTAL_XZ));
-        root.then(buildAtBranch(Plane.HORIZONTAL_XZ));
+        noiseDump.then(buildHereBranch(Plane.HORIZONTAL_XZ));
+        noiseDump.then(buildAtBranch(Plane.HORIZONTAL_XZ));
 
-        // --- vertical XY slice (fixed Z) ---
-        root.then(Commands.literal("vertical")
+        noiseDump.then(Commands.literal("vertical")
                 .then(buildHereBranch(Plane.VERTICAL_XY))
                 .then(buildAtBranch(Plane.VERTICAL_XY)));
 
-        dispatcher.register(root);
+        // Hangs off the shared /the_beyond root.
+        dispatcher.register(Commands.literal("the_beyond")
+                .requires(src -> src.hasPermission(2))
+                .then(noiseDump));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> buildHereBranch(Plane plane) {
@@ -158,7 +147,7 @@ public final class BeyondNoiseDumpCommand {
         CommandSourceStack src = ctx.getSource();
         Entity entity = src.getEntity();
         if (entity == null) {
-            src.sendFailure(Component.literal("/beyond_noise_dump here requires an entity source — use 'at <pos>' from the console."));
+            src.sendFailure(Component.literal("/the_beyond noise_dump here requires an entity source — use 'at <pos>' from the console."));
             return 0;
         }
         Vec3 pos = entity.position();
@@ -181,8 +170,7 @@ public final class BeyondNoiseDumpCommand {
                                 int size, int stride, Mode mode, Plane plane) {
         MinecraftServer server = src.getServer();
 
-        // Resolve effective params on the main thread so the worker sees a single snapshot
-        // even if a datapack reload happens mid-dump.
+        // Snapshot the params here so a mid-dump datapack reload can't change them under the worker.
         BeyondTerrainParams liveParams = BeyondEndChunkGenerator.activeTerrainParams;
         BeyondTerrainParams effective = mode.derive(liveParams);
 
@@ -199,33 +187,31 @@ public final class BeyondNoiseDumpCommand {
         File outFile = new File(dumpDir, fileName);
 
         src.sendSuccess(() -> Component.literal(
-                String.format("[beyond_noise_dump] Sampling %dx%d %s grid @ (%d, %d, %d) stride=%d mode=%s → %s",
+                String.format("[the_beyond noise_dump] Sampling %dx%d %s grid @ (%d, %d, %d) stride=%d mode=%s → %s",
                         size, size, plane.suffix, cx, cy, cz, stride, modeLabel, fileName))
                 .withStyle(ChatFormatting.GRAY), false);
 
         CompletableFuture.runAsync(() -> {
             try {
                 Result result = sampleAndWrite(cx, cy, cz, size, stride, effective, outFile, plane);
-                // CommandSourceStack is not safe to touch from worker threads.
+                // Bounce back to the main thread; the source isn't safe to touch off-thread.
                 server.execute(() -> src.sendSuccess(() -> Component.literal(String.format(
-                        "[beyond_noise_dump] Done → %s  density=[%.3f, %.3f]  solid=%d/%d (%.1f%%)",
+                        "[the_beyond noise_dump] Done → %s  density=[%.3f, %.3f]  solid=%d/%d (%.1f%%)",
                         outFile.getName(), result.minDensity, result.maxDensity,
                         result.solidCount, size * size,
                         100.0 * result.solidCount / (double) (size * size)))
                         .withStyle(ChatFormatting.GREEN), false));
             } catch (Throwable t) {
-                TheBeyond.LOGGER.error("[beyond_noise_dump] dump failed", t);
+                TheBeyond.LOGGER.error("[the_beyond noise_dump] dump failed", t);
                 server.execute(() -> src.sendFailure(Component.literal(
-                        "[beyond_noise_dump] Failed: " + t.getClass().getSimpleName() + ": " + t.getMessage())));
+                        "[the_beyond noise_dump] Failed: " + t.getClass().getSimpleName() + ": " + t.getMessage())));
             }
         });
 
         return 1;
     }
 
-    /** Samples density on a {@code size × size} grid oriented by {@code plane} and writes a
-     *  grayscale-with-red-solid-tint PNG. Horizontal flips +Z down (JourneyMap convention);
-     *  vertical flips +Y up. Samples outside dim height appear black via {@code edgeGradient}. */
+    /** Samples the grid and writes a grayscale PNG, with solid cells tinted red. */
     private static Result sampleAndWrite(int cx, int cy, int cz, int size, int stride,
                                          BeyondTerrainParams params, File outFile,
                                          Plane plane) throws IOException {
@@ -249,10 +235,8 @@ public final class BeyondNoiseDumpCommand {
                     sampleZ = cz + (iOuter - half) * stride;
                 }
                 double density = BeyondEndChunkGenerator.getTerrainDensity(sampleX, sampleY, sampleZ, params);
-                // Threshold must be sampled at WRAPPED coords to match the chunk generator:
-                // getTerrainDensity wraps internally, and isSolidTerrain / generateEndTerrain
-                // both wrap before calling getThreshold. Diagnostic params apply so the dump
-                // reflects the requested mode.
+                // Wrap the coords before reading the threshold, exactly like the chunk generator does,
+                // so the solid/not-solid call here matches the real terrain.
                 long packed = BeyondEndChunkGenerator.computeWrappedCoords(sampleX, sampleZ, params);
                 int wrappedSampleX = BeyondEndChunkGenerator.unpackWrappedX(packed);
                 int wrappedSampleZ = BeyondEndChunkGenerator.unpackWrappedZ(packed);
@@ -268,8 +252,6 @@ public final class BeyondNoiseDumpCommand {
             }
         }
 
-        // Grayscale for density, red tint for solid cells — matches TerrainDensityGridDumpTest
-        // so outputs can be overlaid visually.
         double range = Math.max(1e-9, max - min);
         BufferedImage img = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
         for (int iOuter = 0; iOuter < size; iOuter++) {
@@ -283,8 +265,7 @@ public final class BeyondNoiseDumpCommand {
                 } else {
                     rgb = (v << 16) | (v << 8) | v;
                 }
-                // Row flip matches the plane's natural orientation: XZ -> +Z points down
-                // (JourneyMap), XY -> +Y points up (side view).
+                // Flip the row so the image is oriented the way you'd expect to look at it.
                 img.setRGB(iInner, size - 1 - iOuter, rgb);
             }
         }

@@ -10,18 +10,18 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.HashSet;
 import java.util.Set;
 
-/** S2C sync for {@code PlayerKnowledge}. {@code replace=true} overwrites the client's set
+/** S2C sync for {@code PlayerAwareness}. {@code replace=true} overwrites the client's set
  *  (login snapshot or revoke); {@code replace=false} unions for per-grant deltas. Set wire
  *  format keeps batched grants cheap. */
-public record PlayerKnowledgeSyncPayload(Set<ResourceLocation> keys, boolean replace) implements CustomPacketPayload {
-    public static final Type<PlayerKnowledgeSyncPayload> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "player_knowledge_sync"));
+public record PlayerAwarenessSyncPayload(Set<ResourceLocation> keys, boolean replace) implements CustomPacketPayload {
+    public static final Type<PlayerAwarenessSyncPayload> TYPE = new Type<>(
+            ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "player_awareness_sync"));
 
-    public static final StreamCodec<ByteBuf, PlayerKnowledgeSyncPayload> STREAM_CODEC = StreamCodec.composite(
+    public static final StreamCodec<ByteBuf, PlayerAwarenessSyncPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.collection(HashSet::new, ResourceLocation.STREAM_CODEC),
-            PlayerKnowledgeSyncPayload::keys,
-            ByteBufCodecs.BOOL, PlayerKnowledgeSyncPayload::replace,
-            PlayerKnowledgeSyncPayload::new
+            PlayerAwarenessSyncPayload::keys,
+            ByteBufCodecs.BOOL, PlayerAwarenessSyncPayload::replace,
+            PlayerAwarenessSyncPayload::new
     );
 
     @Override

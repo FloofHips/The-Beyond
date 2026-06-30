@@ -4,7 +4,8 @@ import com.thebeyond.TheBeyond;
 import com.thebeyond.common.block.blockentities.ProjectorBlockEntity;
 import com.thebeyond.common.block.blockentities.RefugeBlockEntity;
 import com.thebeyond.common.block.blockentities.RefugeMenu;
-import com.thebeyond.common.knowledge.PlayerKnowledge;
+import com.thebeyond.common.awareness.HiddenContentFilter;
+import com.thebeyond.common.awareness.PlayerAwareness;
 import com.thebeyond.common.registry.BeyondAttachments;
 import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.compat.jei.JeiCompatBridge;
@@ -67,9 +68,9 @@ public class BeyondNetworking {
         );
 
         registrar.playToClient(
-                PlayerKnowledgeSyncPayload.TYPE,
-                PlayerKnowledgeSyncPayload.STREAM_CODEC,
-                BeyondNetworking::handleKnowledgeSyncClient
+                PlayerAwarenessSyncPayload.TYPE,
+                PlayerAwarenessSyncPayload.STREAM_CODEC,
+                BeyondNetworking::handleAwarenessSyncClient
         );
 
         registrar.playToClient(
@@ -130,6 +131,12 @@ public class BeyondNetworking {
                 CameraShootPayload.TYPE,
                 CameraShootPayload.STREAM_CODEC,
                 BeyondNetworking::handleCameraShoot
+        );
+
+        registrar.playToClient(
+                GatedStructuresSyncPayload.TYPE,
+                GatedStructuresSyncPayload.STREAM_CODEC,
+                BeyondNetworking::handleGatedStructuresClient
         );
     }
 
@@ -193,6 +200,10 @@ public class BeyondNetworking {
 
     private static void handleProjectorFlip(ProjectorFlipPayload payload, IPayloadContext context) {
         withProjector(context, payload.pos(), be -> be.toggleFlipped());
+
+    /** Cache the gated structures so the client can gate /locate. */
+    private static void handleGatedStructuresClient(GatedStructuresSyncPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> HiddenContentFilter.setClientGatedStructures(payload.gated()));
     }
 
     private static void handleSetMode(RefugeSetModePayload payload, IPayloadContext context) {
@@ -237,11 +248,12 @@ public class BeyondNetworking {
         });
     }
 
-    private static void handleKnowledgeSyncClient(PlayerKnowledgeSyncPayload payload, IPayloadContext context) {
+    /** Apply a awareness sync to the local player and refresh JEI. */
+    private static void handleAwarenessSyncClient(PlayerAwarenessSyncPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             Player player = context.player();
             if (player == null) return;
-            PlayerKnowledge pk = player.getData(BeyondAttachments.PLAYER_KNOWLEDGE);
+            PlayerAwareness pk = player.getData(BeyondAttachments.PLAYER_AWARENESS);
             if (payload.replace()) {
                 // copy first: revoke() mutates the backing set we'd be iterating
                 for (ResourceLocation existing : new HashSet<>(pk.all())) {

@@ -3,7 +3,7 @@ package com.thebeyond.mixin.compat.compass;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
-import com.thebeyond.common.knowledge.HiddenContentFilter;
+import com.thebeyond.common.awareness.HiddenContentFilter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
