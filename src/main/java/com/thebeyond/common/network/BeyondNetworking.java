@@ -200,6 +200,7 @@ public class BeyondNetworking {
 
     private static void handleProjectorFlip(ProjectorFlipPayload payload, IPayloadContext context) {
         withProjector(context, payload.pos(), be -> be.toggleFlipped());
+    }
 
     /** Cache the gated structures so the client can gate /locate. */
     private static void handleGatedStructuresClient(GatedStructuresSyncPayload payload, IPayloadContext context) {
