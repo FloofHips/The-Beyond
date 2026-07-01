@@ -42,6 +42,8 @@ public class Lang extends LanguageProvider {
             String key = BuiltInRegistries.BLOCK.getKey(block).toString();
             if (key.equals("the_beyond:gellid_void_block")) {
                 add(block, "Gellid Void");
+            } else if (key.equals("the_beyond:camera")) {
+                add(block, "Pinhole Camera");
             } else {
                 add(block, getLangName(key));
             }
@@ -94,6 +96,20 @@ public class Lang extends LanguageProvider {
         add("biome.the_beyond.true_void", "True Void");
 
         add("itemGroup.the_beyond", "The Beyond");
+
+        // Projector snapshot filters (grade id -> display name; see Grades#label)
+        add("grade.the_beyond.as_photo", "Photo");
+        add("grade.the_beyond.none", "None");
+        add("grade.the_beyond.sepia", "Sepia");
+        add("grade.the_beyond.blue", "Blue");
+
+        // GUI titles + projector/refuge button labels (block/item names are generated from the registry above)
+        add("container.the_beyond.camera", "Camera");
+        add("container.the_beyond.projector", "Projector");
+        add("screen.the_beyond.projector.rotate", "Rotate");
+        add("screen.the_beyond.projector.flip", "Flip");
+        add("screen.the_beyond.projector.tone", "Tone: ");
+        add("screen.the_beyond.refuge.block", "Block %s");
 
         // Sounds
         add("subtitles.block.void_crystal.shatter", "Crystal shatters");

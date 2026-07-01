@@ -17,6 +17,8 @@ config = "the_beyond_sable_compat.mixins.json"
 config = "the_beyond_jade_compat.mixins.json"
 [[mixins]]
 config = "the_beyond_simulated_compat.mixins.json"
+[[mixins]]
+config = "the_beyond_sodium_compat.mixins.json"
 
 [[mods]]
 enumExtensions="META-INF/enumextensions.json"

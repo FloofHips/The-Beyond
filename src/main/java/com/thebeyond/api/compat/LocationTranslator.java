@@ -23,4 +23,8 @@ public interface LocationTranslator {
     /** World point → the local (stored) frame of the sub-level containing {@code containedPos};
      *  {@code null} when not in a sub-level. */
     @Nullable default Vec3 toLocal(Level level, BlockPos containedPos, Vec3 worldPoint) { return null; }
+
+    /** Local direction at {@code containedPos} rotated into visible/world space by the sub-level's pose;
+     *  {@code null} when not in a sub-level (caller keeps the axis as-is). */
+    @Nullable default Vec3 toVisibleDir(Level level, BlockPos containedPos, Vec3 localDir) { return null; }
 }

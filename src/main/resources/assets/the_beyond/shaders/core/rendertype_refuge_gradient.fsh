@@ -11,7 +11,7 @@ in vec2 texCoord2;
 
 out vec4 fragColor;
 
-// Gradient map colors (dark to light):
+// Gradient map colors (dark to light). Mirror of RefugeGradientTextureManager.GRADIENT_STOPS — edit the Java side, then copy the 5 hex values here.
 // 0.00 -> #0c0826
 // 0.30 -> #31334b
 // 0.75 -> #7989a9

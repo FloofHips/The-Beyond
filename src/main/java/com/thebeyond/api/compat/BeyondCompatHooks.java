@@ -61,4 +61,11 @@ public final class BeyondCompatHooks {
         LocationTranslator t = locationTranslator;
         return t == null ? null : t.toLocal(level, containedPos, worldPoint);
     }
+
+    /** Local direction at {@code containedPos} rotated into visible/world space by the sub-level's pose; {@code null} if none. */
+    @Nullable
+    public static Vec3 toVisibleDir(Level level, BlockPos containedPos, Vec3 localDir) {
+        LocationTranslator t = locationTranslator;
+        return t == null ? null : t.toVisibleDir(level, containedPos, localDir);
+    }
 }

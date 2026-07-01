@@ -27,6 +27,9 @@ public class BeyondItems {
 
     public static final DeferredItem<Item> FERROPETAL = registerItem("ferropetal", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> MAGNET = registerItem("magnet", () -> new MagnetItem(new Item.Properties().stacksTo(1), 8));
+    // Block-click places the camera block; in-air or sneaking shoots it handheld.
+    public static final DeferredItem<Item> PINHOLE_CAMERA = registerItem("pinhole_camera", () -> new CameraBlockItem(BeyondBlocks.CAMERA.get(), new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> SNAPSHOT = registerItem("snapshot", () -> new SnapshotItem(new Item.Properties().stacksTo(16).rarity(BeyondEnums.REMEMBRANCE.getValue())));
     public static final DeferredItem<Item> FERROJELLY = registerItem("ferrojelly", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> MAGNOLILLY = registerItem("magnolilly", () -> new PlaceOnWaterBlockItem(BeyondBlocks.MAGNOLILLY.get(), new Item.Properties()));
 
@@ -79,28 +82,33 @@ public class BeyondItems {
     public static final DeferredItem<SpawnEggItem> ENADRAKE_SPAWN_EGG  = ITEMS.register("enadrake_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENADRAKE.get(),-13213601, -297995,new Item.Properties()));
     public static final DeferredItem<SpawnEggItem> ENATIOUS_TOTEM_SPAWN_EGG  = ITEMS.register("enatious_totem_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENATIOUS_TOTEM.get(),-13213601, -2169180,new Item.Properties()));
 
-    public static final DeferredItem<Item> REMEMBRANCE_BEADS    = registerItem("beads_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_IDOL     = registerItem("idol_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_BRACE    = registerItem("brace_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_RING     = registerItem("ring_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_MEMORY   = registerItem("memory_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_HORN     = registerItem("horn_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_LACE     = registerItem("lace_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_BROCHE   = registerItem("broche_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_LIFE     = registerItem("life_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_HOME     = registerItem("home_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_EYE      = registerItem("eye_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_SPIKE    = registerItem("spike_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_ORNAMENT = registerItem("ornament_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_MOUNT    = registerItem("mount_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_HAND     = registerItem("hand_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_CLOTH    = registerItem("cloth_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
+    public static final DeferredItem<Item> REMEMBRANCE_BEADS    = registerRemembrance("beads_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_IDOL     = registerRemembrance("idol_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_BRACE    = registerRemembrance("brace_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_RING     = registerRemembrance("ring_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_MEMORY   = registerRemembrance("memory_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_HORN     = registerRemembrance("horn_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_LACE     = registerRemembrance("lace_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_BROCHE   = registerRemembrance("broche_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_LIFE     = registerRemembrance("life_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_HOME     = registerRemembrance("home_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_EYE      = registerRemembrance("eye_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_SPIKE    = registerRemembrance("spike_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_ORNAMENT = registerRemembrance("ornament_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_MOUNT    = registerRemembrance("mount_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_HAND     = registerRemembrance("hand_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_CLOTH    = registerRemembrance("cloth_remembrance");
 
     @SuppressWarnings("unchecked")
     public static <T extends Item> DeferredItem<T> registerItem(final String name, final Supplier<? extends Item> item) {
         DeferredItem<Item> toReturn = ITEMS.register(name, item);
         CREATIVE_TAB_ITEMS.add(toReturn);
         return (DeferredItem<T>) toReturn;
+    }
+
+    /** The remembrances register identically save the name; keep the order — registration order drives the creative tab and datagen. */
+    private static DeferredItem<Item> registerRemembrance(String name) {
+        return registerItem(name, () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
     }
 
 }

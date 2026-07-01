@@ -186,7 +186,7 @@ public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
             super(x, y, 24, 24, CommonComponents.EMPTY);
             this.resourcelocation = resourcelocation;
             this.mode = mode;
-            setTooltip(Tooltip.create(Component.literal("Block " + tooltip)));
+            setTooltip(Tooltip.create(Component.translatable("screen.the_beyond.refuge.block", tooltip)));
         }
 
         @Override

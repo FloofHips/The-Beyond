@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.Util;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.client.ClientHooks;
 
@@ -38,6 +39,7 @@ public class BeyondRenderTypes extends RenderType {
         RenderType.CompositeState renderState = CompositeState.builder().setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_UNLIT_SHADER).setTextureState(new RenderStateShard.TextureStateShard(textureLocation, false, false)).setTransparencyState(RenderType.TRANSLUCENT_TRANSPARENCY).setCullState(RenderType.CULL).setLightmapState(RenderType.LIGHTMAP).setOverlayState(RenderType.OVERLAY).createCompositeState(true);
         return RenderType.create("entity_unlit_translucent", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, true, false, renderState);
     }
+
     public static RenderType getEntityDepth(ResourceLocation location) {
         return ENTITY_DEPTH.apply(location);
     }
@@ -54,13 +56,7 @@ public class BeyondRenderTypes extends RenderType {
         return create("entity_depth", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536, true, true, compositeState);
     });
 
-    // entityTranslucent variant with back-face culling enabled.
-    // Vanilla entityTranslucent uses NO_CULL, rendering both sides of every quad.
-    // Lantern fins are zero-thickness cubes (e.g. 4×0×7) — Minecraft generates two
-    // coplanar quads facing opposite directions for them. Without culling, both quads
-    // render at the exact same depth, causing z-fighting ("scribbled" artifact).
-    // The original ENTITY_DEPTH and unlitTranslucent both use CULL; this variant
-    // preserves that behavior for the Iris/Oculus shader fallback path.
+    // CULL (vanilla uses NO_CULL): stops coplanar zero-thickness fin quads z-fighting.
     public static final Function<ResourceLocation, RenderType> ENTITY_TRANSLUCENT_CULLED = Util.memoize((location) -> {
         CompositeState compositeState = CompositeState.builder()
                 .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
@@ -77,14 +73,6 @@ public class BeyondRenderTypes extends RenderType {
         return ENTITY_TRANSLUCENT_CULLED.apply(location);
     }
 
-    // entityTranslucent variant WITHOUT back-face culling.
-    // Used for the Lantern body (solid 3D cube) in the two-pass rendering split:
-    // the body needs NO_CULL so both the front and back faces render, giving the
-    // translucent entity a volumetric look (you see the back-inner surface through
-    // the translucent front). Fins keep CULL via entityTranslucentCulled because
-    // they're zero-thickness quads that would z-fight without it.
-    // Same shader/transparency/lightmap/overlay state as ENTITY_TRANSLUCENT_CULLED,
-    // only the cull state differs — keeps both passes visually consistent.
     public static final Function<ResourceLocation, RenderType> ENTITY_TRANSLUCENT_NO_CULLED = Util.memoize((location) -> {
         CompositeState compositeState = CompositeState.builder()
                 .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
@@ -101,18 +89,7 @@ public class BeyondRenderTypes extends RenderType {
         return ENTITY_TRANSLUCENT_NO_CULLED.apply(location);
     }
 
-    // Unlit NO_CULL variant — same geometry as ENTITY_TRANSLUCENT_NO_CULLED
-    // (back+front faces rendered → volumetric translucent look for the solid
-    // 3D body cube) but uses entity_translucent_unlit instead of the standard
-    // entity_translucent shader. The unlit shader skips Mojang's face-normal
-    // shading (which would make UP ≈ 1.0 / DOWN ≈ 0.4), so coplanar zero-thickness
-    // fin/tail quads render with uniform brightness top and bottom — fixes the
-    // hue mismatch the vanilla translucent shader produces.
-    //
-    // Only safe to use when no Iris/Oculus shaderpack is actively running:
-    // a live pack replaces the entire shader pipeline via G-Buffer, ignoring
-    // custom shader state. Gate via ShaderCompatLib.isShaderPackActive() and
-    // fall back to ENTITY_TRANSLUCENT_NO_CULLED when a pack is in use.
+    // No-shaderpack only: unlit shader has no Iris equivalent.
     public static final Function<ResourceLocation, RenderType> ENTITY_TRANSLUCENT_NO_CULLED_UNLIT = Util.memoize((location) -> {
         CompositeState compositeState = CompositeState.builder()
                 .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_UNLIT_SHADER)
@@ -129,10 +106,6 @@ public class BeyondRenderTypes extends RenderType {
         return ENTITY_TRANSLUCENT_NO_CULLED_UNLIT.apply(location);
     }
 
-    // entityTranslucentEmissive variant with back-face culling.
-    // Triggers Iris shader pack bloom/glow effects while preventing z-fighting on
-    // zero-thickness fin quads. Uses COLOR_WRITE (no depth write) like vanilla
-    // entityTranslucentEmissive — the base pass already established depth.
     public static final Function<ResourceLocation, RenderType> ENTITY_TRANSLUCENT_EMISSIVE_CULLED = Util.memoize((location) -> {
         CompositeState compositeState = CompositeState.builder()
                 .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER)
@@ -149,24 +122,7 @@ public class BeyondRenderTypes extends RenderType {
         return ENTITY_TRANSLUCENT_EMISSIVE_CULLED.apply(location);
     }
 
-    // entityTranslucentEmissive variant WITHOUT back-face culling.
-    // SAFE ONLY for atlases whose zero-thickness fin/tail DOWN UV regions are
-    // fully transparent (α=0) — otherwise the two coplanar quads (UP and DOWN)
-    // both rasterize opaque content at the same depth, producing the
-    // "scribble" z-fighting artifact that COLOR_WRITE doesn't prevent (it
-    // suppresses depth-buffer flicker, not rasterizer coverage overlap).
-    //
-    // In this mod: use ONLY for the Leviathan lantern — its leviathan_lantern.png
-    // was confirmed via .backups/DumpAtlasUVs to have α=0% DOWN UV on every
-    // fin/tail face. Small / Medium / Large lanterns all have DOWN UV identical
-    // to UP with opaque content (confirmed via .backups/DumpSmallerLanternUVs),
-    // so they MUST keep entityTranslucentEmissiveCulled.
-    //
-    // Purpose: under an active Iris shaderpack, CULL from below strips the UP
-    // face (back-facing from camera), and the DOWN face being transparent on
-    // the Leviathan means zero bloom contribution on the underside of fins/tail.
-    // NO_CULL renders the UP face from its back side too, so its opaque pixels
-    // project bloom uniformly top and bottom.
+    // NO_CULL safe ONLY when the DOWN UV is fully transparent, else quads z-fight.
     public static final Function<ResourceLocation, RenderType> ENTITY_TRANSLUCENT_EMISSIVE_NO_CULLED = Util.memoize((location) -> {
         CompositeState compositeState = CompositeState.builder()
                 .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER)
@@ -182,4 +138,153 @@ public class BeyondRenderTypes extends RenderType {
     public static RenderType entityTranslucentEmissiveNoCulled(ResourceLocation location) {
         return ENTITY_TRANSLUCENT_EMISSIVE_NO_CULLED.apply(location);
     }
+
+    static RenderStateShard.ShaderStateShard MIRROR_SHADER_STATE = new RenderStateShard.ShaderStateShard(BeyondShaders::getMirror);
+    static RenderStateShard.ShaderStateShard PROJECTOR_DIST_SHADER_STATE = new RenderStateShard.ShaderStateShard(BeyondShaders::getProjectorDist);
+    static RenderStateShard.ShaderStateShard PROJECTOR_DIST_PEEL_SHADER_STATE = new RenderStateShard.ShaderStateShard(BeyondShaders::getProjectorDistPeel);
+    static RenderStateShard.ShaderStateShard PROJECTOR_DIST_ENTITY_SHADER_STATE = new RenderStateShard.ShaderStateShard(BeyondShaders::getProjectorDistEntity);
+
+    public static final Function<ResourceLocation, RenderType> MIRROR = Util.memoize((location) -> {
+        CompositeState compositeState = CompositeState.builder()
+                .setShaderState(MIRROR_SHADER_STATE)
+                .setTextureState(new TextureStateShard(location, false, false))
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                .setWriteMaskState(COLOR_WRITE)
+                // Constant offset: VIEW_OFFSET_Z_LAYERING's distance-scaled bias collapses up close.
+                .setLayeringState(POLYGON_OFFSET_LAYERING)
+                .createCompositeState(false);
+        return create("mirror", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 1536, false, false, compositeState);
+    });
+
+    public static RenderType mirror(ResourceLocation location) {
+        return MIRROR.apply(location);
+    }
+
+    public static final Function<ResourceLocation, RenderType> MIRROR_PACK = Util.memoize((location) -> {
+        CompositeState compositeState = CompositeState.builder()
+                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+                .setTextureState(new TextureStateShard(location, false, false))
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                .setWriteMaskState(COLOR_WRITE)
+                .setLightmapState(LIGHTMAP)
+                .setOverlayState(OVERLAY)
+                .createCompositeState(true);
+        return create("mirror_pack", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536, true, true, compositeState);
+    });
+
+    public static RenderType mirrorPack(ResourceLocation location) {
+        return MIRROR_PACK.apply(location);
+    }
+
+    // Stacked layers composite by submission order; an aggressive shaderpack sort may break it.
+    public static final Function<ResourceLocation, RenderType> PROJECTOR_PACK = Util.memoize((location) -> {
+        CompositeState compositeState = CompositeState.builder()
+                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+                .setTextureState(new TextureStateShard(location, false, false))
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                .setWriteMaskState(COLOR_WRITE)
+                .setLightmapState(LIGHTMAP)
+                .setOverlayState(OVERLAY)
+                .createCompositeState(true);
+        return create("projector_pack", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536, true, true, compositeState);
+    });
+
+    public static RenderType projectorPack(ResourceLocation location) {
+        return PROJECTOR_PACK.apply(location);
+    }
+
+    // NO_CULL because the reflection matrix flips winding.
+    public static final RenderType MIRROR_OCCLUDER = create(
+            "mirror_occluder",
+            DefaultVertexFormat.POSITION,
+            VertexFormat.Mode.QUADS,
+            1536,
+            false,
+            false,
+            CompositeState.builder()
+                    .setShaderState(POSITION_SHADER)
+                    .setWriteMaskState(DEPTH_WRITE)
+                    .setCullState(NO_CULL)
+                    .createCompositeState(false));
+
+    // Block atlas bound for the cutout alpha test, else torch-family transparent full-block quads occlude.
+    public static final RenderType PROJECTOR_DEPTH_BLOCK = create(
+            "projector_depth_block",
+            DefaultVertexFormat.POSITION_TEX,
+            VertexFormat.Mode.QUADS,
+            1536,
+            false,
+            false,
+            CompositeState.builder()
+                    .setShaderState(PROJECTOR_DIST_SHADER_STATE)
+                    .setTextureState(new TextureStateShard(TextureAtlas.LOCATION_BLOCKS, false, false))
+                    .setWriteMaskState(COLOR_DEPTH_WRITE)
+                    .setDepthTestState(LEQUAL_DEPTH_TEST)
+                    .setCullState(NO_CULL)
+                    .createCompositeState(false));
+
+    // Depth peel: shader discards anything at/within the first layer, which must be bound as Sampler1.
+    public static final RenderType PROJECTOR_DEPTH_BLOCK_PEEL = create(
+            "projector_depth_block_peel",
+            DefaultVertexFormat.POSITION_TEX,
+            VertexFormat.Mode.QUADS,
+            1536,
+            false,
+            false,
+            CompositeState.builder()
+                    .setShaderState(PROJECTOR_DIST_PEEL_SHADER_STATE)
+                    .setTextureState(new TextureStateShard(TextureAtlas.LOCATION_BLOCKS, false, false))
+                    .setWriteMaskState(COLOR_DEPTH_WRITE)
+                    .setDepthTestState(LEQUAL_DEPTH_TEST)
+                    .setCullState(NO_CULL)
+                    .createCompositeState(false));
+
+    // Masks off B so the blocks-only distance survives under entity fragments (clips entity shadows to it).
+    private static final WriteMaskStateShard COLOR_NO_B_DEPTH_WRITE = new WriteMaskStateShard(true, true) {
+        @Override
+        public void setupRenderState() {
+            com.mojang.blaze3d.systems.RenderSystem.depthMask(true);
+            com.mojang.blaze3d.systems.RenderSystem.colorMask(true, true, false, true);
+        }
+
+        @Override
+        public void clearRenderState() {
+            com.mojang.blaze3d.systems.RenderSystem.colorMask(true, true, true, true);
+        }
+    };
+
+    // Must draw into the same FBO after PROJECTOR_DEPTH_BLOCK.
+    public static final Function<ResourceLocation, RenderType> PROJECTOR_DEPTH_ENTITY = Util.memoize((location) -> {
+        CompositeState compositeState = CompositeState.builder()
+                .setShaderState(PROJECTOR_DIST_ENTITY_SHADER_STATE)
+                .setTextureState(new TextureStateShard(location, false, false))
+                .setWriteMaskState(COLOR_NO_B_DEPTH_WRITE)
+                .setDepthTestState(LEQUAL_DEPTH_TEST)
+                .setCullState(NO_CULL)
+                .createCompositeState(false);
+        return create("projector_depth_entity", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536, true, false, compositeState);
+    });
+
+    public static RenderType projectorDepthEntity(ResourceLocation location) {
+        return PROJECTOR_DEPTH_ENTITY.apply(location);
+    }
+
+    // VIEW_OFFSET_Z_LAYERING lets this win LEQUAL over the coplanar occluder.
+    public static final RenderType MIRROR_OUTLINE = create(
+            "mirror_shade",
+            DefaultVertexFormat.POSITION_COLOR,
+            VertexFormat.Mode.QUADS,
+            2048,
+            false,
+            false,
+            CompositeState.builder()
+                    .setShaderState(POSITION_COLOR_SHADER)
+                    .setLayeringState(VIEW_OFFSET_Z_LAYERING)
+                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .setCullState(NO_CULL)
+                    .createCompositeState(false));
 }

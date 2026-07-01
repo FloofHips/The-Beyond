@@ -11,6 +11,9 @@ public class BeyondConfig {
     // Override End fog with Beyond's Y-dependent atmospheric fog.
     public static ModConfigSpec.BooleanValue ENABLE_CUSTOM_FOG;
 
+    /** Mirror occlusion uses each block's rendered model (true) or a simplified AABB box (false). */
+    public static ModConfigSpec.BooleanValue MIRROR_OCCLUSION_MODEL_BASED;
+
     // Hide progression-gated content until the player discovers it.
     public static ModConfigSpec.BooleanValue HIDE_UNDISCOVERED_CONTENT;
 
@@ -55,6 +58,13 @@ public class BeyondConfig {
                         "Default: true")
                 .translation(TheBeyond.MODID + ".config.enable_custom_fog")
                 .define("enableCustomFog", true);
+        CLIENT_BUILDER.pop();
+
+        CLIENT_BUILDER.comment("Mirror (pearl_mirror) reflection").push("mirror");
+        MIRROR_OCCLUSION_MODEL_BASED = CLIENT_BUILDER
+                .comment("Mirror occlusion shape: true = block's real model (fences show gaps); false = cheaper AABB box. Default: true")
+                .translation(TheBeyond.MODID + ".config.mirror_occlusion_model_based")
+                .define("occlusionModelBased", true);
         CLIENT_BUILDER.pop();
 
         CLIENT_CONFIG = CLIENT_BUILDER.build();

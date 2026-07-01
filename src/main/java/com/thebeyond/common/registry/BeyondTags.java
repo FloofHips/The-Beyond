@@ -30,6 +30,8 @@ public class BeyondTags {
     public static final TagKey<Item> OBIROOTS = createItem("obiroots");
     public static final TagKey<Item> REMEMBRANCES = createItem("remembrances");
     public static final TagKey<Item> AURORACITE_INTERACTABLE = createItem("auroracite_interactable");
+    public static final TagKey<Item> CAMERA_FILM = createItem("camera_film");
+    public static final TagKey<Item> CAMERA_FUEL = createItem("camera_fuel");
 
     public static final TagKey<Structure> BONFIRE_LOCATABLE = createStructure("bonfire_locatable");
     public static final TagKey<Structure> NOMAD_PRAYER_SITE = createStructure("nomad_prayer_site");

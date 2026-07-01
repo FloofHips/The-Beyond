@@ -1,9 +1,13 @@
 package com.thebeyond.common.registry;
 
 import com.thebeyond.TheBeyond;
+import com.thebeyond.common.block.blockentities.BellowBlockEntity;
+import com.thebeyond.common.block.blockentities.CameraBlockEntity;
+import com.thebeyond.common.block.blockentities.ProjectorBlockEntity;
 import com.thebeyond.common.block.blockentities.BonfireBlockEntity;
 import com.thebeyond.common.block.blockentities.EnadrakeHutBlockEntity;
 import com.thebeyond.common.block.blockentities.MemorFaucetBlockEntity;
+import com.thebeyond.common.block.blockentities.MirrorBlockEntity;
 import com.thebeyond.common.block.blockentities.RefugeBlockEntity;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -24,5 +28,17 @@ public class BeyondBlockEntities {
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<RefugeBlockEntity>> REFUGE = BLOCK_ENTITY_TYPES.
             register("refuge", () -> BlockEntityType.Builder.of(RefugeBlockEntity::new, BeyondBlocks.REFUGE.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MirrorBlockEntity>> MIRROR = BLOCK_ENTITY_TYPES.
+            register("mirror", () -> BlockEntityType.Builder.of(MirrorBlockEntity::new, BeyondBlocks.PEARL_MIRROR.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ProjectorBlockEntity>> PROJECTOR = BLOCK_ENTITY_TYPES.
+            register("projector", () -> BlockEntityType.Builder.of(ProjectorBlockEntity::new, BeyondBlocks.PROJECTOR.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<CameraBlockEntity>> CAMERA = BLOCK_ENTITY_TYPES.
+            register("camera", () -> BlockEntityType.Builder.of(CameraBlockEntity::new, BeyondBlocks.CAMERA.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BellowBlockEntity>> BELLOW = BLOCK_ENTITY_TYPES.
+            register("bellow", () -> BlockEntityType.Builder.of(BellowBlockEntity::new, BeyondBlocks.BELLOW.get()).build(null));
 
 }
