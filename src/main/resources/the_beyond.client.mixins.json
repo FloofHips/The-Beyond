@@ -12,7 +12,7 @@
     "EndDimensionEffectsMixin",
     "FogRendererMixin",
     "ItemRendererMixin",
-    "MinecraftMainTargetAccessor"
+    "MinecraftMainTargetAccessor",
     "ResourceOrTagArgumentMixin",
     "ResourceOrTagArgumentParseMixin",
     "ResourceOrTagKeyArgumentParseMixin",

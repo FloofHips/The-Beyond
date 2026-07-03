@@ -1,0 +1,8 @@
+{
+	"render_type": "minecraft:cutout",
+	"parent": "the_beyond:block/projector_on",
+	"textures": {
+		"0": "the_beyond:block/projector",
+		"particle": "the_beyond:block/projector"
+	}
+}

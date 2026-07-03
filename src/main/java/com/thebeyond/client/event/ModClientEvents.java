@@ -436,9 +436,9 @@ public class ModClientEvents {
         event.registerFluidType(new IClientFluidTypeExtensions() {
             private static final ResourceLocation STILL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_0"),
                     STILL_2 = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/plate_block"),
-                    FLOW = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/auroracite"),
+                    FLOW = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_flowing_0"),
                     OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/auroracite"),
-                    VIEW_OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/block/auroracite.png");
+                    VIEW_OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/block/gellid_void/gellid_void_0.png");
 
             @Override
             public ResourceLocation getStillTexture() {
@@ -592,8 +592,8 @@ public class ModClientEvents {
 
         PoseStack pose = event.getPoseStack();
         pose.pushPose();
-        pose.scale(0.5F, 0.5F, 0.5F);       // vanilla framed-item footprint
-        pose.translate(0.0F, 0.0F, 0.001F); // off the backing to avoid z-fighting
+        //pose.scale(0.5F, 0.5F, 0.5F);       // vanilla framed-item footprint
+        pose.translate(0.0F, 0.0F, -0.01F); // off the backing to avoid z-fighting
 
         PoseStack.Pose last = pose.last();
         VertexConsumer vc = event.getMultiBufferSource().getBuffer(RenderType.entityCutoutNoCull(tex));

@@ -1,0 +1,24 @@
+{
+  "values": {
+    "the_beyond:hand_remembrance": {
+      "compose_group": "the_beyond:memory/keepsake",
+      "region": {
+        "u0": 0.5,
+        "u1": 1.0,
+        "v0": 0.0,
+        "v1": 1.0
+      },
+      "texture": "the_beyond:textures/projector/hand.png"
+    },
+    "the_beyond:ornament_remembrance": {
+      "compose_group": "the_beyond:memory/keepsake",
+      "region": {
+        "u0": 0.0,
+        "u1": 0.5,
+        "v0": 0.0,
+        "v1": 1.0
+      },
+      "texture": "the_beyond:textures/projector/ornament.png"
+    }
+  }
+}

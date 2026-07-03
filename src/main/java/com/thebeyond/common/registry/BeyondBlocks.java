@@ -106,7 +106,7 @@ public class BeyondBlocks {
             .noOcclusion()
             .sound(SoundType.AMETHYST)));
     // No item: pinhole_camera places this block.
-    public static final DeferredBlock<Block> CAMERA = registerBlockWithoutItem("camera", () -> new CameraBlock(BlockBehaviour.Properties.of()
+    public static final DeferredBlock<Block> CAMERA = registerBlockWithoutItem("pinhole_camera", () -> new CameraBlock(BlockBehaviour.Properties.of()
             .mapColor(MapColor.COLOR_GRAY)
             .strength(1.5F)
             .noOcclusion()

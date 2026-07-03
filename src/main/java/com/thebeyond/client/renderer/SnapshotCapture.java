@@ -11,7 +11,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 /** Center-crops an offscreen capture FBO, downsamples to {@link #OUT} square, quantizes, and uploads it as raw RGB. */
 public final class SnapshotCapture {
     public static final int OUT = 32;            // photo px per side; higher = sharper but heavier NBT. Structural (the upload handler caps width at 256), not a free tweak.
-    private static final int COLOR_STEP = 10;    // posterization quant step: 1 = full color, higher = coarser bands (~10 reads retro).
+    private static final int COLOR_STEP = 50;    // posterization quant step: 1 = full color, higher = coarser bands (~10 reads retro).
 
     private SnapshotCapture() {
     }

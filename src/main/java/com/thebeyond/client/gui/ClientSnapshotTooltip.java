@@ -32,7 +32,7 @@ public class ClientSnapshotTooltip implements ClientTooltipComponent {
 
     @Override
     public void renderImage(Font font, int x, int y, GuiGraphics guiGraphics) {
-        ResourceLocation tex = SnapshotTextures.get(pixels, gradeId);
+        ResourceLocation tex = SnapshotTextures.getDownsampled(pixels, gradeId, 16);
         // DynamicTexture is not an atlas sprite, so blitSprite would fail.
         guiGraphics.blit(tex, x, y, 0F, 0F, SIZE, SIZE, SIZE, SIZE);
     }
