@@ -123,16 +123,9 @@ public class ObirootFeature extends Feature<NoneFeatureConfiguration> {
         }
     }
     public int canStart(WorldGenLevel level, RandomSource random, BlockPos pos) {
-        int randomSize = random.nextInt(1, 5);
-        int availableHeight = 0;
-
-        for (int i = 0; i <= randomSize + 4; i++) {
-            if (level.getBlockState(pos.offset(0, i, 0)).isAir()) {
-                availableHeight++;
-            } else {
-                break;
-            }
-        }
+        int randomSize = random.nextInt(1, 3);
+        int maxHeight = 0;
+        int requiredBaseHeight = 1;
 
         for (int i = -randomSize; i <= randomSize; i++) {
             for (int j = -randomSize; j <= randomSize; j++) {
@@ -145,9 +138,18 @@ public class ObirootFeature extends Feature<NoneFeatureConfiguration> {
             }
         }
 
-        if(availableHeight>4)
-            availableHeight = random.nextInt(availableHeight - 4);
+        for (int i = 1; i <= randomSize + 4; i++) {
+            if (level.getBlockState(pos.offset(0, i, 0)).isAir()) {
+                maxHeight++;
+            } else {
+                break;
+            }
+        }
 
-        return availableHeight;
+        if (maxHeight < requiredBaseHeight) {
+            return -1;
+        }
+
+        return Math.min(random.nextInt(0, maxHeight), random.nextInt(0, maxHeight));
     }
 }
