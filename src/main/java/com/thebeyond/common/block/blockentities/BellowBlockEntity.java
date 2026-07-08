@@ -25,14 +25,14 @@ public class BellowBlockEntity extends BlockEntity {
             level.setBlock(pos, state.setValue(BellowBlock.STRENGTH, strength), Block.UPDATE_CLIENTS);
         }
         if (strength > 0 && level instanceof ServerLevel serverLevel) {
-            BellowBlock.serverPush(serverLevel, pos, state, signal, strength);
+            BellowBlock.serverPush(serverLevel, pos, state, signal, strength, null);
         }
     }
 
     public static void clientTick(Level level, BlockPos pos, BlockState state, BellowBlockEntity be) {
         int strength = state.getValue(BellowBlock.STRENGTH);
         if (strength > 0) {
-            BellowBlock.clientJet(level, pos, state, strength);
+            BellowBlock.clientJet(level, pos, state, strength, null);
         }
     }
 }

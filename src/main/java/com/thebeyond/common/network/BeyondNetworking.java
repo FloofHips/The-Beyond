@@ -1,16 +1,17 @@
 package com.thebeyond.common.network;
 
 import com.thebeyond.TheBeyond;
+import com.thebeyond.api.compat.BeyondCompatHooks;
+import com.thebeyond.client.particle.BellowJetOptions;
+import com.thebeyond.common.block.BellowBlock;
+import com.thebeyond.common.block.GaussVentBlock;
 import com.thebeyond.common.block.blockentities.ProjectorBlockEntity;
 import com.thebeyond.common.block.blockentities.RefugeBlockEntity;
 import com.thebeyond.common.block.blockentities.RefugeMenu;
 import com.thebeyond.common.awareness.HiddenContentFilter;
 import com.thebeyond.common.awareness.PlayerAwareness;
-import com.thebeyond.common.registry.BeyondAttachments;
-import com.thebeyond.common.registry.BeyondSoundEvents;
+import com.thebeyond.common.registry.*;
 import com.thebeyond.compat.jei.JeiCompatBridge;
-import com.thebeyond.common.registry.BeyondComponents;
-import com.thebeyond.common.registry.BeyondItems;
 import com.thebeyond.client.renderer.BlockCameraCapture;
 import com.thebeyond.common.item.CameraBlockItem;
 import com.thebeyond.common.camera.CameraGrade;
@@ -18,14 +19,20 @@ import com.thebeyond.common.item.components.Components;
 import com.thebeyond.common.camera.Grades;
 import com.thebeyond.common.camera.SnapshotRequests;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -41,6 +48,8 @@ import java.util.Map;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import java.util.UUID;
+
+import static com.thebeyond.common.block.BellowBlock.*;
 
 public class BeyondNetworking {
 
@@ -65,6 +74,12 @@ public class BeyondNetworking {
                 RefugeActivatePayload.TYPE,
                 RefugeActivatePayload.STREAM_CODEC,
                 BeyondNetworking::handleActivateClient
+        );
+
+        registrar.playToClient(
+                GaussVentParticlePayload.TYPE,
+                GaussVentParticlePayload.STREAM_CODEC,
+                BeyondNetworking::handleGaussVentClient
         );
 
         registrar.playToClient(
@@ -138,6 +153,53 @@ public class BeyondNetworking {
                 GatedStructuresSyncPayload.STREAM_CODEC,
                 BeyondNetworking::handleGatedStructuresClient
         );
+    }
+
+    private static void handleGaussVentClient(GaussVentParticlePayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            BlockPos pos = payload.pos();
+            boolean isBig = payload.isBig();
+            BlockState block = context.player().level().getBlockState(pos);
+            Level level = context.player().level();
+
+            if (block.is(BeyondBlocks.GAUSS_VENT)) {
+                Direction dir = Direction.UP;
+                Vec3 visible = BeyondCompatHooks.visibleOnAnyLevel(level, pos);
+                Vec3 origin = visible != null ? visible : Vec3.atCenterOf(pos);
+                Vec3 wdir = BellowBlock.worldDir(context.player().level(), pos, dir);
+                int strength = isBig ? 40 : Math.min(15, BellowBlock.effectiveReach(level, pos, Direction.UP) * 3);
+                double reach = BellowBlock.reachBlocks(strength);
+
+                Vec3 ref = Math.abs(wdir.y) > 0.5 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
+                Vec3 u = wdir.cross(ref).normalize();
+                Vec3 w = wdir.cross(u).normalize();
+
+                BlockPos ahead = pos.relative(dir, Mth.floor(reach) + 1);
+                boolean blocked = level.getBlockState(ahead).isSolidRender(level, ahead);
+                double tipDist = blocked ? reach + 1.0 : reach + 0.5;
+                int lifetime = Math.max(2, (int) Math.round((tipDist - 0.6) / FLOW_SPEED));
+                BellowJetOptions options = new BellowJetOptions(lifetime);
+                Vec3 nozzle = origin.add(wdir.scale(0.6));
+                RandomSource random = level.random;
+                for (int n = 0; n < STEM_COUNT; n++) {
+                    double ang = random.nextDouble() * Math.PI * 2.0;
+                    double pr = random.nextDouble() * STEM_RADIUS;
+                    Vec3 p = nozzle.add(u.scale(Math.cos(ang) * pr)).add(w.scale(Math.sin(ang) * pr));
+                    level.addParticle(options, p.x, p.y, p.z, wdir.x * FLOW_SPEED, wdir.y * FLOW_SPEED, wdir.z * FLOW_SPEED);
+                }
+                if (blocked) {
+                    Vec3 face = origin.add(wdir.scale(reach + 0.5));
+                    BellowJetOptions splash = new BellowJetOptions(SPLASH_LIFETIME);
+                    for (int n = 0; n < SPLASH_COUNT; n++) {
+                        double ang = random.nextDouble() * Math.PI * 2.0;
+                        Vec3 radial = u.scale(Math.cos(ang)).add(w.scale(Math.sin(ang)));
+                        Vec3 sp = face.subtract(wdir.scale(0.1)).add(radial.scale(random.nextDouble() * 0.15));
+                        Vec3 vel = radial.scale(SPLASH_OUT).subtract(wdir.scale(SPLASH_BACK));
+                        level.addParticle(splash, sp.x, sp.y, sp.z, vel.x, vel.y, vel.z);
+                    }
+                }
+            }
+        });
     }
 
     /** ejectAt == null routes the snapshot back to the player. */

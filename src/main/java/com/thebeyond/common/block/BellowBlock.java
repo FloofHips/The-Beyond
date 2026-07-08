@@ -50,23 +50,23 @@ public class BellowBlock extends BaseEntityBlock {
     public static final IntegerProperty STRENGTH = IntegerProperty.create("strength", 0, MAX_LEVEL);
 
     // 10x10x16, long axis along the facing direction
-    private static final VoxelShape SHAPE_Y = Block.box(3, 0, 3, 13, 16, 13);
-    private static final VoxelShape SHAPE_Z = Block.box(3, 3, 0, 13, 13, 16);
-    private static final VoxelShape SHAPE_X = Block.box(0, 3, 3, 16, 13, 13);
+    public static final VoxelShape SHAPE_Y = Block.box(3, 0, 3, 13, 16, 13);
+    public static final VoxelShape SHAPE_Z = Block.box(3, 3, 0, 13, 13, 16);
+    public static final VoxelShape SHAPE_X = Block.box(0, 3, 3, 16, 13, 13);
 
-    private static final double GUST_RADIUS = 0.5;
-    private static final double BASE_SPEED = 0.7;
-    private static final double VERTICAL_BOOST = 1.6; // up/down fights gravity
-    private static final double ACCEL = 0.2;          // per-tick velocity cap toward the gust speed
-    private static final double SETTLE = 0.6;         // eases the push toward terminal speed (lower = gentler)
-    private static final double MIN_FALLOFF = 0.15;   // residual push at the far edge
-    private static final int STEM_COUNT = 3;
-    private static final double STEM_RADIUS = 0.1;
-    private static final double FLOW_SPEED = 0.3;     // constant; the puff lifetime sets the reach
-    private static final int SPLASH_COUNT = 3;
-    private static final int SPLASH_LIFETIME = 7;
-    private static final double SPLASH_OUT = 0.13;
-    private static final double SPLASH_BACK = 0.04;
+    public static final double GUST_RADIUS = 0.5;
+    public static final double BASE_SPEED = 0.7;
+    public static final double VERTICAL_BOOST = 1.6; // up/down fights gravity
+    public static final double ACCEL = 0.2;          // per-tick velocity cap toward the gust speed
+    public static final double SETTLE = 0.6;         // eases the push toward terminal speed (lower = gentler)
+    public static final double MIN_FALLOFF = 0.15;   // residual push at the far edge
+    public static final int STEM_COUNT = 3;
+    public static final double STEM_RADIUS = 0.1;
+    public static final double FLOW_SPEED = 0.3;     // constant; the puff lifetime sets the reach
+    public static final int SPLASH_COUNT = 3;
+    public static final int SPLASH_LIFETIME = 7;
+    public static final double SPLASH_OUT = 0.13;
+    public static final double SPLASH_BACK = 0.04;
 
     public BellowBlock(Properties properties) {
         super(properties);
@@ -160,13 +160,13 @@ public class BellowBlock extends BaseEntityBlock {
     }
 
     /** Continuous reach in blocks for a synced level, scaling smoothly with the redstone (1/3-block steps). */
-    private static double reachBlocks(int strength) {
+    public static double reachBlocks(int strength) {
         return (double) strength / LEVELS_PER_BLOCK;
     }
 
     /** Server: pushes entities in the gust toward the facing; force scales with the signal and fades over the reach. */
-    public static void serverPush(ServerLevel level, BlockPos pos, BlockState state, int signal, int strength) {
-        Direction dir = state.getValue(FACING);
+    public static void serverPush(ServerLevel level, BlockPos pos, BlockState state, int signal, int strength, Direction direction) {
+        Direction dir = direction == null ? state.getValue(FACING) : direction;
         Vec3 origin = BeyondCompatHooks.visibleOrCenter(level, pos);
         Vec3 worldDir = worldDir(level, pos, dir);
         double reach = reachBlocks(strength);
@@ -202,8 +202,8 @@ public class BellowBlock extends BaseEntityBlock {
     }
 
     /** Client: a constant-speed smoke jet sized to the reach via the puff lifetime; no network cost. */
-    public static void clientJet(Level level, BlockPos pos, BlockState state, int strength) {
-        Direction dir = state.getValue(FACING);
+    public static void clientJet(Level level, BlockPos pos, BlockState state, int strength, Direction direction) {
+        Direction dir = direction == null ? state.getValue(FACING) : direction;
         Vec3 visible = BeyondCompatHooks.visibleOnAnyLevel(level, pos);
         Vec3 origin = visible != null ? visible : Vec3.atCenterOf(pos);
         Vec3 wdir = worldDir(level, pos, dir);
@@ -240,14 +240,14 @@ public class BellowBlock extends BaseEntityBlock {
     }
 
     /** Facing axis in world space: the plain axis in the host level, pose-rotated inside a Sable sub-level. */
-    private static Vec3 worldDir(Level level, BlockPos pos, Direction dir) {
+    public static Vec3 worldDir(Level level, BlockPos pos, Direction dir) {
         Vec3 axis = new Vec3(dir.getStepX(), dir.getStepY(), dir.getStepZ());
         Vec3 rotated = BeyondCompatHooks.toVisibleDir(level, pos, axis);
         return (rotated == null || rotated.lengthSqr() < 1.0e-6) ? axis : rotated.normalize();
     }
 
     /** Open blocks the gust travels in {@code dir} before a solid block stops it, capped at {@link #MAX_HEIGHT}. */
-    private static int effectiveReach(Level level, BlockPos pos, Direction dir) {
+    public static int effectiveReach(Level level, BlockPos pos, Direction dir) {
         BlockPos.MutableBlockPos cur = new BlockPos.MutableBlockPos();
         int reach = 0;
         for (int i = 1; i <= MAX_HEIGHT; i++) {

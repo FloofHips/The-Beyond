@@ -1,23 +1,36 @@
 package com.thebeyond.common.worldgen.features;
 
 import com.mojang.serialization.Codec;
+import com.thebeyond.TheBeyond;
 import com.thebeyond.common.registry.BeyondBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.animal.Bee;
 import net.minecraft.world.level.WorldGenLevel;
-import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import net.minecraft.world.level.levelgen.synth.SimplexNoise;
+import team.chisel.ctm.client.util.Dir;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static net.minecraft.world.level.block.MultifaceBlock.canAttachTo;
+import static net.minecraft.world.level.block.MultifaceBlock.hasFace;
 
 public class GaussGeyserFeature extends Feature<NoneFeatureConfiguration> {
     public GaussGeyserFeature(Codec<NoneFeatureConfiguration> codec) {
         super(codec);
     }
+
+    List<BlockPos> zymotePos = new ArrayList<>();
+    boolean old = false;
 
     @Override
     public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
@@ -35,33 +48,86 @@ public class GaussGeyserFeature extends Feature<NoneFeatureConfiguration> {
                 for (int z = -radius; z <= radius; z++) {
                     BlockPos blockPos = origin.offset(x, y, z);
                     if (blockPos.distSqr(origin) <= radius * radius) {
-                        if (level.getBlockState(blockPos).isSolid() && noise.getValue(x*0.1f, y, z*0.1f) < 0f) {
-                            level.setBlock(blockPos, BeyondBlocks.PORTELAIN.get().defaultBlockState(), 3);
+                        if (level.getBlockState(blockPos).isSolid() && noise.getValue(x*0.1f, y, z*0.1f) < 0.5f) {
+                            level.setBlock(blockPos, BeyondBlocks.GAUSSANITE.get().defaultBlockState(), 3);
                         }
                     }
                 }
             }
         }
 
-        if (size==0) build(level, source, size, origin);
-        else generateSection(level, origin, size, size-2, size+source.nextInt(5, 10),true, source);
+        int height = size + source.nextInt(5, 10);
+        old = source.nextBoolean() || size==0;
 
+        if (size==0) build(level, source, height, origin);
+        else generateSection(level, origin, size, size-2, height,true, source);
 
+        if (old) {
+            spreadZymote(level, source);
+            spreadZymoteEdges(level, source);
+
+            zymotePos.clear();
+        }
 
         return true;
     }
 
+    private void spreadZymote(WorldGenLevel level, RandomSource random) {
+        List<BlockPos> currentZymotes = new ArrayList<>(zymotePos);
+
+        for (BlockPos pos : currentZymotes) {
+           for (Direction d : Direction.values()) {
+               BlockPos blockPos = pos.relative(d);
+               if (random.nextBoolean() && level.getBlockState(blockPos).isSolid()) {
+                   level.setBlock(blockPos, BeyondBlocks.ZYMOTE.get().defaultBlockState(), 2);
+                   zymotePos.add(blockPos);
+               }
+           }
+        }
+    }
+
+    private void spreadZymoteEdges(WorldGenLevel level, RandomSource random) {
+        List<BlockPos> currentZymotes = new ArrayList<>(zymotePos);
+
+        for (BlockPos pos : currentZymotes) {
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        if (random.nextBoolean()) continue;
+                        BlockPos targetPos = pos.offset(dx, dy, dz);
+
+                        if (!level.getBlockState(targetPos).isAir()) continue;
+                        Direction attachmentFace = null;
+                        boolean flag = false;
+                        for (Direction d : Direction.values()) {
+                            if (level.getBlockState(targetPos.relative(d)).is(BeyondBlocks.ZYMOTE.get())) {
+                                flag = true;
+                            }
+                            if (level.getBlockState(targetPos.relative(d)).isSolid()) {
+                                attachmentFace = d;
+                            }
+                        }
+
+                        if (attachmentFace == null) continue;
+
+                        if (!flag) level.setBlock(targetPos, BeyondBlocks.CREEPING_ZYMOTE.get().defaultBlockState().setValue(GlowLichenBlock.getFaceProperty(attachmentFace), true), 2);
+                    }
+                }
+            }
+        }
+    }
+
+
     public void build(WorldGenLevel level, RandomSource random, int size, BlockPos pos) {
-        int height = size + random.nextInt(5, 10);
-        for (int y = 0; y <= height; y++) {
+        for (int y = 0; y <= size; y++) {
 
             BlockState state = Blocks.END_STONE.defaultBlockState();
-            if (y >= (height/3)*2 || y == height/2 || y == height/3)
-                state = BeyondBlocks.PORTELAIN.get().defaultBlockState();
+            if (y >= (size/3)*2 || y == size/2 || y == size/3)
+                state = BeyondBlocks.GAUSSANITE.get().defaultBlockState();
 
             level.setBlock(pos.offset(0, y, 0), state, 2);
         }
-        setVent(level, pos.offset(0, height, 0));
+        setVent(level, pos.offset(0, size, 0));
     }
 
     private void generateSection(WorldGenLevel level, BlockPos basePos, int baseDiam, int topDiam, int height, boolean upward, RandomSource random) {
@@ -78,12 +144,26 @@ public class GaussGeyserFeature extends Feature<NoneFeatureConfiguration> {
 
             BlockState state = Blocks.END_STONE.defaultBlockState();
             if (y >= (height/3)*2 || y == height/2 || y == height/3)
-                state = BeyondBlocks.PORTELAIN.get().defaultBlockState();
+                state = BeyondBlocks.GAUSSANITE.get().defaultBlockState();
 
             for (int x = -radius; x <= radius; x++) {
                 for (int z = -radius; z <= radius; z++) {
 
                     if (radius > 1 && Mth.abs(z) == Mth.abs(x) && Mth.abs(x) == radius) continue;
+
+                    if (old && (random.nextInt(20)<2) && (x == Math.abs(radius) || z == Math.abs(radius)) && (state.is(Blocks.END_STONE) || y >= (height/3)*2)) {
+                        mutablePos.set(basePos.getX() + x, yPos, basePos.getZ() + z);
+                        level.setBlock(mutablePos, BeyondBlocks.ZYMOTE.get().defaultBlockState(), 2);
+                        zymotePos.add(mutablePos.immutable());
+
+                        if (radius==0) {
+                            level.setBlock(mutablePos.offset(0,0, zBias), state, 2);
+                            level.setBlock(mutablePos.offset(xBias,0,0), state, 2);
+                            level.setBlock(mutablePos.offset(xBias,0, zBias), state, 2);
+                        }
+
+                        continue;
+                    }
 
                     mutablePos.set(basePos.getX() + x, yPos, basePos.getZ() + z);
                     level.setBlock(mutablePos, state, 2);
@@ -96,11 +176,20 @@ public class GaussGeyserFeature extends Feature<NoneFeatureConfiguration> {
             }
         }
 
-        setVent(level, basePos.offset(0, height-1, 0));
+        for (int x = -1; x <= 1; x++) {
+            for (int z = -1; z <= 1; z++) {
+                if (x!=0 && z!=0 && random.nextBoolean()) continue;
+                if (level.getBlockState(basePos.offset(x, height-1, z)).is(BeyondBlocks.GAUSSANITE.get())) {
+                    setVent(level, basePos.offset(x, height-1, z));
+                }
+            }
+        }
     }
 
     public void setVent(WorldGenLevel level, BlockPos pos) {
-        level.setBlock(pos, BeyondBlocks.GUSTER.get().defaultBlockState(), 2);
+        if (!level.getBlockState(pos.offset(0, 1, 0)).isAir()) return;
+
+        level.setBlock(pos, BeyondBlocks.GAUSS_VENT.get().defaultBlockState(), 2);
         for (Direction d : Direction.values()) {
             if (d.getAxis().isVertical()) continue;
             if (level.getBlockState(pos.offset(d.getStepX(), -1, d.getStepZ())).isAir()) return;
@@ -115,9 +204,9 @@ public class GaussGeyserFeature extends Feature<NoneFeatureConfiguration> {
 
         for (int i = -randomSize; i <= randomSize; i++) {
             for (int j = -randomSize; j <= randomSize; j++) {
-                //if (level.getBlockState(pos.offset(i, -1, j)).isAir()) {
-                //    return -1;
-                //}
+                if (level.getBlockState(pos.offset(i, -1, j)).isAir()) {
+                    return -1;
+                }
                 if (!level.getBlockState(pos.offset(i, 0, j)).isAir()) {
                     return -1;
                 }

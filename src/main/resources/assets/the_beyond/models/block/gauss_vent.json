@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "the_beyond:block/gauss_vent_top",
+    "bottom": "the_beyond:block/gaussanite",
+    "side": "the_beyond:block/gauss_vent_side"
+  }
+} 

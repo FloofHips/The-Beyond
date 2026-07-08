@@ -100,24 +100,7 @@ public class BeyondBlocks {
             .strength(1.5F, 6.0F)
             .sound(SoundType.NETHER_BRICKS))
     );
-    public static final DeferredBlock<Block> PROJECTOR = registerBlock("projector", () -> new ProjectorBlock(BlockBehaviour.Properties.of()
-            .mapColor(MapColor.TERRACOTTA_WHITE)
-            .strength(1.5F)
-            .noOcclusion()
-            .sound(SoundType.AMETHYST)));
-    // No item: pinhole_camera places this block.
-    public static final DeferredBlock<Block> CAMERA = registerBlockWithoutItem("pinhole_camera", () -> new CameraBlock(BlockBehaviour.Properties.of()
-            .mapColor(MapColor.COLOR_GRAY)
-            .strength(1.5F)
-            .noOcclusion()
-            .sound(SoundType.METAL)));
-    public static final DeferredBlock<Block> BELLOW = registerBlock("bellow", () -> new BellowBlock(BlockBehaviour.Properties.of()
-            .mapColor(MapColor.COLOR_GRAY)
-            .requiresCorrectToolForDrops()
-            .strength(1.5F, 6.0F)
-            .noOcclusion()
-            .sound(SoundType.NETHER_BRICKS))
-    );
+
     public static final DeferredBlock<Block> PORTELAIN_PILLAR = registerBlock("portelain_pillar", () -> new RotatedPillarBlock(
             BlockBehaviour.Properties.ofFullCopy(PORTELAIN.get()).sound(SoundType.NETHER_BRICKS)));
     public static final DeferredBlock<Block> AMPHORA = registerBlock("amphora", () -> new AmphoraBlock(
@@ -289,6 +272,40 @@ public class BeyondBlocks {
                     .sound(SoundType.CHERRY_SAPLING)
                     .pushReaction(PushReaction.DESTROY))
     );
+
+    public static final DeferredBlock<Block> GAUSSANITE = registerBlock("gaussanite",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .strength(1.5F, 2.0F)
+                    .sound(SoundType.TUFF))
+    );
+
+    public static final DeferredBlock<Block> GAUSS_VENT = registerBlock("gauss_vent",
+            () -> new GaussVentBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .strength(1.5F, 2.0F)
+                    .sound(SoundType.TUFF))
+    );
+
+    public static final DeferredBlock<Block> PROJECTOR = registerBlock("projector", () -> new ProjectorBlock(BlockBehaviour.Properties.of()
+            .mapColor(MapColor.TERRACOTTA_WHITE)
+            .strength(1.5F)
+            .noOcclusion()
+            .sound(SoundType.AMETHYST)));
+    // No item: pinhole_camera places this block.
+    public static final DeferredBlock<Block> CAMERA = registerBlockWithoutItem("pinhole_camera", () -> new CameraBlock(BlockBehaviour.Properties.of()
+            .mapColor(MapColor.COLOR_GRAY)
+            .strength(1.5F)
+            .noOcclusion()
+            .sound(SoundType.METAL)));
+    public static final DeferredBlock<Block> BELLOW = registerBlock("bellow", () -> new BellowBlock(BlockBehaviour.Properties.of()
+            .mapColor(MapColor.COLOR_GRAY)
+            .requiresCorrectToolForDrops()
+            .strength(1.5F, 6.0F)
+            .noOcclusion()
+            .sound(SoundType.NETHER_BRICKS))
+    );
+
     public static final DeferredBlock<Block> NACRE = registerBlock("nacre",
             () -> new NacreBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_LIGHT_GRAY)
