@@ -5,7 +5,7 @@
       "Name": "the_beyond:nacre"
     },
     "rim": {
-      "Name": "the_beyond:plate_block"
+      "Name": "the_beyond:gaussanite"
     },
     "rim_size": {
       "type": "minecraft:uniform",
@@ -14,8 +14,8 @@
     },
     "size": {
       "type": "minecraft:uniform",
-      "max_inclusive": 15,
-      "min_inclusive": 5
+      "max_inclusive": 8,
+      "min_inclusive": 4
     }
   }
 }

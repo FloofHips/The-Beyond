@@ -15,7 +15,8 @@
   },
   "features": [
     [
-      "the_beyond:end_island_high,"
+      "the_beyond:end_island_high",
+      "the_beyond:end_island_base"
     ],
     [],
     [],
@@ -26,7 +27,8 @@
       "the_beyond:gauss_vent"
     ],
     [
-      "the_beyond:nacre"],
+      "the_beyond:brittle_metal"
+    ],
     [
       "the_beyond:creeping_zymote"
     ],

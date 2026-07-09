@@ -284,7 +284,7 @@ void main() {
     const float RIM_WIDTH = 0.06;
     float edge = min(min(imgUv.x, 1.0 - imgUv.x), min(imgUv.y, 1.0 - imgUv.y));
     float rimW = max(RIM_WIDTH, 1.5 * fwidth(edge));
-    float rim = smoothstep(0.0, rimW, edge);
+    float rim = round(smoothstep(0.0, rimW, edge)*3)/3.0;
 
     // F3 mode 3 (+sprint): R = angle fade, G = leak fade, B = peel (1.0 where the UNGUARDED second-layer kill fires). The
     // live kill also needs surfHug<0.05, so a lit B over a merge is expected.

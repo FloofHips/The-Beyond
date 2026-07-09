@@ -156,7 +156,7 @@ public class BellowBlock extends BaseEntityBlock {
         if (signal <= 0) {
             return 0;
         }
-        return Math.min(signal, effectiveReach(level, pos, state.getValue(FACING)) * LEVELS_PER_BLOCK);
+        return Math.min(signal, effectiveReach(level, pos, state.getValue(FACING), MAX_HEIGHT) * LEVELS_PER_BLOCK);
     }
 
     /** Continuous reach in blocks for a synced level, scaling smoothly with the redstone (1/3-block steps). */
@@ -247,10 +247,10 @@ public class BellowBlock extends BaseEntityBlock {
     }
 
     /** Open blocks the gust travels in {@code dir} before a solid block stops it, capped at {@link #MAX_HEIGHT}. */
-    public static int effectiveReach(Level level, BlockPos pos, Direction dir) {
+    public static int effectiveReach(Level level, BlockPos pos, Direction dir, int maxReach) {
         BlockPos.MutableBlockPos cur = new BlockPos.MutableBlockPos();
         int reach = 0;
-        for (int i = 1; i <= MAX_HEIGHT; i++) {
+        for (int i = 1; i <= maxReach; i++) {
             cur.set(pos.getX() + dir.getStepX() * i, pos.getY() + dir.getStepY() * i, pos.getZ() + dir.getStepZ() * i);
             if (level.getBlockState(cur).isSolidRender(level, cur)) {
                 break;

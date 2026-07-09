@@ -1,9 +1,12 @@
 package com.thebeyond.common.block;
 
 import com.mojang.serialization.MapCodec;
+import com.thebeyond.client.particle.PixelColorTransitionOptions;
 import com.thebeyond.common.block.blockentities.ProjectorBlockEntity;
+import com.thebeyond.util.ColorUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -26,9 +29,11 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 import com.thebeyond.common.registry.BeyondBlockEntities;
+import org.joml.Vector3f;
 
 /** Same-group fragments forming a full picture fire a one-shot reveal; a redstone rising edge advances the carousel. */
 public class ProjectorBlock extends BaseEntityBlock {
@@ -67,6 +72,21 @@ public class ProjectorBlock extends BaseEntityBlock {
     @Override
     protected BlockState mirror(BlockState state, Mirror mirror) {
         return state.rotate(mirror.getRotation(state.getValue(FACING)));
+    }
+
+    @Override
+    public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
+        super.animateTick(state, level, pos, random);
+
+        if(random.nextBoolean()) return;
+
+        Direction dir = state.getValue(FACING);
+        Vec3 particlePos = Vec3.atCenterOf(pos.relative(dir)).add(-0.3f + random.nextFloat()*0.3f, -0.3f + random.nextFloat()*0.3f, -0.3f + random.nextFloat()*0.3f);
+        level.addParticle(new PixelColorTransitionOptions(
+                new Vector3f(1.0f, 1.0f, 1.0f),
+                new Vector3f(0.9f, 0.5f, 0.9f),
+                0.2f
+        ), particlePos.x, particlePos.y, particlePos.z, dir.getStepX(), 0.001f, dir.getStepZ());
     }
 
     @Override

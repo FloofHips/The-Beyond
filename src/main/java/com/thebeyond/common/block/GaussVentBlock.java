@@ -2,6 +2,7 @@ package com.thebeyond.common.block;
 
 import com.thebeyond.api.compat.BeyondCompatHooks;
 import com.thebeyond.client.particle.BellowJetOptions;
+import com.thebeyond.client.particle.PixelColorTransitionOptions;
 import com.thebeyond.client.particle.SmokeColorTransitionOptions;
 import com.thebeyond.common.network.CameraShootPayload;
 import com.thebeyond.common.network.GaussVentParticlePayload;
@@ -68,13 +69,11 @@ public class GaussVentBlock extends Block {
 
         if (random.nextInt(100) > 1) level.scheduleTick(pos, this, 1);
         else {
-            level.sendParticles(new SmokeColorTransitionOptions(
+            level.sendParticles(new PixelColorTransitionOptions(
                     new Vector3f(0.9f, 0.75f, 0.9f),
                     new Vector3f(1f, 1f, 1f),
-                    1.5f
-            ), pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5, 15, 0.1, 0.1, 0.1, 0.015);
-            BellowBlock.serverPush(level, pos, state, 15, 15, Direction.UP);
-
+                    0.5f
+            ), pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5, 15, 0.1, 0.1, 0.1, 0.005);
         }
     }
 

@@ -167,7 +167,7 @@ public class BeyondNetworking {
                 Vec3 visible = BeyondCompatHooks.visibleOnAnyLevel(level, pos);
                 Vec3 origin = visible != null ? visible : Vec3.atCenterOf(pos);
                 Vec3 wdir = BellowBlock.worldDir(context.player().level(), pos, dir);
-                int strength = isBig ? 40 : Math.min(15, BellowBlock.effectiveReach(level, pos, Direction.UP) * 3);
+                int strength = (isBig ? BellowBlock.effectiveReach(level, pos, Direction.UP, 40)*3 : Math.min(15, BellowBlock.effectiveReach(level, pos, Direction.UP, 15) * 3)) + level.random.nextInt(4) - 2;
                 double reach = BellowBlock.reachBlocks(strength);
 
                 Vec3 ref = Math.abs(wdir.y) > 0.5 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
@@ -177,19 +177,22 @@ public class BeyondNetworking {
                 BlockPos ahead = pos.relative(dir, Mth.floor(reach) + 1);
                 boolean blocked = level.getBlockState(ahead).isSolidRender(level, ahead);
                 double tipDist = blocked ? reach + 1.0 : reach + 0.5;
-                int lifetime = Math.max(2, (int) Math.round((tipDist - 0.6) / FLOW_SPEED));
+                int lifetime = isBig ? 40 : Math.max(2, (int) Math.round((tipDist - 0.6) / FLOW_SPEED));
                 BellowJetOptions options = new BellowJetOptions(lifetime);
                 Vec3 nozzle = origin.add(wdir.scale(0.6));
                 RandomSource random = level.random;
+
+                float offset = isBig ? 1.2f: 0.6f;
+
                 for (int n = 0; n < STEM_COUNT; n++) {
                     double ang = random.nextDouble() * Math.PI * 2.0;
                     double pr = random.nextDouble() * STEM_RADIUS;
                     Vec3 p = nozzle.add(u.scale(Math.cos(ang) * pr)).add(w.scale(Math.sin(ang) * pr));
-                    level.addParticle(options, p.x, p.y, p.z, wdir.x * FLOW_SPEED, wdir.y * FLOW_SPEED, wdir.z * FLOW_SPEED);
+                    level.addParticle(options, p.x + (offset*level.random.nextFloat()-offset/2f), p.y, p.z + (offset*level.random.nextFloat()-offset/2f), wdir.x * FLOW_SPEED, wdir.y * FLOW_SPEED, wdir.z * FLOW_SPEED);
                 }
                 if (blocked) {
                     Vec3 face = origin.add(wdir.scale(reach + 0.5));
-                    BellowJetOptions splash = new BellowJetOptions(SPLASH_LIFETIME);
+                    BellowJetOptions splash = new BellowJetOptions(lifetime);
                     for (int n = 0; n < SPLASH_COUNT; n++) {
                         double ang = random.nextDouble() * Math.PI * 2.0;
                         Vec3 radial = u.scale(Math.cos(ang)).add(w.scale(Math.sin(ang)));

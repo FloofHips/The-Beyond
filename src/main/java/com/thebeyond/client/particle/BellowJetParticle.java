@@ -25,8 +25,8 @@ public class BellowJetParticle extends TextureSheetParticle {
         this.lifetime = Math.max(1, lifetime);
         this.friction = 1.0F;
         this.gravity = 0.0F;
-        this.hasPhysics = false;
-        this.quadSize *= 3.0F*lifetime*0.05f;
+        this.hasPhysics = true;
+        this.quadSize *= 3.0F*lifetime*0.05f+level.random.nextFloat();
         this.setSpriteFromAge(sprites);
     }
 
