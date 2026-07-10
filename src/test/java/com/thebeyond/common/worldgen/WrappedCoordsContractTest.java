@@ -10,22 +10,8 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Contract tests for {@link BeyondEndChunkGenerator#computeWrappedCoords(int, int)}.
- *
- * <p><b>Why this test exists</b>: every caller that samples terrain density MUST
- * agree on the same wrapped coordinates. If the 3-arg
- * {@code getTerrainDensity(int,int,int)} (used by the biome source to decide
- * void vs solid) and {@code generateEndTerrain} (used by the chunk writer) ever
- * computed a different wrap, the biome source would place structures on columns
- * that later generated as void — the symptom is structures floating in thin
- * air. This test locks the contract by requiring every caller to route through
- * the single {@link BeyondEndChunkGenerator#computeWrappedCoords} entry point.
- *
- * <p>The properties asserted here are the minimum required invariants — if a
- * future change re-introduces a divergent path, these tests will fail on the
- * new call site instead of in production.
- */
+/** Contract tests for {@link BeyondEndChunkGenerator#computeWrappedCoords(int, int)}: every density caller
+ *  must share one wrap, or the biome source and chunk writer disagree on a column and structures float over void. */
 class WrappedCoordsContractTest {
 
     private HashSimplexNoise savedNoise;
@@ -35,8 +21,7 @@ class WrappedCoordsContractTest {
     void captureState() {
         savedNoise = BeyondEndChunkGenerator.simplexNoise;
         savedParams = BeyondEndChunkGenerator.activeTerrainParams;
-        // Force DEFAULTS so every test runs against the reference transform,
-        // regardless of what state leaked in from prior test order.
+        // Pin DEFAULTS so every test runs against the reference transform, not test-order leakage.
         BeyondEndChunkGenerator.activeTerrainParams = BeyondTerrainParams.DEFAULTS;
     }
 
@@ -60,8 +45,7 @@ class WrappedCoordsContractTest {
 
     @Test
     void determinismInNullFallback() {
-        // Pre-init state: noise not yet ready. Helper must still return the
-        // raw wrap deterministically — callers don't NPE, they get integers.
+        // Pre-init state: noise not ready yet, but callers must still get a deterministic wrap, not an NPE.
         BeyondEndChunkGenerator.simplexNoise = null;
 
         long a = BeyondEndChunkGenerator.computeWrappedCoords(1234567, -89012);
@@ -88,10 +72,8 @@ class WrappedCoordsContractTest {
         int wx = BeyondEndChunkGenerator.unpackWrappedX(packed);
         int wz = BeyondEndChunkGenerator.unpackWrappedZ(packed);
 
-        // The unpacked values must match pingPongWrap on the raw input
-        // (no warp applied in null-fallback branch). Bound derives from the
-        // active wrap range so the test stays correct if DEFAULTS changes —
-        // do NOT hardcode a literal R here.
+        // No warp in the null-fallback branch — output must match a plain pingPongWrap.
+        // Derive R from DEFAULTS rather than hardcoding, so this stays correct if DEFAULTS changes.
         int R = BeyondTerrainParams.DEFAULTS.wrapRange();
         assertEquals(BeyondEndChunkGenerator.pingPongWrap(x, -R, R), wx);
         assertEquals(BeyondEndChunkGenerator.pingPongWrap(z, -R, R), wz);
@@ -108,8 +90,7 @@ class WrappedCoordsContractTest {
             "-2147483648, -2147483648"
     })
     void wrappedOutputStaysWithinWrapRange(int x, int z) {
-        // With noise active — warp adds up to ±WARP_AMPLITUDE to the input
-        // before wrapping, but the wrap itself guarantees output ∈ [-R, R].
+        // Warp perturbs the input before wrapping, but the wrap itself still guarantees output ∈ [-R, R].
         BeyondEndChunkGenerator.simplexNoise =
                 new HashSimplexNoise(RandomSource.create(42L));
 
@@ -123,23 +104,15 @@ class WrappedCoordsContractTest {
     }
 
     /**
-     * Asserts the single-source-of-truth invariant: all call paths that decide
-     * "what are the wrapped coords here?" must agree. Currently the only public
-     * entry point is {@link BeyondEndChunkGenerator#computeWrappedCoords} — if
-     * a future change adds a second path that re-inlines the wrap math the new
-     * path will diverge silently. This test asserts the helper is stable and
-     * callable from an external test (which stands in for "any future
-     * caller"); if the helper is ever replaced or made non-public the test
-     * breaks and the author is forced to consider whether every caller was
-     * updated.
+     * Guards against a second wrap-math path being inlined elsewhere: if
+     * {@link BeyondEndChunkGenerator#computeWrappedCoords} stops being the single public entry point, this test fails.
      */
     @Test
     void singleSourceOfTruthIsReachable() {
         BeyondEndChunkGenerator.simplexNoise =
                 new HashSimplexNoise(RandomSource.create(7L));
 
-        // Two different callers (here simulated by two call sites) must
-        // produce identical results for identical inputs.
+        // Two call sites simulating different callers must agree on identical inputs.
         long fromCallerA = BeyondEndChunkGenerator.computeWrappedCoords(654321, -123456);
         long fromCallerB = BeyondEndChunkGenerator.computeWrappedCoords(654321, -123456);
         assertEquals(fromCallerA, fromCallerB);

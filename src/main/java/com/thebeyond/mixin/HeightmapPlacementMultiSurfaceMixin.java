@@ -54,8 +54,7 @@ public abstract class HeightmapPlacementMultiSurfaceMixin {
             cache.put(chunkKey, columnKey, cached);
         }
 
-        // Single-surface column: vanilla behaviour. Skip the override so other mods'
-        // mixins on getPositions (and vanilla logic) execute normally.
+        // Single-surface column: fall through so other mods' getPositions mixins still run.
         if (cached.length <= 1) return;
 
         List<BlockPos> positions = new ArrayList<>(cached.length);
@@ -72,7 +71,7 @@ public abstract class HeightmapPlacementMultiSurfaceMixin {
         for (int y = minY; y <= topY; y++) {
             pos.setY(y);
             boolean isSolid = !ctx.getBlockState(pos).isAir();
-            // Surface = first air block above a solid one. Place feature here.
+            // Surface = first air block above a solid one (a pancake top).
             if (wasSolid && !isSolid) {
                 if (n == tmp.length) {
                     int[] grown = new int[tmp.length * 2];

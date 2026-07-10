@@ -176,7 +176,7 @@ public class VoronoiNoise {
 
                 if (dist < minDist) {
                     minDist = dist;
-                    closestCellId = cellSeed; // Use the seed as cell ID
+                    closestCellId = cellSeed;
                     xCandidate = xPos;
                     zCandidate = zPos;
                 }

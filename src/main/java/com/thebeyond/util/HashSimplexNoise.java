@@ -3,9 +3,8 @@ package com.thebeyond.util;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 
-/** SimplexNoise variant with the 256-entry permutation table replaced by SplitMix64
- *  hashing — period grows to 2^64. Callers should still wrap inputs (~±500k) so the
- *  skew/unskew math doesn't lose precision in {@code double}. */
+/** SimplexNoise with the 256-entry permutation table swapped for SplitMix64 hashing (period 2^64).
+ *  Keep inputs within ~±500k or the skew/unskew math loses {@code double} precision. */
 public class HashSimplexNoise {
     protected static final int[][] GRADIENT = new int[][]{
             {1, 1, 0},
@@ -40,8 +39,7 @@ public class HashSimplexNoise {
         this.xo = random.nextDouble() * 256.0;
         this.yo = random.nextDouble() * 256.0;
         this.zo = random.nextDouble() * 256.0;
-        // Full 64-bit seed from two nextInt() calls; RandomSource does not expose
-        // nextLong() in the reduced API Minecraft uses here.
+        // RandomSource has no nextLong() in this API, so build the 64-bit seed from two nextInt()s.
         long hi = ((long) random.nextInt()) << 32;
         long lo = ((long) random.nextInt()) & 0xFFFFFFFFL;
         this.seed = hi | lo;
@@ -97,8 +95,7 @@ public class HashSimplexNoise {
         double d7 = d5 - (double) l + G2;
         double d8 = d4 - 1.0 + 2.0 * G2;
         double d9 = d5 - 1.0 + 2.0 * G2;
-        // No mask needed: p() hashes over the full 32-bit int range and returns a
-        // 16-bit result, so any int index produces a deterministic permutation.
+        // No mask needed: p() accepts any int and returns a deterministic 16-bit result.
         int k1 = this.p(i + this.p(j)) % 12;
         int l1 = this.p(i + k + this.p(j + l)) % 12;
         int i2 = this.p(i + 1 + this.p(j + 1)) % 12;

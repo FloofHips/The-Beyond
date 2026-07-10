@@ -5,7 +5,9 @@
   "refmap": "the_beyond.refmap.json",
   "mixins": [
     "SimAssemblyContraptionMixin",
-    "SimEndSeaHeightMixin"
+    "SimEndSeaHeightMixin",
+    "EndVoidFloorMixin",
+    "SimContraptionFloorMixin"
   ],
   "server": [],
   "injectors": {

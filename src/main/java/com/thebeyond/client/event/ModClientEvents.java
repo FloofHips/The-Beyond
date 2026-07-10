@@ -310,6 +310,25 @@ public class ModClientEvents {
         }
     }
 
+    /**
+     * Deafening potion liquid: dark wine-purple. The potion carries no baked effects, so vanilla coloring
+     * would fall back to the base water-blue; every other potion keeps the vanilla color path.
+     */
+    @SubscribeEvent
+    public static void colorSetupItem(RegisterColorHandlersEvent.Item event) {
+        event.register((stack, tintIndex) -> {
+            if (tintIndex > 0) return -1;
+            net.minecraft.world.item.alchemy.PotionContents contents =
+                    stack.getOrDefault(net.minecraft.core.component.DataComponents.POTION_CONTENTS,
+                            net.minecraft.world.item.alchemy.PotionContents.EMPTY);
+            if (contents.potion().map(h -> h.is(BeyondPotions.DEAFENING.getKey())).orElse(false)) {
+                return 0xFF5A1535;
+            }
+            return contents.getColor();
+        }, net.minecraft.world.item.Items.POTION, net.minecraft.world.item.Items.SPLASH_POTION,
+                net.minecraft.world.item.Items.LINGERING_POTION);
+    }
+
     @SubscribeEvent
     public static void colorSetupBlock(RegisterColorHandlersEvent.Block event) {
         BlockColors colors = event.getBlockColors();
@@ -399,7 +418,48 @@ public class ModClientEvents {
         }
     }
 
-    // Server-side Refuge/Totem/gameplay handlers live in ModGameEvents (must register on dedicated servers too).
+    /**
+     * The deafening potion carries no baked effects (they are applied on break, capped and radius-based),
+     * so vanilla renders "No Effects". Replace that line with the real payload so the tooltip tells the truth.
+     */
+    @SubscribeEvent
+    public static void onItemTooltip(net.neoforged.neoforge.event.entity.player.ItemTooltipEvent event) {
+        ItemStack stack = event.getItemStack();
+        net.minecraft.world.item.alchemy.PotionContents contents =
+                stack.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS);
+        if (contents == null) return;
+        if (contents.potion().map(h -> !h.is(BeyondPotions.DEAFENING.getKey())).orElse(true)) return;
+
+        boolean lingering = stack.is(net.minecraft.world.item.Items.LINGERING_POTION);
+        int seconds = (lingering
+                ? com.thebeyond.common.event.BeyondDeafeningPotionEvents.LINGER_DURATION
+                : com.thebeyond.common.event.BeyondDeafeningPotionEvents.SPLASH_DURATION) / 20;
+        // Color by the effect's own category (HARMFUL -> red), matching how vanilla renders potion effects —
+        // deafened is a debuff, so it must read red, not the blue of a beneficial effect.
+        net.minecraft.ChatFormatting color = BeyondEffects.DEAFENED.value().getCategory().getTooltipFormatting();
+        Component effectLine = Component.translatable("effect.the_beyond.deafened")
+                .append(Component.literal(String.format(" (%d:%02d)", seconds / 60, seconds % 60)))
+                .withStyle(color);
+
+        var tooltip = event.getToolTip();
+        int at = -1;
+        for (int i = 0; i < tooltip.size(); i++) {
+            if (tooltip.get(i).getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents tc
+                    && "effect.none".equals(tc.getKey())) {
+                at = i;
+                break;
+            }
+        }
+        if (at >= 0) tooltip.set(at, effectLine);
+        else { at = Math.min(1, tooltip.size()); tooltip.add(at, effectLine); }
+        if (stack.is(net.minecraft.world.item.Items.POTION)) {
+            tooltip.add(at + 1, Component.translatable("tooltip.the_beyond.deafening_drinkable")
+                    .withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.ITALIC));
+        }
+    }
+
+    // Server-side Refuge, Totem, and gameplay handlers live in ModGameEvents.java
+    // so they register on dedicated servers (not just Dist.CLIENT).
 
     @SubscribeEvent
     public static void onRenderNameTag(RenderNameTagEvent event) {

@@ -12,9 +12,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 
-/** Guards {@code getNoiseBiome} against ResourceKey contamination in the parameter list:
- *  the implicit checkcast to Holder crashes pre-@Inject. {@code @Overwrite} is required
- *  because the failure happens in bytecode, not a wrappable call. */
+/** Guards {@code getNoiseBiome} against ResourceKey contamination in the parameter list — the implicit
+ *  checkcast to Holder crashes before any {@code @Inject} can run, so an {@code @Overwrite} is needed instead. */
 @Mixin(MultiNoiseBiomeSource.class)
 public abstract class MultiNoiseBiomeSourceMixin {
 
@@ -36,7 +35,7 @@ public abstract class MultiNoiseBiomeSourceMixin {
             return (Holder<Biome>) result;
         }
 
-        // Contaminated: find first valid Holder as fallback
+        // Contaminated — fall back to the first valid Holder found
         Holder<Biome> firstValid = null;
         for (Pair<Climate.ParameterPoint, Holder<Biome>> pair : this.parameters().values()) {
             Object val = (Object) pair.getSecond();
@@ -46,8 +45,7 @@ public abstract class MultiNoiseBiomeSourceMixin {
             }
         }
 
-        // Total contamination shouldn't happen; the raw first value is still safer than
-        // null, which vanilla getNoiseBiome() callers never expect.
+        // Shouldn't happen, but a raw first value beats null — callers never expect null here.
         return firstValid != null ? firstValid : (Holder<Biome>) (Object) this.parameters().values().getFirst().getSecond();
     }
 }

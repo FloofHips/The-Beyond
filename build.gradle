@@ -125,6 +125,15 @@ dependencies {
 
 tasks.named('test', Test).configure {
     useJUnitPlatform()
+    // The heavy worldgen scan tests OOM the default 512m heap when run together; give them 2g and a fresh
+    // JVM per class so scans can't accumulate (also isolates the static generator-noise fields each test swaps).
+    maxHeapSize = '2g'
+    forkEvery = 1
+    // The default build/test-results/test/binary is held open by the IDE test view on Windows, so gradle's
+    // pre-run delete fails; a run-scoped output dir sidesteps the lock without disrupting the IDE.
+    binaryResultsDirectory = layout.buildDirectory.dir("test-run/binary")
+    reports.junitXml.outputLocation = layout.buildDirectory.dir("test-run/junitxml")
+    reports.html.outputLocation = layout.buildDirectory.dir("test-run/html")
     testLogging {
         events 'passed', 'skipped', 'failed'
     }
@@ -155,6 +164,7 @@ tasks.withType(ProcessResources).configureEach {
 publishing {
     publications {
         register('mavenJava', MavenPublication) {
+            artifactId = mod_id
             from components.java
         }
     }

@@ -28,6 +28,37 @@ public final class BeyondTerrain {
         return b.build();
     }
 
+    /** Whether Beyond's End terrain reports solid at {@code (x, y, z)}, using the same density predicate as
+     *  the placed chunks; best-effort {@code false} outside Beyond's End or before the sampler is primed. */
+    public static boolean isSolidAt(int x, int y, int z) {
+        if (!BeyondTerrainState.isActive()) return false;
+        try {
+            BeyondEndChunkGenerator.ColumnScratch scratch = BeyondEndChunkGenerator.getColumnScratch();
+            float distance = (float) Math.sqrt((double) x * x + (double) z * z);
+            BeyondEndChunkGenerator.initColumnScratch(x, z, distance, scratch);
+            return BeyondEndChunkGenerator.isSolidTerrainScratch(y, scratch);
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** Highest solid Y in {@code [minY, maxY]} at {@code (x, z)}, or {@link Integer#MIN_VALUE} if empty /
+     *  unowned / not primed. Complements {@link #streamPancakeTops}, which streams every layer top. */
+    public static int findSurfaceTop(int x, int z, int minY, int maxY) {
+        if (!BeyondTerrainState.isActive()) return Integer.MIN_VALUE;
+        try {
+            BeyondEndChunkGenerator.ColumnScratch scratch = BeyondEndChunkGenerator.getColumnScratch();
+            float distance = (float) Math.sqrt((double) x * x + (double) z * z);
+            BeyondEndChunkGenerator.initColumnScratch(x, z, distance, scratch);
+            for (int y = maxY; y >= minY; y--) {
+                if (BeyondEndChunkGenerator.isSolidTerrainScratch(y, scratch)) return y;
+            }
+            return Integer.MIN_VALUE;
+        } catch (Throwable t) {
+            return Integer.MIN_VALUE;
+        }
+    }
+
     /** Beyond's biome-noise simplex field, or {@code null} before worldgen bootstraps.
      *  Read-only; for biome-aligned macro-region deformation. */
     @Nullable

@@ -56,6 +56,8 @@ public final class BeyondCoreLifecycle {
         // Reset Beyond's own static world-bound state so the next start re-detects.
         BeyondTerrainStateInternal.reset();
         BeyondEndChunkGenerator.resetNoises();
+        com.thebeyond.common.worldgen.BeyondGenDiagnostics.reset();   // re-arm one-shot gen logs for next world
+        com.thebeyond.api.worldgen.BeyondForeignStructureProfiles.clearLayerDistributed();   // drop per-placement distributed decisions (no cross-world leak)
         AuroraciteLayerFeature.resetNoise();
         AuroraciteLayerDTFeature.resetNoise();
         AnchorLeggingsItem.clearCreativeTracking();

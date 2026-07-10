@@ -5,6 +5,8 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.alchemy.PotionContents;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -23,6 +25,10 @@ public class BeyondTabs {
                             output.accept(i.get().asItem());
                         }
                 );
+                // Deafening potion is a thrown tool: list the functional splash + lingering variants. The
+                // drinkable shell is only the brew intermediate (no effect on drink), so it is not listed here.
+                output.accept(PotionContents.createItemStack(Items.SPLASH_POTION, BeyondPotions.DEAFENING));
+                output.accept(PotionContents.createItemStack(Items.LINGERING_POTION, BeyondPotions.DEAFENING));
             }).build());
 
     public static void addCreative(BuildCreativeModeTabContentsEvent event) {

@@ -54,6 +54,14 @@ public class Lang extends LanguageProvider {
 
         effects.forEach(effect -> add(effect, getName(effect.getDescriptionId())));
 
+        // Deafening potion (a delivery-only potion — the effect is applied on break, not on drink).
+        // Item names live in the vanilla minecraft potion translation-key namespace with the "deafening" prefix.
+        add("item.minecraft.potion.effect.deafening", "Potion of Deafening");
+        add("item.minecraft.splash_potion.effect.deafening", "Splash Potion of Deafening");
+        add("item.minecraft.lingering_potion.effect.deafening", "Lingering Potion of Deafening");
+        add("item.minecraft.tipped_arrow.effect.deafening", "Arrow of Deafening");
+        add("tooltip.the_beyond.deafening_drinkable", "Does nothing when drunk");
+
         Set<EntityType<?>> mobs = BuiltInRegistries.ENTITY_TYPE.stream().filter(i -> TheBeyond.MODID.equals(BuiltInRegistries.ENTITY_TYPE.getKey(i).getNamespace()))
                 .collect(Collectors.toSet());
 

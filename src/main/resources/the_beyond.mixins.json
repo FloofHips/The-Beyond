@@ -18,7 +18,6 @@
     "EndWeatherSyncMixin",
     "ServerLevelLightningSuppressMixin",
     "JigsawStructureMixin",
-    "JigsawPlacementMixin",
     "AuroraciteLayerProtectionMixin",
     "AuroraciteLayerFillMixin",
     "HeightmapPlacementMultiSurfaceMixin",
@@ -27,7 +26,15 @@
     "BeehiveDecoratorEmptyLogsMixin",
     "CocoaDecoratorEmptyLogsMixin",
     "LocateCommandMixin",
-    "ResourceOrTagKeyArgumentMixin"
+    "ResourceOrTagKeyArgumentMixin",
+    "IslandCarveProtectionMixin",
+    "StructureStartSanctionMixin",
+    "ForeignStructureRejectionMixin",
+    "FeatureGuardMixin",
+    "StructureTemplateAccessor",
+    "SinglePoolElementAccessor",
+    "WardenDeafenAngerMixin",
+    "WardenVibrationUserMixin"
   ],
   "client": [
     "client.BossHealthOverlayAccessor",

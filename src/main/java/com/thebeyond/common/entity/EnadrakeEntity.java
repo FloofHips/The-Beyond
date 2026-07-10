@@ -173,6 +173,7 @@ public class EnadrakeEntity extends PathfinderMob {
 
             if (player != null) {
                 this.lookAt(player, 180, 180);
+                // The screech deafens the player (client audio-mute); DEAFENED on a mob is the FOV-stealth state instead.
                 player.addEffect(new MobEffectInstance(BeyondEffects.DEAFENED, 1200));
             }
         }

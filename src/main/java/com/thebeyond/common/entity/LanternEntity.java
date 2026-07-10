@@ -1,5 +1,6 @@
 package com.thebeyond.common.entity;
 
+import com.thebeyond.api.worldgen.BeyondTerrainState;
 import com.thebeyond.common.block.BonfireBlock;
 import com.thebeyond.common.entity.util.SlowRotFlyingMoveControl;
 import com.thebeyond.common.registry.*;
@@ -204,7 +205,7 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
         double inflate = switch (getSize()) {
             case 0 -> 1.0;   // small: short fins
             case 1 -> 2.0;   // medium: longer fins
-            case 2 -> 3.0;   // large: fins extend further in all directions
+            case 2 -> 3.0;   // large: fins reach further
             case 3 -> 6.0;   // Leviathan: body ~5b long, tail ~4b, fins ~1b
             default -> 2.0;
         };
@@ -408,6 +409,9 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
     }
 
     public static boolean checkMonsterSpawnRules(EntityType<LanternEntity> lanternEntityEntityType, ServerLevelAccessor serverLevelAccessor, MobSpawnType mobSpawnType, BlockPos blockPos, RandomSource randomSource) {
+        // Keep lanterns above the dimension-floor band (the_paths / abyssal_nomad zone, dimMinY+8): vanilla's uniform
+        // spawn-Y collapses to the world-surface, which in island-free columns is that floor, funnelling most onto dimMinY.
+        if (blockPos.getY() <= BeyondTerrainState.getDimMinY() + 8) return false;
         return serverLevelAccessor.getBlockState(blockPos.below()).isAir() && serverLevelAccessor.getBlockState(blockPos.above()).isAir() && serverLevelAccessor.getBlockState(blockPos).isAir();
     }
 

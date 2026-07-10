@@ -34,12 +34,10 @@ public abstract class AuroraciteLayerFillMixin {
 
     private static final ResourceLocation DT_FLUID_ID = ResourceLocation.parse("dimensional_tears:dimensional_tears");
 
-    // Lazily populated on first fire.
     private static volatile Boolean dtLoaded;
     private static volatile BlockState cachedDTFluid;
     private static volatile SimplexNoise fallbackNoise;
 
-    /** Logs the first fire per JVM with the chosen noise source. */
     private static final AtomicBoolean LOGGED_FIRST_FIRE = new AtomicBoolean(false);
 
     @Inject(
@@ -50,11 +48,10 @@ public abstract class AuroraciteLayerFillMixin {
             WorldGenLevel level, ChunkAccess chunk, StructureManager structureManager,
             CallbackInfo ci) {
 
-        // End only.
         if (level.getLevel().dimension() != Level.END) return;
 
         SimplexNoise noise = resolveNoise(level);
-        if (noise == null) return; // defensive; resolveNoise always returns non-null
+        if (noise == null) return; // defensive: resolveNoise always returns non-null
 
         final int minY = level.getMinBuildHeight();
         final int chunkX = chunk.getPos().getMinBlockX();
@@ -82,8 +79,6 @@ public abstract class AuroraciteLayerFillMixin {
                 final double n = noise.getValue(globalX * 0.1, globalZ * 0.1);
 
                 if (n > 0.0) {
-                    // Two-layer auroracite column at the floor; overwrites foreign blocks
-                    // (auroracite is the End floor's ground truth). Idempotent: skip if already set.
                     mutable.set(globalX, minY, globalZ);
                     if (!chunk.getBlockState(mutable).is(BeyondBlocks.AURORACITE.get())) {
                         chunk.setBlockState(mutable, auroracite, false);
@@ -92,32 +87,24 @@ public abstract class AuroraciteLayerFillMixin {
                     if (!chunk.getBlockState(mutable).is(BeyondBlocks.AURORACITE.get())) {
                         chunk.setBlockState(mutable, auroracite, false);
                     }
-                    // Clear foreign vegetation that landed on the column via MOTION_BLOCKING
-                    // heightmap features; surface plants belong on islands, not the void floor.
-                    // Air check avoids erasing legitimate minY+2 placements.
+                    // Strip vegetation that heightmap features dropped here — plants belong on islands, not the void floor.
                     mutable.set(globalX, minY + 2, globalZ);
                     BlockState aboveFloor = chunk.getBlockState(mutable);
                     if (!aboveFloor.isAir()) {
                         chunk.setBlockState(mutable, Blocks.AIR.defaultBlockState(), false);
                     }
                 } else if (dtUsable) {
-                    // DT fluid fills the gaps; overwrite foreign blocks, skip if already
-                    // auroracite or the same DT fluid.
                     mutable.set(globalX, minY, globalZ);
                     BlockState existing = chunk.getBlockState(mutable);
                     if (!existing.is(BeyondBlocks.AURORACITE.get()) && existing.getBlock() != dtFluid.getBlock()) {
                         chunk.setBlockState(mutable, dtFluid, false);
                     }
                 }
-                // No DT and noise <= 0: leave the existing block.
             }
         }
     }
 
-    /**
-     * Prefers either feature's live noise for cross-biome continuity; falls back to a
-     * JVM-cached, world-seeded noise when neither feature has run yet.
-     */
+    /** Prefers either feature's live noise for cross-biome continuity; falls back to a JVM-cached, world-seeded noise. */
     private static SimplexNoise resolveNoise(WorldGenLevel level) {
         SimplexNoise n = AuroraciteLayerDTFeature.getNoiseInstance();
         if (n != null) return n;
@@ -147,10 +134,7 @@ public abstract class AuroraciteLayerFillMixin {
         }
     }
 
-    /**
-     * Returns DT's source fluid with {@code is_ocean=true} when that property exists
-     * (enables DT's skipRendering optimisation). Air if DT is absent or the property moved.
-     */
+    /** Sets {@code is_ocean=true} when present (enables DT's skipRendering optimisation). Air if DT is absent. */
     private static BlockState getDTFluidState() {
         BlockState cached = cachedDTFluid;
         if (cached != null) return cached;

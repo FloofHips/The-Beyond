@@ -9,6 +9,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.StructureTags;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
@@ -36,6 +37,14 @@ public class BeyondTags {
     public static final TagKey<Structure> BONFIRE_LOCATABLE = createStructure("bonfire_locatable");
     public static final TagKey<Structure> NOMAD_PRAYER_SITE = createStructure("nomad_prayer_site");
 
+    /** Reverse opt-out: members ignore the deafening FOV-stealth rule (always notice the player). */
+    public static final TagKey<EntityType<?>> IMMUNE_TO_DEAFENING = createEntity("immune_to_deafening");
+    /**
+     * Reverse opt-out: members are non-visual hunters (vibration/hearing/movement), so they're excluded from the FOV rule.
+     * Suppression follows each creature's real path — Warden via its mixins, Ghoul (vestigial vibration) via the {@code setTarget} handler.
+     */
+    public static final TagKey<EntityType<?>> SENSES_VIA_VIBRATION = createEntity("senses_via_vibration");
+
     private static TagKey<Block> createBlock(String id) {
         return BlockTags.create(ResourceLocation.fromNamespaceAndPath(MODID, id));
     }
@@ -46,5 +55,9 @@ public class BeyondTags {
 
     private static TagKey<Structure> createStructure(String id) {
         return TagKey.create(Registries.STRUCTURE, ResourceLocation.fromNamespaceAndPath(MODID, id));
+    }
+
+    private static TagKey<EntityType<?>> createEntity(String id) {
+        return TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(MODID, id));
     }
 }

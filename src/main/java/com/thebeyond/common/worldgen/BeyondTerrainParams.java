@@ -5,9 +5,8 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
-/** Datapack-configurable knobs for the Beyond End coordinate transform. Decoded from the
- *  dimension JSON's {@code terrain_params} field (optional, falls back to {@link #DEFAULTS}).
- *  Published to {@link BeyondEndChunkGenerator#activeTerrainParams}; reset on server stop. */
+/** Datapack-configurable knobs for the Beyond End coordinate transform, decoded from the
+ *  dimension JSON's optional {@code terrain_params} field (see {@link #DEFAULTS}). */
 public record BeyondTerrainParams(int wrapRange, double warpAmplitude, double warpScale) {
 
     /** Wrap pivot outside the ~50k lore radius; low-frequency, low-magnitude warp fuzzes
@@ -15,7 +14,7 @@ public record BeyondTerrainParams(int wrapRange, double warpAmplitude, double wa
     public static final BeyondTerrainParams DEFAULTS = new BeyondTerrainParams(
             500000, 50.0, 0.001);
 
-    // Validation bounds. See class javadoc for the reasoning behind each.
+    // Validation bounds.
     public static final int    MIN_WRAP_RANGE = 50000;
     public static final int    MAX_WRAP_RANGE = 1000000;
     public static final double MIN_WARP_AMPLITUDE = 0.0;     // 0 = disabled
@@ -53,9 +52,8 @@ public record BeyondTerrainParams(int wrapRange, double warpAmplitude, double wa
     /** Unvalidated intermediate decode target; see {@link #CODEC}. */
     private record Raw(int wrapRange, double warpAmplitude, double warpScale) {}
 
-    /** Two-stage codec: decode raw fields, then {@code flatXmap} through the record's compact
-     *  constructor so its {@link IllegalArgumentException} becomes {@link DataResult#error}
-     *  (world load logs the message, doesn't crash). All fields default individually. */
+    /** Decodes raw fields (each defaulting independently), then routes them through the compact
+     *  constructor so an {@link IllegalArgumentException} becomes a logged {@link DataResult#error}. */
     public static final MapCodec<BeyondTerrainParams> CODEC = RecordCodecBuilder.<Raw>mapCodec(instance ->
             instance.group(
                     Codec.INT.optionalFieldOf("wrap_range", DEFAULTS.wrapRange())

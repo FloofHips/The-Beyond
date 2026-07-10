@@ -49,6 +49,7 @@ public class TheBeyond {
         BeyondFluids.FLUIDS.register(modEventBus);
         BeyondFeatures.FEATURES.register(modEventBus);
         BeyondEffects.MOB_EFFECTS.register(modEventBus);
+        BeyondPotions.POTIONS.register(modEventBus);
         BeyondComponents.COMPONENTS.register(modEventBus);
         BeyondPoiTypes.POI_TYPES.register(modEventBus);
         BeyondBiomeModifiers.BIOME_MODIFIERS.register(modEventBus);

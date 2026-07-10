@@ -68,7 +68,7 @@ public abstract class CountOnEveryLayerPlacementMixin {
         cir.setReturnValue(positions.stream());
     }
 
-    /** Y above the {@code targetLayer}-th solid→non-solid transition (top-down, 0=topmost). MAX_VALUE if none. Fluids count as non-solid so lake surfaces produce their own layer. */
+    /** Y just above the {@code targetLayer}-th solid→non-solid transition scanning top-down (0=topmost, MAX_VALUE if the layer doesn't exist); fluids count as non-solid so lake surfaces get their own layer. */
     private static int findLayerSurfaceY(PlacementContext ctx, int x, int z,
                                          int targetLayer, int minY, int maxY) {
         int[] surfaces = getOrComputeSurfaces(ctx, x, z, minY, maxY);

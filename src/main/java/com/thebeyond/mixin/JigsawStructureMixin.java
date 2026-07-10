@@ -1,14 +1,21 @@
 package com.thebeyond.mixin;
 
+import com.thebeyond.api.compat.PancakeScan;
+import com.thebeyond.api.worldgen.BeyondForeignStructureProfiles;
 import com.thebeyond.api.worldgen.BeyondTerrain;
 import com.thebeyond.api.worldgen.BeyondTerrainState;
 import com.thebeyond.common.worldgen.BeyondEndChunkGenerator;
+import com.thebeyond.common.worldgen.BeyondGenDiagnostics;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.levelgen.GenerationStep;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.TerrainAdjustment;
 import net.minecraft.world.level.levelgen.structure.pools.DimensionPadding;
 import net.minecraft.world.level.levelgen.structure.pools.JigsawPlacement;
 import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
@@ -41,6 +48,7 @@ public abstract class JigsawStructureMixin {
     @Shadow @Final private List<PoolAliasBinding> poolAliases;
     @Shadow @Final private DimensionPadding dimensionPadding;
     @Shadow @Final private LiquidSettings liquidSettings;
+    @Shadow @Final private Optional<Heightmap.Types> projectStartToHeightmap;
 
     @Inject(method = "findGenerationPoint", at = @At("HEAD"), cancellable = true)
     private void the_beyond$rerouteBeyondStructures(
@@ -50,14 +58,17 @@ public abstract class JigsawStructureMixin {
         ResourceKey<StructureTemplatePool> poolKey = this.startPool.unwrapKey().orElse(null);
         if (poolKey == null) return;
         ResourceLocation poolLoc = poolKey.location();
-        if (!"the_beyond".equals(poolLoc.getNamespace())) return;
+        if (!"the_beyond".equals(poolLoc.getNamespace())) {
+            the_beyond$autoAnchorForeign(context, cir);
+            return;
+        }
 
         boolean beyondActive = BeyondTerrainState.isActive();
         int dimMinY = context.heightAccessor().getMinBuildHeight();
         String path = poolLoc.getPath();
         ChunkPos chunkPos = context.chunkPos();
 
-        // Fountain: dim floor anchor across all modes (Beyond-só, Beyond+combo, soup).
+        // Fountain anchors to the dim floor even outside beyondActive (soup mode included).
         if ("fountain/fountain".equals(path)) {
             BlockPos pos = new BlockPos(chunkPos.getMinBlockX(), dimMinY + 2, chunkPos.getMinBlockZ());
             cir.setReturnValue(the_beyond$addPiecesAt(context, pos));
@@ -69,14 +80,11 @@ public abstract class JigsawStructureMixin {
             return;
         }
 
-        // Branches below scan Beyond's real terrain via streamPancakeTops, which reads
-        // the End's static noise; prime it first since structure-start/locate can run
-        // before any generator primed it (NPE otherwise).
+        // streamPancakeTops needs noise primed; structure-start/locate can run before any generator does so — NPE otherwise.
         if (context.chunkGenerator() instanceof BeyondEndChunkGenerator beg)
             beg.computeNoisesIfNotPresent(context.randomState());
 
-        // jump_platform: outer waypoints float midpoint between pancakes. The central jump_platform_island uses
-        // a separate pool (no branch here) so it falls through to vanilla placement at its own start_height.
+        // jump_platform_island is a separate pool with no branch here — falls through to vanilla placement.
         if ("misc/jump_platform".equals(path)) {
             int centerX = chunkPos.getMinBlockX();
             int centerZ = chunkPos.getMinBlockZ();
@@ -93,8 +101,6 @@ public abstract class JigsawStructureMixin {
             return;
         }
 
-        // bridge: anchor above the highest pancake within radial reach so the deck and the
-        // descending pillar chain never touch islands.
         if (path.startsWith("bridge/")) {
             int centerX = chunkPos.getMinBlockX();
             int centerZ = chunkPos.getMinBlockZ();
@@ -119,8 +125,6 @@ public abstract class JigsawStructureMixin {
             return;
         }
 
-        // Landmarks land on a real pancake, distributed across all layers (not just the
-        // topmost); per-chunk salt picks a different pancake each chunk.
         if (path.startsWith("bonfire/") || path.startsWith("aberrant_remains/") || "misc/arch".equals(path)) {
             int centerX = chunkPos.getMinBlockX();
             int centerZ = chunkPos.getMinBlockZ();
@@ -151,6 +155,112 @@ public abstract class JigsawStructureMixin {
                 this.dimensionPadding,
                 this.liquidSettings
         );
+    }
+
+    /** Auto-host a foreign jigsaw structure on Beyond's far-field: Class A (projects to a heightmap) is opted
+     *  into carve + foundation, Class F (void floater) is left alone, Class B is re-anchored onto a pancake. */
+    private void the_beyond$autoAnchorForeign(
+            Structure.GenerationContext context,
+            CallbackInfoReturnable<Optional<Structure.GenerationStub>> cir) {
+        if (!BeyondTerrainState.isActive()) return;
+        // isActive() is global (not per-dimension); this instanceof is what confines the branches below to Beyond's End.
+        if (!(context.chunkGenerator() instanceof BeyondEndChunkGenerator beg)) return;
+        if (this.projectStartToHeightmap.isPresent()) {
+            // ENCAPSULATE is exempt (it buries on purpose); other Class A adapters get carve + foundation since
+            // vanilla leaves no carve and stacked islands would fill their interior with stone.
+            Structure selfA = (Structure) (Object) this;
+            if (selfA.terrainAdaptation() != TerrainAdjustment.ENCAPSULATE
+                    && the_beyond$belongsToEndBiome(selfA, beg)) {
+                ResourceLocation keyA = the_beyond$structureKey(context, selfA);
+                if (keyA != null && BeyondForeignStructureProfiles.get(keyA) == null) {
+                    BeyondForeignStructureProfiles.markAutoSeatedProjected(keyA);
+                    ChunkPos cpA = context.chunkPos();
+                    int centerX = cpA.getMinBlockX(), centerZ = cpA.getMinBlockZ();
+                    boolean farField = (double) centerX * centerX + (double) centerZ * centerZ >= 650.0 * 650.0;
+                    if (farField) {
+                        beg.computeNoisesIfNotPresent(context.randomState());
+                        int[] layer = PancakeScan.pickEndBiomeLayerInChunk(
+                                beg, cpA.x, cpA.z, context.heightAccessor(), context.randomState(),
+                                selfA.biomes(), PancakeScan.LAYER_MIN_HEADROOM);
+                        if (layer != null) {
+                            BeyondForeignStructureProfiles.markLayerDistributed(keyA, cpA.toLong());
+                            the_beyond$logAuto(selfA, keyA, "A", "LAYER_DISTRIBUTED requestedY=" + layer[1] + " (surgical distributed carve)");
+                            the_beyond$logDistributedY(keyA, cpA, layer[1]);
+                            cir.setReturnValue(the_beyond$addPiecesAt(context, new BlockPos(layer[0], layer[1], layer[2])));
+                            return;
+                        }
+                    }
+                    the_beyond$logAuto(selfA, keyA, "A", "AUTO_SEAT_PROJECTED (no layer; topmost) adapt=" + selfA.terrainAdaptation());
+                }
+            }
+            return;   // placement stays vanilla self-projected to the surface
+        }
+
+        ChunkPos chunkPos = context.chunkPos();
+        int centerX = chunkPos.getMinBlockX();
+        int centerZ = chunkPos.getMinBlockZ();
+        // Inside radius 650: central island + inner void, no valid pancake terrain to re-anchor onto.
+        if ((double) centerX * centerX + (double) centerZ * centerZ < 650.0 * 650.0) {
+            cir.setReturnValue(Optional.empty());
+            return;
+        }
+
+        Structure self = (Structure) (Object) this;
+        ResourceLocation key = the_beyond$structureKey(context, self);
+        // Class F check must precede Class B: neither terraforms nor targets the surface step → deliberate void floater.
+        if (self.terrainAdaptation() == TerrainAdjustment.NONE
+                && self.step() != GenerationStep.Decoration.SURFACE_STRUCTURES) {
+            the_beyond$logAuto(self, key, "F", "FLOAT_PRESERVE");
+            return;
+        }
+
+        beg.computeNoisesIfNotPresent(context.randomState());
+        int[] spot = PancakeScan.pickEndBiomeSpotInChunk(
+                beg, chunkPos.x, chunkPos.z, context.heightAccessor(), context.randomState(), self.biomes());
+        if (spot == null) {
+            the_beyond$logAuto(self, key, "B", "REJECT_no_pancake");
+            cir.setReturnValue(Optional.empty());              // no fitting pancake in this cell → no structure
+            return;
+        }
+        the_beyond$logAuto(self, key, "B", "REANCHOR_SEATED y=" + spot[1]);
+        BeyondForeignStructureProfiles.markAutoReanchored(key);
+        cir.setReturnValue(the_beyond$addPiecesAt(context, new BlockPos(spot[0], spot[1], spot[2])));
+    }
+
+    /** Guards against a mixed structure set running a non-End member here before vanilla's set-level filter rejects it. */
+    private static boolean the_beyond$belongsToEndBiome(Structure self, BeyondEndChunkGenerator beg) {
+        var possible = beg.getBiomeSource().possibleBiomes();
+        for (var biome : self.biomes()) {
+            if (possible.contains(biome)) return true;
+        }
+        return false;
+    }
+
+    @org.jetbrains.annotations.Nullable
+    private static ResourceLocation the_beyond$structureKey(Structure.GenerationContext context, Structure self) {
+        try {
+            return context.registryAccess().registryOrThrow(Registries.STRUCTURE).getKey(self);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    private static void the_beyond$logAuto(Structure self, @org.jetbrains.annotations.Nullable ResourceLocation key, String cls, String decision) {
+        String id = key == null ? "?" : key.toString();
+        if (BeyondGenDiagnostics.loggedAutoProfile.add(id)) {
+            com.thebeyond.TheBeyond.LOGGER.debug(
+                    "[Beyond] auto-structure {} class={} adapt={} step={} -> {}",
+                    id, cls, self.terrainAdaptation(), self.step(), decision);
+        }
+    }
+
+    private static void the_beyond$logDistributedY(ResourceLocation key, ChunkPos cp, int requestedY) {
+        String id = key == null ? "?" : key.toString();
+        if (BeyondGenDiagnostics.loggedDistributedY.add(id + "@" + cp.x + "," + cp.z)
+                && BeyondGenDiagnostics.loggedDistributedY.size() <= 40) {
+            com.thebeyond.TheBeyond.LOGGER.debug(
+                    "[Beyond] layer-distribute {} chunk=[{},{}] requestedY={}", id, cp.x, cp.z, requestedY);
+        }
     }
 
     private static List<Integer> the_beyond$floatingPlatformYs(int x, int z, int minY, int maxY) {

@@ -19,8 +19,7 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
 import net.minecraft.world.level.levelgen.synth.SimplexNoise;
 
 /** DT variant of {@link AuroraciteLayerFeature}: auroracite islands above DT's source fluid
- *  in the noise-gap cells. Biome modifier {@code mod_loaded} conditions enforce mutual
- *  exclusion with the vanilla variant. Falls back to air when DT is absent. */
+ *  in the noise-gap cells, falling back to air when DT isn't loaded. */
 public class AuroraciteLayerDTFeature extends Feature<NoneFeatureConfiguration> {
 
     private static final ResourceLocation DT_FLUID_ID = ResourceLocation.parse("dimensional_tears:dimensional_tears");
@@ -95,7 +94,7 @@ public class AuroraciteLayerDTFeature extends Feature<NoneFeatureConfiguration> 
         int minY = level.getMinBuildHeight();
         if (loggedMinY != minY) {
             loggedMinY = minY;
-            TheBeyond.LOGGER.info("[AuroraciteLayerDTFeature] placing at minY={} (level.getMinBuildHeight())", minY);
+            TheBeyond.LOGGER.info("[AuroraciteLayerDTFeature] placing at minY={}", minY);
         }
         int chunkX = origin.getX() & ~15; // align to chunk
         int chunkZ = origin.getZ() & ~15;

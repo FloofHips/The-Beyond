@@ -21,10 +21,8 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
 import java.util.ArrayList;
 import java.util.List;
 
-/** Per-pancake port of BetterEnd's {@code CrystalMountainPiece.postProcess}. Height bonus
- *  is biome-span-relative (highest Crystal-Mountains pancake in the column = full +36
- *  bonus, lowest = 0); cluster count is reduced, centers are spaced, tips capped to the
- *  next solid block above so pillars don't pierce overhead pancakes. */
+/** Per-pancake port of BetterEnd's {@code CrystalMountainPiece.postProcess}, scaling the
+ *  height bonus by how high this pancake sits in the column's Crystal-Mountains span. */
 public class AuroraCrystalClusterFeature extends Feature<NoneFeatureConfiguration> {
     private static final TagKey<Biome> CRYSTAL_MOUNTAINS_TAG = TagKey.create(
             Registries.BIOME,

@@ -11,10 +11,8 @@ import org.junit.jupiter.params.provider.CsvSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Contract tests for {@link BeyondTerrainParams} construction and codec
- * validation. Locks the validation bounds so datapack authors can't silently
- * produce a broken dimension; a loosening refactor must explicitly update
- * both the class and these tests.
+ * Locks {@link BeyondTerrainParams}'s validation bounds so a datapack can't silently produce a broken dimension;
+ * loosening the bounds means updating both the class and these tests.
  */
 class BeyondTerrainParamsTest {
 
@@ -37,7 +35,7 @@ class BeyondTerrainParamsTest {
             "250000, 501.0, 0.001",   // amplitude above max
             "250000, 50.0,  0.0",     // scale zero
             "250000, 50.0,  0.011",   // scale above max
-            "100,    50.0,  0.001",   // wrap tiny, amplitude vs wrap sanity still
+            "100,    50.0,  0.001",   // wrap too small for its own amplitude sanity check
             "100000, 100001.0, 0.001" // amplitude > wrap_range (pathological)
     })
     void outOfRangeValuesThrow(int wrap, double amp, double scale) {
