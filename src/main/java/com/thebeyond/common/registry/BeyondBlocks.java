@@ -287,6 +287,13 @@ public class BeyondBlocks {
                     .sound(SoundType.TUFF))
     );
 
+    public static final DeferredBlock<Block> BRITTLE_METAL = registerBlock("brittle_metal",
+            () -> new BrittleMetalBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                    .strength(0.5F, 0.5F)
+                    .sound(SoundType.COPPER_GRATE))
+    );
+
     public static final DeferredBlock<Block> PROJECTOR = registerBlock("projector", () -> new ProjectorBlock(BlockBehaviour.Properties.of()
             .mapColor(MapColor.TERRACOTTA_WHITE)
             .strength(1.5F)

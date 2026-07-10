@@ -99,6 +99,9 @@ public class BeyondItems {
     public static final DeferredItem<Item> REMEMBRANCE_HAND     = registerRemembrance("hand_remembrance");
     public static final DeferredItem<Item> REMEMBRANCE_CLOTH    = registerRemembrance("cloth_remembrance");
 
+    public static final DeferredItem<Item> BRITTLE_METAL_SHEET = registerItem("brittle_metal_sheet", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> PRISMUTH = registerItem("prismuth", () -> new Item(new Item.Properties()));
+
     @SuppressWarnings("unchecked")
     public static <T extends Item> DeferredItem<T> registerItem(final String name, final Supplier<? extends Item> item) {
         DeferredItem<Item> toReturn = ITEMS.register(name, item);

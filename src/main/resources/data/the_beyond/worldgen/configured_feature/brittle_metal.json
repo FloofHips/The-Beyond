@@ -2,7 +2,7 @@
   "type": "minecraft:delta_feature",
   "config": {
     "contents": {
-      "Name": "the_beyond:nacre"
+      "Name": "the_beyond:brittle_metal"
     },
     "rim": {
       "Name": "the_beyond:gaussanite"
