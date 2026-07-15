@@ -45,6 +45,18 @@ public class ItemModels extends ItemModelProvider {
         items.remove(BeyondBlocks.AMPHORA.asItem());
         items.remove(BeyondItems.PINHOLE_CAMERA.asItem());
 
+        items.remove(BeyondItems.BRITTLE_SWORD.asItem());
+        items.remove(BeyondItems.BRITTLE_SHOVEL.asItem());
+        items.remove(BeyondItems.BRITTLE_AXE.asItem());
+        items.remove(BeyondItems.BRITTLE_HOE.asItem());
+        items.remove(BeyondItems.BRITTLE_PICKAXE.asItem());
+
+        handheldItem(BeyondItems.BRITTLE_SWORD.asItem());
+        handheldItem(BeyondItems.BRITTLE_SHOVEL.asItem());
+        handheldItem(BeyondItems.BRITTLE_AXE.asItem());
+        handheldItem(BeyondItems.BRITTLE_HOE.asItem());
+        handheldItem(BeyondItems.BRITTLE_PICKAXE.asItem());
+
         itemGeneratedModel(BeyondBlocks.VOID_CRYSTAL.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/void_crystal"));
         itemGeneratedModel(BeyondBlocks.OBIROOT_ARM.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/obiroot_arm"));
         //itemGeneratedModel(BeyondBlocks.VOID_FLAME.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/void_flame"));

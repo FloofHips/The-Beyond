@@ -27,9 +27,6 @@ public class BeyondItems {
 
     public static final DeferredItem<Item> FERROPETAL = registerItem("ferropetal", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> MAGNET = registerItem("magnet", () -> new MagnetItem(new Item.Properties().stacksTo(1), 8));
-    // Block-click places the camera block; in-air or sneaking shoots it handheld.
-    public static final DeferredItem<Item> PINHOLE_CAMERA = registerItem("pinhole_camera", () -> new CameraBlockItem(BeyondBlocks.CAMERA.get(), new Item.Properties().stacksTo(1)));
-    public static final DeferredItem<Item> SNAPSHOT = registerItem("snapshot", () -> new SnapshotItem(new Item.Properties().stacksTo(16).rarity(BeyondEnums.REMEMBRANCE.getValue())));
     public static final DeferredItem<Item> FERROJELLY = registerItem("ferrojelly", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> MAGNOLILLY = registerItem("magnolilly", () -> new PlaceOnWaterBlockItem(BeyondBlocks.MAGNOLILLY.get(), new Item.Properties()));
 
@@ -101,6 +98,16 @@ public class BeyondItems {
 
     public static final DeferredItem<Item> BRITTLE_METAL_SHEET = registerItem("brittle_metal_sheet", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> PRISMUTH = registerItem("prismuth", () -> new Item(new Item.Properties()));
+
+    public static final DeferredItem<Item> BRITTLE_SWORD = registerItem("brittle_sword", () -> new SwordItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(SwordItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 3, -2.4F))));
+    public static final DeferredItem<Item> BRITTLE_SHOVEL = registerItem("brittle_shovel", () -> new ShovelItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(ShovelItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 1.5F, -3.0F))));
+    public static final DeferredItem<Item> BRITTLE_PICKAXE = registerItem("brittle_pickaxe", () -> new PickaxeItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(PickaxeItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 1.0F, -2.8F))));
+    public static final DeferredItem<Item> BRITTLE_AXE = registerItem("brittle_axe", () -> new AxeItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(AxeItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 6.0F, -3.0F))));
+    public static final DeferredItem<Item> BRITTLE_HOE = registerItem("brittle_hoe", () -> new HoeItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(HoeItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 0.0F, -3.0F))));
+
+    // Block-click places the camera block; in-air or sneaking shoots it handheld.
+    public static final DeferredItem<Item> PINHOLE_CAMERA = registerItem("pinhole_camera", () -> new CameraBlockItem(BeyondBlocks.CAMERA.get(), new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> SNAPSHOT = registerItem("snapshot", () -> new SnapshotItem(new Item.Properties().stacksTo(16).rarity(BeyondEnums.REMEMBRANCE.getValue())));
 
     @SuppressWarnings("unchecked")
     public static <T extends Item> DeferredItem<T> registerItem(final String name, final Supplier<? extends Item> item) {
