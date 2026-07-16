@@ -218,11 +218,8 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
     public void computeNoisesIfNotPresent(RandomState randomState) {
         if (simplexNoise == null || biomeSimplexNoise == null || warpZSimplexNoise == null || globalHOffsetNoise == null || globalVOffsetNoise == null || globalCOffsetNoise == null) {
-            if (seed == 1) {
-                WorldSeedHolder holder = (WorldSeedHolder) (Object) randomState;
-                seed = holder.the_Beyond$getWorldSeed();
-            }
-            computeNoisesIfNotPresent(seed);
+            long worldSeed = ((WorldSeedHolder) (Object) randomState).the_Beyond$getWorldSeed();
+            computeNoisesIfNotPresent(worldSeed);
         }
     }
 
@@ -230,6 +227,8 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         if (simplexNoise == null || biomeSimplexNoise == null || warpZSimplexNoise == null || globalHOffsetNoise == null || globalVOffsetNoise == null || globalCOffsetNoise == null) {
             synchronized (BeyondEndChunkGenerator.class) {
                 if (simplexNoise == null || biomeSimplexNoise == null || warpZSimplexNoise == null || globalHOffsetNoise == null || globalVOffsetNoise == null || globalCOffsetNoise == null) {
+
+                    seed = worldSeed;
                     // Sequential worldSeed offsets, next free = +6 — never reuse a prior offset.
                     RandomSource random1 = RandomSource.create(worldSeed);
                     RandomSource random2 = RandomSource.create(worldSeed + 1);
@@ -258,6 +257,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             globalVOffsetNoise = null;
             globalCOffsetNoise = null;
             activeTerrainParams = BeyondTerrainParams.DEFAULTS;
+            seed = 1;
         }
     }
 
