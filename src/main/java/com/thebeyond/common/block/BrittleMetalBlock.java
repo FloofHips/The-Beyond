@@ -30,6 +30,9 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class BrittleMetalBlock extends Block {
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
 
@@ -50,8 +53,9 @@ public class BrittleMetalBlock extends Block {
 
     @Override
     public void stepOn(Level level, BlockPos pos, BlockState state, Entity entity) {
-        if (state.getValue(POWERED) || !(entity instanceof Player)) return;
-        level.scheduleTick(pos, this, 20);
+        if (!(entity instanceof Player)) return;
+        if (!state.getValue(POWERED)) level.scheduleTick(pos, this, 20);
+        else if (level.random.nextBoolean()) level.scheduleTick(pos, this, 20);
         level.playSound(null, pos, SoundEvents.COPPER_BULB_BREAK, SoundSource.BLOCKS);
     }
 
@@ -60,7 +64,8 @@ public class BrittleMetalBlock extends Block {
         super.tick(state, level, pos, random);
         level.playSound(null, pos, SoundEvents.IRON_GOLEM_DAMAGE, SoundSource.BLOCKS);
         level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.BRITTLE_METAL.get().defaultBlockState()), pos.getX()+0.5f, pos.getY()+1.2f, pos.getZ()+0.5f, 10, 0.5F, 0.5F, 0.5F, 0.1F);
-        level.setBlockAndUpdate(pos, BeyondBlocks.BRITTLE_METAL.get().defaultBlockState().setValue(POWERED, true));
+        BlockState blockState = !state.getValue(POWERED) ? BeyondBlocks.BRITTLE_METAL.get().defaultBlockState().setValue(POWERED, true) : BeyondBlocks.MOLTEN_METAL.get().defaultBlockState();
+        level.setBlockAndUpdate(pos, blockState);
     }
 
     @Override
@@ -87,13 +92,13 @@ public class BrittleMetalBlock extends Block {
             serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.BRITTLE_METAL.get().defaultBlockState()), pos.getX()+0.5f, pos.getY()+1.2f, pos.getZ()+0.5f, 5, 0.5F, 0.5F, 0.5F, 0.0F);
             if (itemStack.isEmpty()) return super.useWithoutItem(state, level, pos, player, hitResult);
 
-            for (int x = -1; x <= 1; x++) {
-                for (int z = -1; z <= 1; z++) {
-                    level.destroyBlock(pos.offset(x, 0, z), false);
-                }
-            }
+            //for (int x = -1; x <= 1; x++) {
+            //    for (int z = -1; z <= 1; z++) {
+            //        level.destroyBlock(pos.offset(x, 0, z), false);
+            //    }
+            //}
 
-            ItemEntity entity = new ItemEntity(level, pos.getX(), pos.getY() + 1, pos.getZ(), itemStack);
+            ItemEntity entity = new ItemEntity(level, pos.getX() + 0.5f, pos.getY() + 1, pos.getZ() + 0.5f, itemStack);
             level.addFreshEntity(entity);
             entity.setDeltaMovement(entity.getDeltaMovement().add(0,0.1,0));
 
@@ -123,7 +128,7 @@ public class BrittleMetalBlock extends Block {
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return state.getValue(POWERED) ? Block.box((double)0.0F, (double)0.0F, (double)0.0F, (double)16.0F, (double)14.0F, (double)16.0F) : Block.box((double)0.0F, (double)0.0F, (double)0.0F, (double)16.0F, (double)15.0F, (double)16.0F);
+        return state.getValue(POWERED) ? Block.box((double)0.0F, (double)0.0F, (double)0.0F, (double)16.0F, (double)13.0F, (double)16.0F) : Block.box((double)0.0F, (double)0.0F, (double)0.0F, (double)16.0F, (double)15.0F, (double)16.0F);
     }
 
     @Override
@@ -133,7 +138,7 @@ public class BrittleMetalBlock extends Block {
 
     public ItemStack determineTool(BlockGetter level, BlockPos pos, Direction dir) {
         StringBuilder pattern = new StringBuilder();
-
+        List<BlockPos> toBreak = new ArrayList<>();
         Direction left = dir.getClockWise();
         Direction forward = dir;
 
@@ -145,19 +150,43 @@ public class BrittleMetalBlock extends Block {
 
                 boolean isPowered = level.getBlockState(checkPos).getValue(POWERED);
                 pattern.append(isPowered ? "0" : "1");
+                if (!isPowered || col==0) toBreak.add(checkPos);
             }
         }
+
+        ItemStack stack = ItemStack.EMPTY;
 
         String current = pattern.toString();
 
         switch (current) {
-            case pickaxe: return new ItemStack(BeyondItems.BRITTLE_PICKAXE.get());
-            case axe, axe_2: return new ItemStack(BeyondItems.BRITTLE_AXE.get());
-            case hoe, hoe_2: return new ItemStack(BeyondItems.BRITTLE_HOE.get());
-            case shovel: return new ItemStack(BeyondItems.BRITTLE_SHOVEL.get());
-            case sword: return new ItemStack(BeyondItems.BRITTLE_SWORD.get());
+            case pickaxe: {
+                stack = new ItemStack(BeyondItems.BRITTLE_PICKAXE.get());
+                break;
+            }
+            case axe, axe_2: {
+                stack = new ItemStack(BeyondItems.BRITTLE_AXE.get());
+                break;
+            }
+            case hoe, hoe_2: {
+                stack = new ItemStack(BeyondItems.BRITTLE_HOE.get());
+                break;
+            }
+            case shovel: {
+                stack = new ItemStack(BeyondItems.BRITTLE_SHOVEL.get());
+                break;
+            }
+            case sword: {
+                stack = new ItemStack(BeyondItems.BRITTLE_SWORD.get());
+                break;
+            }
         }
 
-        return ItemStack.EMPTY;
+        if (!stack.isEmpty() && !toBreak.isEmpty()) {
+            for (BlockPos position : toBreak) {
+                if (level instanceof ServerLevel serverLevel) serverLevel.setBlock(position, BeyondBlocks.MOLTEN_METAL.get().defaultBlockState(),3);
+            }
+        }
+
+        return stack;
     }
 }

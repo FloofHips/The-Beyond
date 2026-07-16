@@ -60,10 +60,10 @@ public class GaussVentBlock extends Block {
         if (random.nextInt(10) < 2) level.playSound(null, pos, SoundEvents.SOUL_ESCAPE.value(), SoundSource.BLOCKS);
 
         if (isBig(level, pos)) {
-            PacketDistributor.sendToPlayersNear(level, null, pos.getX(), pos.getY(), pos.getZ(), 64, new GaussVentParticlePayload(pos, true));
+            PacketDistributor.sendToPlayersNear(level, null, pos.getX(), pos.getY(), pos.getZ(), 128, new GaussVentParticlePayload(pos, true));
             BellowBlock.serverPush(level, pos, state, 15, 40, Direction.UP);
         } else {
-            PacketDistributor.sendToPlayersNear(level, null, pos.getX(), pos.getY(), pos.getZ(), 32, new GaussVentParticlePayload(pos, false));
+            PacketDistributor.sendToPlayersNear(level, null, pos.getX(), pos.getY(), pos.getZ(), 64, new GaussVentParticlePayload(pos, false));
             BellowBlock.serverPush(level, pos, state, 15, 15, Direction.UP);
         }
 

@@ -5,7 +5,7 @@
       "Name": "the_beyond:brittle_metal"
     },
     "rim": {
-      "Name": "the_beyond:gaussanite"
+      "Name": "the_beyond:brittle_metal"
     },
     "rim_size": {
       "type": "minecraft:constant",
