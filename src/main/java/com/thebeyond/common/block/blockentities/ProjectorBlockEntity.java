@@ -3,7 +3,6 @@ package com.thebeyond.common.block.blockentities;
 import com.thebeyond.api.compat.BeyondCompatHooks;
 import com.thebeyond.common.block.ProjectorAcceptance;
 import com.thebeyond.common.block.ProjectorBlock;
-import com.thebeyond.common.camera.Grades;
 import com.thebeyond.common.data.BeyondDataMapTypes;
 import com.thebeyond.common.data.ProjectorTexture;
 import com.thebeyond.common.registry.BeyondBlockEntities;
@@ -70,7 +69,6 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
     private int carouselPeriod = 40; // ticks
     private boolean flipped = false;
     private int rotation = 0;         // quarter-turns 0..3, independent of world facing
-    private ResourceLocation gradeId = Grades.AS_PHOTO;
 
     private int tickCounter;
 
@@ -164,10 +162,6 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
         setChanged();
     }
 
-    public ResourceLocation getGradeId() {
-        return gradeId;
-    }
-
     /** No clamp: render wraps the index modulo the filled-slot count. */
     public void advanceCarousel() {
         carouselIndex++;
@@ -196,11 +190,6 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
 
     public void toggleFlipped() {
         setFlipped(!this.flipped);
-    }
-
-    public void setGradeId(ResourceLocation id) {
-        this.gradeId = id;
-        setChanged();
     }
 
     public boolean isGroupComplete(ResourceLocation group) {
@@ -355,22 +344,6 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
         carouselPeriod = tag.contains("CarouselPeriod") ? tag.getInt("CarouselPeriod") : 40;
         flipped = tag.getBoolean("Flipped");
         rotation = Math.floorMod(tag.getInt("Rotation"), 4);
-        gradeId = gradeIdFromNbt(tag.getString("Grade"));
-    }
-
-    /** Legacy enum names migrate to built-in grade ids; new saves store the id directly. */
-    private static ResourceLocation gradeIdFromNbt(String s) {
-        if (s == null || s.isEmpty()) {
-            return Grades.AS_PHOTO;
-        }
-        switch (s) {
-            case "NONE": return Grades.NONE;
-            case "SEPIA": return Grades.SEPIA;
-            case "BLUE": return Grades.BLUE;
-            default:
-                ResourceLocation rl = ResourceLocation.tryParse(s);
-                return rl != null ? rl : Grades.AS_PHOTO;
-        }
     }
 
     @Override
@@ -383,7 +356,6 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
         tag.putInt("CarouselPeriod", carouselPeriod);
         tag.putBoolean("Flipped", flipped);
         tag.putInt("Rotation", rotation);
-        tag.putString("Grade", gradeId.toString());
     }
 
     @Override

@@ -11,7 +11,9 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.compat.ShaderCompatLib;
-import com.thebeyond.common.camera.SnapshotGrade;
+import com.thebeyond.client.renderer.blockentities.ProjectorGradeLut;
+import com.thebeyond.common.camera.Grade;
+import com.thebeyond.common.camera.Grades;
 import com.thebeyond.common.registry.BeyondShaders;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -35,18 +37,18 @@ public final class ItemIconTextures {
 
     private static final class Key {
         final ItemStack stack;
-        final SnapshotGrade grade;
+        final ResourceLocation gradeId;
         private final int hash;
 
-        Key(ItemStack stack, SnapshotGrade grade) {
+        Key(ItemStack stack, ResourceLocation gradeId) {
             this.stack = stack;
-            this.grade = grade;
-            this.hash = 31 * ItemStack.hashItemAndComponents(stack) + grade.ordinal();
+            this.gradeId = gradeId;
+            this.hash = 31 * ItemStack.hashItemAndComponents(stack) + gradeId.hashCode();
         }
 
         @Override
         public boolean equals(Object o) {
-            return o instanceof Key k && grade == k.grade && ItemStack.isSameItemSameComponents(stack, k.stack);
+            return o instanceof Key k && gradeId.equals(k.gradeId) && ItemStack.isSameItemSameComponents(stack, k.stack);
         }
 
         @Override
@@ -59,16 +61,16 @@ public final class ItemIconTextures {
         final ResourceLocation loc;
         final FboTexture fbo = new FboTexture();
         final ItemStack stack;
-        final SnapshotGrade grade;
+        final ResourceLocation gradeId;
         TextureTarget target;
-        TextureTarget gradeTarget;  // populated only when grade != NONE and the shader loaded
+        TextureTarget gradeTarget;  // populated only when the grade tints and the shader loaded
         long lastRequestedFrame;
         boolean valid;
 
-        Slot(ResourceLocation loc, ItemStack stack, SnapshotGrade grade) {
+        Slot(ResourceLocation loc, ItemStack stack, ResourceLocation gradeId) {
             this.loc = loc;
             this.stack = stack;
-            this.grade = grade;
+            this.gradeId = gradeId;
         }
 
         void free() {
@@ -105,19 +107,29 @@ public final class ItemIconTextures {
     }
 
     /** Null until its FBO has rendered at least once. */
-    public static ResourceLocation get(ItemStack stack, SnapshotGrade grade) {
+    public static ResourceLocation get(ItemStack stack, ResourceLocation gradeId) {
         if (stack.isEmpty()) {
             return null;
         }
-        Slot slot = POOL.get(new Key(stack, grade));
+        Slot slot = POOL.get(new Key(stack, gradeId));
         if (slot == null) {
             ItemStack copy = stack.copy();
             ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "dynamic/item_icon/" + (idCounter++));
-            slot = new Slot(loc, copy, grade);
-            POOL.put(new Key(copy, grade), slot);
+            slot = new Slot(loc, copy, gradeId);
+            POOL.put(new Key(copy, gradeId), slot);
         }
         slot.lastRequestedFrame = frame;
         return slot.valid ? slot.loc : null;
+    }
+
+    /** Resolved grade for a slot, or null if the client registry isn't available yet. */
+    private static Grade gradeOf(Slot slot) {
+        Minecraft mc = Minecraft.getInstance();
+        return mc.level != null ? Grades.resolve(mc.level.registryAccess(), slot.gradeId) : null;
+    }
+
+    private static boolean tints(Grade grade) {
+        return grade != null && grade.stops().length > 0;
     }
 
     /** Call from {@code RenderFrameEvent.Pre}, client thread. */
@@ -150,7 +162,7 @@ public final class ItemIconTextures {
             for (Slot slot : POOL.values()) {
                 if (frame - slot.lastRequestedFrame <= RENDER_GRACE) {
                     renderRaw(slot, gg);
-                    anyGraded |= slot.grade != SnapshotGrade.NONE;
+                    anyGraded |= tints(gradeOf(slot));
                 }
             }
 
@@ -163,7 +175,7 @@ public final class ItemIconTextures {
                 RenderSystem.disableDepthTest();
                 RenderSystem.disableBlend();
                 for (Slot slot : POOL.values()) {
-                    if (slot.grade != SnapshotGrade.NONE && frame - slot.lastRequestedFrame <= RENDER_GRACE) {
+                    if (frame - slot.lastRequestedFrame <= RENDER_GRACE && tints(gradeOf(slot))) {
                         gradeBlit(slot);
                     }
                 }
@@ -202,12 +214,16 @@ public final class ItemIconTextures {
         slot.valid = true;
     }
 
-    /** On shader miss the slot keeps the raw icon. */
+    /** On shader/LUT miss the slot keeps the raw icon. */
     private static void gradeBlit(Slot slot) {
-        ShaderInstance shader = slot.grade == SnapshotGrade.SEPIA ? BeyondShaders.getProjectorGradeSepia()
-                : slot.grade == SnapshotGrade.BLUE ? BeyondShaders.getProjectorGradeBlue() : null;
+        ShaderInstance shader = BeyondShaders.getProjectorGradeData();
         if (shader == null) {
             return;
+        }
+        Grade grade = gradeOf(slot);
+        ResourceLocation lut = ProjectorGradeLut.get(slot.gradeId, grade);
+        if (lut == null) {
+            return; // passthrough grade -> keep the raw icon
         }
         if (slot.gradeTarget == null) {
             slot.gradeTarget = new TextureTarget(SIZE, SIZE, false, OSX);
@@ -218,7 +234,9 @@ public final class ItemIconTextures {
         slot.gradeTarget.bindWrite(true);
 
         RenderSystem.setShaderTexture(0, slot.target.getColorTextureId());
+        RenderSystem.setShaderTexture(1, lut);
         RenderSystem.setShader(() -> shader);
+        shader.safeGetUniform("Strength").set(grade.strength());
         BufferBuilder bb = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
         bb.addVertex(-1f, -1f, 0f).setUv(0f, 0f);
         bb.addVertex(1f, -1f, 0f).setUv(1f, 0f);
@@ -235,5 +253,6 @@ public final class ItemIconTextures {
             it.next().free();
             it.remove();
         }
+        ProjectorGradeLut.clear();
     }
 }

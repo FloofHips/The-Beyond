@@ -111,7 +111,7 @@ public final class ProjectorDeferredDecal {
     private static void drawProjectorSlots(ShaderInstance shader, ProjectorBlockEntity be, boolean postFinal) {
         NonNullList<ItemStack> items = be.getItems();
         int mode = be.getMode();
-        ResourceLocation gradeId = be.getGradeId();
+        ResourceLocation gradeId = ProjectorRenderer.frontGlassGradeId(be);
         int[] filled = be.filledSlots();
         int f = filled.length;
         if (f == 0) {

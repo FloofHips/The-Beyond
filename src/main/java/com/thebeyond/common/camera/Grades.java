@@ -4,13 +4,16 @@ import com.thebeyond.TheBeyond;
 import com.thebeyond.common.registry.BeyondComponents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.BeaconBeamBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.EnumMap;
+import java.util.Map;
 
 /** Keys, built-in ids, and resolution helpers for the data-driven snapshot-filter registry {@code the_beyond:grade}. */
 public final class Grades {
@@ -27,7 +30,22 @@ public final class Grades {
     /** Passthrough, used when an id is missing or the registry is not yet available. */
     private static final Grade FALLBACK = new Grade(new int[0][], 0f);
 
+    /** A missing glass_<dye> palette resolves to passthrough, not a crash. */
+    private static final Map<DyeColor, ResourceLocation> GLASS_GRADES = new EnumMap<>(DyeColor.class);
+
+    static {
+        for (DyeColor c : DyeColor.values()) {
+            GLASS_GRADES.put(c, id("glass_" + c.getSerializedName()));
+        }
+    }
+
     private Grades() {
+    }
+
+    /** Stained-glass blocks and panes both implement BeaconBeamBlock; null for anything without a dye. */
+    @Nullable
+    public static ResourceLocation glassGradeId(BlockState state) {
+        return state.getBlock() instanceof BeaconBeamBlock beam ? GLASS_GRADES.get(beam.getColor()) : null;
     }
 
     /** The grade a photo carries ({@code SNAPSHOT_GRADE}), defaulting to {@link #SEPIA} when unset. */
@@ -49,19 +67,4 @@ public final class Grades {
         return g != null ? g : FALLBACK;
     }
 
-    /** Projector cycle order: AS_PHOTO first, then the registry's grades sorted by id (deterministic across sides). */
-    public static List<ResourceLocation> cycleOrder(RegistryAccess access) {
-        List<ResourceLocation> out = new ArrayList<>();
-        out.add(AS_PHOTO);
-        if (access != null) {
-            access.registryOrThrow(REGISTRY).keySet().stream().sorted().forEach(out::add);
-        }
-        return out;
-    }
-
-    /** GUI label; resolves {@code grade.<namespace>.<path>} with a fallback to the path. */
-    public static Component label(ResourceLocation gradeId) {
-        return Component.translatableWithFallback(
-                "grade." + gradeId.getNamespace() + "." + gradeId.getPath(), gradeId.getPath());
-    }
 }

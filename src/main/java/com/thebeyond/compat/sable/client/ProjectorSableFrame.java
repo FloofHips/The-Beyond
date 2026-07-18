@@ -85,11 +85,20 @@ public final class ProjectorSableFrame {
             if (dist < 1.0e-4) {
                 return 1.0;
             }
-            BlockHitResult hit = rawClip(level, eye, p);
-            if (hit.getType() == HitResult.Type.MISS || hit.getBlockPos().equals(self)) {
-                return 1.0;
+            Vec3 dir = rel.scale(1.0 / dist);
+            Vec3 from = eye;
+            for (int i = 0; i < 5; i++) {
+                BlockHitResult hit = rawClip(level, from, p);
+                if (hit.getType() == HitResult.Type.MISS || hit.getBlockPos().equals(self)) {
+                    return 1.0;
+                }
+                if (ProjectorRenderer.isLightTransmitting(level.getBlockState(hit.getBlockPos()))) {
+                    from = hit.getLocation().add(dir.scale(1.0e-3)); // glass is not an occluder
+                    continue;
+                }
+                return hit.getLocation().distanceTo(eye) < dist - 0.06 ? 0.0 : 1.0; // 0.06 = ProjectorRenderer.OCC_EPS
             }
-            return hit.getLocation().distanceTo(eye) < dist - 0.06 ? 0.0 : 1.0; // 0.06 = ProjectorRenderer.OCC_EPS
+            return 1.0;
         } catch (Throwable t) {
             return 1.0;
         }

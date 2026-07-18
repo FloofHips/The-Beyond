@@ -45,8 +45,17 @@ public record Grade(int[][] stops, float strength) {
         if (stops.length == 0) {
             return 0xFF000000 | (b << 16) | (g << 8) | r;
         }
-        float lum = (0.299f * r + 0.587f * g + 0.114f * b) / 255f;
-        float pos = Math.max(0f, Math.min(1f, lum)) * (stops.length - 1);
+        int t = rampRgb((0.299f * r + 0.587f * g + 0.114f * b) / 255f);
+        int tr = (t >> 16) & 0xFF, tg = (t >> 8) & 0xFF, tb = t & 0xFF;
+        int nr = (int) (r + (tr - r) * strength);
+        int ng = (int) (g + (tg - g) * strength);
+        int nb = (int) (b + (tb - b) * strength);
+        return 0xFF000000 | (nb << 16) | (ng << 8) | nr;
+    }
+
+    /** Pure ramp colour at luminance {@code l}, packed 0xRRGGBB; caller guarantees at least one stop. */
+    public int rampRgb(float l) {
+        float pos = Math.max(0f, Math.min(1f, l)) * (stops.length - 1);
         int idx = Math.min((int) pos, stops.length - 2);
         if (idx < 0) {
             idx = 0; // single-stop grade: flat tint
@@ -56,9 +65,6 @@ public record Grade(int[][] stops, float strength) {
         int tr = (int) (stops[idx][0] + (stops[hi][0] - stops[idx][0]) * f);
         int tg = (int) (stops[idx][1] + (stops[hi][1] - stops[idx][1]) * f);
         int tb = (int) (stops[idx][2] + (stops[hi][2] - stops[idx][2]) * f);
-        int nr = (int) (r + (tr - r) * strength);
-        int ng = (int) (g + (tg - g) * strength);
-        int nb = (int) (b + (tb - b) * strength);
-        return 0xFF000000 | (nb << 16) | (ng << 8) | nr;
+        return (tr << 16) | (tg << 8) | tb;
     }
 }

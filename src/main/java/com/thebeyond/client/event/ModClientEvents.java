@@ -288,11 +288,8 @@ public class ModClientEvents {
                     ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_mirror"),
                     DefaultVertexFormat.POSITION_COLOR), BeyondShaders::setMirror);
             event.registerShader(new ShaderInstance(event.getResourceProvider(),
-                    ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_projector_grade_sepia"),
-                    DefaultVertexFormat.POSITION_TEX), BeyondShaders::setProjectorGradeSepia);
-            event.registerShader(new ShaderInstance(event.getResourceProvider(),
-                    ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_projector_grade_blue"),
-                    DefaultVertexFormat.POSITION_TEX), BeyondShaders::setProjectorGradeBlue);
+                    ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_projector_grade_data"),
+                    DefaultVertexFormat.POSITION_TEX), BeyondShaders::setProjectorGradeData);
             event.registerShader(new ShaderInstance(event.getResourceProvider(),
                     ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_projector_dist"),
                     DefaultVertexFormat.POSITION_TEX), BeyondShaders::setProjectorDist);

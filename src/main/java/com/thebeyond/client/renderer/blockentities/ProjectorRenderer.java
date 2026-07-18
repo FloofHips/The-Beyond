@@ -6,7 +6,6 @@ import com.thebeyond.client.compat.ShaderCompatLib;
 import com.thebeyond.common.block.ProjectorBlock;
 import com.thebeyond.common.block.blockentities.ProjectorBlockEntity;
 import com.thebeyond.common.camera.Grades;
-import com.thebeyond.common.camera.SnapshotGrade;
 import com.thebeyond.common.data.BeyondDataMapTypes;
 import com.thebeyond.common.data.ProjectorTexture;
 import com.thebeyond.common.item.components.Components;
@@ -99,6 +98,9 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
     static boolean DIAG_CONTRAPTION = true;
     private static final Set<BlockPos> DIAG_LOGGED = ConcurrentHashMap.newKeySet();
 
+    static boolean DIAG_GLASS_TONE = true;
+    private static final ConcurrentHashMap<BlockPos, ResourceLocation> DIAG_LAST_TONE = new ConcurrentHashMap<>();
+
     static final double MAX_THROW = 16.0; // beam reach (blocks); shared with the depth-map passes. Cosmetic look knobs live in ProjectorTunables.
     private static final double SURFACE_EPS = 0.003;  // float just off the hit surface
     private static final int FULL_BRIGHT = 15728880;
@@ -144,10 +146,25 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
     }
 
     /** Glass-family blocks let the beam pass through. Deliberately NOT {@code !canOcclude()} — fences/stairs must still block. */
-    static boolean isLightTransmitting(BlockState st) {
+    public static boolean isLightTransmitting(BlockState st) {
         return st.getBlock() instanceof TransparentBlock
                 || st.is(Tags.Blocks.GLASS_BLOCKS)
                 || st.is(Tags.Blocks.GLASS_PANES);
+    }
+
+    /** Grade of a stained-glass block/pane glued to the front, else AS_PHOTO. getBlockState, never level.clip (Sable rewrites clip). */
+    static ResourceLocation frontGlassGradeId(ProjectorBlockEntity be) {
+        Level level = be.getLevel();
+        if (level == null) {
+            return Grades.AS_PHOTO;
+        }
+        BlockState fg = level.getBlockState(ProjectorBlock.frontOrigin(be.getBlockPos(), be.getBlockState()));
+        ResourceLocation id = Grades.glassGradeId(fg);
+        ResourceLocation tone = (id != null && isLightTransmitting(fg)) ? id : Grades.AS_PHOTO;
+        if (DIAG_GLASS_TONE && !tone.equals(DIAG_LAST_TONE.put(be.getBlockPos(), tone))) {
+            TheBeyond.LOGGER.info("[Projector tone] be@{} front={} -> {}", be.getBlockPos(), fg.getBlock(), tone);
+        }
+        return tone;
     }
 
     /** True when a full-block light source sits directly behind the lens (a torch or lantern is not enough). */
@@ -274,7 +291,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         double ox = pos.getX(), oy = pos.getY(), oz = pos.getZ();
 
         int mode = be.getMode();
-        ResourceLocation gradeId = be.getGradeId();
+        ResourceLocation gradeId = frontGlassGradeId(be);
         int[] filled = be.filledSlots();
         int f = filled.length;
         if (f == 0) {
@@ -541,8 +558,8 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
                     }
                     mp.set(x, y, z);
                     BlockState st = level.getBlockState(mp);
-                    if (st.isAir() || st.canBeReplaced()) {
-                        continue; // pass through air + vegetation/fluids
+                    if (st.isAir() || st.canBeReplaced() || isLightTransmitting(st)) {
+                        continue; // pass through air + vegetation/fluids + glass
                     }
                     for (ModelQuad q : modelQuads(st)) {
                         if (q.cull() >= 0) {
@@ -702,13 +719,22 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
             return false;
         }
         Vec3 dir = rel.scale(1.0 / dist);
+        Vec3 end = eye.add(dir.scale(dist + 0.5));
+        Vec3 from = eye;
         try {
-            BlockHitResult hit = level.clip(new ClipContext(eye, eye.add(dir.scale(dist + 0.5)),
-                    ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, CollisionContext.empty()));
-            if (hit.getType() == HitResult.Type.MISS || hit.getBlockPos().equals(self)) {
-                return false; // the quad's own collider must not self-occlude
+            for (int i = 0; i < 5; i++) {
+                BlockHitResult hit = level.clip(new ClipContext(from, end,
+                        ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, CollisionContext.empty()));
+                if (hit.getType() == HitResult.Type.MISS || hit.getBlockPos().equals(self)) {
+                    return false; // the quad's own collider must not self-occlude
+                }
+                if (isLightTransmitting(level.getBlockState(hit.getBlockPos()))) {
+                    from = hit.getLocation().add(dir.scale(1.0e-3)); // glass is not an occluder
+                    continue;
+                }
+                return hit.getLocation().distanceTo(eye) < dist - OCC_EPS;
             }
-            return hit.getLocation().distanceTo(eye) < dist - OCC_EPS;
+            return false;
         } catch (RuntimeException e) {
             return false;
         }
@@ -938,10 +964,10 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
 
     /** The display texture + sub-rect + opacity for a slot, or null if there's nothing (yet) to draw. */
     static Resolved resolveTexture(ItemStack stack, ResourceLocation projectorGradeId) {
-        // AS_PHOTO defers to each photo's own filter; otherwise the projector's chosen grade overrides.
-        ResourceLocation gradeId = Grades.AS_PHOTO.equals(projectorGradeId) ? Grades.photoGrade(stack) : projectorGradeId;
+        boolean asPhoto = Grades.AS_PHOTO.equals(projectorGradeId);
         Components.SnapshotPixelsComponent px = stack.get(BeyondComponents.SNAPSHOT_PIXELS.get());
         if (px != null && px.width() > 0 && px.rgb().length == px.width() * px.height() * 3) {
+            ResourceLocation gradeId = asPhoto ? Grades.photoGrade(stack) : projectorGradeId;
             return new Resolved(SnapshotTextures.get(px, gradeId), ProjectorTexture.Region.FULL, 1f, false);
         }
         ProjectorTexture pt = BeyondDataMapTypes.getProjectorTexture(stack);
@@ -949,19 +975,10 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
             return new Resolved(pt.texture(), pt.region(), pt.opacity(), false);
         }
         // Fallback: live inventory icon, null until its FBO renders; flipV since the FBO is bottom-up.
-        ResourceLocation icon = ItemIconTextures.get(stack, toGpuGrade(gradeId));
+        // Plain item has no photo to defer to, so no-glass (AS_PHOTO) stays untinted.
+        ResourceLocation gradeId = asPhoto ? Grades.NONE : projectorGradeId;
+        ResourceLocation icon = ItemIconTextures.get(stack, gradeId);
         return icon != null ? new Resolved(icon, ProjectorTexture.Region.FULL, 1f, true) : null;
-    }
-
-    /** Maps a grade id to the built-in GPU shader key for the icon path; custom/none -> NONE (no shader). */
-    private static SnapshotGrade toGpuGrade(ResourceLocation gradeId) {
-        if (Grades.SEPIA.equals(gradeId)) {
-            return SnapshotGrade.SEPIA;
-        }
-        if (Grades.BLUE.equals(gradeId)) {
-            return SnapshotGrade.BLUE;
-        }
-        return SnapshotGrade.NONE;
     }
 
     record Resolved(ResourceLocation texture, ProjectorTexture.Region region, float opacity, boolean flipV) {

@@ -1,10 +1,8 @@
 package com.thebeyond.common.block.blockentities;
 
 import com.thebeyond.common.block.ProjectorAcceptance;
-import com.thebeyond.common.camera.Grades;
 import com.thebeyond.common.registry.BeyondMenus;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.Container;
@@ -167,9 +165,5 @@ public class ProjectorMenu extends AbstractContainerMenu {
 
     public boolean isFlipped() {
         return this.data.get(4) != 0;
-    }
-
-    public ResourceLocation getGradeId() {
-        return container instanceof ProjectorBlockEntity p ? p.getGradeId() : Grades.AS_PHOTO;
     }
 }

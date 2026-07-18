@@ -9,8 +9,7 @@ public class BeyondShaders {
     private static ShaderInstance ENTITY_DEPTH_SHADER;
     private static ShaderInstance REFUGE_GRADIENT_SHADER;
     private static ShaderInstance MIRROR_SHADER;
-    private static ShaderInstance PROJECTOR_GRADE_SEPIA_SHADER;
-    private static ShaderInstance PROJECTOR_GRADE_BLUE_SHADER;
+    private static ShaderInstance PROJECTOR_GRADE_DATA_SHADER;
     private static ShaderInstance PROJECTOR_DIST_SHADER;
     private static ShaderInstance PROJECTOR_DIST_PEEL_SHADER;
     private static ShaderInstance PROJECTOR_DIST_ENTITY_SHADER;
@@ -43,22 +42,14 @@ public class BeyondShaders {
         MIRROR_SHADER = instance;
     }
 
+    /** Data-driven item-icon grade: ramp LUT (Sampler1) blended at a Strength uniform. */
     @Nullable
-    public static ShaderInstance getProjectorGradeSepia() {
-        return PROJECTOR_GRADE_SEPIA_SHADER;
+    public static ShaderInstance getProjectorGradeData() {
+        return PROJECTOR_GRADE_DATA_SHADER;
     }
 
-    public static void setProjectorGradeSepia(ShaderInstance instance) {
-        PROJECTOR_GRADE_SEPIA_SHADER = instance;
-    }
-
-    @Nullable
-    public static ShaderInstance getProjectorGradeBlue() {
-        return PROJECTOR_GRADE_BLUE_SHADER;
-    }
-
-    public static void setProjectorGradeBlue(ShaderInstance instance) {
-        PROJECTOR_GRADE_BLUE_SHADER = instance;
+    public static void setProjectorGradeData(ShaderInstance instance) {
+        PROJECTOR_GRADE_DATA_SHADER = instance;
     }
 
     /** Writes R+G packed radial distance from the projector lens. */

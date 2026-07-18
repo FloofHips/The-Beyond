@@ -2,17 +2,13 @@ package com.thebeyond.client.gui;
 
 import com.thebeyond.common.block.blockentities.ProjectorBlockEntity;
 import com.thebeyond.common.block.blockentities.ProjectorMenu;
-import com.thebeyond.common.camera.Grades;
 import com.thebeyond.common.network.ProjectorCarouselAutoPayload;
 import com.thebeyond.common.network.ProjectorCarouselPayload;
 import com.thebeyond.common.network.ProjectorRotatePayload;
 import com.thebeyond.common.network.ProjectorFlipPayload;
-import com.thebeyond.common.network.ProjectorSetGradePayload;
 import com.thebeyond.common.network.ProjectorSetModePayload;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -28,7 +24,6 @@ public class ProjectorScreen extends AbstractContainerScreen<ProjectorMenu> {
     private Button prevButton;
     private Button nextButton;
     private Button autoButton;
-    private Button gradeButton;
 
     public ProjectorScreen(ProjectorMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -62,10 +57,6 @@ public class ProjectorScreen extends AbstractContainerScreen<ProjectorMenu> {
         addRenderableWidget(Button.builder(Component.translatable("screen.the_beyond.projector.flip"),
                         b -> PacketDistributor.sendToServer(new ProjectorFlipPayload(menu.getBlockPos())))
                 .bounds(x + 128, y + 39, 64, 18).build());
-        gradeButton = Button.builder(gradeLabel(),
-                        b -> PacketDistributor.sendToServer(new ProjectorSetGradePayload(menu.getBlockPos(), nextGradeId())))
-                .bounds(x + 128, y + 58, 64, 18).build();
-        addRenderableWidget(gradeButton);
 
         // Added unconditionally; render() toggles visibility to Carousel mode only.
         prevButton = Button.builder(Component.literal("<"),
@@ -86,16 +77,6 @@ public class ProjectorScreen extends AbstractContainerScreen<ProjectorMenu> {
         return Component.literal(menu.isCarouselAuto() ? "Auto: On" : "Auto: Off");
     }
 
-    private Component gradeLabel() {
-        return Component.translatable("screen.the_beyond.projector.tone").append(Grades.label(menu.getGradeId()));
-    }
-
-    private ResourceLocation nextGradeId() {
-        var cycle = Grades.cycleOrder(Minecraft.getInstance().level.registryAccess());
-        int idx = Math.max(0, cycle.indexOf(menu.getGradeId()));
-        return cycle.get((idx + 1) % cycle.size());
-    }
-
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         // Sync before super.render, else a button hidden this frame could still intercept the click.
@@ -107,7 +88,6 @@ public class ProjectorScreen extends AbstractContainerScreen<ProjectorMenu> {
         nextButton.visible = carousel;
         autoButton.visible = carousel;
         autoButton.setMessage(autoLabel());
-        gradeButton.setMessage(gradeLabel());
 
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);

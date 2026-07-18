@@ -131,12 +131,6 @@ public class BeyondNetworking {
         );
 
         registrar.playToServer(
-                ProjectorSetGradePayload.TYPE,
-                ProjectorSetGradePayload.STREAM_CODEC,
-                BeyondNetworking::handleProjectorSetGrade
-        );
-
-        registrar.playToServer(
                 ProjectorFlipPayload.TYPE,
                 ProjectorFlipPayload.STREAM_CODEC,
                 BeyondNetworking::handleProjectorFlip
@@ -257,10 +251,6 @@ public class BeyondNetworking {
 
     private static void handleProjectorRotate(ProjectorRotatePayload payload, IPayloadContext context) {
         withProjector(context, payload.pos(), be -> be.addRotation(payload.steps()));
-    }
-
-    private static void handleProjectorSetGrade(ProjectorSetGradePayload payload, IPayloadContext context) {
-        withProjector(context, payload.pos(), be -> be.setGradeId(payload.gradeId()));
     }
 
     private static void handleProjectorFlip(ProjectorFlipPayload payload, IPayloadContext context) {
