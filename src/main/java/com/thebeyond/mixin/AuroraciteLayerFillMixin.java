@@ -4,6 +4,7 @@ import com.thebeyond.TheBeyond;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.worldgen.features.AuroraciteLayerDTFeature;
 import com.thebeyond.common.worldgen.features.AuroraciteLayerFeature;
+import com.thebeyond.compat.dt.DimensionalTearsCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -60,7 +61,7 @@ public abstract class AuroraciteLayerFillMixin {
         final BlockState auroracite = BeyondBlocks.AURORACITE.get().defaultBlockState();
         final boolean hasDT = isDTLoaded();
         final BlockState dtFluid = hasDT ? getDTFluidState() : Blocks.AIR.defaultBlockState();
-        final boolean dtUsable = hasDT && !dtFluid.isAir();
+        final boolean placeLiquid = hasDT && !dtFluid.isAir() && DimensionalTearsCompat.oceanEnabled();
 
         if (LOGGED_FIRST_FIRE.compareAndSet(false, true)) {
             TheBeyond.LOGGER.info(
@@ -79,28 +80,40 @@ public abstract class AuroraciteLayerFillMixin {
                 final double n = noise.getValue(globalX * 0.1, globalZ * 0.1);
 
                 if (n > 0.0) {
-                    mutable.set(globalX, minY, globalZ);
-                    if (!chunk.getBlockState(mutable).is(BeyondBlocks.AURORACITE.get())) {
-                        chunk.setBlockState(mutable, auroracite, false);
+                    if (placeLiquid) {
+                        the_beyond$placeFluid(chunk, mutable.set(globalX, minY, globalZ), dtFluid);
+                        the_beyond$placeAuroracite(chunk, mutable.set(globalX, minY + 1, globalZ), auroracite);
+                        the_beyond$placeAuroracite(chunk, mutable.set(globalX, minY + 2, globalZ), auroracite);
+                        the_beyond$stripVegetation(chunk, mutable.set(globalX, minY + 3, globalZ));
+                    } else {
+                        the_beyond$placeAuroracite(chunk, mutable.set(globalX, minY, globalZ), auroracite);
+                        the_beyond$placeAuroracite(chunk, mutable.set(globalX, minY + 1, globalZ), auroracite);
+                        the_beyond$stripVegetation(chunk, mutable.set(globalX, minY + 2, globalZ));
                     }
-                    mutable.set(globalX, minY + 1, globalZ);
-                    if (!chunk.getBlockState(mutable).is(BeyondBlocks.AURORACITE.get())) {
-                        chunk.setBlockState(mutable, auroracite, false);
-                    }
-                    // Strip vegetation that heightmap features dropped here — plants belong on islands, not the void floor.
-                    mutable.set(globalX, minY + 2, globalZ);
-                    BlockState aboveFloor = chunk.getBlockState(mutable);
-                    if (!aboveFloor.isAir()) {
-                        chunk.setBlockState(mutable, Blocks.AIR.defaultBlockState(), false);
-                    }
-                } else if (dtUsable) {
-                    mutable.set(globalX, minY, globalZ);
-                    BlockState existing = chunk.getBlockState(mutable);
-                    if (!existing.is(BeyondBlocks.AURORACITE.get()) && existing.getBlock() != dtFluid.getBlock()) {
-                        chunk.setBlockState(mutable, dtFluid, false);
-                    }
+                } else if (placeLiquid) {
+                    the_beyond$placeFluid(chunk, mutable.set(globalX, minY, globalZ), dtFluid);
+                    the_beyond$placeFluid(chunk, mutable.set(globalX, minY + 1, globalZ), dtFluid);
                 }
             }
+        }
+    }
+
+    private static void the_beyond$placeAuroracite(ChunkAccess chunk, BlockPos pos, BlockState auroracite) {
+        if (!chunk.getBlockState(pos).is(BeyondBlocks.AURORACITE.get())) {
+            chunk.setBlockState(pos, auroracite, false);
+        }
+    }
+
+    private static void the_beyond$placeFluid(ChunkAccess chunk, BlockPos pos, BlockState dtFluid) {
+        BlockState existing = chunk.getBlockState(pos);
+        if (!existing.is(BeyondBlocks.AURORACITE.get()) && existing.getBlock() != dtFluid.getBlock()) {
+            chunk.setBlockState(pos, dtFluid, false);
+        }
+    }
+
+    private static void the_beyond$stripVegetation(ChunkAccess chunk, BlockPos pos) {
+        if (!chunk.getBlockState(pos).isAir()) {
+            chunk.setBlockState(pos, Blocks.AIR.defaultBlockState(), false);
         }
     }
 

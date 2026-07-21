@@ -3,6 +3,7 @@ package com.thebeyond.common.worldgen.features;
 import com.mojang.serialization.Codec;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.compat.dt.DimensionalTearsCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -89,7 +90,7 @@ public class AuroraciteLayerDTFeature extends Feature<NoneFeatureConfiguration> 
         RandomSource random = context.random();
         SimplexNoise simplex = getNoise(random);
         BlockState dtFluid = getDTFluidState();
-        boolean hasDTFluid = !dtFluid.isAir();
+        boolean placeLiquid = !dtFluid.isAir() && DimensionalTearsCompat.oceanEnabled();
 
         int minY = level.getMinBuildHeight();
         if (loggedMinY != minY) {
@@ -110,11 +111,18 @@ public class AuroraciteLayerDTFeature extends Feature<NoneFeatureConfiguration> 
                 double auroraNoise = simplex.getValue(globalX * 0.1, globalZ * 0.1);
 
                 if (auroraNoise > 0.0) {
-                    level.setBlock(mutable.set(globalX, minY, globalZ), auroracite, 2);
-                    level.setBlock(mutable.set(globalX, minY + 1, globalZ), auroracite, 2);
+                    if (placeLiquid) {
+                        level.setBlock(mutable.set(globalX, minY, globalZ), dtFluid, 2);
+                        level.setBlock(mutable.set(globalX, minY + 1, globalZ), auroracite, 2);
+                        level.setBlock(mutable.set(globalX, minY + 2, globalZ), auroracite, 2);
+                    } else {
+                        level.setBlock(mutable.set(globalX, minY, globalZ), auroracite, 2);
+                        level.setBlock(mutable.set(globalX, minY + 1, globalZ), auroracite, 2);
+                    }
                     placed = true;
-                } else if (hasDTFluid) {
+                } else if (placeLiquid) {
                     level.setBlock(mutable.set(globalX, minY, globalZ), dtFluid, 2);
+                    level.setBlock(mutable.set(globalX, minY + 1, globalZ), dtFluid, 2);
                     placed = true;
                 }
             }
