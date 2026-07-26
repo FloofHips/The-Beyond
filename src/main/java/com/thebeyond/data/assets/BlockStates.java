@@ -32,17 +32,22 @@ public class BlockStates extends BlockStateProvider {
         basicBlock(BeyondBlocks.PORTELAIN_TILES);
         basicBlock(BeyondBlocks.ENGRAVED_END_STONE);
         basicBlock(BeyondBlocks.MEMOR);
+        basicBlock(BeyondBlocks.BRITTLE_METAL_BLOCK);
         basicBlock(BeyondBlocks.CHISELED_MEMOR);
         customBlock(BeyondBlocks.BONFIRE);
 
-        //basicBlock(BeyondBlocks.COBBLED_PEARL);
-        //basicBlock(BeyondBlocks.COBBLED_PEARL_BRICKS);
+        basicBlock(BeyondBlocks.COBBLED_PEARL);
+        basicBlock(BeyondBlocks.COBBLED_PEARL_BRICKS);
+        basicBlock(BeyondBlocks.PEARL);
+        basicBlock(BeyondBlocks.PEARL_BRICKS);
+
         //rotatedPillarBlock(BeyondBlocks.XYLEM);
         //rotatedPillarBlock(BeyondBlocks.FERROJELLY_BLOCK);
 
         blocks.remove(BeyondBlocks.FERROJELLY_BLOCK);
 
-        doorBlockWithRenderType((DoorBlock) BeyondBlocks.PORTELAIN_DOOR.get(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/portelain_door_bottom"), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/portelain_door_top"), "minecraft:cutout");
+        doorBlock((DoorBlock) BeyondBlocks.PORTELAIN_DOOR.get(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/portelain_door_bottom"), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/portelain_door_top"));
+        doorBlock((DoorBlock) BeyondBlocks.BRITTLE_METAL_DOOR.get(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/brittle_metal_door_bottom"), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/brittle_metal_door_top"));
 
         DataHelper.takeAll(blocks, b -> b.get() instanceof RotatedPillarBlock).forEach(this::rotatedPillarBlock);
         DataHelper.takeAll(blocks, b -> b.get() instanceof StairBlock).forEach(this::stairsBlock);

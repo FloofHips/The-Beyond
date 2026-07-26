@@ -41,6 +41,7 @@ public class ItemModels extends ItemModelProvider {
 
         items.remove(BeyondBlocks.REACHING_ZYMOTE.asItem());
         items.remove(BeyondBlocks.PORTELAIN_DOOR.asItem());
+        items.remove(BeyondBlocks.BRITTLE_METAL_DOOR.asItem());
         items.remove(BeyondBlocks.OBIROOT_SPROUT.asItem());
         items.remove(BeyondBlocks.AMPHORA.asItem());
         items.remove(BeyondItems.PINHOLE_CAMERA.asItem());
@@ -64,6 +65,7 @@ public class ItemModels extends ItemModelProvider {
         itemGeneratedModel(BeyondBlocks.CREEPING_ZYMOTE.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/creeping_zymote"));
         itemGeneratedModel(BeyondBlocks.REACHING_ZYMOTE.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/reaching_zymote"));
         itemGeneratedModel(BeyondBlocks.PORTELAIN_DOOR.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/portelain_door"));
+        itemGeneratedModel(BeyondBlocks.BRITTLE_METAL_DOOR.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/brittle_metal_door"));
         itemGeneratedModel(BeyondItems.PINHOLE_CAMERA.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/pinhole_camera"));
 
         takeAll(items, i -> i instanceof BlockItem).forEach(item -> blockBasedModel(item, ""));

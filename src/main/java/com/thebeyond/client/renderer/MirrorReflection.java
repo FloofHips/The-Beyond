@@ -61,8 +61,8 @@ public final class MirrorReflection {
     private static final int MAX_PLANES = 32;
 
     private static final int TINT_R = 202, TINT_G = 222, TINT_B = 234;
-    private static final float ALPHA_NEAR = 0.9f;
-    private static final float ALPHA_FAR = 0.3f;
+    private static final float ALPHA_NEAR = 0.7f;
+    private static final float ALPHA_FAR = 0.0f;
     private static final int MAX_REFLECTED_ENTITIES = 16;
     // Keep each sub-quad small on screen so affine UVs ≈ projective.
     private static final int MAX_SUBDIV = 32;

@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/door_top_left",
+  "textures": {
+    "bottom": "the_beyond:block/brittle_metal_door_bottom",
+    "top": "the_beyond:block/brittle_metal_door_top"
+  }
+}
