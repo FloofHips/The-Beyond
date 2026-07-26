@@ -365,10 +365,10 @@
   },
   "block.memor_faucet.step": {
     "sounds": [
-      "the_beyond:block/memor_faucet/light1",
-      "the_beyond:block/memor_faucet/light2",
-      "the_beyond:block/memor_faucet/light3",
-      "the_beyond:block/memor_faucet/light4"
+      "the_beyond:block/memor/light1",
+      "the_beyond:block/memor/light2",
+      "the_beyond:block/memor/light3",
+      "the_beyond:block/memor/light4"
     ],
     "subtitle": "subtitles.block.generic.footsteps"
   },
@@ -958,7 +958,7 @@
   },
   "block.gellid_void.burst": {
     "sounds": [
-      "the_beyond:block/gellid_void/burst",
+      "the_beyond:block/gellid_void/burst1",
       "the_beyond:block/gellid_void/burst2",
       "the_beyond:block/gellid_void/burst3",
       "the_beyond:block/gellid_void/burst4"

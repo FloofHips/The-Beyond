@@ -176,6 +176,7 @@ public class ModClientEvents {
         EntityRenderers.register(BeyondEntityTypes.UNSTABLE_SEED.get(), UnstableSeedRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.LANTERN.get(), LanternRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.ABYSSAL_NOMAD.get(), AbyssalNomadRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.TEST_BLOCK.get(), LivingBlockRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.TOTEM_OF_RESPITE.get(), TotemOfRespiteRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.GRAVISTAR.get(), ThrownItemRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.RISING_BLOCK.get(), FallingBlockRenderer::new);

@@ -2,6 +2,7 @@ package com.thebeyond.common.registry;
 
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.entity.*;
+import com.thebeyond.common.entity.util.livingblock.LivingBlock;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
@@ -74,4 +75,11 @@ public class BeyondEntityTypes {
                             .sized(1, 1)
                             .clientTrackingRange(4)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rising_block").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<LivingBlock>> TEST_BLOCK =
+            ENTITY_TYPES.register("test_block",
+                    () -> EntityType.Builder.<LivingBlock>of(LivingBlock::new, MobCategory.MISC)
+                            .sized(1, 1)
+                            .clientTrackingRange(4)
+                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "test_block").toString()));
 }
