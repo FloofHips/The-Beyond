@@ -73,7 +73,8 @@ public class GellidVoidBlock extends LiquidBlock {
     @Override
     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
         super.entityInside(state, level, pos, entity);
-        entity.setDeltaMovement(entity.getDeltaMovement().add(0, .1, 0));
+        if (!(entity instanceof Player player && player.isShiftKeyDown()))
+            entity.setDeltaMovement(entity.getDeltaMovement().add(0, .05, 0));
 
         if (entity.tickCount % (200 + level.random.nextInt(0, 100)) == 0 && level instanceof ServerLevel serverLevel && entity instanceof LivingEntity livingEntity) {
             if (livingEntity.hasEffect(BeyondEffects.WEIGHTLESS)) {

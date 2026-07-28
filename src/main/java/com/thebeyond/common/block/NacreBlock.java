@@ -87,9 +87,9 @@ public class NacreBlock extends Block {
             if (!(state.getBlock() instanceof NacreBlock)) continue;
             if (state.getValue(POWERED)) continue;
 
-            spawnParticles(level, current, random, new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.NACRE.get().defaultBlockState()), 20);
+            spawnParticles(level, current, random, new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.UNSTABLE_NACRE.get().defaultBlockState()), 20);
             level.playSound(null, current, SoundEvents.BRUSH_GRAVEL_COMPLETED, SoundSource.BLOCKS);
-            level.setBlockAndUpdate(current, BeyondBlocks.NACRE.get().defaultBlockState().setValue(POWERED, true));
+            level.setBlockAndUpdate(current, BeyondBlocks.UNSTABLE_NACRE.get().defaultBlockState().setValue(POWERED, true));
             level.scheduleTick(current, state.getBlock(), delay);
 
             int cell = getVariant(current);
@@ -106,29 +106,19 @@ public class NacreBlock extends Block {
 
     @Override
     protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
-        if (!state.getValue(POWERED))
-            level.playSound(null, pos, SoundEvents.WOOD_HIT, SoundSource.BLOCKS);
         return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
     }
 
     @Override
     protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         if (state.getValue(POWERED)) {
+            level.playSound(null, pos, SoundEvents.WOOD_HIT, SoundSource.BLOCKS);
             RisingBlockEntity risingblockentity = RisingBlockEntity.rise(level, pos, state);
             risingblockentity.dropItem = false;
         }
 
         super.tick(state, level, pos, random);
     }
-//
-    //public void trigger(Level level, BlockPos pos, int delay, RandomSource random) {
-    //    spawnParticles(level, pos, random, new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.NACRE.get().defaultBlockState()), 20);
-//
-    //    if (level.getBlockState(pos).getValue(POWERED)) return;
-    //    level.playSound(null, pos, SoundEvents.BRUSH_GRAVEL_COMPLETED, SoundSource.BLOCKS);
-    //    level.setBlockAndUpdate(pos, BeyondBlocks.NACRE.get().defaultBlockState().setValue(POWERED, true));
-    //    level.scheduleTick(pos, this, delay);
-    //}
 
     private boolean isSameVariant(int parent, BlockPos pos) {
         double cellSize = 2.5;

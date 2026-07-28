@@ -3,6 +3,7 @@ package com.thebeyond.common.worldgen.features;
 import com.mojang.serialization.Codec;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -49,7 +50,7 @@ public class GaussGeyserFeature extends Feature<NoneFeatureConfiguration> {
                     BlockPos blockPos = origin.offset(x, y, z);
                     double distedSqr = blockPos.distSqr(origin);
                     if (distedSqr <= radius * radius) {
-                        if (level.getBlockState(blockPos).isSolid() && noise.getValue(x*0.1f, y, z*0.1f) < 0.5f) {
+                        if (level.getBlockState(blockPos).is(BeyondTags.END_DECORATOR_REPLACEABLE) && noise.getValue(x*0.1f, y, z*0.1f) < 0.5f) {
                             level.setBlock(blockPos, BeyondBlocks.GAUSSANITE.get().defaultBlockState(), 3);
                         }
                     }

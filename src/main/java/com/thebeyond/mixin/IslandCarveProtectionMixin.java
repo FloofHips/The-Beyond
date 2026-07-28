@@ -14,6 +14,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+//temporarily removed from the mixins.json!
+
 /** Vetoes two kinds of writes on Beyond's own End generator: features rooting inside a foreign structure's
  *  carved volume ({@link FeatureGuard}), and foreign template air carving solid island terrain. {@link SanctionedWrite} bypasses both. */
 @Mixin(WorldGenRegion.class)

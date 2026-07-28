@@ -334,13 +334,19 @@ public class BeyondBlocks {
 
     // Pearlescent Expanse
     public static final DeferredBlock<Block> NACRE = registerBlock("nacre",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                    .strength(2.0F, 2.0F)
+                    .sound(SoundType.GRAVEL))
+    );
+    public static final DeferredBlock<Block> UNSTABLE_NACRE = registerBlock("unstable_nacre",
             () -> new NacreBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_LIGHT_GRAY)
                     .strength(2.0F, 2.0F)
                     .sound(SoundType.GRAVEL))
     );
     public static final DeferredBlock<Block> PEARL = registerBlock("pearl",
-            () -> new Block(BlockBehaviour.Properties.of()
+            () -> new WhistlingBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.TERRACOTTA_WHITE)
                     .strength(0.5F, 0.0F)
                     .sound(BeyondSoundTypes.MEMOR)));
