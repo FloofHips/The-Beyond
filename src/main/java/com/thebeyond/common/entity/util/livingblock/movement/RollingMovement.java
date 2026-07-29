@@ -313,4 +313,3 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
         }
     }
 }
-

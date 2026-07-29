@@ -10,7 +10,6 @@ import net.minecraft.world.phys.Vec3;
 
 public class FloatingMovement implements MovementStrategy<FloatingMovement.Data> {
     private static final double SPEED = 0.06;
-    private static final double ARBITRARY_STUCK_SPEED_THRESHOLD = 0.001;
 
     public FloatingMovement.Data initData() {
         return new FloatingMovement.Data();

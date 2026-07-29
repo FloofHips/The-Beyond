@@ -144,4 +144,3 @@ public class BouncingMovement implements MovementStrategy<BouncingMovement.Data>
         }
     }
 }
-

@@ -1,4 +1,3 @@
-// Target.java - Remove STREAM_CODEC, keep the write/read methods
 package com.thebeyond.common.entity.util.livingblock.movement;
 
 import net.minecraft.network.FriendlyByteBuf;

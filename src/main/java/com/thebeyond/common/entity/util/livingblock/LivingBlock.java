@@ -19,13 +19,17 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.gameevent.GameEvent.Context;
+import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -44,7 +48,17 @@ public class LivingBlock extends Mob {
     protected static final EntityDataAccessor<MovementData> MOVEMENT_DATA = SynchedEntityData.defineId(LivingBlock.class, BeyondEntityDataSerializers.MOVEMENT_DATA.get());
     protected static final EntityDataAccessor<Target> MOVEMENT_TARGET = SynchedEntityData.defineId(LivingBlock.class, BeyondEntityDataSerializers.TARGET.get());
     private static final EntityDataAccessor<Direction> DATA_CLIMBING_DIRECTION = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.DIRECTION);
+    private static final EntityDataAccessor<Vector3f> DATA_DIMENSIONS = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.VECTOR3);
     private static final EntityDataAccessor<Boolean> DATA_PINNED = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.BOOLEAN);
+
+    private static final EntityDataAccessor<Integer> DATA_MOVEMENT_TYPE = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.INT);
+
+    private static final MovementStrategy<?> MV_ROLL = new RollingMovement();
+    private static final MovementStrategy<?> MV_POGO = new BouncingMovement();
+    private static final MovementStrategy<?> MV_DRIFT = new FloatingMovement();
+    private static final MovementStrategy<?> MV_ROLL_FLOAT = new FluidFloatingMovement();
+
+    private static final double AGGRO_RANGE = 24.0;
 
     private final Quaternionf lastRotation = new Quaternionf();
     private final Quaternionf rotation = new Quaternionf();
@@ -58,7 +72,7 @@ public class LivingBlock extends Mob {
     private static final float ROLL_ROTATION_DELTA_EPSILON = 1.0E-5F;
 
     public Vec3 boundingBoxOffset = Vec3.ZERO;
-    private MovementStrategy<?> movement = new RollingMovement();
+    private MovementStrategy<?> movement = MV_ROLL_FLOAT;
     private float maxUpStep = 0.6F;
     private Vec3 pogoScaleTarget = new Vec3(1.0, 1.0, 1.0);
     private Vec3 lastPogoScaleTarget = new Vec3(1.0, 1.0, 1.0);
@@ -66,11 +80,27 @@ public class LivingBlock extends Mob {
     private int pogoScaleTicksRemaining = 0;
     private int pogoScaleTicks = 0;
     private VoxelShape customShape = Shapes.block();
+    private CollisionInteraction collision = CollisionInteraction.ENTITY;
+
+    public CollisionInteraction getCollision() {
+        return this.collision;
+    }
+
+    public void setCollision(CollisionInteraction collision) {
+        this.collision = collision != null ? collision : CollisionInteraction.ENTITY;
+    }
 
     public LivingBlock(final EntityType<? extends Mob>  type, final Level level) {
         super(type, level);
         this.setMovementData(this.movement.initData());
         this.noPhysics = false;
+    }
+
+    @Nullable
+    @Override
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData spawnData) {
+        this.randomizeProceduralShape();
+        return super.finalizeSpawn(level, difficulty, reason, spawnData);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -80,6 +110,91 @@ public class LivingBlock extends Mob {
     public void setShape(VoxelShape shape) {
         this.customShape = shape;
         this.refreshDimensions();
+    }
+
+    public boolean isBeingDraggedRapidly() {
+        if (!this.isLeashed()) return false;
+        return this.getDeltaMovement().horizontalDistanceSqr() > 0.01;
+    }
+
+    private MovementStrategy<?> desiredMovement() {
+        AABB b = (this.customShape != null ? this.customShape : Shapes.block()).bounds();
+        double sizeX = b.getXsize();
+        double sizeY = b.getYsize();
+        double sizeZ = b.getZsize();
+
+        double volume = sizeX * sizeY * sizeZ;
+        double maxFootprint = Math.max(sizeX, sizeZ);
+
+        boolean isTiny = volume <= 0.125;
+        boolean isFlat = sizeY <= (maxFootprint * 0.5);
+
+        if (this.isLeashed()) {
+            Entity holder = this.getLeashHolder();
+            if (holder != null) {
+                if (!holder.onGround() && !this.onGround()) {
+                    if (isTiny) {
+                        return MV_DRIFT;
+                    }
+                }
+
+                if (this.isBeingDraggedRapidly()) {
+                    return MV_POGO;
+                }
+            }
+        }
+
+        if (isFlat) {
+            return MV_POGO;
+        }
+        return MV_ROLL_FLOAT;
+    }
+
+    public void setMovement(final MovementStrategy<?> movement) {
+        if (movement == null || movement == this.movement) {
+            return;
+        }
+        this.movement = movement;
+        if (!this.level().isClientSide()) {
+            this.setMovementData(movement.initData());
+            this.entityData.set(DATA_MOVEMENT_TYPE, movementTypeId());
+        }
+    }
+
+    private int movementTypeId() {
+        if (this.movement instanceof BouncingMovement) return 1;
+        if (this.movement instanceof FluidFloatingMovement) return 3;
+        if (this.movement instanceof FloatingMovement) return 2;
+        return 0;
+    }
+
+    private static MovementStrategy<?> movementFromId(final int id) {
+        return switch (id) {
+            case 1 -> MV_POGO;
+            case 2 -> MV_DRIFT;
+            case 3 -> MV_ROLL_FLOAT;
+            default -> MV_ROLL;
+        };
+    }
+
+    @Override
+    public void onSyncedDataUpdated(final EntityDataAccessor<?> key) {
+        super.onSyncedDataUpdated(key);
+        if (DATA_MOVEMENT_TYPE.equals(key) && this.level().isClientSide()) {
+            this.movement = movementFromId(this.entityData.get(DATA_MOVEMENT_TYPE));
+        }
+        if (DATA_DIMENSIONS.equals(key)) {
+            Vector3f dim = this.entityData.get(DATA_DIMENSIONS);
+            this.setShape(Shapes.box(0, 0, 0, dim.x(), dim.y(), dim.z()));
+        }
+    }
+
+    public void setMovementTarget(final Target target) {
+        this.entityData.set(MOVEMENT_TARGET, target == null ? Target.NONE : target);
+    }
+
+    public void clearMovementTarget() {
+        this.setMovementTarget(Target.NONE);
     }
 
     private static @Nullable BlockPos findFreeSpawnInColumn(final Level level, final BlockPos base, final Set<BlockPos> used) {
@@ -127,6 +242,9 @@ public class LivingBlock extends Mob {
         entityData.define(MOVEMENT_TARGET, Target.NONE);
         entityData.define(MOVEMENT_DATA, MovementData.EMPTY);
         entityData.define(DATA_CLIMBING_DIRECTION, Direction.DOWN);
+        entityData.define(DATA_DIMENSIONS, new Vector3f(1.0F, 1.0F, 1.0F));
+        entityData.define(DATA_MOVEMENT_TYPE, 3);
+
     }
 
     public boolean isPinned() {
@@ -137,6 +255,10 @@ public class LivingBlock extends Mob {
         this.entityData.set(DATA_PINNED, pinned);
     }
 
+    public void setDimensions(Vector3f dim) {
+        this.entityData.set(DATA_DIMENSIONS, dim);
+    }
+
     public Direction getClimbingDirection() {
         return this.entityData.get(DATA_CLIMBING_DIRECTION);
     }
@@ -145,6 +267,18 @@ public class LivingBlock extends Mob {
         if (!this.level().isClientSide()) {
             this.entityData.set(DATA_CLIMBING_DIRECTION, direction);
         }
+    }
+
+    public void randomizeProceduralShape() {
+        //float w = (2 + this.random.nextInt(15)) / 16.0F;
+        //float h = (2 + this.random.nextInt(15)) / 16.0F;
+        //float d = (2 + this.random.nextInt(15)) / 16.0F;
+
+        float w = this.random.nextFloat();
+        float h = this.random.nextFloat();
+        float d = this.random.nextFloat();
+
+        this.setDimensions(new Vector3f(2, 2, 2));
     }
 
     public void resetClimbingDirection() {
@@ -161,12 +295,27 @@ public class LivingBlock extends Mob {
 
     @Override
     public void readAdditionalSaveData(CompoundTag input) {
+        super.readAdditionalSaveData(input);
         this.setPinned(input.getBoolean("pinned"));
+
+        if (input.contains("cuboid_width")) {
+            this.setDimensions(new Vector3f(
+                    input.getFloat("cuboid_width"),
+                    input.getFloat("cuboid_height"),
+                    input.getFloat("cuboid_depth")
+            ));
+        }
     }
 
     @Override
     public void addAdditionalSaveData(CompoundTag output) {
+        super.addAdditionalSaveData(output);
         output.putBoolean("pinned", this.isPinned());
+
+        Vector3f dim = this.entityData.get(DATA_DIMENSIONS);
+        output.putFloat("cuboid_width", dim.x());
+        output.putFloat("cuboid_height", dim.y());
+        output.putFloat("cuboid_depth", dim.z());
     }
 
     @Override
@@ -259,6 +408,21 @@ public class LivingBlock extends Mob {
         super.tick();
 
         if (!this.isDeadOrDying() && !this.isPinned()) {
+            if (!this.level().isClientSide()) {
+                this.setMovement(this.desiredMovement());
+                Entity holder = this.isLeashed() ? this.getLeashHolder() : null;
+                if (holder != null) {
+                    this.setMovementTarget(Target.followingEntity(holder, 2.0));
+                } else if (AGGRO_RANGE > 0.0) {
+                    Player nearest = this.level().getNearestPlayer(this, AGGRO_RANGE);
+                    if (nearest != null && !nearest.isCreative() && !nearest.isSpectator()) {
+                        this.setMovementTarget(Target.followingEntity(nearest, 1.0));
+                    } else {
+                        this.clearMovementTarget();
+                    }
+                }
+            }
+
             Target target = this.getMovementTarget();
             Vec3 targetPos = target.resolvePosition(this.level());
             if (targetPos != null) {
@@ -266,6 +430,13 @@ public class LivingBlock extends Mob {
                 if (!moved && target.clearWhenNear()) {
                     this.movement.resetMovement(this);
                 }
+            }
+        }
+
+        if (this.collision.canBeNudged()) {
+            AABB bounds = this.getBoundingBox();
+            for (Entity entity : this.level().getEntities(this, AABB.ofSize(bounds.getCenter(), 0.05, 0.05, 0.05), t -> t instanceof LivingBlock livingBlock && livingBlock.collision.canBeNudged())) {
+                entity.push(this);
             }
         }
 
@@ -380,8 +551,13 @@ public class LivingBlock extends Mob {
     }
 
     @Override
+    public boolean canBeCollidedWith() {
+        return !this.isDeadOrDying() && this.collision.canBeCollidedWith();
+    }
+
+    @Override
     public boolean isPushable() {
-        return !this.isDeadOrDying();
+        return !this.isDeadOrDying() && this.collision.isPushable();
     }
 
     @Override
@@ -400,14 +576,17 @@ public class LivingBlock extends Mob {
 
     @Override
     protected AABB makeBoundingBox() {
-        Vec3 position = this.getPosition(0);
+        Vec3 position = this.position();
 
-        VoxelShape shape = Block.box((double)6.0F, (double)0.0F, (double)6.0F, (double)10.0F, (double)10.0F, (double)10.0F);
-
+        VoxelShape shape = this.customShape != null ? this.customShape : Shapes.block();
         AABB bounds = shape.bounds();
         this.boundingBoxOffset = bounds.getCenter().reverse();
 
         return bounds.move(position.subtract(bounds.getBottomCenter()));
+    }
+    @Override
+    public Vec3 getLeashOffset(float partialTicks) {
+        return new Vec3(0.0, this.getBoundingBox().getYsize() / 2.0, 0.0);
     }
 
     public MovementData getMovementData() {
