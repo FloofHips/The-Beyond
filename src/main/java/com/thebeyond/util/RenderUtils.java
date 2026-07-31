@@ -1,9 +1,12 @@
 package com.thebeyond.util;
 
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.thebeyond.client.event.ModClientEvents;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -39,6 +42,40 @@ public class RenderUtils {
             renderer.renderModelLists(pass, ItemStack.EMPTY, packedLight, overlayCoord, poseStack, consumer);
             consumer.setColor(1, 1, 1, 1);
         }
+    }
+
+    public static void renderAdditiveQuad(GuiGraphics gui, ResourceLocation texture, int startx, int starty, int Uoffset, int Voffset, int width, int height, int texwidth, int texheight, int tintColor) {
+        RenderSystem.enableBlend();
+        RenderSystem.blendFuncSeparate(
+                GlStateManager.SourceFactor.ONE,
+                GlStateManager.DestFactor.ONE,
+                GlStateManager.SourceFactor.ONE,
+                GlStateManager.DestFactor.ZERO
+        );
+        gui.blit(texture, startx, starty, Uoffset, Voffset, width, height, texwidth, texheight);
+        RenderSystem.defaultBlendFunc();
+    }
+
+    public static void renderMultiplicativeQuad(GuiGraphics gui, ResourceLocation texture, int startx, int starty, int Uoffset, int Voffset, int width, int height, int texwidth, int texheight, int tintColor) {
+        RenderSystem.enableBlend();
+        RenderSystem.blendFuncSeparate(
+                GlStateManager.SourceFactor.DST_COLOR,
+                GlStateManager.DestFactor.ZERO,
+                GlStateManager.SourceFactor.ONE,
+                GlStateManager.DestFactor.ZERO
+        );
+//
+//        float a = ((tintColor >> 24) & 0xFF) / 255f;
+//        float r = ((tintColor >> 16) & 0xFF) / 255f;
+//        float g = ((tintColor >> 8) & 0xFF) / 255f;
+//        float b = (tintColor & 0xFF) / 255f;
+//
+//        RenderSystem.setShaderColor(r, g, b, a);
+
+        gui.blit(texture, startx, starty, Uoffset, Voffset, width, height, texwidth, texheight);
+
+        //RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+        RenderSystem.defaultBlendFunc();
     }
 
     /** A model resolved once per frame and reused across draws, skipping the per-call ModelManager

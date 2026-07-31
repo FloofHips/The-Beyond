@@ -119,24 +119,6 @@ public class BeyondNetworking {
         );
 
         registrar.playToServer(
-                ProjectorCarouselAutoPayload.TYPE,
-                ProjectorCarouselAutoPayload.STREAM_CODEC,
-                BeyondNetworking::handleProjectorCarouselAuto
-        );
-
-        registrar.playToServer(
-                ProjectorRotatePayload.TYPE,
-                ProjectorRotatePayload.STREAM_CODEC,
-                BeyondNetworking::handleProjectorRotate
-        );
-
-        registrar.playToServer(
-                ProjectorFlipPayload.TYPE,
-                ProjectorFlipPayload.STREAM_CODEC,
-                BeyondNetworking::handleProjectorFlip
-        );
-
-        registrar.playToServer(
                 CameraShootPayload.TYPE,
                 CameraShootPayload.STREAM_CODEC,
                 BeyondNetworking::handleCameraShoot
@@ -243,18 +225,6 @@ public class BeyondNetworking {
 
     private static void handleProjectorCarousel(ProjectorCarouselPayload payload, IPayloadContext context) {
         withProjector(context, payload.pos(), be -> be.stepCarousel(payload.delta()));
-    }
-
-    private static void handleProjectorCarouselAuto(ProjectorCarouselAutoPayload payload, IPayloadContext context) {
-        withProjector(context, payload.pos(), be -> be.setCarouselAuto(payload.auto()));
-    }
-
-    private static void handleProjectorRotate(ProjectorRotatePayload payload, IPayloadContext context) {
-        withProjector(context, payload.pos(), be -> be.addRotation(payload.steps()));
-    }
-
-    private static void handleProjectorFlip(ProjectorFlipPayload payload, IPayloadContext context) {
-        withProjector(context, payload.pos(), be -> be.toggleFlipped());
     }
 
     /** Cache the gated structures so the client can gate /locate. */

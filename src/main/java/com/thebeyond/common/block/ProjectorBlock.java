@@ -6,6 +6,7 @@ import com.thebeyond.common.block.blockentities.ProjectorBlockEntity;
 import com.thebeyond.util.ColorUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
@@ -15,11 +16,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Mirror;
-import net.minecraft.world.level.block.RenderShape;
-import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -156,15 +154,32 @@ public class ProjectorBlock extends BaseEntityBlock {
         if (level.isClientSide) {
             return;
         }
+
+        boolean lightBlock = isLightBlock(state, level, pos);
+        level.setBlock(pos, state.setValue(POWERED, lightBlock), Block.UPDATE_CLIENTS);
+
         boolean signal = level.hasNeighborSignal(pos);
-        if (signal == state.getValue(POWERED)) {
-            return;
-        }
-        level.setBlock(pos, state.setValue(POWERED, signal), Block.UPDATE_CLIENTS);
-        if (signal && level.getBlockEntity(pos) instanceof ProjectorBlockEntity be
-                && be.getMode() == ProjectorBlockEntity.MODE_CAROUSEL) {
+
+        if (signal && level.getBlockEntity(pos) instanceof ProjectorBlockEntity be && be.getMode() == ProjectorBlockEntity.MODE_CAROUSEL) {
             be.advanceCarousel();
+            for (int i = 0; i < 6; i++) {
+                makeParticle(level, pos, 1);
+            }
         }
+    }
+
+    private static void makeParticle(LevelAccessor level, BlockPos pos, float alpha) {
+        double d0 = (double)pos.getX() + (double)0.0F + level.getRandom().nextFloat();
+        double d1 = (double)pos.getY() + (double)1.0F + level.getRandom().nextFloat();
+        double d2 = (double)pos.getZ() + (double)0.0F + level.getRandom().nextFloat();
+        level.addParticle(new DustParticleOptions(DustParticleOptions.REDSTONE_PARTICLE_COLOR, alpha), d0, d1, d2, (double)0.0F, (double)0.0F, (double)0.0F);
+    }
+
+    static boolean isLightBlock(BlockState state, Level level, BlockPos pos) {
+        Direction facing = state.getValue(ProjectorBlock.FACING);
+        BlockPos behind = pos.relative(facing.getOpposite());
+        BlockState behindState = level.getBlockState(behind);
+        return behindState.getLightEmission(level, behind) > 0;
     }
 
     @Override

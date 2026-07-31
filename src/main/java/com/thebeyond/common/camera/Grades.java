@@ -51,7 +51,7 @@ public final class Grades {
     /** The grade a photo carries ({@code SNAPSHOT_GRADE}), defaulting to {@link #SEPIA} when unset. */
     public static ResourceLocation photoGrade(ItemStack stack) {
         ResourceLocation g = stack.get(BeyondComponents.SNAPSHOT_GRADE.get());
-        return g != null ? g : SEPIA;
+        return g != null ? g : NONE;
     }
 
     private static ResourceLocation id(String path) {

@@ -65,10 +65,10 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
 
     private int mode = MODE_MIXUP;
     private int carouselIndex = 0;
-    private boolean carouselAuto = false;
-    private int carouselPeriod = 40; // ticks
-    private boolean flipped = false;
-    private int rotation = 0;         // quarter-turns 0..3, independent of world facing
+    //private boolean carouselAuto = false;
+    //private int carouselPeriod = 40; // ticks
+    //private boolean flipped = false;
+    //private int rotation = 0;         // quarter-turns 0..3, independent of world facing
 
     private int tickCounter;
 
@@ -78,9 +78,6 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
             return switch (i) {
                 case 0 -> mode;
                 case 1 -> carouselIndex;
-                case 2 -> carouselAuto ? 1 : 0;
-                case 3 -> carouselPeriod;
-                case 4 -> flipped ? 1 : 0;
                 default -> 0;
             };
         }
@@ -90,9 +87,6 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
             switch (i) {
                 case 0 -> mode = v;
                 case 1 -> carouselIndex = v;
-                case 2 -> carouselAuto = v != 0;
-                case 3 -> carouselPeriod = v;
-                case 4 -> flipped = v != 0;
             }
         }
 
@@ -141,27 +135,6 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
         return carouselIndex;
     }
 
-    public boolean isCarouselAuto() {
-        return carouselAuto;
-    }
-
-    public int getCarouselPeriod() {
-        return carouselPeriod;
-    }
-
-    public boolean isFlipped() {
-        return flipped;
-    }
-
-    public int getRotation() {
-        return rotation;
-    }
-
-    public void addRotation(int steps) {
-        this.rotation = Math.floorMod(this.rotation + steps, 4);
-        setChanged();
-    }
-
     /** No clamp: render wraps the index modulo the filled-slot count. */
     public void advanceCarousel() {
         carouselIndex++;
@@ -173,23 +146,17 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
         setChanged();
     }
 
+    public void setMode(int mode, boolean cycle) {
+        if (!cycle) {
+            this.mode = Math.floorMod(mode, 4);
+        } else {
+            this.mode = mode%4;
+        }
+    }
+
     public void stepCarousel(int delta) {
         this.carouselIndex += delta;
         setChanged();
-    }
-
-    public void setCarouselAuto(boolean auto) {
-        this.carouselAuto = auto;
-        setChanged();
-    }
-
-    public void setFlipped(boolean flipped) {
-        this.flipped = flipped;
-        setChanged();
-    }
-
-    public void toggleFlipped() {
-        setFlipped(!this.flipped);
     }
 
     public boolean isGroupComplete(ResourceLocation group) {
@@ -246,12 +213,12 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
     }
 
     public static void serverTick(net.minecraft.world.level.Level level, BlockPos pos, BlockState state, ProjectorBlockEntity be) {
-        if (!be.carouselAuto || be.mode != MODE_CAROUSEL || be.carouselPeriod <= 0) {
-            return;
-        }
-        if (++be.tickCounter % be.carouselPeriod == 0) {
-            be.advanceCarousel();
-        }
+        //if (!be.carouselAuto || be.mode != MODE_CAROUSEL || be.carouselPeriod <= 0) {
+        //    return;
+        //}
+        //if (++be.tickCounter % be.carouselPeriod == 0) {
+        //    be.advanceCarousel();
+        //}
     }
 
     @Override
@@ -340,10 +307,10 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
         ContainerHelper.loadAllItems(tag, items, registries);
         mode = tag.getInt("Mode");
         carouselIndex = tag.getInt("CarouselIndex");
-        carouselAuto = tag.getBoolean("CarouselAuto");
-        carouselPeriod = tag.contains("CarouselPeriod") ? tag.getInt("CarouselPeriod") : 40;
-        flipped = tag.getBoolean("Flipped");
-        rotation = Math.floorMod(tag.getInt("Rotation"), 4);
+        //carouselAuto = tag.getBoolean("CarouselAuto");
+        //carouselPeriod = tag.contains("CarouselPeriod") ? tag.getInt("CarouselPeriod") : 40;
+        //flipped = tag.getBoolean("Flipped");
+        //rotation = Math.floorMod(tag.getInt("Rotation"), 4);
     }
 
     @Override
@@ -352,10 +319,10 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
         ContainerHelper.saveAllItems(tag, items, registries);
         tag.putInt("Mode", mode);
         tag.putInt("CarouselIndex", carouselIndex);
-        tag.putBoolean("CarouselAuto", carouselAuto);
-        tag.putInt("CarouselPeriod", carouselPeriod);
-        tag.putBoolean("Flipped", flipped);
-        tag.putInt("Rotation", rotation);
+        //tag.putBoolean("CarouselAuto", carouselAuto);
+        //tag.putInt("CarouselPeriod", carouselPeriod);
+        //tag.putBoolean("Flipped", flipped);
+        //tag.putInt("Rotation", rotation);
     }
 
     @Override

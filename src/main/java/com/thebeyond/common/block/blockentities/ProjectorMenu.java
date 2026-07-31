@@ -46,9 +46,6 @@ public class ProjectorMenu extends AbstractContainerMenu {
                     return switch (i) {
                         case 0 -> projector.getMode();
                         case 1 -> projector.getCarouselIndex();
-                        case 2 -> projector.isCarouselAuto() ? 1 : 0;
-                        case 3 -> projector.getCarouselPeriod();
-                        case 4 -> projector.isFlipped() ? 1 : 0;
                         default -> 0;
                     };
                 }
@@ -75,9 +72,7 @@ public class ProjectorMenu extends AbstractContainerMenu {
         checkContainerDataCount(this.data, DATA_COUNT);
 
         for (int i = 0; i < PROJECTOR_SLOTS; i++) {
-            int col = i % 2;
-            int row = i / 2;
-            this.addSlot(new Slot(this.container, i, 86 + col * 18, 20 + row * 18) {
+            this.addSlot(new Slot(this.container, i, 53 + i * 18, 54) {
                 @Override
                 public boolean mayPlace(ItemStack stack) {
                     return ProjectorAcceptance.accepts(stack);
@@ -92,14 +87,14 @@ public class ProjectorMenu extends AbstractContainerMenu {
 
         this.addDataSlots(this.data);
 
-        for (int k = 0; k < 3; ++k) {
-            for (int l = 0; l < 9; ++l) {
-                this.addSlot(new Slot(playerInventory, l + k * 9 + 9, 22 + l * 18, 118 + k * 18));
+        for(int k = 0; k < 3; ++k) {
+            for(int i1 = 0; i1 < 9; ++i1) {
+                this.addSlot(new Slot(playerInventory, i1 + k * 9 + 9, 8 + i1 * 18, 85 + k * 18));
             }
         }
 
-        for (int i1 = 0; i1 < 9; ++i1) {
-            this.addSlot(new Slot(playerInventory, i1, 22 + i1 * 18, 176));
+        for(int l = 0; l < 9; ++l) {
+            this.addSlot(new Slot(playerInventory, l, 8 + l * 18, 143));
         }
     }
 
@@ -149,21 +144,5 @@ public class ProjectorMenu extends AbstractContainerMenu {
 
     public int getMode() {
         return this.data.get(0);
-    }
-
-    public int getCarouselIndex() {
-        return this.data.get(1);
-    }
-
-    public boolean isCarouselAuto() {
-        return this.data.get(2) != 0;
-    }
-
-    public int getCarouselPeriod() {
-        return this.data.get(3);
-    }
-
-    public boolean isFlipped() {
-        return this.data.get(4) != 0;
     }
 }

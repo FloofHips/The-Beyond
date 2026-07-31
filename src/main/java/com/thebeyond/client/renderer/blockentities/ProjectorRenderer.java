@@ -133,15 +133,15 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         Vec3 eye = Vec3.atCenterOf(be.getBlockPos()).add(forward.scale(0.5));
         Vec3 worldUp = new Vec3(0, 1, 0);
         Vec3 right = forward.cross(worldUp).normalize();
-        if (be.isFlipped()) {
-            right = right.scale(-1);
-        }
+//        if (be.isFlipped()) {
+//            right = right.scale(-1);
+//        }
         Vec3 up = right.cross(forward).normalize();
-        for (int k = Math.floorMod(be.getRotation(), 4); k > 0; k--) {
-            Vec3 nr = up;
-            up = right.scale(-1);
-            right = nr;
-        }
+        //for (int k = Math.floorMod(be.getRotation(), 4); k > 0; k--) {
+        //    Vec3 nr = up;
+        //    up = right.scale(-1);
+        //    right = nr;
+        //}
         return new Pinhole(eye, forward, right, up, BASE_HALF / REF_DIST);
     }
 
@@ -156,11 +156,11 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
     static ResourceLocation frontGlassGradeId(ProjectorBlockEntity be) {
         Level level = be.getLevel();
         if (level == null) {
-            return Grades.AS_PHOTO;
+            return Grades.NONE;
         }
         BlockState fg = level.getBlockState(ProjectorBlock.frontOrigin(be.getBlockPos(), be.getBlockState()));
         ResourceLocation id = Grades.glassGradeId(fg);
-        ResourceLocation tone = (id != null && isLightTransmitting(fg)) ? id : Grades.AS_PHOTO;
+        ResourceLocation tone = (id != null && isLightTransmitting(fg)) ? id : Grades.NONE;
         if (DIAG_GLASS_TONE && !tone.equals(DIAG_LAST_TONE.put(be.getBlockPos(), tone))) {
             TheBeyond.LOGGER.info("[Projector tone] be@{} front={} -> {}", be.getBlockPos(), fg.getBlock(), tone);
         }
@@ -177,11 +177,12 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         if (!(state.getBlock() instanceof ProjectorBlock)) {
             return false;
         }
-        Direction facing = state.getValue(ProjectorBlock.FACING);
-        BlockPos behind = be.getBlockPos().relative(facing.getOpposite());
-        BlockState behindState = level.getBlockState(behind);
-        return behindState.getLightEmission(level, behind) > 0
-                && behindState.isCollisionShapeFullBlock(level, behind);
+
+        return state.getValue(ProjectorBlock.POWERED);
+        //Direction facing = state.getValue(ProjectorBlock.FACING);
+        //BlockPos behind = be.getBlockPos().relative(facing.getOpposite());
+        //BlockState behindState = level.getBlockState(behind);
+        //return behindState.getLightEmission(level, behind) > 0;
     }
 
     /** World AABB enclosing the full pinhole cone out to {@link #MAX_THROW}. */
