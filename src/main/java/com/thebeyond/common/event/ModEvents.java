@@ -2,7 +2,6 @@ package com.thebeyond.common.event;
 
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.entity.*;
-import com.thebeyond.common.entity.util.livingblock.LivingBlock;
 import com.thebeyond.common.registry.BeyondEntityTypes;
 import com.thebeyond.common.camera.Grade;
 import com.thebeyond.common.camera.Grades;
@@ -24,7 +23,7 @@ public class ModEvents {
         event.put(BeyondEntityTypes.ENATIOUS_TOTEM.get(), EnatiousTotemEntity.createAttributes().build());
         event.put(BeyondEntityTypes.LANTERN.get(), LanternEntity.createAttributes().build());
         event.put(BeyondEntityTypes.ABYSSAL_NOMAD.get(), AbyssalNomadEntity.createAttributes().build());
-        event.put(BeyondEntityTypes.TEST_BLOCK.get(), LivingBlock.createAttributes().build());
+        event.put(BeyondEntityTypes.BEAD.get(), BeadEntity.createAttributes().build());
     }
 
     /** Registered on both sides; a Dist.CLIENT-only registration would skip dedicated servers. */

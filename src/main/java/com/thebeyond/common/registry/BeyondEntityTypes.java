@@ -2,13 +2,10 @@ package com.thebeyond.common.registry;
 
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.entity.*;
-import com.thebeyond.common.entity.util.livingblock.LivingBlock;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
-import net.neoforged.bus.EventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -76,10 +73,10 @@ public class BeyondEntityTypes {
                             .clientTrackingRange(4)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rising_block").toString()));
 
-    public static final DeferredHolder<EntityType<?>, EntityType<LivingBlock>> TEST_BLOCK =
-            ENTITY_TYPES.register("test_block",
-                    () -> EntityType.Builder.<LivingBlock>of(LivingBlock::new, MobCategory.MISC)
+    public static final DeferredHolder<EntityType<?>, EntityType<BeadEntity>> BEAD =
+            ENTITY_TYPES.register("bead_entity",
+                    () -> EntityType.Builder.<BeadEntity>of(BeadEntity::new, MobCategory.MISC)
                             .sized(1, 1)
                             .clientTrackingRange(4)
-                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "test_block").toString()));
+                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "bead_entity").toString()));
 }

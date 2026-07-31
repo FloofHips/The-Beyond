@@ -2,6 +2,7 @@ package com.thebeyond.common.entity.util.livingblock;
 
 import com.thebeyond.common.registry.BeyondEntityDataSerializers;
 import com.thebeyond.common.entity.util.livingblock.movement.*;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.util.MathHelpers;
 
 import java.util.Set;
@@ -24,7 +25,6 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.gameevent.GameEvent.Context;
@@ -99,12 +99,8 @@ public class LivingBlock extends Mob {
     @Nullable
     @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData spawnData) {
-        this.randomizeProceduralShape();
+        this.getProceduralShape();
         return super.finalizeSpawn(level, difficulty, reason, spawnData);
-    }
-
-    public static AttributeSupplier.Builder createAttributes() {
-        return Monster.createMonsterAttributes().add(Attributes.MOVEMENT_SPEED, 0.2);
     }
 
     public void setShape(VoxelShape shape) {
@@ -269,16 +265,12 @@ public class LivingBlock extends Mob {
         }
     }
 
-    public void randomizeProceduralShape() {
-        //float w = (2 + this.random.nextInt(15)) / 16.0F;
-        //float h = (2 + this.random.nextInt(15)) / 16.0F;
-        //float d = (2 + this.random.nextInt(15)) / 16.0F;
+    public void getProceduralShape() {
+        float w = (1 + this.random.nextInt(15)) / 16.0F;
+        float h = (1 + this.random.nextInt(15)) / 16.0F;
+        float d = (1 + this.random.nextInt(15)) / 16.0F;
 
-        float w = this.random.nextFloat();
-        float h = this.random.nextFloat();
-        float d = this.random.nextFloat();
-
-        this.setDimensions(new Vector3f(2, 2, 2));
+        this.setDimensions(new Vector3f(w, h, d));
     }
 
     public void resetClimbingDirection() {
@@ -325,6 +317,7 @@ public class LivingBlock extends Mob {
 
     @Override
     protected void playStepSound(final BlockPos pos, final BlockState movingOn) {
+        this.playSound(BeyondSoundEvents.MEMOR_PLACE.get());
         super.playStepSound(pos, movingOn);
     }
 
@@ -396,7 +389,7 @@ public class LivingBlock extends Mob {
             if (lastDistanceToZero > 10.0 && currentDistanceToZero <= 10.0) {
                 BlockPos effectPos = this.getOnPosLegacy();
                 BlockState effectState = this.level().getBlockState(effectPos);
-                //this.walkingStepSound(effectPos, effectState);
+                this.playStepSound(effectPos, effectState);
                 this.level().gameEvent(GameEvent.STEP, effectPos, Context.of(this, effectState));
                 this.rollSoundTime = 4;
             }

@@ -115,8 +115,7 @@ public class LivingBlockRenderer extends EntityRenderer<LivingBlock> {
         poseStack.scale((float) sizeX, (float) sizeY, (float) sizeZ);
         poseStack.translate(-0.5, -0.5, -0.5);
 
-        this.blockRenderer.renderSingleBlock(
-                BLOCK_STATE, poseStack, buffer, packedLight, OverlayTexture.NO_OVERLAY);
+        this.blockRenderer.renderSingleBlock(getBlockState(), poseStack, buffer, packedLight, OverlayTexture.NO_OVERLAY);
 
         poseStack.popPose();
 
@@ -126,6 +125,10 @@ public class LivingBlockRenderer extends EntityRenderer<LivingBlock> {
         }
 
         super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
+    }
+
+    public BlockState getBlockState() {
+        return BLOCK_STATE;
     }
 
     @Override
