@@ -25,6 +25,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -78,6 +79,7 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
             return switch (i) {
                 case 0 -> mode;
                 case 1 -> carouselIndex;
+                case 2 -> isLit();
                 default -> 0;
             };
         }
@@ -133,6 +135,19 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
 
     public int getCarouselIndex() {
         return carouselIndex;
+    }
+
+    public int isLit() {
+        Level level = this.getLevel();
+        if (level == null) {
+            return 0;
+        }
+        BlockState state = this.getBlockState();
+        if (!(state.getBlock() instanceof ProjectorBlock)) {
+            return 0;
+        }
+
+        return state.getValue(ProjectorBlock.POWERED) ? 1 : 0;
     }
 
     /** No clamp: render wraps the index modulo the filled-slot count. */

@@ -179,10 +179,6 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         }
 
         return state.getValue(ProjectorBlock.POWERED);
-        //Direction facing = state.getValue(ProjectorBlock.FACING);
-        //BlockPos behind = be.getBlockPos().relative(facing.getOpposite());
-        //BlockState behindState = level.getBlockState(behind);
-        //return behindState.getLightEmission(level, behind) > 0;
     }
 
     /** World AABB enclosing the full pinhole cone out to {@link #MAX_THROW}. */

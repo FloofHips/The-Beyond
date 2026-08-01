@@ -46,6 +46,7 @@ public class ProjectorMenu extends AbstractContainerMenu {
                     return switch (i) {
                         case 0 -> projector.getMode();
                         case 1 -> projector.getCarouselIndex();
+                        case 2 -> projector.isLit();
                         default -> 0;
                     };
                 }
@@ -144,5 +145,9 @@ public class ProjectorMenu extends AbstractContainerMenu {
 
     public int getMode() {
         return this.data.get(0);
+    }
+
+    public int isLit() {
+        return this.data.get(2);
     }
 }

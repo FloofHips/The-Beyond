@@ -3,6 +3,7 @@ package com.thebeyond.client.gui;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.math.Axis;
 import com.thebeyond.TheBeyond;
+import com.thebeyond.common.block.ProjectorBlock;
 import com.thebeyond.common.block.blockentities.ProjectorBlockEntity;
 import com.thebeyond.common.block.blockentities.ProjectorMenu;
 import com.thebeyond.common.network.ProjectorCarouselAutoPayload;
@@ -13,6 +14,8 @@ import com.thebeyond.common.network.ProjectorSetModePayload;
 import com.thebeyond.util.RenderUtils;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -33,12 +36,11 @@ public class ProjectorScreen extends AbstractContainerScreen<ProjectorMenu> {
     static final ResourceLocation MAGAZINE_SPRITE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/container/projector/magazine.png");
     static final ResourceLocation LIGHT_SPRITE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/container/projector/light.png");
 
-    private Button[] modeButtons;
-    private Button prevButton;
-    private Button nextButton;
-    private Button autoButton;
     float rot;
-    int rotTarget;
+    float rotTarget;
+    ScreenRectangle currentMode;
+    ScreenRectangle nextMode;
+    ScreenRectangle previousMode;
 
     public ProjectorScreen(ProjectorMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -51,65 +53,60 @@ public class ProjectorScreen extends AbstractContainerScreen<ProjectorMenu> {
         super.init();
         int x = this.leftPos;
         int y = this.topPos;
-        rot = menu.getMode()*90;
-        rotTarget = (int) rot;
 
-        this.titleLabelX = 8;//(this.imageWidth - this.font.width(this.title)) / 2;
+        currentMode = new ScreenRectangle(x+79, y+5, 18, 18);
+        nextMode = new ScreenRectangle(x+100, y, 27, 39);
+        previousMode = new ScreenRectangle(x+48, y, 27, 39);
+
+        rot = menu.getMode() *90;
+        rotTarget = rot;
+
+        this.titleLabelX = 8;
         this.titleLabelY = 44;
         this.inventoryLabelX = 8;
         this.inventoryLabelY = 73;
 
-
         this.addWidget(Button.builder(Component.literal("Previous Mode"),
                         b -> {
-                            rotTarget = getNextMode(menu.getMode() - 1)*90;
-                            PacketDistributor.sendToServer(new ProjectorSetModePayload(menu.getBlockPos(), (byte) getNextMode(menu.getMode() - 1)));
+                            rotTarget = cycleMode(menu.getMode() - 1)*90;
+                            PacketDistributor.sendToServer(new ProjectorSetModePayload(menu.getBlockPos(), (byte) cycleMode(menu.getMode() - 1)));
                         })
-                .bounds(x + 48, y, 27, 27)
+                .bounds(x + 48, y, 27, 39)
                 .build());
 
         this.addWidget(Button.builder(Component.literal("Next Mode"),
                         b -> {
-                            rotTarget = getNextMode(menu.getMode() + 1)*90;
-                            PacketDistributor.sendToServer(new ProjectorSetModePayload(menu.getBlockPos(), (byte) getNextMode(menu.getMode() + 1)));
+                            rotTarget = cycleMode(menu.getMode() + 1)*90;
+                            PacketDistributor.sendToServer(new ProjectorSetModePayload(menu.getBlockPos(), (byte) cycleMode(menu.getMode() + 1)));
                         })
-                .bounds(x + 100, y, 27, 27)
+                .bounds(x + 100, y, 27, 39)
                 .build());
     }
 
-    public int getNextMode(int mode) {
-        return mode%4;
+    public int cycleMode(int mode) {
+        return Math.floorMod(mode, 4);
     }
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        // Sync before super.render, else a button hidden this frame could still intercept the click.
-
-        //for (int i = 0; i < modeButtons.length; i++) {
-        //    modeButtons[i].active = menu.getMode() != i;
-        //}
-        //boolean carousel = menu.getMode() == ProjectorBlockEntity.MODE_CAROUSEL;
-        //prevButton.visible = carousel;
-        //nextButton.visible = carousel;
-        //autoButton.visible = carousel;
-        //autoButton.setMessage(autoLabel());
-
        if (rot != rotTarget) {
-           rot = (float) Mth.rotLerp(0.1, rot, rotTarget);
-
-           rot = (int) rot;
+           rot = (float) Mth.rotLerp(0.3, rot, rotTarget);
        }
 
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
+        if (currentMode.containsPoint(mouseX, mouseY))
+            guiGraphics.renderTooltip(this.font, Component.literal(ProjectorBlockEntity.MODE_NAMES[menu.getMode()]), mouseX, mouseY);
+        if (nextMode.containsPoint(mouseX, mouseY))
+            guiGraphics.renderTooltip(this.font, Component.literal(">"), mouseX, mouseY);
+        if (previousMode.containsPoint(mouseX, mouseY))
+            guiGraphics.renderTooltip(this.font, Component.literal("<"), mouseX, mouseY);
     }
 
     @Override
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         int x = this.leftPos;
         int y = this.topPos;
-        //int x = (this.width - this.imageWidth) / 2;
-        //int y = (this.height - this.imageHeight) / 2;
 
         guiGraphics.blit(BACKPLATE_SPRITE, x+48, y,0,0, 80, 80, 80, 80);
 
@@ -126,6 +123,7 @@ public class ProjectorScreen extends AbstractContainerScreen<ProjectorMenu> {
         guiGraphics.blit(BG_LOCATION, x, y, 0,0,176, 167);
         RenderSystem.defaultBlendFunc();
 
-        RenderUtils.renderAdditiveQuad(guiGraphics, LIGHT_SPRITE, x+71, y+23,0,0, 34, 34, 34, 34, 0);
+        if(menu.isLit() == 1)
+            RenderUtils.renderAdditiveQuad(guiGraphics, LIGHT_SPRITE, x+71, y+23,0,0, 34, 34, 34, 34, 0);
     }
 }
