@@ -31,6 +31,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -455,6 +457,12 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         return chunk.getBlockState(pos);
     }
 
+    private static int reflectionPriority(Entity e) {
+        if (e instanceof Player) return 0;
+        if (e instanceof LivingEntity) return 1;
+        return 2;
+    }
+
     private static List<Entity> collectReflectedEntities(Minecraft mc, Vec3 point, Vec3 normal, float pt) {
         double r = RENDER_DIST;
         AABB box = new AABB(point.x - r, point.y - r, point.z - r, point.x + r, point.y + r, point.z + r);
@@ -465,7 +473,9 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
             }
             front.add(e);
         }
-        front.sort(Comparator.comparingDouble(e -> e.distanceToSqr(point.x, point.y, point.z)));
+        // Players first, then other living bodies: the cap is small, and dropped items must not crowd them out.
+        front.sort(Comparator.<Entity>comparingInt(MirrorSableRenderer::reflectionPriority)
+                .thenComparingDouble(e -> e.distanceToSqr(point.x, point.y, point.z)));
 
         List<Entity> visible = new ArrayList<>();
         int budget = Math.min(front.size(), MAX_REFLECTED_ENTITIES * 3);

@@ -51,4 +51,6 @@ public final class FeatureGuard {
 
     /** True while the guard is armed for the current chunk decoration (a carve structure is near). */
     public static boolean isArmed() { return VOLUME.get() != null; }
+
+    public static boolean inStructure() { return DEPTH.get()[0] > 0; }
 }

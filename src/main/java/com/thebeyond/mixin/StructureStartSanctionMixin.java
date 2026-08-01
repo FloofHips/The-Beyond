@@ -4,6 +4,7 @@ import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.thebeyond.api.worldgen.BeyondForeignStructureProfiles;
 import com.thebeyond.api.worldgen.FeatureGuard;
+import com.thebeyond.api.worldgen.ForeignStructureWrite;
 import com.thebeyond.api.worldgen.SanctionedWrite;
 import com.thebeyond.api.worldgen.StructureIntegrationProfile;
 import com.thebeyond.common.worldgen.BeyondEndChunkGenerator;
@@ -56,15 +57,17 @@ public abstract class StructureStartSanctionMixin {
         // Mark the structure-placement phase so the feature guard (which only vetoes feature writes) lets
         // this structure build inside its own bbox.
         if (beyondGen) FeatureGuard.enterStructure();
+        boolean foreign = beyondGen && !own;
+        if (foreign) ForeignStructureWrite.enter();
         try {
             original.call(level, structureManager, chunkGenerator, random, boundingBox, chunkPos);
+            // Inside the scope: outside it the feature guard vetoes the swap on every column the carve cleared.
+            if (foreign) the_beyond$coverGroundDirt(level, boundingBox);
         } finally {
+            if (foreign) ForeignStructureWrite.exit();
             if (beyondGen) FeatureGuard.exitStructure();
             if (own) SanctionedWrite.exit();
         }
-        // After a foreign structure places, optionally swap its dirt-family ground blocks for end_stone so
-        // a ruin authored with a dirt floor reads as End stone here.
-        if (beyondGen && !own) the_beyond$coverGroundDirt(level, boundingBox);
     }
 
     private void the_beyond$coverGroundDirt(WorldGenLevel level, BoundingBox writeBox) {

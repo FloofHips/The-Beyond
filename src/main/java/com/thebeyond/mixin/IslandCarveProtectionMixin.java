@@ -1,6 +1,7 @@
 package com.thebeyond.mixin;
 
 import com.thebeyond.api.worldgen.FeatureGuard;
+import com.thebeyond.api.worldgen.ForeignStructureWrite;
 import com.thebeyond.api.worldgen.SanctionedWrite;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.worldgen.BeyondEndChunkGenerator;
@@ -13,8 +14,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-
-//temporarily removed from the mixins.json!
 
 /** Vetoes two kinds of writes on Beyond's own End generator: features rooting inside a foreign structure's
  *  carved volume ({@link FeatureGuard}), and foreign template air carving solid island terrain. {@link SanctionedWrite} bypasses both. */
@@ -69,11 +68,12 @@ public abstract class IslandCarveProtectionMixin {
             return;
         }
         // Record decoration blocks near a carve structure; the post-decoration sweep drops any whose support was severed above. Generic — no per-mod list.
-        if (FeatureGuard.isArmed() && !state.isAir()) {
+        if (FeatureGuard.isArmed() && !FeatureGuard.inStructure() && !state.isAir()) {
             FloatingFeatureGuard.record(pos.asLong());
         }
         // Carve veto: foreign template AIR over solid island terrain.
         if (!state.isAir()) return;                  // only template AIR can carve
+        if (!ForeignStructureWrite.isActive()) return;
         BlockState existing = self.getBlockState(pos);
         if (existing.isAir()) return;                // air-over-air: hollowing above islands → allow
         if (!existing.getFluidState().isEmpty()) return; // don't fight fluids

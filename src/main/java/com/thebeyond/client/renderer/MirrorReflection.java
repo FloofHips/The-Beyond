@@ -28,6 +28,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
@@ -90,6 +91,14 @@ public final class MirrorReflection {
 
     // LOS raycast is the costly part of capture; refresh the selection every few ticks, not every frame.
     private static final int ENTITY_REFRESH_TICKS = 4;
+
+    private static final Vec3[] FACE_NORMALS = new Vec3[6];
+
+    static {
+        for (Direction d : Direction.values()) {
+            FACE_NORMALS[d.ordinal()] = new Vec3(d.getStepX(), d.getStepY(), d.getStepZ());
+        }
+    }
 
     private static Slot[] slots;
     private static boolean loggedBuildTag;
@@ -226,10 +235,11 @@ public final class MirrorReflection {
                 continue;
             }
             BlockPos pos = be.getBlockPos();
-            boolean visible = frustum.isVisible(new AABB(pos).inflate(0.5));
+            double bx = pos.getX(), by = pos.getY(), bz = pos.getZ();
+            boolean visible = frustum.isVisible(new AABB(bx - 0.5, by - 0.5, bz - 0.5, bx + 1.5, by + 1.5, bz + 1.5));
             for (Direction f : MirrorBlock.reflectiveFaces(st)) {
-                Vec3 normal = new Vec3(f.getStepX(), f.getStepY(), f.getStepZ());
-                Vec3 faceCenter = Vec3.atCenterOf(pos).add(normal.scale(0.5));
+                Vec3 normal = FACE_NORMALS[f.ordinal()];
+                Vec3 faceCenter = new Vec3(bx + 0.5 + normal.x * 0.5, by + 0.5 + normal.y * 0.5, bz + 0.5 + normal.z * 0.5);
                 double dsq = faceCenter.distanceToSqr(pp);
                 PlaneKey key = planeKey(pos, f);
                 PlaneInfo info = planes.get(key);
@@ -944,7 +954,9 @@ public final class MirrorReflection {
             }
             front.add(e);
         }
-        front.sort(Comparator.comparingDouble(e -> e.distanceToSqr(info.point.x, info.point.y, info.point.z)));
+        // Players first, then other living bodies: the cap is small, and dropped items must not crowd them out.
+        front.sort(Comparator.<Entity>comparingInt(MirrorReflection::reflectionPriority)
+                .thenComparingDouble(e -> e.distanceToSqr(info.point.x, info.point.y, info.point.z)));
 
         // Bounded by a check budget then the entity cap, so a crowd of occluded mobs can't blow up the cost.
         List<Entity> visible = new ArrayList<>();
@@ -956,6 +968,12 @@ public final class MirrorReflection {
             }
         }
         return visible;
+    }
+
+    private static int reflectionPriority(Entity e) {
+        if (e instanceof Player) return 0;
+        if (e instanceof LivingEntity) return 1;
+        return 2;
     }
 
     /** Samples several heights, not just the eye, so a block covering one part (e.g. the head) doesn't cull the whole body. */
@@ -1076,7 +1094,7 @@ public final class MirrorReflection {
                     continue;
                 }
                 int alpha = (int) (Mth.clamp(slot.fade, 0.0f, 1.0f) * 255.0f);
-                float[][] corners = faceQuad(facing, 0.002f);
+                float[][] corners = FACE_QUADS[facing.ordinal()];
 
                 if (slot.packPath()) {
                     VertexConsumer vc = buf.getBuffer(BeyondRenderTypes.mirrorPack(slot.texture()));
@@ -1153,6 +1171,16 @@ public final class MirrorReflection {
         return bottom + (top - bottom) * v;
     }
 
+
+    // Only ever needed at the one inset below, and the caller never writes into it, so build the six once.
+    private static final float FACE_INSET = 0.002f;
+    private static final float[][][] FACE_QUADS = new float[6][][];
+
+    static {
+        for (Direction d : Direction.values()) {
+            FACE_QUADS[d.ordinal()] = faceQuad(d, FACE_INSET);
+        }
+    }
 
     private static float[][] faceQuad(Direction facing, float e) {
         return switch (facing) {

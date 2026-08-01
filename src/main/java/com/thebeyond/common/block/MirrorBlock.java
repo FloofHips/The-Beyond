@@ -27,6 +27,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /** Face reflectivity survives breaking via the block's copy_state loot table. */
 public class MirrorBlock extends BaseEntityBlock {
@@ -50,14 +51,19 @@ public class MirrorBlock extends BaseEntityBlock {
                 .setValue(WEST, false).setValue(UP, false).setValue(DOWN, false));
     }
 
+    // Queried per mirror per frame by the reflection pass; at most 64 states, and BlockStates are interned.
+    private static final Map<BlockState, List<Direction>> FACE_CACHE = new ConcurrentHashMap<>();
+
     public static List<Direction> reflectiveFaces(BlockState state) {
-        List<Direction> faces = new ArrayList<>(4);
-        for (Map.Entry<Direction, BooleanProperty> e : FACE_PROPERTIES.entrySet()) {
-            if (state.getValue(e.getValue())) {
-                faces.add(e.getKey());
+        return FACE_CACHE.computeIfAbsent(state, s -> {
+            List<Direction> faces = new ArrayList<>(4);
+            for (Map.Entry<Direction, BooleanProperty> e : FACE_PROPERTIES.entrySet()) {
+                if (s.getValue(e.getValue())) {
+                    faces.add(e.getKey());
+                }
             }
-        }
-        return faces;
+            return List.copyOf(faces);
+        });
     }
 
     @Override

@@ -16,8 +16,6 @@ import org.spongepowered.asm.mixin.Mixin;
 
 import java.util.List;
 
-//temporarily removed from the mixins.json!
-
 /** Arms {@link FeatureGuard} with the exact volume the island carve cleared around nearby carve-type
  *  structures, so decorations can't pierce them or float in the carved margin. Cleared in a finally. */
 @Mixin(ChunkGenerator.class)
