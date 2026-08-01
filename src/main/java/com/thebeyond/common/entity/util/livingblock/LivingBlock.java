@@ -1,15 +1,15 @@
 package com.thebeyond.common.entity.util.livingblock;
 
 import com.thebeyond.common.registry.BeyondEntityDataSerializers;
+import com.thebeyond.common.registry.BeyondTags;
 import com.thebeyond.common.entity.util.livingblock.movement.*;
-import com.thebeyond.common.registry.BeyondSoundEvents;
+import com.thebeyond.common.entity.util.livingblock.LivingBlockShapeFactory;
 import com.thebeyond.util.MathHelpers;
 
-import java.util.Set;
+import java.util.List;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.core.Direction.Axis;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -17,6 +17,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.network.syncher.SynchedEntityData.Builder;
 import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -25,6 +26,7 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.level.Level;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.gameevent.GameEvent.Context;
@@ -48,8 +50,8 @@ public class LivingBlock extends Mob {
     protected static final EntityDataAccessor<MovementData> MOVEMENT_DATA = SynchedEntityData.defineId(LivingBlock.class, BeyondEntityDataSerializers.MOVEMENT_DATA.get());
     protected static final EntityDataAccessor<Target> MOVEMENT_TARGET = SynchedEntityData.defineId(LivingBlock.class, BeyondEntityDataSerializers.TARGET.get());
     private static final EntityDataAccessor<Direction> DATA_CLIMBING_DIRECTION = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.DIRECTION);
-    private static final EntityDataAccessor<Vector3f> DATA_DIMENSIONS = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.VECTOR3);
     private static final EntityDataAccessor<Boolean> DATA_PINNED = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer> DATA_SHAPE_SEED = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.INT);
 
     private static final EntityDataAccessor<Integer> DATA_MOVEMENT_TYPE = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.INT);
 
@@ -71,7 +73,23 @@ public class LivingBlock extends Mob {
     private static final double ROLL_SOUND_MIN_ANGLE = 10.0;
     private static final float ROLL_ROTATION_DELTA_EPSILON = 1.0E-5F;
 
-    public Vec3 boundingBoxOffset = Vec3.ZERO;
+    private static final float FLOP_VOLUME = 1.0F;
+    private static final float FLOP_PITCH = 0.75F;
+    private static final float FLOP_MIN_CONTACT = 0.35F;
+    private static final float FLOP_PITCH_SPREAD = 0.3F;
+    private static final double DRAG_TUMBLE_SPEED_SQR = 0.01;
+    private static final double TUMBLE_MIN_SPEED = 0.02;
+    private static final float TUMBLE_PIVOT_BIAS = 0.15F;
+    private static final double TUMBLE_LIFT_CAP = 0.45;
+    private static final double TUMBLE_MAX_SLOPE = 2.0;
+    private static final double TUMBLE_MIN_LIFT = 0.08;
+    private static final double TUMBLE_LAUNCH_MARGIN = 1.0;
+    private static final double IMPACT_SQUASH_MIN_SPEED = 0.1;
+    private static final double IMPACT_SQUASH_RANGE = 0.5;
+    private static final double IMPACT_SQUASH_MAX = 0.35;
+    private static final int IMPACT_SQUASH_TICKS = 2;
+    private static final int IMPACT_RECOVER_TICKS = 4;
+
     private MovementStrategy<?> movement = MV_ROLL_FLOAT;
     private float maxUpStep = 0.6F;
     private Vec3 pogoScaleTarget = new Vec3(1.0, 1.0, 1.0);
@@ -80,6 +98,17 @@ public class LivingBlock extends Mob {
     private int pogoScaleTicksRemaining = 0;
     private int pogoScaleTicks = 0;
     private VoxelShape customShape = Shapes.block();
+    private AABB shapeBounds;
+    private List<AABB> shapeBoxes;
+    private double shapeCenterX;
+    private double shapeCenterZ;
+    private boolean shapeIsEntropic;
+    private boolean pendingFlop;
+    private boolean wasGrounded;
+    private boolean tumbleArmed;
+    private boolean tumbleAirborne;
+    private double previousFallSpeed;
+    private int squashRecoverTicks;
     private CollisionInteraction collision = CollisionInteraction.ENTITY;
 
     public CollisionInteraction getCollision() {
@@ -96,34 +125,95 @@ public class LivingBlock extends Mob {
         this.noPhysics = false;
     }
 
+    public VoxelShape getCustomShape() {
+        return this.customShape;
+    }
+
     @Nullable
     @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData spawnData) {
-        this.getProceduralShape();
+        this.assignShapeSeed();
         return super.finalizeSpawn(level, difficulty, reason, spawnData);
+    }
+
+    public boolean isEntropicForm() {
+        return this.getType().is(BeyondTags.ENTROPIC_FORM);
+    }
+
+    private void assignShapeSeed() {
+        if (this.entityData.get(DATA_SHAPE_SEED) == 0) {
+            this.entityData.set(DATA_SHAPE_SEED, this.random.nextInt() | 1);
+        }
+    }
+
+    protected VoxelShape generateShape(final RandomSource random, final boolean entropic) {
+        return LivingBlockShapeFactory.create(random, entropic);
+    }
+
+    private void applyShape() {
+        this.shapeIsEntropic = this.isEntropicForm();
+        this.setShape(this.generateShape(
+                RandomSource.create(this.entityData.get(DATA_SHAPE_SEED)), this.shapeIsEntropic));
+    }
+
+    public static AttributeSupplier.Builder createAttributes() {
+        return Monster.createMonsterAttributes().add(Attributes.MOVEMENT_SPEED, 0.2);
     }
 
     public void setShape(VoxelShape shape) {
         this.customShape = shape;
+        this.cacheShapeGeometry();
         this.refreshDimensions();
     }
 
+    private void cacheShapeGeometry() {
+        VoxelShape shape = this.customShape != null ? this.customShape : Shapes.block();
+        this.shapeBounds = shape.bounds();
+        this.shapeBoxes = List.copyOf(shape.toAabbs());
+        this.shapeCenterX = Mth.lerp(0.5, this.shapeBounds.minX, this.shapeBounds.maxX);
+        this.shapeCenterZ = Mth.lerp(0.5, this.shapeBounds.minZ, this.shapeBounds.maxZ);
+    }
+
+    public AABB getShapeBounds() {
+        if (this.shapeBounds == null) {
+            this.cacheShapeGeometry();
+        }
+        return this.shapeBounds;
+    }
+
+    public List<AABB> getShapeBoxes() {
+        if (this.shapeBoxes == null) {
+            this.cacheShapeGeometry();
+        }
+        return this.shapeBoxes;
+    }
+
     public boolean isBeingDraggedRapidly() {
-        if (!this.isLeashed()) return false;
-        return this.getDeltaMovement().horizontalDistanceSqr() > 0.01;
+        if (!this.isLeashed()) {
+            return false;
+        }
+        Entity holder = this.getLeashHolder();
+        if (holder == null) {
+            return false;
+        }
+        double distance = this.distanceTo(holder);
+        if (distance <= Leashable.LEASH_ELASTIC_DIST || distance > Leashable.LEASH_TOO_FAR_DIST) {
+            return false;
+        }
+        return this.getDeltaMovement().horizontalDistanceSqr() > DRAG_TUMBLE_SPEED_SQR;
     }
 
     private MovementStrategy<?> desiredMovement() {
-        AABB b = (this.customShape != null ? this.customShape : Shapes.block()).bounds();
+        AABB b = this.getShapeBounds();
         double sizeX = b.getXsize();
         double sizeY = b.getYsize();
         double sizeZ = b.getZsize();
 
         double volume = sizeX * sizeY * sizeZ;
         double maxFootprint = Math.max(sizeX, sizeZ);
-
+        
         boolean isTiny = volume <= 0.125;
-        boolean isFlat = sizeY <= (maxFootprint * 0.5);
+        boolean isFlat = sizeY <= (maxFootprint * 0.5); 
 
         if (this.isLeashed()) {
             Entity holder = this.getLeashHolder();
@@ -135,15 +225,15 @@ public class LivingBlock extends Mob {
                 }
 
                 if (this.isBeingDraggedRapidly()) {
-                    return MV_POGO;
+                    return MV_ROLL_FLOAT;
                 }
             }
         }
 
         if (isFlat) {
-            return MV_POGO;
+            return MV_POGO; 
         }
-        return MV_ROLL_FLOAT;
+        return MV_ROLL_FLOAT; 
     }
 
     public void setMovement(final MovementStrategy<?> movement) {
@@ -179,9 +269,8 @@ public class LivingBlock extends Mob {
         if (DATA_MOVEMENT_TYPE.equals(key) && this.level().isClientSide()) {
             this.movement = movementFromId(this.entityData.get(DATA_MOVEMENT_TYPE));
         }
-        if (DATA_DIMENSIONS.equals(key)) {
-            Vector3f dim = this.entityData.get(DATA_DIMENSIONS);
-            this.setShape(Shapes.box(0, 0, 0, dim.x(), dim.y(), dim.z()));
+        if (DATA_SHAPE_SEED.equals(key)) {
+            this.applyShape();
         }
     }
 
@@ -191,30 +280,6 @@ public class LivingBlock extends Mob {
 
     public void clearMovementTarget() {
         this.setMovementTarget(Target.NONE);
-    }
-
-    private static @Nullable BlockPos findFreeSpawnInColumn(final Level level, final BlockPos base, final Set<BlockPos> used) {
-        MutableBlockPos pos = base.mutable();
-
-        for (int y = 0; y < 5; y++) {
-            if (!used.contains(pos) && level.noCollision(AABB.encapsulatingFullBlocks(pos, pos).deflate(1.0E-7))) {
-                return pos.immutable();
-            }
-
-            pos.move(Direction.UP);
-        }
-
-        pos.set(base).move(Direction.DOWN);
-
-        for (int y = 0; y < 3; y++) {
-            if (!used.contains(pos) && level.noCollision(AABB.encapsulatingFullBlocks(pos, pos).deflate(1.0E-7))) {
-                return pos.immutable();
-            }
-
-            pos.move(Direction.DOWN);
-        }
-
-        return null;
     }
 
     @Override
@@ -238,9 +303,9 @@ public class LivingBlock extends Mob {
         entityData.define(MOVEMENT_TARGET, Target.NONE);
         entityData.define(MOVEMENT_DATA, MovementData.EMPTY);
         entityData.define(DATA_CLIMBING_DIRECTION, Direction.DOWN);
-        entityData.define(DATA_DIMENSIONS, new Vector3f(1.0F, 1.0F, 1.0F));
         entityData.define(DATA_MOVEMENT_TYPE, 3);
-
+        entityData.define(DATA_SHAPE_SEED, 0);
+        
     }
 
     public boolean isPinned() {
@@ -251,10 +316,6 @@ public class LivingBlock extends Mob {
         this.entityData.set(DATA_PINNED, pinned);
     }
 
-    public void setDimensions(Vector3f dim) {
-        this.entityData.set(DATA_DIMENSIONS, dim);
-    }
-
     public Direction getClimbingDirection() {
         return this.entityData.get(DATA_CLIMBING_DIRECTION);
     }
@@ -263,14 +324,6 @@ public class LivingBlock extends Mob {
         if (!this.level().isClientSide()) {
             this.entityData.set(DATA_CLIMBING_DIRECTION, direction);
         }
-    }
-
-    public void getProceduralShape() {
-        float w = (1 + this.random.nextInt(15)) / 16.0F;
-        float h = (1 + this.random.nextInt(15)) / 16.0F;
-        float d = (1 + this.random.nextInt(15)) / 16.0F;
-
-        this.setDimensions(new Vector3f(w, h, d));
     }
 
     public void resetClimbingDirection() {
@@ -288,26 +341,15 @@ public class LivingBlock extends Mob {
     @Override
     public void readAdditionalSaveData(CompoundTag input) {
         super.readAdditionalSaveData(input);
-        this.setPinned(input.getBoolean("pinned"));
-
-        if (input.contains("cuboid_width")) {
-            this.setDimensions(new Vector3f(
-                    input.getFloat("cuboid_width"),
-                    input.getFloat("cuboid_height"),
-                    input.getFloat("cuboid_depth")
-            ));
+        if (input.contains("shape_seed")) {
+            this.entityData.set(DATA_SHAPE_SEED, input.getInt("shape_seed"));
         }
     }
 
     @Override
     public void addAdditionalSaveData(CompoundTag output) {
         super.addAdditionalSaveData(output);
-        output.putBoolean("pinned", this.isPinned());
-
-        Vector3f dim = this.entityData.get(DATA_DIMENSIONS);
-        output.putFloat("cuboid_width", dim.x());
-        output.putFloat("cuboid_height", dim.y());
-        output.putFloat("cuboid_depth", dim.z());
+        output.putInt("shape_seed", this.entityData.get(DATA_SHAPE_SEED));
     }
 
     @Override
@@ -317,8 +359,18 @@ public class LivingBlock extends Mob {
 
     @Override
     protected void playStepSound(final BlockPos pos, final BlockState movingOn) {
-        this.playSound(BeyondSoundEvents.MEMOR_PLACE.get());
-        super.playStepSound(pos, movingOn);
+        if (this.normalStepSounds()) {
+            super.playStepSound(pos, movingOn);
+        }
+    }
+
+    private void playFaceLandingSound(final BlockPos pos, final BlockState landedOn, final float contactSpan) {
+        if (landedOn.liquid()) {
+            return;
+        }
+        float volume = FLOP_VOLUME * (FLOP_MIN_CONTACT + (1.0F - FLOP_MIN_CONTACT) * contactSpan);
+        float pitch = FLOP_PITCH + (1.0F - contactSpan) * FLOP_PITCH_SPREAD;
+        this.playSound(BeyondSoundEvents.MEMOR_PLACE.get(), volume, pitch);
     }
 
     @Override
@@ -374,7 +426,8 @@ public class LivingBlock extends Mob {
         }
 
         applyMovementRotation(this.rollDeltaX, this.rollDeltaZ, this.rotation);
-        if (this.rollSoundTime-- <= 0 && !this.normalStepSounds() && !this.lastRotation.equals(this.rotation, 1.0E-5F)) {
+        if (this.rollSoundTime-- <= 0 && !this.normalStepSounds() && !this.movement.flopsOnLanding()
+                && !this.lastRotation.equals(this.rotation, ROLL_ROTATION_DELTA_EPSILON)) {
             Quaternionf groundAngle = snapToNearestRightAngle(this.rotation);
             Quaternionf lastToGround = new Quaternionf(this.lastRotation);
             lastToGround.conjugate();
@@ -386,12 +439,9 @@ public class LivingBlock extends Mob {
             currentToGround.mul(groundAngle);
             double currentAngleToZero = Math.toDegrees(currentToGround.angle()) % 360.0;
             double currentDistanceToZero = Math.min(currentAngleToZero, 360.0 - currentAngleToZero);
-            if (lastDistanceToZero > 10.0 && currentDistanceToZero <= 10.0) {
-                BlockPos effectPos = this.getOnPosLegacy();
-                BlockState effectState = this.level().getBlockState(effectPos);
-                this.playStepSound(effectPos, effectState);
-                this.level().gameEvent(GameEvent.STEP, effectPos, Context.of(this, effectState));
-                this.rollSoundTime = 4;
+            if (lastDistanceToZero > ROLL_SOUND_MIN_ANGLE && currentDistanceToZero <= ROLL_SOUND_MIN_ANGLE) {
+                this.pendingFlop = true;
+                this.rollSoundTime = ROLL_SOUND_MIN_TIME;
             }
         }
 
@@ -399,6 +449,29 @@ public class LivingBlock extends Mob {
         this.rollDeltaX = 0.0F;
         this.rollDeltaZ = 0.0F;
         super.tick();
+
+        if (!this.level().isClientSide()) {
+            this.assignShapeSeed();
+        }
+
+        if (this.shapeIsEntropic != this.isEntropicForm()) {
+            this.applyShape();
+        }
+
+        boolean grounded = this.onGround();
+        if (grounded && !this.wasGrounded && this.movement.flopsOnLanding()) {
+            this.pendingFlop = true;
+        }
+        this.wasGrounded = grounded;
+
+        if (this.pendingFlop && grounded) {
+            this.pendingFlop = false;
+            BlockPos flopPos = this.getOnPosLegacy();
+            BlockState flopState = this.level().getBlockState(flopPos);
+            this.playFaceLandingSound(flopPos, flopState,
+                    LivingBlockCollisionHandler.groundContactSpan(this, snapToNearestRightAngle(this.rotation)));
+            this.level().gameEvent(GameEvent.STEP, flopPos, Context.of(this, flopState));
+        }
 
         if (!this.isDeadOrDying() && !this.isPinned()) {
             if (!this.level().isClientSide()) {
@@ -433,7 +506,6 @@ public class LivingBlock extends Mob {
             }
         }
 
-        //this.move(MoverType.SELF, this.getDeltaMovement());
         boolean isClimbing = this.isClimbing();
         BlockPos posBelow = this.getBlockPosBelowThatAffectsMyMovement();
         float blockFriction = this.onGround() ? this.level().getBlockState(posBelow).getBlock().getFriction() : 1.0F;
@@ -447,6 +519,8 @@ public class LivingBlock extends Mob {
         if (this.isInWater()) {
             this.setDeltaMovement(this.getDeltaMovement().scale(0.8));
         }
+
+        this.applyTumbleDynamics();
 
         if (this.onGround() && this.getDeltaMovement().horizontalDistanceSqr() < Mth.square(0.001) || isClimbing && Math.abs(this.getDeltaMovement().y) < 0.001) {
             Vec3 blockGridDeltaFull = this.blockPosition().getBottomCenter().subtract(this.position());
@@ -468,15 +542,17 @@ public class LivingBlock extends Mob {
             this.rotation.identity();
         }
 
-        if (this.movement instanceof BouncingMovement) {
-            Vec3 pogoScaleDiff = this.pogoScaleTarget.subtract(this.currentPogoScale);
-            if (pogoScaleDiff.lengthSqr() > 1.0E-5F) {
-                this.currentPogoScale = MathHelpers.vecLerp((float) (1.0 - (double)this.pogoScaleTicksRemaining / this.pogoScaleTicks), this.lastPogoScaleTarget, this.pogoScaleTarget);
-            }
+        Vec3 pogoScaleDiff = this.pogoScaleTarget.subtract(this.currentPogoScale);
+        if (pogoScaleDiff.lengthSqr() > 1.0E-5F && this.pogoScaleTicks > 0) {
+            this.currentPogoScale = MathHelpers.vecLerp((float) (1.0 - (double)this.pogoScaleTicksRemaining / this.pogoScaleTicks), this.lastPogoScaleTarget, this.pogoScaleTarget);
+        }
 
-            if (this.pogoScaleTicksRemaining > 0) {
-                this.pogoScaleTicksRemaining--;
-            }
+        if (this.pogoScaleTicksRemaining > 0) {
+            this.pogoScaleTicksRemaining--;
+        }
+
+        if (this.squashRecoverTicks > 0 && --this.squashRecoverTicks == 0) {
+            this.setPogoScaleTarget(new Vec3(1.0, 1.0, 1.0), IMPACT_RECOVER_TICKS);
         }
 
         AABB bounds = this.getBoundingBox();
@@ -486,7 +562,7 @@ public class LivingBlock extends Mob {
             float tilt = Math.abs(localYaxis.y);
             double sizeX = bounds.getXsize();
             double sizeZ = bounds.getZsize();
-            float rotationSpeed = !isClimbing && !this.onGround() ? 0.5F : 1.0F;
+            float rotationSpeed = !isClimbing && !this.onGround() ? (this.tumbleAirborne ? 1.0F : 0.5F) : 1.0F;
             if (sizeZ > 1.0E-5F) {
                 double sideLength = sizeZ < sizeY
                         ? Mth.lerp((double)tilt, Math.sqrt(sizeZ / sizeY) * sizeY, sizeY)
@@ -498,7 +574,7 @@ public class LivingBlock extends Mob {
                 double sideLength = sizeX < sizeY
                         ? Mth.lerp((double)tilt, Math.sqrt(sizeX / sizeY) * sizeY, sizeY)
                         : Mth.lerp((double)tilt, sizeX, Math.sqrt(sizeY / sizeX) * sizeX);
-                this.rollDeltaZ = this.rollDeltaZ + (float)((this.getX() - this.xo) * rotationSpeed / sideLength);
+                this.rollDeltaZ = this.rollDeltaZ - (float)((this.getX() - this.xo) * rotationSpeed / sideLength);
             }
 
             if (isClimbing) {
@@ -517,6 +593,8 @@ public class LivingBlock extends Mob {
                 }
             }
         }
+
+        this.previousFallSpeed = this.getDeltaMovement().y;
     }
 
     protected boolean normalStepSounds() {
@@ -566,16 +644,75 @@ public class LivingBlock extends Mob {
         this.maxUpStep = 0.6F;
     }
 
+    private void applyTumbleDynamics() {
+        if (!this.onGround()) {
+            if (this.tumbleArmed) {
+                this.tumbleAirborne = true;
+            }
+            return;
+        }
+
+        this.tumbleArmed = false;
+        if (this.tumbleAirborne) {
+            this.tumbleAirborne = false;
+            this.applyImpactSquash(-this.previousFallSpeed);
+        }
+
+        if (!this.isBeingDraggedRapidly() || this.isClimbing()) {
+            return;
+        }
+
+        Vec3 velocity = this.getDeltaMovement();
+        double speed = velocity.horizontalDistance();
+        if (speed < TUMBLE_MIN_SPEED) {
+            return;
+        }
+
+        Vector3f travel = new Vector3f((float) (velocity.x / speed), 0.0F, (float) (velocity.z / speed));
+        Vector3f probe = new Vector3f(travel).mul(TUMBLE_PIVOT_BIAS).sub(0.0F, 1.0F, 0.0F);
+        Vector3f pivot = LivingBlockCollisionHandler.supportCorner(this, this.rotation, probe);
+
+        double drop = -pivot.y();
+        if (drop < 1.0E-4) {
+            return;
+        }
+
+        double along = pivot.x() * travel.x() + pivot.z() * travel.z();
+        double radius = Math.sqrt(along * along + drop * drop);
+        double phase = Math.atan2(drop, -along);
+        double sinPhase = Math.sin(phase);
+        if (sinPhase < 1.0E-4) {
+            return;
+        }
+
+        double launchSpeedSqr = this.getGravity() * radius * sinPhase * sinPhase * sinPhase * TUMBLE_LAUNCH_MARGIN;
+        if (speed * speed <= launchSpeedSqr) {
+            return;
+        }
+
+        double slope = Mth.clamp(-Math.cos(phase) / sinPhase, 0.0, TUMBLE_MAX_SLOPE);
+        double lift = Math.min(speed * slope, TUMBLE_LIFT_CAP);
+        if (lift > TUMBLE_MIN_LIFT && lift > velocity.y) {
+            this.setDeltaMovement(velocity.x, lift, velocity.z);
+            this.tumbleArmed = true;
+        }
+    }
+
+    private void applyImpactSquash(final double impactSpeed) {
+        double strength = Mth.clamp((impactSpeed - IMPACT_SQUASH_MIN_SPEED) / IMPACT_SQUASH_RANGE, 0.0, 1.0) * IMPACT_SQUASH_MAX;
+        if (strength < 1.0E-3) {
+            return;
+        }
+        this.setPogoScaleTarget(new Vec3(1.0 + strength, 1.0 - strength, 1.0 + strength), IMPACT_SQUASH_TICKS);
+        this.squashRecoverTicks = IMPACT_RECOVER_TICKS;
+    }
+
 
     @Override
     protected AABB makeBoundingBox() {
+        AABB bounds = this.getShapeBounds();
         Vec3 position = this.position();
-
-        VoxelShape shape = this.customShape != null ? this.customShape : Shapes.block();
-        AABB bounds = shape.bounds();
-        this.boundingBoxOffset = bounds.getCenter().reverse();
-
-        return bounds.move(position.subtract(bounds.getBottomCenter()));
+        return bounds.move(position.x - this.shapeCenterX, position.y - bounds.minY, position.z - this.shapeCenterZ);
     }
     @Override
     public Vec3 getLeashOffset(float partialTicks) {

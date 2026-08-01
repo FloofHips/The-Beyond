@@ -1,8 +1,6 @@
 package com.thebeyond.common.entity.util.livingblock.movement;
 
 import com.thebeyond.common.entity.util.livingblock.LivingBlock;
-import io.netty.buffer.ByteBuf;
-import java.util.Optional;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.util.Mth;
@@ -14,7 +12,6 @@ public class BouncingMovement implements MovementStrategy<BouncingMovement.Data>
     private static final Vec3 POGO_ANIM_SCALE_DEFAULT = new Vec3(1.0, 1.0, 1.0);
     private static final Vec3 POGO_ANIM_SCALE_SQUISH = new Vec3(1.5, 0.8, 1.5);
     private static final Vec3 POGO_ANIM_SCALE_STRETCH = new Vec3(0.8, 1.35, 0.8);
-    private static final int POGO_ANIM_TICKS = 2;
     private final double jumpHeight;
     private final int ticksBetweenJumps;
     private final double horizontalMovementSpeed;
@@ -72,8 +69,6 @@ public class BouncingMovement implements MovementStrategy<BouncingMovement.Data>
             Vec3 horizontalDirection = horizontalDistance > 1.0E-5F ? horizontalDelta.scale(1.0 / horizontalDistance) : Vec3.ZERO;
             double gravity = entity.getGravity();
             double jumpInitialVelocity = Math.sqrt(2.0 * this.jumpHeight * gravity);
-            double slowRadius = 4.0;
-            double minHorizontalSpeed = 0.0;
             double speedScale = Mth.clamp(horizontalDistance / 4.0, 0.0, 1.0);
             double adjustedHorizontalSpeed = Mth.lerp(speedScale, 0.0, this.horizontalMovementSpeed);
             double xd = horizontalDirection.x * adjustedHorizontalSpeed;
@@ -93,6 +88,16 @@ public class BouncingMovement implements MovementStrategy<BouncingMovement.Data>
         } else {
             return true;
         }
+    }
+
+    @Override
+    public boolean normalStepSounds() {
+        return false;
+    }
+
+    @Override
+    public boolean flopsOnLanding() {
+        return true;
     }
 
     @Override
@@ -144,3 +149,4 @@ public class BouncingMovement implements MovementStrategy<BouncingMovement.Data>
         }
     }
 }
+

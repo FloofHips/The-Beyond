@@ -3,6 +3,8 @@ package com.thebeyond.client.renderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.thebeyond.common.entity.util.livingblock.LivingBlock;
+import com.thebeyond.common.entity.util.livingblock.LivingBlockCollisionHandler;
+
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -23,13 +25,11 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import net.minecraft.core.Direction;
-import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
 public class LivingBlockRenderer extends EntityRenderer<LivingBlock> {
 
-    /** Placeholder skin for the test block; swap for a per-entity block state when the entity carries one. */
-    private static final BlockState BLOCK_STATE = Blocks.LIME_CONCRETE.defaultBlockState();
+    private static final BlockState BLOCK_STATE = Blocks.RED_CONCRETE.defaultBlockState();
     private static final ResourceLocation TEXTURE =
             ResourceLocation.withDefaultNamespace("textures/block/red_concrete.png");
 
@@ -40,23 +40,6 @@ public class LivingBlockRenderer extends EntityRenderer<LivingBlock> {
         this.blockRenderer = context.getBlockRenderDispatcher();
         this.shadowRadius = 0.4F;
     }
-
-    private static Vector3f[] getCorners(final float sizeX, final float sizeY, final float sizeZ) {
-        float hX = sizeX / 2.0F;
-        float hY = sizeY / 2.0F;
-        float hZ = sizeZ / 2.0F;
-        return new Vector3f[]{
-                new Vector3f(-hX, -hY, -hZ),
-                new Vector3f(-hX, -hY,  hZ),
-                new Vector3f(-hX,  hY, -hZ),
-                new Vector3f(-hX,  hY,  hZ),
-                new Vector3f( hX, -hY, -hZ),
-                new Vector3f( hX, -hY,  hZ),
-                new Vector3f( hX,  hY, -hZ),
-                new Vector3f( hX,  hY,  hZ),
-        };
-    }
-
     @Override
     public void render(final LivingBlock entity,
                        final float entityYaw,
@@ -72,14 +55,9 @@ public class LivingBlockRenderer extends EntityRenderer<LivingBlock> {
 
         Quaternionf rotation = new Quaternionf();
         entity.getRotation(rotation, partialTicks);
-        rotation.x = -rotation.x;
-        rotation.w = -rotation.w;
 
         AABBBuilder builder = new AABBBuilder();
-        for (Vector3f corner : getCorners((float) sizeX, (float) sizeY, (float) sizeZ)) {
-            rotation.transformUnit(corner);
-            builder.include(corner);
-        }
+        LivingBlockCollisionHandler.includeRotatedOBBCorners(entity, rotation, builder);
 
         Direction climbDir  = entity.getClimbingDirection();
         Direction.Axis axis = climbDir.getAxis();
@@ -112,10 +90,27 @@ public class LivingBlockRenderer extends EntityRenderer<LivingBlock> {
         poseStack.scale(pogo.x(), pogo.y(), pogo.z());
         poseStack.mulPose(rotation);
 
-        poseStack.scale((float) sizeX, (float) sizeY, (float) sizeZ);
-        poseStack.translate(-0.5, -0.5, -0.5);
+        AABB bounds = entity.getShapeBounds();
+        poseStack.translate(
+                -(bounds.minX + bounds.maxX) / 2.0,
+                -(bounds.minY + bounds.maxY) / 2.0,
+                -(bounds.minZ + bounds.maxZ) / 2.0
+        );
 
-        this.blockRenderer.renderSingleBlock(getBlockState(), poseStack, buffer, packedLight, OverlayTexture.NO_OVERLAY);
+        for (AABB subBox : entity.getShapeBoxes()) {
+            poseStack.pushPose();
+            poseStack.translate(subBox.minX, subBox.minY, subBox.minZ);
+            poseStack.scale(
+                    (float) subBox.getXsize(),
+                    (float) subBox.getYsize(),
+                    (float) subBox.getZsize()
+            );
+
+            this.blockRenderer.renderSingleBlock(
+                    this.getBlockState(), poseStack, buffer, packedLight, OverlayTexture.NO_OVERLAY);
+
+            poseStack.popPose();
+        }
 
         poseStack.popPose();
 

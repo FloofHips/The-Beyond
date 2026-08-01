@@ -23,6 +23,10 @@ public interface MovementStrategy<DataType extends MovementData> {
         return true;
     }
 
+    default boolean flopsOnLanding() {
+        return false;
+    }
+
     static void resetVelocity(final LivingBlock entity, final boolean resetVertical) {
         Vec3 movement = entity.getDeltaMovement();
         if (movement.lengthSqr() > Mth.square(1.0E-6)) {

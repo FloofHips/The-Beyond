@@ -2,6 +2,7 @@ package com.thebeyond.common.registry;
 
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.entity.*;
+import com.thebeyond.common.entity.util.livingblock.LivingBlock;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
@@ -73,10 +74,24 @@ public class BeyondEntityTypes {
                             .clientTrackingRange(4)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rising_block").toString()));
 
+    public static final DeferredHolder<EntityType<?>, EntityType<LivingBlock>> TEST_BLOCK =
+            ENTITY_TYPES.register("test_block",
+                    () -> EntityType.Builder.<LivingBlock>of(LivingBlock::new, MobCategory.MISC)
+                            .sized(1, 1)
+                            .clientTrackingRange(4)
+                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "test_block").toString()));
+
     public static final DeferredHolder<EntityType<?>, EntityType<BeadEntity>> BEAD =
             ENTITY_TYPES.register("bead_entity",
                     () -> EntityType.Builder.<BeadEntity>of(BeadEntity::new, MobCategory.MISC)
                             .sized(1, 1)
                             .clientTrackingRange(4)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "bead_entity").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<LivingBlock>> ENTROPIC_BLOCK =
+            ENTITY_TYPES.register("entropic_block",
+                    () -> EntityType.Builder.<LivingBlock>of(LivingBlock::new, MobCategory.MISC)
+                            .sized(1, 1)
+                            .clientTrackingRange(4)
+                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "entropic_block").toString()));
 }
