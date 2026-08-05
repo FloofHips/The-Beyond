@@ -49,6 +49,11 @@ public class BeyondEntityTypes {
                     () -> EntityType.Builder.of(EnatiousTotemEntity::new, MobCategory.MISC)
                             .sized(1.5F, 3F)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "enatious_totem").toString()));
+    public static final DeferredHolder<EntityType<?>, EntityType<PerkaStalkerEntity>> PERKA_STALKER =
+            ENTITY_TYPES.register("perka_stalker",
+                    () -> EntityType.Builder.of(PerkaStalkerEntity::new, MobCategory.CREATURE)
+                            .sized(1, 1)
+                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "perka_stalker").toString()));
     public static final DeferredHolder<EntityType<?>, EntityType<KnockbackSeedEntity>> KNOCKBACK_SEED =
             ENTITY_TYPES.register("knockback_seed",
                     () -> EntityType.Builder.<KnockbackSeedEntity>of(KnockbackSeedEntity::new, MobCategory.MISC)

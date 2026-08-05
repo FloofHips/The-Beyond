@@ -40,57 +40,11 @@ public class PearlPillarFeature extends Feature<NoneFeatureConfiguration> {
                 blockpos$mutableblockpos.move(Direction.DOWN);
             }
 
-            //blockpos$mutableblockpos.move(Direction.UP);
-            //this.placeBaseHangOff(worldgenlevel, randomsource, blockpos$mutableblockpos1.setWithOffset(blockpos$mutableblockpos, Direction.NORTH));
-            //this.placeBaseHangOff(worldgenlevel, randomsource, blockpos$mutableblockpos1.setWithOffset(blockpos$mutableblockpos, Direction.SOUTH));
-            //this.placeBaseHangOff(worldgenlevel, randomsource, blockpos$mutableblockpos1.setWithOffset(blockpos$mutableblockpos, Direction.WEST));
-            //this.placeBaseHangOff(worldgenlevel, randomsource, blockpos$mutableblockpos1.setWithOffset(blockpos$mutableblockpos, Direction.EAST));
-            //blockpos$mutableblockpos.move(Direction.DOWN);
-            //BlockPos.MutableBlockPos blockpos$mutableblockpos2 = new BlockPos.MutableBlockPos();
-
-            //for(int i = -3; i < 4; ++i) {
-            //    for(int j = -3; j < 4; ++j) {
-            //        int k = Mth.abs(i) * Mth.abs(j);
-            //        if (randomsource.nextInt(10) < 10 - k) {
-            //            blockpos$mutableblockpos2.set(blockpos$mutableblockpos.offset(i, 0, j));
-            //            int l = 3;
-//
-            //            while(worldgenlevel.isEmptyBlock(blockpos$mutableblockpos1.setWithOffset(blockpos$mutableblockpos2, Direction.DOWN))) {
-            //                blockpos$mutableblockpos2.move(Direction.DOWN);
-            //                --l;
-            //                if (l <= 0) {
-            //                    break;
-            //                }
-            //            }
-//
-            //            if (!worldgenlevel.isEmptyBlock(blockpos$mutableblockpos1.setWithOffset(blockpos$mutableblockpos2, Direction.DOWN))) {
-            //                worldgenlevel.setBlock(blockpos$mutableblockpos2, BeyondBlocks.PEARL.get().defaultBlockState(), 2);
-            //            }
-            //        }
-            //    }
-            //}
-
             SimplexNoise noise = new SimplexNoise(randomsource);
             if (worldgenlevel.getBlockState(blockpos$mutableblockpos).isSolid())
                 placeRing(worldgenlevel, randomsource, blockpos$mutableblockpos.above());
             PearlPoolFeature.createFloor(worldgenlevel,noise ,4 , blockpos$mutableblockpos);
 
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private void placeBaseHangOff(LevelAccessor level, RandomSource random, BlockPos pos) {
-        if (random.nextBoolean()) {
-            level.setBlock(pos, BeyondBlocks.PEARL.get().defaultBlockState(), 2);
-        }
-
-    }
-
-    private boolean placeHangOff(LevelAccessor level, RandomSource random, BlockPos pos) {
-        if (random.nextFloat() < 0.5) {
-            level.setBlock(pos, BeyondBlocks.PEARL.get().defaultBlockState(), 2);
             return true;
         } else {
             return false;
@@ -110,7 +64,5 @@ public class PearlPillarFeature extends Feature<NoneFeatureConfiguration> {
         level.setBlock(pos.offset(-axis.getStepX(), 0, -axis.getStepZ()), BeyondBlocks.PEARL.get().defaultBlockState(), 2);
         level.setBlock(pos.offset(axis.getStepX(), 0, axis.getStepZ()),   BeyondBlocks.PEARL.get().defaultBlockState(), 2);
         level.setBlock(pos.offset(0, -1, 0),   BeyondBlocks.PEARL.get().defaultBlockState(), 2);
-
-        //level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
     }
 }

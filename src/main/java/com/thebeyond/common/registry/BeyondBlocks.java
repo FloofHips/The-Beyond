@@ -372,6 +372,34 @@ public class BeyondBlocks {
                     .strength(1.0F, 0.1F)
                     .noOcclusion()));
 
+    //Chestral Hollows
+    public static final DeferredBlock<Block> VILET = registerBlock("vilet",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.TERRACOTTA_PURPLE)
+                    .strength(0.3F, 0.0F)
+                    .sound(SoundType.FUNGUS)));
+    public static final DeferredBlock<Block> VILET_GROWTH = registerBlock("vilet_growth",
+            () -> new FloorGrowthBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.TERRACOTTA_PURPLE)
+                    .replaceable()
+                    .noCollission()
+                    .instabreak()
+                    .sound(SoundType.CHERRY_SAPLING)
+                    .offsetType(BlockBehaviour.OffsetType.XZ)
+                    .pushReaction(PushReaction.DESTROY)
+                    .strength(0.0F, 0.0F)
+                    .sound(SoundType.FUNGUS)));
+    public static final DeferredBlock<Block> PERKA_STALK = registerBlock("perka_stalk",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_PURPLE)
+                    .strength(1.5F, 0.3F)
+                    .sound(SoundType.BONE_BLOCK)));
+    public static final DeferredBlock<Block> PERKA_STALK_MOUTH = registerBlock("perka_stalk_mouth",
+            () -> new PerkaStalkMouthBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_PURPLE)
+                    .strength(2F, 0.5F)
+                    .sound(SoundType.BONE_BLOCK)));
+
     @SuppressWarnings("unchecked")
     private static <T extends Block> DeferredBlock<T> registerBlockWithoutItem(String name, Supplier<? extends Block> block) {
         DeferredBlock<Block> toReturn = BLOCKS.register(name, block);

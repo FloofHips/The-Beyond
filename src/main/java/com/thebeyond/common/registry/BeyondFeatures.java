@@ -24,6 +24,9 @@ public class BeyondFeatures {
     public static final DeferredHolder<Feature<?>, AuroraCrystalClusterFeature> AURORA_CRYSTAL_CLUSTER = FEATURES.register("compat/aurora_crystal_cluster", () -> new AuroraCrystalClusterFeature(NoneFeatureConfiguration.CODEC));
 
     public static final DeferredHolder<Feature<?>, GaussGeyserFeature> GAUSS_GEYSER = FEATURES.register("gauss_geyser", () -> new GaussGeyserFeature(NoneFeatureConfiguration.CODEC));
+
     public static final DeferredHolder<Feature<?>, PearlPoolFeature> PEARL_POOL = FEATURES.register("pearl_pool", () -> new PearlPoolFeature(NoneFeatureConfiguration.CODEC));
     public static final DeferredHolder<Feature<?>, PearlPillarFeature> PEARL_PILLAR = FEATURES.register("pearl_pillar", () -> new PearlPillarFeature(NoneFeatureConfiguration.CODEC));
+
+    public static final DeferredHolder<Feature<?>, PerkaStalkFeature> PERKA_STALK = FEATURES.register("perka_stalk", () -> new PerkaStalkFeature(NoneFeatureConfiguration.CODEC));
 }

@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "front": "the_beyond:block/perka_stalk_mouth",
+    "side": "the_beyond:block/perka_stalk",
+    "top": "the_beyond:block/perka_stalk_top"
+  }
+}

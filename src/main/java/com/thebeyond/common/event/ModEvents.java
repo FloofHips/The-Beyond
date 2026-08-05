@@ -19,6 +19,7 @@ public class ModEvents {
     @SubscribeEvent
     public static void registerAttributes(EntityAttributeCreationEvent event){
         event.put(BeyondEntityTypes.ENDERGLOP.get(), EnderglopEntity.createAttributes().build());
+        event.put(BeyondEntityTypes.PERKA_STALKER.get(), PerkaStalkerEntity.createAttributes().build());
         event.put(BeyondEntityTypes.ENADRAKE.get(), EnadrakeEntity.createAttributes().build());
         event.put(BeyondEntityTypes.ENATIOUS_TOTEM.get(), EnatiousTotemEntity.createAttributes().build());
         event.put(BeyondEntityTypes.LANTERN.get(), LanternEntity.createAttributes().build());

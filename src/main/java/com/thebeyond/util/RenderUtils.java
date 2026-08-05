@@ -22,6 +22,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.model.data.ModelData;
 import org.joml.Vector3f;
 
+import java.awt.*;
 import java.util.List;
 
 public class RenderUtils {
@@ -42,6 +43,18 @@ public class RenderUtils {
             renderer.renderModelLists(pass, ItemStack.EMPTY, packedLight, overlayCoord, poseStack, consumer);
             consumer.setColor(1, 1, 1, 1);
         }
+    }
+
+    public static int lerpColor(float factor, int color1, int color2) {
+        Color c1 = new Color(color1, true);
+        Color c2 = new Color(color2, true);
+
+        int r = (int)(c1.getRed() + (c2.getRed() - c1.getRed()) * factor);
+        int g = (int)(c1.getGreen() + (c2.getGreen() - c1.getGreen()) * factor);
+        int b = (int)(c1.getBlue() + (c2.getBlue() - c1.getBlue()) * factor);
+        int a = (int)(c1.getAlpha() + (c2.getAlpha() - c1.getAlpha()) * factor);
+
+        return (a << 24) | (r << 16) | (g << 8) | b;
     }
 
     public static void renderAdditiveQuad(GuiGraphics gui, ResourceLocation texture, int startx, int starty, int Uoffset, int Voffset, int width, int height, int texwidth, int texheight, int tintColor) {

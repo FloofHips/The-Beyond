@@ -35,8 +35,8 @@ public class BlockStates extends BlockStateProvider {
         basicBlock(BeyondBlocks.BRITTLE_METAL_BLOCK);
         basicBlock(BeyondBlocks.NACRE);
         basicBlock(BeyondBlocks.CHISELED_MEMOR);
+        basicBlock(BeyondBlocks.VILET);
         customBlock(BeyondBlocks.BONFIRE);
-
         basicBlock(BeyondBlocks.COBBLED_PEARL);
         basicBlock(BeyondBlocks.COBBLED_PEARL_BRICKS);
         basicBlock(BeyondBlocks.PEARL);

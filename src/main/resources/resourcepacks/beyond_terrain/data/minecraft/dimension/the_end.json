@@ -7,6 +7,7 @@
       "type": "the_beyond:the_end",
       "tainted_end_biomes": [
         "minecraft:end_highlands",
+        "the_beyond:chestral_hollows",
         "minecraft:end_midlands",
         "minecraft:end_barrens",
         "the_beyond:attracta_expanse",

@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "the_beyond:block/perka_stalk_mouth",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "the_beyond:block/perka_stalk_mouth"
+    },
+    "facing=south": {
+      "model": "the_beyond:block/perka_stalk_mouth",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "the_beyond:block/perka_stalk_mouth",
+      "y": 270
+    }
+  }
+}
