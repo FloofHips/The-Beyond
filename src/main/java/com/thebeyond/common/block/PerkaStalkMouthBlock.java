@@ -55,7 +55,7 @@ public class PerkaStalkMouthBlock extends HorizontalDirectionalBlock {
             stalker.setPos(Vec3.atCenterOf(pos.offset(value.getStepX(), value.getStepY(), value.getStepZ())).add(0,-0.5,0));
             stalker.level().broadcastEntityEvent(stalker, PerkaStalkerEntity.SPREAD);
             stalker.setFacing(value);
-
+            stalker.base = true;
             level.addFreshEntity(stalker);
         }
         return super.useWithoutItem(state, level, pos, player, hitResult);

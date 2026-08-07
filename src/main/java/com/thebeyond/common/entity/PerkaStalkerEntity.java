@@ -41,6 +41,8 @@ public class PerkaStalkerEntity extends LivingEntity implements OwnableEntity {
     public final AnimationState attackAnimationState = new AnimationState();
     public final AnimationState spreadAnimationState = new AnimationState();
     public final AnimationState retreatAnimationState = new AnimationState();
+    public int children = 0;
+    public boolean base = false;
 
     public List<Direction> directions = new ArrayList<>(List.of(Direction.values()));
     public static final int MAX_GENERATION = 10;
@@ -115,12 +117,28 @@ public class PerkaStalkerEntity extends LivingEntity implements OwnableEntity {
     }
 
     @Override
+    public void remove(RemovalReason reason) {
+        if (reason != Entity.RemovalReason.DISCARDED) {
+            PerkaStalkerEntity owner = (PerkaStalkerEntity) this.getOwner();
+            if (owner != null) {
+                owner.markedForRemoval = true;
+                owner.children--;
+            }
+        }
+
+        super.remove(reason);
+    }
+
+    @Override
     public void tick() {
         super.tick();
 
         if (level().getDifficulty() == Difficulty.PEACEFUL) return;
 
         if (!level().isClientSide) {
+
+            if (!base && children <= 0 && !isViolent() && (tickCount % 60 == 0)) markedForRemoval = true;
+
             if (retreatCounter==0 && (tickCount % 100 == 0)) {
                 if (level().getBlockState(this.blockPosition().offset(getFacing().getStepX(), getFacing().getStepY(), getFacing().getStepZ())).isSolid()) markedForRemoval = true;
             }
@@ -129,13 +147,16 @@ public class PerkaStalkerEntity extends LivingEntity implements OwnableEntity {
                 if (owner != null) {
                     owner.markedForRemoval = true;
                 }
-                this.retreatCounter = 7;
+                beginRetreat();
             }
             if (retreatCounter > 0) {
                 if (retreatCounter == 7) level().broadcastEntityEvent(this, RETREAT);
                 retreatCounter--;
                 if (retreatCounter == 1) {
-                    level().addParticle(ColorUtils.dustOptions, position().x, position().y, position().z, 0.2f, 0.5f, 0.2f);
+                    PerkaStalkerEntity owner = (PerkaStalkerEntity) this.getOwner();
+                    if (owner != null) {
+                        owner.children--;
+                    }
                     this.discard();
                 }
             }
@@ -181,6 +202,11 @@ public class PerkaStalkerEntity extends LivingEntity implements OwnableEntity {
         }
     }
 
+    private void beginRetreat() {
+        if (children <= 0)
+            this.retreatCounter = 7;
+    }
+
     private void spawnChild(BlockPos pos, Direction d) {
         PerkaStalkerEntity stalker = new PerkaStalkerEntity(BeyondEntityTypes.PERKA_STALKER.get(), level());
 
@@ -194,6 +220,7 @@ public class PerkaStalkerEntity extends LivingEntity implements OwnableEntity {
         stalker.setOwner(this.getUUID());
         stalker.level().broadcastEntityEvent(stalker, SPREAD);
 
+        this.children++;
         yetToBud = false;
         level().playSound(null, pos.getX(), pos.getY(), pos.getZ(), SoundEvents.BEEHIVE_EXIT, SoundSource.HOSTILE);
     }
