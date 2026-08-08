@@ -623,7 +623,7 @@ public class LivingBlock extends Mob {
 
     @Override
     public boolean canBeCollidedWith() {
-        return !this.isDeadOrDying() && this.collision.canBeCollidedWith();
+        return !this.isDeadOrDying();
     }
 
     @Override

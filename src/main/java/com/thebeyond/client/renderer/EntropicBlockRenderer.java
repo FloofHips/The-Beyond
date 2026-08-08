@@ -1,19 +1,16 @@
 package com.thebeyond.client.renderer;
 
+import com.thebeyond.TheBeyond;
+import com.thebeyond.client.renderer.util.LivingBlockSkin;
+import com.thebeyond.common.registry.BeyondBlocks;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class EntropicBlockRenderer extends LivingBlockRenderer {
 
-    private static final BlockState BLOCK_STATE = Blocks.LIME_CONCRETE.defaultBlockState();
-
     public EntropicBlockRenderer(final EntityRendererProvider.Context context) {
-        super(context);
+        super(context, "portelain_tiles");
     }
 
-    @Override
-    public BlockState getBlockState() {
-        return BLOCK_STATE;
-    }
 }

@@ -2,44 +2,62 @@ package com.thebeyond.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.thebeyond.TheBeyond;
+import com.thebeyond.client.renderer.util.LivingBlockSkin;
+import com.thebeyond.common.entity.util.livingblock.AABBBuilder;
 import com.thebeyond.common.entity.util.livingblock.LivingBlock;
 import com.thebeyond.common.entity.util.livingblock.LivingBlockCollisionHandler;
 
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.LightLayer;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
-import com.thebeyond.common.entity.util.livingblock.AABBBuilder;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
-import net.minecraft.core.Direction;
 import org.joml.Vector3fc;
+
+import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 public class LivingBlockRenderer extends EntityRenderer<LivingBlock> {
 
-    private static final BlockState BLOCK_STATE = Blocks.RED_CONCRETE.defaultBlockState();
-    private static final ResourceLocation TEXTURE =
-            ResourceLocation.withDefaultNamespace("textures/block/red_concrete.png");
+    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
 
-    private final BlockRenderDispatcher blockRenderer;
+    private static final String DEFAULT_TEXTURE = "memor";
+    private static final float SHADOW_RADIUS = 0.4F;
+
+    private final Quaternionf rotation = new Quaternionf();
+    private final Map<List<AABB>, List<LivingBlockMeshBaker.MeshQuad>> meshCache = new WeakHashMap<>();
+    private final LivingBlockSkin skin;
 
     public LivingBlockRenderer(final EntityRendererProvider.Context context) {
-        super(context);
-        this.blockRenderer = context.getBlockRenderDispatcher();
-        this.shadowRadius = 0.4F;
+        this(context, LivingBlockSkin.of(TheBeyond.MODID, DEFAULT_TEXTURE));
     }
+    public LivingBlockRenderer(final EntityRendererProvider.Context context, String texture) {
+        this(context, LivingBlockSkin.of(TheBeyond.MODID, texture));
+    }
+
+    protected LivingBlockRenderer(final EntityRendererProvider.Context context, final LivingBlockSkin skin) {
+        super(context);
+        this.shadowRadius = SHADOW_RADIUS;
+        this.skin = skin.resolved();
+    }
+
+    public LivingBlockSkin getSkin() {
+        return this.skin;
+    }
+
     @Override
     public void render(final LivingBlock entity,
                        final float entityYaw,
@@ -53,13 +71,12 @@ public class LivingBlockRenderer extends EntityRenderer<LivingBlock> {
         double sizeY = box.getYsize();
         double sizeZ = box.getZsize();
 
-        Quaternionf rotation = new Quaternionf();
-        entity.getRotation(rotation, partialTicks);
+        entity.getRotation(this.rotation, partialTicks);
 
         AABBBuilder builder = new AABBBuilder();
-        LivingBlockCollisionHandler.includeRotatedOBBCorners(entity, rotation, builder);
+        LivingBlockCollisionHandler.includeRotatedOBBCorners(entity, this.rotation, builder);
 
-        Direction climbDir  = entity.getClimbingDirection();
+        Direction climbDir = entity.getClimbingDirection();
         Direction.Axis axis = climbDir.getAxis();
         int step = climbDir.getAxisDirection().getStep();
         double edgeOffset = builder.edge(climbDir);
@@ -69,17 +86,13 @@ public class LivingBlockRenderer extends EntityRenderer<LivingBlock> {
         double translateZ = 0.0;
 
         if (axis == Direction.Axis.Y) {
-            if (climbDir == Direction.DOWN) {
-                translateY = -edgeOffset;
-            } else {
-                translateY = sizeY - edgeOffset;
-            }
+            translateY = climbDir == Direction.DOWN ? -edgeOffset : sizeY - edgeOffset;
         } else {
-            translateY = sizeY / 2.0;
+            translateY = sizeY * 0.5;
             if (axis == Direction.Axis.X) {
-                translateX = (sizeX / 2.0) * step - edgeOffset;
+                translateX = sizeX * 0.5 * step - edgeOffset;
             } else {
-                translateZ = (sizeZ / 2.0) * step - edgeOffset;
+                translateZ = sizeZ * 0.5 * step - edgeOffset;
             }
         }
 
@@ -88,29 +101,16 @@ public class LivingBlockRenderer extends EntityRenderer<LivingBlock> {
 
         Vector3fc pogo = entity.getPogoScale(partialTicks);
         poseStack.scale(pogo.x(), pogo.y(), pogo.z());
-        poseStack.mulPose(rotation);
+        poseStack.mulPose(this.rotation);
 
         AABB bounds = entity.getShapeBounds();
         poseStack.translate(
-                -(bounds.minX + bounds.maxX) / 2.0,
-                -(bounds.minY + bounds.maxY) / 2.0,
-                -(bounds.minZ + bounds.maxZ) / 2.0
+                -(bounds.minX + bounds.maxX) * 0.5,
+                -(bounds.minY + bounds.maxY) * 0.5,
+                -(bounds.minZ + bounds.maxZ) * 0.5
         );
 
-        for (AABB subBox : entity.getShapeBoxes()) {
-            poseStack.pushPose();
-            poseStack.translate(subBox.minX, subBox.minY, subBox.minZ);
-            poseStack.scale(
-                    (float) subBox.getXsize(),
-                    (float) subBox.getYsize(),
-                    (float) subBox.getZsize()
-            );
-
-            this.blockRenderer.renderSingleBlock(
-                    this.getBlockState(), poseStack, buffer, packedLight, OverlayTexture.NO_OVERLAY);
-
-            poseStack.popPose();
-        }
+        renderShape(entity, poseStack, buffer, packedLight);
 
         poseStack.popPose();
 
@@ -122,27 +122,70 @@ public class LivingBlockRenderer extends EntityRenderer<LivingBlock> {
         super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
     }
 
-    public BlockState getBlockState() {
-        return BLOCK_STATE;
+    protected void renderShape(LivingBlock entity, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
+        List<AABB> shape = entity.getShapeBoxes();
+        List<LivingBlockMeshBaker.MeshQuad> mesh = this.meshCache.computeIfAbsent(shape, boxes -> {
+            List<LivingBlockMeshBaker.MeshQuad> baked = LivingBlockMeshBaker.bake(boxes);
+            int rimCount = 0;
+            for (LivingBlockMeshBaker.MeshQuad q : baked) {
+                if (q.rim()) {
+                    rimCount++;
+                }
+            }
+            LOGGER.info("[livingblock] baked shape: boxes={} quads={} rim={} fill={}",
+                    boxes.size(), baked.size(), rimCount, baked.size() - rimCount);
+            return baked;
+        });
+
+        Matrix4f matrix = poseStack.last().pose();
+
+        VertexConsumer fill = buffer.getBuffer(RenderType.entityCutoutNoCull(this.skin.fill()));
+        for (LivingBlockMeshBaker.MeshQuad quad : mesh) {
+            if (!quad.rim()) {
+                emit(fill, matrix, quad, packedLight);
+            }
+        }
+
+        VertexConsumer rim = buffer.getBuffer(RenderType.entityCutoutNoCull(this.skin.rim()));
+        for (LivingBlockMeshBaker.MeshQuad quad : mesh) {
+            if (quad.rim()) {
+                emit(rim, matrix, quad, packedLight);
+            }
+        }
+    }
+
+    private static void emit(final VertexConsumer consumer, final Matrix4f matrix,
+                             final LivingBlockMeshBaker.MeshQuad quad, final int packedLight) {
+        float[] xyz = quad.xyz();
+        float[] uv = quad.uv();
+        for (int i = 0; i < 4; i++) {
+            consumer.addVertex(matrix, xyz[i * 3], xyz[i * 3 + 1], xyz[i * 3 + 2])
+                    .setColor(255, 255, 255, 255)
+                    .setUv(uv[i * 2], uv[i * 2 + 1])
+                    .setOverlay(OverlayTexture.NO_OVERLAY)
+                    .setLight(packedLight)
+                    .setNormal(quad.nx(), quad.ny(), quad.nz());
+        }
     }
 
     @Override
     public ResourceLocation getTextureLocation(final LivingBlock entity) {
-        return TEXTURE;
+        return this.skin.rim();
     }
 
-    private void renderLeash(final LivingBlock entity,
-                             final float partialTicks,
-                             final PoseStack poseStack,
-                             final MultiBufferSource buffer,
-                             final Entity holder) {
+    private void renderLeash(final LivingBlock entity, final float partialTicks, final PoseStack poseStack,
+                             final MultiBufferSource buffer, final Entity holder) {
         poseStack.pushPose();
 
         Vec3 ropeHold = holder.getRopeHoldPosition(partialTicks);
         double yaw = Mth.lerp(partialTicks, entity.yBodyRotO, entity.yBodyRot) * (Math.PI / 180.0) + (Math.PI / 2.0);
+        double cosYaw = Math.cos(yaw);
+        double sinYaw = Math.sin(yaw);
+
         Vec3 leashOffset = entity.getLeashOffset(partialTicks);
-        double offX = Math.cos(yaw) * leashOffset.z + Math.sin(yaw) * leashOffset.x;
-        double offZ = Math.sin(yaw) * leashOffset.z - Math.cos(yaw) * leashOffset.x;
+        double offX = cosYaw * leashOffset.z + sinYaw * leashOffset.x;
+        double offZ = sinYaw * leashOffset.z - cosYaw * leashOffset.x;
+
         double startX = Mth.lerp((double) partialTicks, entity.xo, entity.getX()) + offX;
         double startY = Mth.lerp((double) partialTicks, entity.yo, entity.getY()) + leashOffset.y;
         double startZ = Mth.lerp((double) partialTicks, entity.zo, entity.getZ()) + offZ;
@@ -155,7 +198,7 @@ public class LivingBlockRenderer extends EntityRenderer<LivingBlock> {
 
         VertexConsumer rope = buffer.getBuffer(RenderType.leash());
         Matrix4f matrix = poseStack.last().pose();
-        float inv = (float) (Mth.invSqrt(dx * dx + dz * dz) * 0.025F / 2.0F);
+        float inv = (float) (Mth.invSqrt(dx * dx + dz * dz) * 0.0125F);
         float sideX = dz * inv;
         float sideZ = dx * inv;
 
@@ -178,15 +221,14 @@ public class LivingBlockRenderer extends EntityRenderer<LivingBlock> {
         poseStack.popPose();
     }
 
-    private static void addLeashVertexPair(final VertexConsumer rope,
-                                           final Matrix4f matrix,
+    private static void addLeashVertexPair(final VertexConsumer rope, final Matrix4f matrix,
                                            final float dx, final float dy, final float dz,
                                            final int entityBlockLight, final int holderBlockLight,
                                            final int entitySkyLight, final int holderSkyLight,
                                            final float width, final float yOffset,
                                            final float sideX, final float sideZ,
                                            final int index, final boolean end) {
-        float t = index / 24.0F;
+        float t = index * 0.041666668F;
         int blockLight = (int) Mth.lerp(t, (float) entityBlockLight, (float) holderBlockLight);
         int skyLight = (int) Mth.lerp(t, (float) entitySkyLight, (float) holderSkyLight);
         int packedLight = LightTexture.pack(blockLight, skyLight);
@@ -200,9 +242,7 @@ public class LivingBlockRenderer extends EntityRenderer<LivingBlock> {
         float y = dy > 0.0F ? dy * t * t : dy - dy * (1.0F - t) * (1.0F - t);
         float z = dz * t;
 
-        rope.addVertex(matrix, x - sideX, y + width - yOffset, z + sideZ)
-                .setColor(r, g, b, 1.0F).setLight(packedLight);
-        rope.addVertex(matrix, x + sideX, y + yOffset, z - sideZ)
-                .setColor(r, g, b, 1.0F).setLight(packedLight);
+        rope.addVertex(matrix, x - sideX, y + width - yOffset, z + sideZ).setColor(r, g, b, 1.0F).setLight(packedLight);
+        rope.addVertex(matrix, x + sideX, y + yOffset, z - sideZ).setColor(r, g, b, 1.0F).setLight(packedLight);
     }
 }
