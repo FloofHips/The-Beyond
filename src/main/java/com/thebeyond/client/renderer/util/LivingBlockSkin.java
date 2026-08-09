@@ -13,6 +13,10 @@ public record LivingBlockSkin(ResourceLocation rim, ResourceLocation fill) {
         return new LivingBlockSkin(locate(namespace, texture), locate(namespace, texture + CTM_SUFFIX));
     }
 
+    public static LivingBlockSkin of(final String namespace, final String mainTexture, final String edges) {
+        return new LivingBlockSkin(locateRaw(namespace, mainTexture), locateRaw(namespace, edges));
+    }
+
     public LivingBlockSkin resolved() {
         return Minecraft.getInstance().getResourceManager().getResource(this.fill).isPresent()
                 ? this
@@ -21,5 +25,9 @@ public record LivingBlockSkin(ResourceLocation rim, ResourceLocation fill) {
 
     private static ResourceLocation locate(final String namespace, final String name) {
         return ResourceLocation.fromNamespaceAndPath(namespace, FOLDER + name + EXTENSION);
+    }
+
+    private static ResourceLocation locateRaw(final String namespace, final String name) {
+        return ResourceLocation.fromNamespaceAndPath(namespace, name);
     }
 }

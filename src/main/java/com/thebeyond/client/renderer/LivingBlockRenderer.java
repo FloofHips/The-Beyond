@@ -3,6 +3,7 @@ package com.thebeyond.client.renderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.thebeyond.TheBeyond;
+import com.thebeyond.client.renderer.util.LivingBlockMeshBaker;
 import com.thebeyond.client.renderer.util.LivingBlockSkin;
 import com.thebeyond.common.entity.util.livingblock.AABBBuilder;
 import com.thebeyond.common.entity.util.livingblock.LivingBlock;
@@ -22,10 +23,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix4f;
-import org.joml.Quaternionf;
-import org.joml.Vector3fc;
+import org.joml.*;
 
+import java.lang.Math;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -38,14 +38,17 @@ public class LivingBlockRenderer extends EntityRenderer<LivingBlock> {
     private static final float SHADOW_RADIUS = 0.4F;
 
     private final Quaternionf rotation = new Quaternionf();
-    private final Map<List<AABB>, List<LivingBlockMeshBaker.MeshQuad>> meshCache = new WeakHashMap<>();
-    private final LivingBlockSkin skin;
+    protected final Map<List<AABB>, List<LivingBlockMeshBaker.MeshQuad>> meshCache = new WeakHashMap<>();
+    protected final LivingBlockSkin skin;
 
     public LivingBlockRenderer(final EntityRendererProvider.Context context) {
         this(context, LivingBlockSkin.of(TheBeyond.MODID, DEFAULT_TEXTURE));
     }
     public LivingBlockRenderer(final EntityRendererProvider.Context context, String texture) {
         this(context, LivingBlockSkin.of(TheBeyond.MODID, texture));
+    }
+    public LivingBlockRenderer(final EntityRendererProvider.Context context, String texture, String outline) {
+        this(context, LivingBlockSkin.of(TheBeyond.MODID, texture, outline));
     }
 
     protected LivingBlockRenderer(final EntityRendererProvider.Context context, final LivingBlockSkin skin) {
@@ -138,37 +141,45 @@ public class LivingBlockRenderer extends EntityRenderer<LivingBlock> {
         });
 
         Matrix4f matrix = poseStack.last().pose();
+        Matrix3f normalMatrix = poseStack.last().normal();
 
         VertexConsumer fill = buffer.getBuffer(RenderType.entityCutoutNoCull(this.skin.fill()));
         for (LivingBlockMeshBaker.MeshQuad quad : mesh) {
             if (!quad.rim()) {
-                emit(fill, matrix, quad, packedLight);
+                emit(fill, matrix, normalMatrix, quad, packedLight);
             }
         }
 
         VertexConsumer rim = buffer.getBuffer(RenderType.entityCutoutNoCull(this.skin.rim()));
         for (LivingBlockMeshBaker.MeshQuad quad : mesh) {
             if (quad.rim()) {
-                emit(rim, matrix, quad, packedLight);
+                emit(rim, matrix, normalMatrix, quad, packedLight);
             }
         }
     }
 
-    private static void emit(final VertexConsumer consumer, final Matrix4f matrix,
-                             final LivingBlockMeshBaker.MeshQuad quad, final int packedLight) {
+    public static void emit(final VertexConsumer consumer, final Matrix4f matrix, Matrix3f normalMatrix, final LivingBlockMeshBaker.MeshQuad quad, final int packedLight) {
+        emit(consumer, matrix, normalMatrix, quad, packedLight, 255, 255, 255, 255);
+    }
+
+    public static void emit(final VertexConsumer consumer, final Matrix4f matrix, Matrix3f normalMatrix, final LivingBlockMeshBaker.MeshQuad quad, final int packedLight, int r, int g, int b, int a) {
         float[] xyz = quad.xyz();
         float[] uv = quad.uv();
+
+        Vector3f normal = new Vector3f(quad.nx(), quad.ny(), quad.nz());
+        normal.mul(normalMatrix);
+
         for (int i = 0; i < 4; i++) {
             consumer.addVertex(matrix, xyz[i * 3], xyz[i * 3 + 1], xyz[i * 3 + 2])
-                    .setColor(255, 255, 255, 255)
+                    .setColor(r, g, b, a)
                     .setUv(uv[i * 2], uv[i * 2 + 1])
                     .setOverlay(OverlayTexture.NO_OVERLAY)
                     .setLight(packedLight)
-                    .setNormal(quad.nx(), quad.ny(), quad.nz());
+                    .setNormal(normal.x, normal.y, normal.z);
         }
     }
 
-    @Override
+        @Override
     public ResourceLocation getTextureLocation(final LivingBlock entity) {
         return this.skin.rim();
     }
