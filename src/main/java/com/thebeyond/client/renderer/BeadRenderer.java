@@ -21,8 +21,6 @@ import java.util.List;
 
 public class BeadRenderer extends LivingBlockRenderer {
 
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/bauble/swirl.png");
-
 
     public BeadRenderer(final EntityRendererProvider.Context context) {
         super(context, "textures/entity/bauble/edges.png", "textures/entity/bauble/outline.png");
@@ -35,7 +33,7 @@ public class BeadRenderer extends LivingBlockRenderer {
             color = beadEntity.getBodyColor();
 
         List<AABB> shape = entity.getShapeBoxes();
-        RenderUtils.renderCuboid(entity.getShapeBounds().deflate(0.001), poseStack, buffer.getBuffer(RenderType.entityCutout(TEXTURE)), packedLight, (color.getRed()*0.9f)/255f, (color.getGreen()*0.9f)/255f, (color.getBlue()*0.9f)/255f, 1);
+        RenderUtils.renderCuboid(entity.getShapeBounds().deflate(0.001), poseStack, buffer.getBuffer(RenderType.entityCutout(getTextureLocation(entity))), packedLight, (color.getRed()*0.9f)/255f, (color.getGreen()*0.9f)/255f, (color.getBlue()*0.9f)/255f, 1);
         List<LivingBlockMeshBaker.MeshQuad> mesh = this.meshCache.computeIfAbsent(shape, boxes -> {
             List<LivingBlockMeshBaker.MeshQuad> baked = LivingBlockMeshBaker.bake(boxes);
             int rimCount = 0;
@@ -54,8 +52,15 @@ public class BeadRenderer extends LivingBlockRenderer {
         VertexConsumer rim = buffer.getBuffer(BeyondRenderTypes.entityTranslucentNoCulled(this.skin.rim()));
         for (LivingBlockMeshBaker.MeshQuad quad : mesh) {
             if (quad.rim()) {
-                emit(rim, matrix, normalMatrix, quad, packedLight, color.getRed(), color.getGreen(), color.getBlue(), 230);
+                emit(rim, matrix, normalMatrix, quad, packedLight, color.getRed(), color.getGreen(), color.getBlue(), 200);
             }
         }
+    }
+
+    @Override
+    public ResourceLocation getTextureLocation(LivingBlock entity) {
+        if (entity instanceof BeadEntity beadEntity)
+            return ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/bauble/" + beadEntity.getVariant() + ".png");
+        return null;
     }
 }

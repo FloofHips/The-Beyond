@@ -531,6 +531,7 @@ public class LivingBlock extends Mob {
             if (blockGridOffset > 1.0E-6 && blockGridOffset <= 0.125 && this.isIdle() && !this.level().isClientSide()) {
                 this.move(MoverType.SELF, blockGridDelta);
             }
+            //setBoundingBox(rotateAABB());
         }
 
         Vector3f facing = new Vector3f();
