@@ -107,7 +107,9 @@ public class BeyondItems {
 
     // Block-click places the camera block; in-air or sneaking shoots it handheld.
     public static final DeferredItem<Item> PINHOLE_CAMERA = registerItem("pinhole_camera", () -> new CameraBlockItem(BeyondBlocks.CAMERA.get(), new Item.Properties().stacksTo(1)));
-    public static final DeferredItem<Item> SNAPSHOT = registerItem("snapshot", () -> new SnapshotItem(new Item.Properties().stacksTo(16).rarity(BeyondEnums.REMEMBRANCE.getValue())));
+    public static final DeferredItem<Item> SNAPSHOT = registerItem("snapshot", () -> new SnapshotItem(new Item.Properties().stacksTo(16)));
+
+    public static final DeferredItem<Item> OCARINA = registerItem("ocarina", () -> new OcarinaItem(new Item.Properties().stacksTo(1)));
 
     @SuppressWarnings("unchecked")
     public static <T extends Item> DeferredItem<T> registerItem(final String name, final Supplier<? extends Item> item) {

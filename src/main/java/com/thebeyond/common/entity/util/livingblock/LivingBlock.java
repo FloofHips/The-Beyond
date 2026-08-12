@@ -479,14 +479,15 @@ public class LivingBlock extends Mob {
                 Entity holder = this.isLeashed() ? this.getLeashHolder() : null;
                 if (holder != null) {
                     this.setMovementTarget(Target.followingEntity(holder, 2.0));
-                } else if (AGGRO_RANGE > 0.0) {
-                    Player nearest = this.level().getNearestPlayer(this, AGGRO_RANGE);
-                    if (nearest != null && !nearest.isCreative() && !nearest.isSpectator()) {
-                        this.setMovementTarget(Target.followingEntity(nearest, 1.0));
-                    } else {
-                        this.clearMovementTarget();
-                    }
                 }
+                //else if (AGGRO_RANGE > 0.0) {
+                //    Player nearest = this.level().getNearestPlayer(this, AGGRO_RANGE);
+                //    if (nearest != null && !nearest.isCreative() && !nearest.isSpectator()) {
+                //        this.setMovementTarget(Target.followingEntity(nearest, 1.0));
+                //    } else {
+                //        this.clearMovementTarget();
+                //    }
+                //}
             }
 
             Target target = this.getMovementTarget();
