@@ -89,6 +89,7 @@ public class BeadEntity extends LivingBlock {
     public @Nullable SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData spawnData) {
         setVariant(Arrays.stream(VARIANTS).toList().get(level.getRandom().nextInt(VARIANTS.length)));
         setBodyColor(-1);
+        setDyeColor(DyeColor.WHITE);
         return super.finalizeSpawn(level, difficulty, reason, spawnData);
     }
 
@@ -163,6 +164,20 @@ public class BeadEntity extends LivingBlock {
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);
         Item item = itemstack.getItem();
+
+        if (item instanceof DyeItem) {
+            DyeItem dyeitem = (DyeItem)item;
+            //if (this.isOwnedBy(player)) {
+                DyeColor dyecolor = dyeitem.getDyeColor();
+                if (dyecolor != this.getDyeColor()) {
+                    this.setDyeColor(dyecolor);
+                    itemstack.consume(1, player);
+                    return InteractionResult.SUCCESS;
+                }
+
+                return super.mobInteract(player, hand);
+            //}
+        }
 
         return super.mobInteract(player, hand);
     }

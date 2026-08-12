@@ -30,10 +30,10 @@ public class BeadRenderer extends LivingBlockRenderer {
     @Override
     protected void renderShape(LivingBlock entity, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         Color color = Color.white;
-        Color color2 = new Color(DyeColor.WHITE.getTextColor());
+        Color color2 = new Color(DyeColor.WHITE.getTextureDiffuseColor());
         if (entity instanceof BeadEntity beadEntity) {
             color = beadEntity.getBodyColor();
-            color2 = new Color(beadEntity.getDyeColor().getTextColor());
+            color2 = new Color(beadEntity.getDyeColor().getTextureDiffuseColor()).brighter();
         }
 
         List<AABB> shape = entity.getShapeBoxes();
@@ -72,12 +72,12 @@ public class BeadRenderer extends LivingBlockRenderer {
         float minY = (float) shapeBounds.min(Direction.Axis.Y);
         float minZ = (float) shapeBounds.min(Direction.Axis.Z);
 
-        RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(HOLE_BIG)), matrix, normalMatrix, packedLight, 1, 1, 1, 1, Direction.Axis.Y, true, minX, maxY, minZ,  7, 7);
-        RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(HOLE_BIG)), matrix, normalMatrix, packedLight, 1, 1, 1, 1, Direction.Axis.Y, false, minX, minY, minZ, 7, 7);
-        RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(HOLE_BIG)), matrix, normalMatrix, packedLight, 1, 1, 1, 1, Direction.Axis.X, true, minX, minY, minZ,  7, 7);
-        RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(HOLE_BIG)), matrix, normalMatrix, packedLight, 1, 1, 1, 1, Direction.Axis.X, false, maxX, minY, minZ, 7, 7);
-        RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(HOLE_BIG)), matrix, normalMatrix, packedLight, 1, 1, 1, 1, Direction.Axis.Z, true, minX, minY, minZ,  7, 7);
-        RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(HOLE_BIG)), matrix, normalMatrix, packedLight, 1, 1, 1, 1, Direction.Axis.Z, false, minX, minY, maxZ, 7, 7);
+        RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(HOLE_BIG)), matrix, normalMatrix, packedLight, r*255, g*255, b*255, 230, Direction.Axis.Y, true, minX, maxY, minZ,  7, 7);
+        RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(HOLE_BIG)), matrix, normalMatrix, packedLight, r*255, g*255, b*255, 230, Direction.Axis.Y, false, minX, minY, minZ, 7, 7);
+        RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(HOLE_BIG)), matrix, normalMatrix, packedLight, r*255, g*255, b*255, 230, Direction.Axis.X, true, minX, minY, minZ,  7, 7);
+        RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(HOLE_BIG)), matrix, normalMatrix, packedLight, r*255, g*255, b*255, 230, Direction.Axis.X, false, maxX, minY, minZ, 7, 7);
+        RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(HOLE_BIG)), matrix, normalMatrix, packedLight, r*255, g*255, b*255, 230, Direction.Axis.Z, true, minX, minY, minZ,  7, 7);
+        RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(HOLE_BIG)), matrix, normalMatrix, packedLight, r*255, g*255, b*255, 230, Direction.Axis.Z, false, minX, minY, maxZ, 7, 7);
     }
 
     @Override
