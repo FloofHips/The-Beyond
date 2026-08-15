@@ -1,24 +1,68 @@
 {
   "values": {
+    "the_beyond:beads_remembrance": {
+      "compose_group": "the_beyond:memory/prison",
+      "texture": "the_beyond:textures/projection/beads_remembrance.png"
+    },
+    "the_beyond:brace_remembrance": {
+      "compose_group": "the_beyond:memory/punishment",
+      "texture": "the_beyond:textures/projection/brace_remembrance.png"
+    },
+    "the_beyond:broche_remembrance": {
+      "compose_group": "the_beyond:memory/history",
+      "texture": "the_beyond:textures/projection/broche_remembrance.png"
+    },
+    "the_beyond:cloth_remembrance": {
+      "compose_group": "the_beyond:memory/history",
+      "texture": "the_beyond:textures/projection/cloth_remembrance.png"
+    },
+    "the_beyond:eye_remembrance": {
+      "compose_group": "the_beyond:memory/key",
+      "texture": "the_beyond:textures/projection/eye_remembrance.png"
+    },
     "the_beyond:hand_remembrance": {
-      "compose_group": "the_beyond:memory/keepsake",
-      "region": {
-        "u0": 0.5,
-        "u1": 1.0,
-        "v0": 0.0,
-        "v1": 1.0
-      },
-      "texture": "the_beyond:textures/projector/hand.png"
+      "compose_group": "the_beyond:memory/prison",
+      "texture": "the_beyond:textures/projection/hand_remembrance.png"
+    },
+    "the_beyond:home_remembrance": {
+      "compose_group": "the_beyond:memory/prison",
+      "texture": "the_beyond:textures/projection/home_remembrance.png"
+    },
+    "the_beyond:horn_remembrance": {
+      "compose_group": "the_beyond:memory/prison",
+      "texture": "the_beyond:textures/projection/horn_remembrance.png"
+    },
+    "the_beyond:idol_remembrance": {
+      "compose_group": "the_beyond:memory/punishment",
+      "texture": "the_beyond:textures/projection/idol_remembrance.png"
+    },
+    "the_beyond:lace_remembrance": {
+      "compose_group": "the_beyond:memory/history",
+      "texture": "the_beyond:textures/projection/lace_remembrance.png"
+    },
+    "the_beyond:life_remembrance": {
+      "compose_group": "the_beyond:memory/punishment",
+      "texture": "the_beyond:textures/projection/life_remembrance.png"
+    },
+    "the_beyond:memory_remembrance": {
+      "compose_group": "the_beyond:memory/key",
+      "texture": "the_beyond:textures/projection/memory_remembrance.png"
+    },
+    "the_beyond:mount_remembrance": {
+      "compose_group": "the_beyond:memory/key",
+      "texture": "the_beyond:textures/projection/mount_remembrance.png"
     },
     "the_beyond:ornament_remembrance": {
-      "compose_group": "the_beyond:memory/keepsake",
-      "region": {
-        "u0": 0.0,
-        "u1": 0.5,
-        "v0": 0.0,
-        "v1": 1.0
-      },
-      "texture": "the_beyond:textures/projector/ornament.png"
+      "compose_group": "the_beyond:memory/key",
+      "texture": "the_beyond:textures/projection/ornament_remembrance.png"
+    },
+    "the_beyond:ring_remembrance": {
+      "compose_group": "the_beyond:memory/punishment",
+      "texture": "the_beyond:textures/projection/ring_remembrance.png"
+    },
+    "the_beyond:spike_remembrance": {
+      "compose_group": "the_beyond:memory/history",
+      "texture": "the_beyond:textures/projection/spike_remembrance.png"
     }
   }
 }

@@ -175,38 +175,19 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
     }
 
     public boolean isGroupComplete(ResourceLocation group) {
-        final int n = 8;
-        boolean[] covered = new boolean[n * n];
-        int marked = 0;
+        if (items.isEmpty()) return false;
+        if (items.size() != 4) return false;
+
         for (ItemStack stack : items) {
             if (stack.isEmpty()) {
                 continue;
             }
             ProjectorTexture pt = BeyondDataMapTypes.getProjectorTexture(stack);
             if (pt == null || pt.composeGroup().isEmpty() || !pt.composeGroup().get().equals(group)) {
-                continue;
-            }
-            ProjectorTexture.Region r = pt.region();
-            // Half-open [u0,u1)x[v0,v1): must match the renderer's shared-edge boundary rule.
-            for (int gy = 0; gy < n; gy++) {
-                float cy = (gy + 0.5f) / n;
-                if (cy < r.v0() || cy >= r.v1()) {
-                    continue;
-                }
-                for (int gx = 0; gx < n; gx++) {
-                    float cx = (gx + 0.5f) / n;
-                    if (cx < r.u0() || cx >= r.u1()) {
-                        continue;
-                    }
-                    int idx = gy * n + gx;
-                    if (!covered[idx]) {
-                        covered[idx] = true;
-                        marked++;
-                    }
-                }
+                return false;
             }
         }
-        return marked == n * n;
+        return true;
     }
 
     private void checkRevealOnChange(ResourceLocation group, boolean wasComplete) {
@@ -282,7 +263,7 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
         items.set(slot, stack);
         stack.limitSize(getMaxStackSize(stack));
         setChanged();
-        checkRevealOnChange(group, wasComplete);
+        checkRevealOnChange(group, false);
     }
 
     @Override
