@@ -263,7 +263,7 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
         items.set(slot, stack);
         stack.limitSize(getMaxStackSize(stack));
         setChanged();
-        checkRevealOnChange(group, false);
+        checkRevealOnChange(group, wasComplete);
     }
 
     @Override

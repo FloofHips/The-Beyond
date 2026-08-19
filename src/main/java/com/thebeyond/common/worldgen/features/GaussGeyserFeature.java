@@ -2,6 +2,8 @@ package com.thebeyond.common.worldgen.features;
 
 import com.mojang.serialization.Codec;
 import com.thebeyond.TheBeyond;
+import com.thebeyond.common.block.BranchBlock;
+import com.thebeyond.common.block.ThornsBlock;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondTags;
 import net.minecraft.core.BlockPos;
@@ -10,6 +12,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.animal.Bee;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
@@ -31,6 +34,7 @@ public class GaussGeyserFeature extends Feature<NoneFeatureConfiguration> {
     }
 
     List<BlockPos> zymotePos = new ArrayList<>();
+    List<BlockPos> thornsPos = new ArrayList<>();
     boolean old = false;
 
     @Override
@@ -62,8 +66,7 @@ public class GaussGeyserFeature extends Feature<NoneFeatureConfiguration> {
         old = source.nextBoolean() || size==0;
 
         if (size==0) build(level, source, height, origin);
-        else generateSection(level, origin, size, Math.max(0, size-source.nextInt(2,4)), height,true, source);
-        //else generateSection(level, origin, 0, 0, height,true, source);
+        else generateSection(level, origin, size, Math.max(0, size-source.nextInt(2,4)), height,true, source, noise);
 
         if (old) {
             spreadZymote(level, source);
@@ -133,7 +136,7 @@ public class GaussGeyserFeature extends Feature<NoneFeatureConfiguration> {
         setVent(level, pos.offset(0, size, 0));
     }
 
-    private void generateSection(WorldGenLevel level, BlockPos blockpos, int baseDiam, int topDiam, int height, boolean upward, RandomSource randomsource) {
+    private void generateSection(WorldGenLevel level, BlockPos blockpos, int baseDiam, int topDiam, int height, boolean upward, RandomSource randomsource, SimplexNoise noise) {
 
         int f = baseDiam*2;
         int d = topDiam*2;
@@ -187,59 +190,120 @@ public class GaussGeyserFeature extends Feature<NoneFeatureConfiguration> {
             }
         }
 
-        //BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
-        //int xBias = random.nextBoolean() ? 1 : -1;
-        //int zBias = random.nextBoolean() ? 1 : -1;
-//
-        //for (int y = 0; y < height; y++) {
-        //    float progress = ((float)y / height)*1.5F;
-        //    int currentDiam = (int) Mth.lerp(progress, baseDiam, topDiam);
-        //    int radius = currentDiam / 2;
-//
-        //    int yPos = upward ? basePos.getY() + y : basePos.getY() - y;
-//
-        //    BlockState state = Blocks.END_STONE.defaultBlockState();
-        //    if (y >= (height/3)*2 || y == height/2 || y == height/3)
-        //        state = BeyondBlocks.GAUSSANITE.get().defaultBlockState();
-//
-        //    for (int x = -radius; x <= radius; x++) {
-        //        for (int z = -radius; z <= radius; z++) {
-//
-        //            if (radius > 1 && Mth.abs(z) == Mth.abs(x) && Mth.abs(x) == radius) continue;
-//
-        //            if (old && (random.nextInt(20)<2) && (x == Math.abs(radius) || z == Math.abs(radius)) && (state.is(Blocks.END_STONE) || y >= (height/3)*2)) {
-        //                mutablePos.set(basePos.getX() + x, yPos, basePos.getZ() + z);
-        //                level.setBlock(mutablePos, BeyondBlocks.ZYMOTE.get().defaultBlockState(), 2);
-        //                zymotePos.add(mutablePos.immutable());
-//
-        //                if (radius==0) {
-        //                    level.setBlock(mutablePos.offset(0,0, zBias), state, 2);
-        //                    level.setBlock(mutablePos.offset(xBias,0,0), state, 2);
-        //                    level.setBlock(mutablePos.offset(xBias,0, zBias), state, 2);
-        //                }
-//
-        //                continue;
-        //            }
-//
-        //            mutablePos.set(basePos.getX() + x, yPos, basePos.getZ() + z);
-        //            level.setBlock(mutablePos, state, 2);
-        //            if (radius==0) {
-        //                level.setBlock(mutablePos.offset(0,0, zBias), state, 2);
-        //                level.setBlock(mutablePos.offset(xBias,0,0), state, 2);
-        //                level.setBlock(mutablePos.offset(xBias,0, zBias), state, 2);
-        //            }
-        //        }
-        //    }
-        //}
-//
-        //for (int x = -1; x <= 1; x++) {
-        //    for (int z = -1; z <= 1; z++) {
-        //        if (x!=0 && z!=0 && random.nextBoolean()) continue;
-        //        if (level.getBlockState(basePos.offset(x, height-1, z)).is(BeyondBlocks.GAUSSANITE.get())) {
-        //            setVent(level, basePos.offset(x, height-1, z));
-        //        }
-        //    }
-        //}
+        if (level.canSeeSky(blockpos.offset(0, lastHeight, 0))) return;
+        generateSoot(level, blockpos.offset(0, lastHeight, 0), randomsource, noise, baseDiam*2);
+    }
+
+    private void generateSoot(WorldGenLevel level, BlockPos blockpos, RandomSource randomsource, SimplexNoise noise, int groundRadius) {
+        BlockPos.MutableBlockPos start = blockpos.above().mutable();
+        boolean brambled = randomsource.nextBoolean();
+
+        while((level.isEmptyBlock(start))) {
+            if (level.isOutsideBuildHeight(start)) {
+                return;
+            }
+
+            if (randomsource.nextBoolean()) groundRadius--;
+            start.move(Direction.UP);
+        }
+
+        if (groundRadius<=0) return;
+
+        BlockPos.MutableBlockPos ceiling = start;
+
+        for (int x = -groundRadius; x <= groundRadius; x++) {
+            for (int y = -groundRadius; y <= 2; y++) {
+                for (int z = -groundRadius; z <= groundRadius; z++) {
+                    BlockPos blockPos = start.offset(x, y, z);
+                    double distedSqr = blockPos.distSqr(start);
+                    double noiseValue = noise.getValue(x * 0.1f, y, z * 0.1f);
+                    float noisyRadius = (float) (groundRadius-noiseValue*2);
+
+                    if (distedSqr <= noisyRadius * noisyRadius) {
+                        if ((level.getBlockState(blockPos).isAir() || level.getBlockState(blockPos).is(BeyondBlocks.BLINDING_THORNS.get())) && level.getBlockState(blockPos.above()).isSolid()) {
+                            level.setBlock(blockPos, BeyondBlocks.SOOT_BLOCK.get().defaultBlockState(), 3);
+                            if (brambled) brambleUpSoot(level, randomsource, blockPos);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (brambled) buildClimbingThorns(level, randomsource, ceiling);
+        if (brambled) cleanUpBlockstates(level);
+    }
+
+    private void placeThorn(WorldGenLevel level, BlockPos pos) {
+        if (!level.isEmptyBlock(pos)) return;
+        this.setBlock(level, pos, BeyondBlocks.BLINDING_THORNS.get().defaultBlockState());
+        thornsPos.add(pos);
+    }
+
+    private void cleanUpBlockstates(WorldGenLevel level) {
+        List<BlockPos> currentThorns = new ArrayList<>(thornsPos);
+        for (BlockPos pos : currentThorns) {
+            level.setBlock(pos, ThornsBlock.getStateWithConnections(level, pos,BeyondBlocks.BLINDING_THORNS.get().defaultBlockState()), 3);
+        }
+        thornsPos.clear();
+    }
+
+    private boolean buildClimbingThorns(WorldGenLevel level, RandomSource randomsource, BlockPos.MutableBlockPos ceiling) {
+        int counter = 0;
+
+        while((!level.isEmptyBlock(ceiling)) && counter < 6) {
+            if (level.isOutsideBuildHeight(ceiling)) {
+                return false;
+            }
+
+            counter++;
+            ceiling.move(Direction.UP);
+        }
+
+        if (level.isEmptyBlock(ceiling)) {
+            for (Direction d : Direction.values()) {
+                if (d.getAxis().isVertical()) continue;
+                placeThorn(level, ceiling.offset(d.getStepX(), 0,d.getStepZ()));
+                level.setBlock(ceiling.offset(d.getStepX(), -1,d.getStepZ()), BeyondBlocks.SOOT_BLOCK.get().defaultBlockState(), 3);
+            }
+
+            level.setBlock(ceiling.offset(0, -1,0), BeyondBlocks.SOOT_BLOCK.get().defaultBlockState(), 3);
+            for (int i = 0; i < randomsource.nextInt(5, 20); i++) {
+                placeThorn(level, ceiling.offset(0, i, 0));
+                if (randomsource.nextFloat() < 0.3f) {
+                    placeBranch(level, randomsource, ceiling.offset(1, i, 0));
+                    placeBranch(level, randomsource, ceiling.offset(-1, i, 0));
+                    placeBranch(level, randomsource, ceiling.offset(0, i, -1));
+                    placeBranch(level, randomsource, ceiling.offset(0, i, 1));
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private void placeBranch(WorldGenLevel level, RandomSource randomsource, BlockPos pos) {
+        if (randomsource.nextInt(4) == 0) {
+            placeThorn(level, pos);
+            if (randomsource.nextBoolean() && level.isEmptyBlock(pos.below())) {
+                level.setBlock(pos.below(), BeyondBlocks.SOOT_BLOCK.get().defaultBlockState(),3);
+            }
+        }
+    }
+
+    private void brambleUpSoot(WorldGenLevel level, RandomSource randomsource, BlockPos blockPos) {
+        for (Direction d : Direction.values()) {
+            BlockPos offset = blockPos.offset(d.getStepX(), d.getStepY(), d.getStepZ());
+            if (level.getBlockState(offset).isAir() && randomsource.nextBoolean()) {
+                placeThorn(level, offset);
+
+                if (level.getBlockState(offset.above()).isAir()) {
+                    placeThorn(level, offset.above());
+                }
+                if (level.getBlockState(offset.below()).isAir() && randomsource.nextBoolean()) {
+                    placeThorn(level, offset.below());
+                }
+            }
+        }
     }
 
     public void setVent(WorldGenLevel level, BlockPos pos) {

@@ -180,6 +180,7 @@ public class ModClientEvents {
         EntityRenderers.register(BeyondEntityTypes.TOTEM_OF_RESPITE.get(), TotemOfRespiteRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.GRAVISTAR.get(), ThrownItemRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.RISING_BLOCK.get(), FallingBlockRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.BRUBBLE.get(), BrubbleRenderer::new);
 
         ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID.get(), RenderType.cutoutMipped());
         ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID_FLOWING.get(), RenderType.cutoutMipped());
@@ -229,6 +230,7 @@ public class ModClientEvents {
         event.registerLayerDefinition(BeyondModelLayers.ABYSSAL_NOMAD, () -> AbyssalNomadModel.createBodyLayer(CubeDeformation.NONE));
         event.registerLayerDefinition(BeyondModelLayers.ABYSSAL_NOMAD_GLOW, () -> AbyssalNomadModel.createBodyLayer(new CubeDeformation(-0.1f)));
         event.registerLayerDefinition(BeyondModelLayers.PERKA_STALKER, PerkaStalkerModel::createBodyLayer);
+        event.registerLayerDefinition(BeyondModelLayers.BRUBBLE, BrubbleModel::createBodyLayer);
 
 
         BeyondItems.ITEMS.getEntries().stream()

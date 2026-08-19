@@ -24,6 +24,7 @@ public class ModEvents {
         event.put(BeyondEntityTypes.ENATIOUS_TOTEM.get(), EnatiousTotemEntity.createAttributes().build());
         event.put(BeyondEntityTypes.LANTERN.get(), LanternEntity.createAttributes().build());
         event.put(BeyondEntityTypes.ABYSSAL_NOMAD.get(), AbyssalNomadEntity.createAttributes().build());
+        event.put(BeyondEntityTypes.BRUBBLE.get(), BrubbleEntity.createAttributes().build());
     }
 
     /** Registered on both sides; a Dist.CLIENT-only registration would skip dedicated servers. */

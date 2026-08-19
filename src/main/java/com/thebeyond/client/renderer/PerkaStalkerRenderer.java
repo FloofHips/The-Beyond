@@ -23,8 +23,6 @@ public class PerkaStalkerRenderer extends LivingEntityRenderer<PerkaStalkerEntit
     protected void setupRotations(PerkaStalkerEntity entity, PoseStack poseStack, float bob, float yBodyRot, float partialTick, float scale) {
         Direction facing = entity.getFacing();
 
-        //poseStack.pushPose();
-
         if (facing == Direction.UP) {
             poseStack.translate(0.5f, 0.5f, 0);
             poseStack.mulPose(Axis.ZP.rotation((float) (Math.PI/2f)));
@@ -34,8 +32,6 @@ public class PerkaStalkerRenderer extends LivingEntityRenderer<PerkaStalkerEntit
         }
 
         super.setupRotations(entity, poseStack, bob, facing.toYRot(), partialTick, scale);
-
-        //poseStack.popPose();
     }
 
     @Override

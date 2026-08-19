@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "the_beyond:block/brittle_metal_slab"
+    },
+    "type=double": {
+      "model": "the_beyond:block/brittle_metal"
+    },
+    "type=top": {
+      "model": "the_beyond:block/brittle_metal_slab_top"
+    }
+  }
+}

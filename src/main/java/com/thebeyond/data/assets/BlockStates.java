@@ -32,7 +32,6 @@ public class BlockStates extends BlockStateProvider {
         basicBlock(BeyondBlocks.PORTELAIN_TILES);
         basicBlock(BeyondBlocks.ENGRAVED_END_STONE);
         basicBlock(BeyondBlocks.MEMOR);
-        basicBlock(BeyondBlocks.BRITTLE_METAL_BLOCK);
         basicBlock(BeyondBlocks.NACRE);
         basicBlock(BeyondBlocks.CHISELED_MEMOR);
         basicBlock(BeyondBlocks.VILET);
@@ -41,6 +40,7 @@ public class BlockStates extends BlockStateProvider {
         basicBlock(BeyondBlocks.COBBLED_PEARL_BRICKS);
         basicBlock(BeyondBlocks.PEARL);
         basicBlock(BeyondBlocks.PEARL_BRICKS);
+        basicBlock(BeyondBlocks.SOOT_BLOCK);
 
         //rotatedPillarBlock(BeyondBlocks.XYLEM);
         //rotatedPillarBlock(BeyondBlocks.FERROJELLY_BLOCK);

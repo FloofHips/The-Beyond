@@ -79,4 +79,11 @@ public class BeyondEntityTypes {
                             .sized(1, 1)
                             .clientTrackingRange(4)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rising_block").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<BrubbleEntity>> BRUBBLE =
+            ENTITY_TYPES.register("brubble",
+                    () -> EntityType.Builder.<BrubbleEntity>of(BrubbleEntity::new, MobCategory.MONSTER)
+                            .sized(0.9f, 0.9f)
+                            .clientTrackingRange(4)
+                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "brubble").toString()));
 }
