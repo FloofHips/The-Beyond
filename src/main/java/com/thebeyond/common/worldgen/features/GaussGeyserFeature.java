@@ -220,7 +220,7 @@ public class GaussGeyserFeature extends Feature<NoneFeatureConfiguration> {
                     float noisyRadius = (float) (groundRadius-noiseValue*2);
 
                     if (distedSqr <= noisyRadius * noisyRadius) {
-                        if ((level.getBlockState(blockPos).isAir() || level.getBlockState(blockPos).is(BeyondBlocks.BLINDING_THORNS.get())) && level.getBlockState(blockPos.above()).isSolid()) {
+                        if ((level.getBlockState(blockPos).isAir() || level.getBlockState(blockPos).is(BeyondBlocks.BLINDING_THORN.get())) && level.getBlockState(blockPos.above()).isSolid()) {
                             level.setBlock(blockPos, BeyondBlocks.SOOT_BLOCK.get().defaultBlockState(), 3);
                             if (brambled) brambleUpSoot(level, randomsource, blockPos);
                         }
@@ -235,14 +235,14 @@ public class GaussGeyserFeature extends Feature<NoneFeatureConfiguration> {
 
     private void placeThorn(WorldGenLevel level, BlockPos pos) {
         if (!level.isEmptyBlock(pos)) return;
-        this.setBlock(level, pos, BeyondBlocks.BLINDING_THORNS.get().defaultBlockState());
+        this.setBlock(level, pos, BeyondBlocks.BLINDING_THORN.get().defaultBlockState());
         thornsPos.add(pos);
     }
 
     private void cleanUpBlockstates(WorldGenLevel level) {
         List<BlockPos> currentThorns = new ArrayList<>(thornsPos);
         for (BlockPos pos : currentThorns) {
-            level.setBlock(pos, ThornsBlock.getStateWithConnections(level, pos,BeyondBlocks.BLINDING_THORNS.get().defaultBlockState()), 3);
+            level.setBlock(pos, ThornsBlock.getStateWithConnections(level, pos,BeyondBlocks.BLINDING_THORN.get().defaultBlockState()), 3);
         }
         thornsPos.clear();
     }

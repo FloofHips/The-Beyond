@@ -2,7 +2,7 @@ package com.thebeyond.common.registry;
 
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.block.blockentities.BellowBlockEntity;
-import com.thebeyond.common.block.blockentities.CameraBlockEntity;
+import com.thebeyond.common.block.blockentities.PrismographBlockEntity;
 import com.thebeyond.common.block.blockentities.ProjectorBlockEntity;
 import com.thebeyond.common.block.blockentities.BonfireBlockEntity;
 import com.thebeyond.common.block.blockentities.EnadrakeHutBlockEntity;
@@ -35,8 +35,8 @@ public class BeyondBlockEntities {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ProjectorBlockEntity>> PROJECTOR = BLOCK_ENTITY_TYPES.
             register("projector", () -> BlockEntityType.Builder.of(ProjectorBlockEntity::new, BeyondBlocks.PROJECTOR.get()).build(null));
 
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<CameraBlockEntity>> CAMERA = BLOCK_ENTITY_TYPES.
-            register("camera", () -> BlockEntityType.Builder.of(CameraBlockEntity::new, BeyondBlocks.CAMERA.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<PrismographBlockEntity>> PRISMOGRAPH = BLOCK_ENTITY_TYPES.
+            register("prismograph", () -> BlockEntityType.Builder.of(PrismographBlockEntity::new, BeyondBlocks.PRISMOGRAPH.get()).build(null));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BellowBlockEntity>> BELLOW = BLOCK_ENTITY_TYPES.
             register("bellow", () -> BlockEntityType.Builder.of(BellowBlockEntity::new, BeyondBlocks.BELLOW.get()).build(null));

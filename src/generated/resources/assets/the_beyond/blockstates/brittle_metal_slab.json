@@ -4,7 +4,7 @@
       "model": "the_beyond:block/brittle_metal_slab"
     },
     "type=double": {
-      "model": "the_beyond:block/brittle_metal"
+      "model": "the_beyond:block/brittle_metal_block"
     },
     "type=top": {
       "model": "the_beyond:block/brittle_metal_slab_top"

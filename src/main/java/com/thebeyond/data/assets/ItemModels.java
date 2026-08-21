@@ -44,14 +44,17 @@ public class ItemModels extends ItemModelProvider {
         items.remove(BeyondBlocks.PORTELAIN_DOOR.asItem());
         items.remove(BeyondBlocks.BRITTLE_METAL_DOOR.asItem());
         items.remove(BeyondBlocks.OBIROOT_SPROUT.asItem());
+        items.remove(BeyondBlocks.BLEEDING_THORN.asItem());
+        items.remove(BeyondBlocks.BLINDING_THORN.asItem());
         items.remove(BeyondBlocks.AMPHORA.asItem());
-        items.remove(BeyondItems.PINHOLE_CAMERA.asItem());
+        items.remove(BeyondItems.PRISMOGRAPH.asItem());
 
         items.remove(BeyondItems.BRITTLE_SWORD.asItem());
         items.remove(BeyondItems.BRITTLE_SHOVEL.asItem());
         items.remove(BeyondItems.BRITTLE_AXE.asItem());
         items.remove(BeyondItems.BRITTLE_HOE.asItem());
         items.remove(BeyondItems.BRITTLE_PICKAXE.asItem());
+        items.remove(BeyondItems.SMOKE_FUSE.asItem());
 
         handheldItem(BeyondItems.BRITTLE_SWORD.asItem());
         handheldItem(BeyondItems.BRITTLE_SHOVEL.asItem());
@@ -67,7 +70,10 @@ public class ItemModels extends ItemModelProvider {
         itemGeneratedModel(BeyondBlocks.VILE_GROWTH.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/vile_growth"));
         itemGeneratedModel(BeyondBlocks.PORTELAIN_DOOR.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/portelain_door"));
         itemGeneratedModel(BeyondBlocks.BRITTLE_METAL_DOOR.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/brittle_metal_door"));
-        itemGeneratedModel(BeyondItems.PINHOLE_CAMERA.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/pinhole_camera"));
+        itemGeneratedModel(BeyondItems.PRISMOGRAPH.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/prismograph"));
+        itemGeneratedModel(BeyondBlocks.BLEEDING_THORN.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/bleeding_thorn"));
+        itemGeneratedModel(BeyondBlocks.BLINDING_THORN.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/blinding_thorn"));
+
 
         takeAll(items, i -> i instanceof BlockItem).forEach(item -> blockBasedModel(item, ""));
         takeAll(items, i -> i instanceof SpawnEggItem).forEach(this::spawnEggGeneratedModel);

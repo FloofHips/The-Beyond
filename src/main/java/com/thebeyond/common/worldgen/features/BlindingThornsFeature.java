@@ -40,7 +40,7 @@ public class BlindingThornsFeature extends ThornsFeature {
 
     @Override
     public @NotNull BlockState getBlockState() {
-        return BeyondBlocks.BLINDING_THORNS.get().defaultBlockState();
+        return BeyondBlocks.BLINDING_THORN.get().defaultBlockState();
     }
 
     @Override

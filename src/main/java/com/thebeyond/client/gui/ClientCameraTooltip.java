@@ -1,6 +1,6 @@
 package com.thebeyond.client.gui;
 
-import com.thebeyond.common.item.CameraTooltip;
+import com.thebeyond.common.item.PrismographTooltip;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
@@ -12,7 +12,7 @@ public class ClientCameraTooltip implements ClientTooltipComponent {
     private final ItemStack film;
     private final ItemStack fuel;
 
-    public ClientCameraTooltip(CameraTooltip tooltip) {
+    public ClientCameraTooltip(PrismographTooltip tooltip) {
         this.film = tooltip.film();
         this.fuel = tooltip.fuel();
     }

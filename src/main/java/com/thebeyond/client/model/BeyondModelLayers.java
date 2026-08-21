@@ -31,8 +31,8 @@ public class BeyondModelLayers {
             new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "abyssal_nomad"), "main");
     public static final ModelLayerLocation ABYSSAL_NOMAD_GLOW =
             new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "abyssal_nomad"), "glow");
-    public static final ModelLayerLocation PERKA_STALKER =
-            new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "perka_stalker"), "main");
+    public static final ModelLayerLocation STALKER =
+            new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "stalker"), "main");
     public static final ModelLayerLocation BRUBBLE =
             new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "brubble"), "main");
 }

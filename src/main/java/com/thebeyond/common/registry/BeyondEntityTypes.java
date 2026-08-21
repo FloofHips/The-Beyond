@@ -4,10 +4,8 @@ import com.thebeyond.TheBeyond;
 import com.thebeyond.common.entity.*;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
-import net.neoforged.bus.EventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -49,11 +47,11 @@ public class BeyondEntityTypes {
                     () -> EntityType.Builder.of(EnatiousTotemEntity::new, MobCategory.MISC)
                             .sized(1.5F, 3F)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "enatious_totem").toString()));
-    public static final DeferredHolder<EntityType<?>, EntityType<PerkaStalkerEntity>> PERKA_STALKER =
-            ENTITY_TYPES.register("perka_stalker",
-                    () -> EntityType.Builder.of(PerkaStalkerEntity::new, MobCategory.CREATURE)
+    public static final DeferredHolder<EntityType<?>, EntityType<StalkerEntity>> STALKER =
+            ENTITY_TYPES.register("stalker",
+                    () -> EntityType.Builder.of(StalkerEntity::new, MobCategory.CREATURE)
                             .sized(1, 1)
-                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "perka_stalker").toString()));
+                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "stalker").toString()));
     public static final DeferredHolder<EntityType<?>, EntityType<KnockbackSeedEntity>> KNOCKBACK_SEED =
             ENTITY_TYPES.register("knockback_seed",
                     () -> EntityType.Builder.<KnockbackSeedEntity>of(KnockbackSeedEntity::new, MobCategory.MISC)
@@ -91,4 +89,9 @@ public class BeyondEntityTypes {
                     () -> EntityType.Builder.<SmokeFuseEntity>of(SmokeFuseEntity::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "smoke_fuse").toString()));
+    public static final DeferredHolder<EntityType<?>, EntityType<CoilEntity>> COILED_STALK =
+            ENTITY_TYPES.register("coiled_stalk",
+                    () -> EntityType.Builder.<CoilEntity>of(CoilEntity::new, MobCategory.MISC)
+                            .sized(0.5F, 0.5F)
+                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "coiled_stalk").toString()));
 }

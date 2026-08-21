@@ -4,7 +4,6 @@ import com.thebeyond.TheBeyond;
 import com.thebeyond.api.compat.BeyondCompatHooks;
 import com.thebeyond.client.particle.BellowJetOptions;
 import com.thebeyond.common.block.BellowBlock;
-import com.thebeyond.common.block.GaussVentBlock;
 import com.thebeyond.common.block.blockentities.ProjectorBlockEntity;
 import com.thebeyond.common.block.blockentities.RefugeBlockEntity;
 import com.thebeyond.common.block.blockentities.RefugeMenu;
@@ -13,7 +12,7 @@ import com.thebeyond.common.awareness.PlayerAwareness;
 import com.thebeyond.common.registry.*;
 import com.thebeyond.compat.jei.JeiCompatBridge;
 import com.thebeyond.client.renderer.BlockCameraCapture;
-import com.thebeyond.common.item.CameraBlockItem;
+import com.thebeyond.common.item.PrismographBlockItem;
 import com.thebeyond.common.camera.CameraGrade;
 import com.thebeyond.common.item.components.Components;
 import com.thebeyond.common.camera.Grades;
@@ -29,7 +28,6 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -46,7 +44,7 @@ import net.neoforged.neoforge.items.ItemHandlerHelper;
 import net.minecraft.world.item.ItemStack;
 import java.util.Map;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
+
 import java.util.UUID;
 
 import static com.thebeyond.common.block.BellowBlock.*;
@@ -186,11 +184,11 @@ public class BeyondNetworking {
         context.enqueueWork(() -> {
             ServerPlayer player = (ServerPlayer) context.player();
             ItemStack camera = player.getItemInHand(payload.hand());
-            if (!(camera.getItem() instanceof CameraBlockItem)
-                    || !CameraBlockItem.hasFilm(camera)) {
+            if (!(camera.getItem() instanceof PrismographBlockItem)
+                    || !PrismographBlockItem.hasFilm(camera)) {
                 return;
             }
-            CameraBlockItem.consumeFilm(camera);
+            PrismographBlockItem.consumeFilm(camera);
             long requestId = SnapshotRequests.issue(player, null,
                     CameraGrade.get(camera));
             PacketDistributor.sendToPlayer(player, new CaptureRequestPayload(requestId));

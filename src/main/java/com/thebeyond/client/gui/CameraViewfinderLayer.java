@@ -2,7 +2,7 @@ package com.thebeyond.client.gui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.thebeyond.client.camera.CameraAim;
-import com.thebeyond.common.item.CameraBlockItem;
+import com.thebeyond.common.item.PrismographBlockItem;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -59,7 +59,7 @@ public class CameraViewfinderLayer implements LayeredDraw.Layer {
     }
 
     private static boolean holdingCamera(LocalPlayer player) {
-        return player.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof CameraBlockItem
-                || player.getItemInHand(InteractionHand.OFF_HAND).getItem() instanceof CameraBlockItem;
+        return player.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof PrismographBlockItem
+                || player.getItemInHand(InteractionHand.OFF_HAND).getItem() instanceof PrismographBlockItem;
     }
 }

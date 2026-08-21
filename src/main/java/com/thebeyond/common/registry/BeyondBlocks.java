@@ -55,13 +55,13 @@ public class BeyondBlocks {
                     .noOcclusion()
                     .replaceable())
     );
-    public static final DeferredBlock<Block> BLEEDING_THORNS = registerBlock("bleeding_thorns",
+    public static final DeferredBlock<Block> BLEEDING_THORN = registerBlock("bleeding_thorn",
             () -> new BleedingThornsBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_RED)
                     .strength(1.0F, 1.0F)
                     .sound(SoundType.NETHER_WOOD))
     );
-    public static final DeferredBlock<Block> BLINDING_THORNS = registerBlock("blinding_thorns",
+    public static final DeferredBlock<Block> BLINDING_THORN = registerBlock("blinding_thorn",
             () -> new BlindingThornsBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_BLACK)
                     .strength(1.0F, 1.0F)
@@ -344,7 +344,7 @@ public class BeyondBlocks {
             .noOcclusion()
             .sound(SoundType.AMETHYST)));
     // No item: pinhole_camera places this block.
-    public static final DeferredBlock<Block> CAMERA = registerBlockWithoutItem("pinhole_camera", () -> new CameraBlock(BlockBehaviour.Properties.of()
+    public static final DeferredBlock<Block> PRISMOGRAPH = registerBlockWithoutItem("prismograph", () -> new PrismographBlock(BlockBehaviour.Properties.of()
             .mapColor(MapColor.COLOR_GRAY)
             .strength(1.5F)
             .noOcclusion()
@@ -356,7 +356,6 @@ public class BeyondBlocks {
             .noOcclusion()
             .sound(SoundType.NETHER_BRICKS))
     );
-
 
     // Pearlescent Expanse
     public static final DeferredBlock<Block> NACRE = registerBlock("nacre",

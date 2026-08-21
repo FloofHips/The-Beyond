@@ -5,8 +5,10 @@ import com.thebeyond.client.model.equipment.AnchorLeggingsModel;
 import com.thebeyond.client.model.equipment.EtherCloakModel;
 import com.thebeyond.common.item.*;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.*;
+import net.minecraft.world.item.component.DyedItemColor;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -104,12 +106,13 @@ public class BeyondItems {
     public static final DeferredItem<Item> BRITTLE_PICKAXE = registerItem("brittle_pickaxe", () -> new PickaxeItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(PickaxeItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 1.0F, -2.8F))));
     public static final DeferredItem<Item> BRITTLE_AXE = registerItem("brittle_axe", () -> new AxeItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(AxeItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 6.0F, -3.0F))));
     public static final DeferredItem<Item> BRITTLE_HOE = registerItem("brittle_hoe", () -> new HoeItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(HoeItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 0.0F, -3.0F))));
-
     // Block-click places the camera block; in-air or sneaking shoots it handheld.
-    public static final DeferredItem<Item> PINHOLE_CAMERA = registerItem("pinhole_camera", () -> new CameraBlockItem(BeyondBlocks.CAMERA.get(), new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> PRISMOGRAPH = registerItem("prismograph", () -> new PrismographBlockItem(BeyondBlocks.PRISMOGRAPH.get(), new Item.Properties().stacksTo(1)));
     public static final DeferredItem<Item> SNAPSHOT = registerItem("snapshot", () -> new SnapshotItem(new Item.Properties().stacksTo(16).rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> SMOKE_FUSE = registerItem("smoke_fuse", () -> new SmokeFuseItem(new Item.Properties()));
-    public static final DeferredItem<Item> COIL = registerItem("coil", () -> new CoilItem(new Item.Properties()));
+
+    public static final DeferredItem<Item> STALKER_SEGMENT = registerItem("stalker_segment", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> SMOKE_FUSE = registerItem("smoke_fuse", () -> new SmokeFuseItem(new Item.Properties().component(DataComponents.DYED_COLOR, new DyedItemColor(DyeColor.BLACK.getFireworkColor(), true))));
+    public static final DeferredItem<Item> COILED_STALK = registerItem("coiled_stalk", () -> new CoilItem(new Item.Properties()));
 
     @SuppressWarnings("unchecked")
     public static <T extends Item> DeferredItem<T> registerItem(final String name, final Supplier<? extends Item> item) {

@@ -42,7 +42,7 @@ public class BleedingThornsFeature extends ThornsFeature {
 
     @Override
     public @NotNull BlockState getBlockState() {
-        return BeyondBlocks.BLEEDING_THORNS.get().defaultBlockState();
+        return BeyondBlocks.BLEEDING_THORN.get().defaultBlockState();
     }
 
     @Override

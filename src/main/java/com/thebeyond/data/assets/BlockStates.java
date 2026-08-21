@@ -46,6 +46,8 @@ public class BlockStates extends BlockStateProvider {
         //rotatedPillarBlock(BeyondBlocks.FERROJELLY_BLOCK);
 
         blocks.remove(BeyondBlocks.FERROJELLY_BLOCK);
+        blocks.remove(BeyondBlocks.COIL_VERTEBRAE);
+
         blocks.remove(BeyondBlocks.BRITTLE_METAL_SLAB);
         slabBlock((SlabBlock) BeyondBlocks.BRITTLE_METAL_SLAB.get(),
                 ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/brittle_metal_block"),

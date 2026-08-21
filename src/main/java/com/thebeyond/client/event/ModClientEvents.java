@@ -15,15 +15,9 @@ import com.thebeyond.client.model.equipment.MultipartArmorModel;
 import com.thebeyond.client.particle.*;
 import com.thebeyond.client.renderer.*;
 import com.thebeyond.client.renderer.blockentities.*;
-import com.thebeyond.common.block.RefugeBlock;
-import com.thebeyond.common.block.blockentities.RefugeBlockEntity;
-import com.thebeyond.common.entity.TotemOfRespiteEntity;
 import com.thebeyond.common.item.*;
 import com.thebeyond.common.registry.*;
-import com.thebeyond.mixin.AbstractSoundInstanceAccessor;
-import com.thebeyond.util.AOEManager;
 import com.thebeyond.util.ColorUtils;
-import com.thebeyond.util.RefugeChunkData;
 import com.thebeyond.util.RenderUtils;
 import com.thebeyond.client.particle.BellowJetParticle;
 import com.thebeyond.compat.sable.client.BeyondSableClientCompat;
@@ -42,69 +36,32 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.model.HumanoidModel;
-import net.minecraft.client.model.Model;
 import net.minecraft.client.model.geom.builders.CubeDeformation;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.FlameParticle;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
-import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.entity.FallingBlockRenderer;
-import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.ModelResourceLocation;
-import net.minecraft.client.resources.sounds.AbstractSoundInstance;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.core.*;
-import net.minecraft.core.particles.ItemParticleOption;
-import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.damagesource.DamageTypes;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
-import net.minecraft.world.entity.ai.village.poi.PoiManager;
-import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.monster.Zombie;
-import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.vehicle.ChestBoat;
-import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.level.*;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.RotatedPillarBlock;
-import net.minecraft.world.level.block.SweetBerryBushBlock;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.ChunkAccess;
-import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.synth.PerlinSimplexNoise;
 import net.minecraft.world.level.material.FluidState;
-import net.minecraft.world.level.portal.DimensionTransition;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.Event;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -115,25 +72,11 @@ import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtension
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.common.util.TriState;
-import net.neoforged.neoforge.event.PlayLevelSoundEvent;
-import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
-import net.neoforged.neoforge.event.entity.living.*;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
-import net.neoforged.neoforge.event.entity.player.UseItemOnBlockEvent;
-import net.neoforged.neoforge.event.level.*;
-import net.neoforged.neoforge.event.tick.PlayerTickEvent;
-import net.neoforged.neoforge.event.tick.ServerTickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
-import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
-import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
-import java.lang.reflect.Field;
-import java.nio.Buffer;
 import java.util.*;
-import java.util.stream.Collectors;
+
 import net.neoforged.fml.ModList;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 
@@ -171,7 +114,7 @@ public class ModClientEvents {
         EntityRenderers.register(BeyondEntityTypes.ENDERGLOP.get(), EnderglopRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.ENADRAKE.get(), EnadrakeRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.ENATIOUS_TOTEM.get(), EnatiousTotemRenderer::new);
-        EntityRenderers.register(BeyondEntityTypes.PERKA_STALKER.get(), PerkaStalkerRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.STALKER.get(), StalkerRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.KNOCKBACK_SEED.get(), KnockBackSeedRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.POISON_SEED.get(), PoisonSeedRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.UNSTABLE_SEED.get(), UnstableSeedRenderer::new);
@@ -180,6 +123,7 @@ public class ModClientEvents {
         EntityRenderers.register(BeyondEntityTypes.TOTEM_OF_RESPITE.get(), TotemOfRespiteRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.GRAVISTAR.get(), ThrownItemRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.SMOKE_FUSE.get(), ThrownItemRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.COILED_STALK.get(), ThrownItemRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.RISING_BLOCK.get(), FallingBlockRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.BRUBBLE.get(), BrubbleRenderer::new);
 
@@ -206,7 +150,7 @@ public class ModClientEvents {
     public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(BeyondMenus.REFUGE.get(), RefugeScreen::new);
         event.register(BeyondMenus.PROJECTOR.get(), ProjectorScreen::new);
-        event.register(BeyondMenus.CAMERA_BLOCK.get(), CameraBlockScreen::new);
+        event.register(BeyondMenus.PRISMOGRAPH.get(), PrismographBlockScreen::new);
     }
 
     @SubscribeEvent
@@ -230,7 +174,7 @@ public class ModClientEvents {
         event.registerLayerDefinition(BeyondModelLayers.LANTERN_SMALL, LanternSmallModel::createBodyLayer);
         event.registerLayerDefinition(BeyondModelLayers.ABYSSAL_NOMAD, () -> AbyssalNomadModel.createBodyLayer(CubeDeformation.NONE));
         event.registerLayerDefinition(BeyondModelLayers.ABYSSAL_NOMAD_GLOW, () -> AbyssalNomadModel.createBodyLayer(new CubeDeformation(-0.1f)));
-        event.registerLayerDefinition(BeyondModelLayers.PERKA_STALKER, PerkaStalkerModel::createBodyLayer);
+        event.registerLayerDefinition(BeyondModelLayers.STALKER, StalkerModel::createBodyLayer);
         event.registerLayerDefinition(BeyondModelLayers.BRUBBLE, BrubbleModel::createBodyLayer);
 
 
@@ -329,6 +273,10 @@ public class ModClientEvents {
             return contents.getColor();
         }, net.minecraft.world.item.Items.POTION, net.minecraft.world.item.Items.SPLASH_POTION,
                 net.minecraft.world.item.Items.LINGERING_POTION);
+
+        event.register((stack, tintIndex) -> {
+            return tintIndex > 0 ? -1 : DyedItemColor.getOrDefault(stack, DyeColor.BLACK.getFireworkColor());
+        }, BeyondItems.SMOKE_FUSE.asItem());
     }
 
     @SubscribeEvent
@@ -584,8 +532,8 @@ public class ModClientEvents {
         }
         Player player = Minecraft.getInstance().player;
         boolean holding = player != null
-                && (player.getMainHandItem().getItem() instanceof CameraBlockItem
-                || player.getOffhandItem().getItem() instanceof CameraBlockItem);
+                && (player.getMainHandItem().getItem() instanceof PrismographBlockItem
+                || player.getOffhandItem().getItem() instanceof PrismographBlockItem);
         if (!holding) {
             CameraAim.clear();
         }
@@ -600,8 +548,8 @@ public class ModClientEvents {
         }
         Player player = Minecraft.getInstance().player;
         return player != null
-                && (player.getMainHandItem().getItem() instanceof CameraBlockItem
-                || player.getOffhandItem().getItem() instanceof CameraBlockItem);
+                && (player.getMainHandItem().getItem() instanceof PrismographBlockItem
+                || player.getOffhandItem().getItem() instanceof PrismographBlockItem);
     }
 
     /** While aiming, hide every HUD layer but the viewfinder so the framing matches the (HUD-less) photo. */
@@ -632,7 +580,7 @@ public class ModClientEvents {
     public static void onRegisterTooltipFactories(RegisterClientTooltipComponentFactoriesEvent event) {
         event.register(SnapshotTooltip.class,
                 ClientSnapshotTooltip::new);
-        event.register(CameraTooltip.class,
+        event.register(PrismographTooltip.class,
                 ClientCameraTooltip::new);
     }
 
