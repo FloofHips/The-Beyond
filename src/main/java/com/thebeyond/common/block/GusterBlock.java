@@ -1,5 +1,6 @@
 package com.thebeyond.common.block;
 
+import com.thebeyond.common.registry.BeyondEffects;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -8,7 +9,9 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -39,7 +42,7 @@ public class GusterBlock extends Block {
             entity.setDeltaMovement(entity.getDeltaMovement().add(pushVector));
             serverLevel.sendParticles(ParticleTypes.GUST_EMITTER_SMALL, pos.getX()+0.5, pos.getY()+1, pos.getZ()+0.5, 3, 0.1,0.1,0.1,1);
             serverLevel.sendParticles(ParticleTypes.GUST_EMITTER_LARGE, pos.getX()+0.5, pos.getY()+1, pos.getZ()+0.5, 3, 0.1,0.1,0.1,1);
-
+            if (entity instanceof LivingEntity le && !le.hasEffect(BeyondEffects.WEIGHTLESS)) le.addEffect(new MobEffectInstance(BeyondEffects.WEIGHTLESS, 250,1));
             entity.hurtMarked = true;
         }
         super.stepOn(level, pos, state, entity);

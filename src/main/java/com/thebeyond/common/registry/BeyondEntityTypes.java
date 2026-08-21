@@ -86,4 +86,9 @@ public class BeyondEntityTypes {
                             .sized(0.9f, 0.9f)
                             .clientTrackingRange(4)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "brubble").toString()));
+    public static final DeferredHolder<EntityType<?>, EntityType<SmokeFuseEntity>> SMOKE_FUSE =
+            ENTITY_TYPES.register("smoke_fuse",
+                    () -> EntityType.Builder.<SmokeFuseEntity>of(SmokeFuseEntity::new, MobCategory.MISC)
+                            .sized(0.5F, 0.5F)
+                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "smoke_fuse").toString()));
 }

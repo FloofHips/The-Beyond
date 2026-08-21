@@ -46,6 +46,12 @@ public class BlockStates extends BlockStateProvider {
         //rotatedPillarBlock(BeyondBlocks.FERROJELLY_BLOCK);
 
         blocks.remove(BeyondBlocks.FERROJELLY_BLOCK);
+        blocks.remove(BeyondBlocks.BRITTLE_METAL_SLAB);
+        slabBlock((SlabBlock) BeyondBlocks.BRITTLE_METAL_SLAB.get(),
+                ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/brittle_metal_block"),
+                ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/brittle_metal"),
+                ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/brittle_metal"),
+                ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/brittle_metal"));
 
         doorBlock((DoorBlock) BeyondBlocks.PORTELAIN_DOOR.get(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/portelain_door_bottom"), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/portelain_door_top"));
         doorBlock((DoorBlock) BeyondBlocks.BRITTLE_METAL_DOOR.get(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/brittle_metal_door_bottom"), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/brittle_metal_door_top"));

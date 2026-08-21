@@ -22,8 +22,8 @@ public class ColorUtils {
     );
 
     public static SmokeColorTransitionOptions blackOptions = new SmokeColorTransitionOptions(
-            new Vector3f(0.1f, 0.0f, 0.1f),
-            new Vector3f(0.7f, 0.0f, 0.9f),
+            new Vector3f(0.0f, 0.0f, 0.0f),
+            new Vector3f(0.1f, 0.0f, 0.2f),
             2f
     );
 

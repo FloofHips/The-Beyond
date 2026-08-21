@@ -77,7 +77,7 @@ public class PerkaStalkFeature extends Feature<NoneFeatureConfiguration> {
                         if (worldgenlevel.getBlockState(blockPos.above()).isAir() && worldgenlevel.getBlockState(blockPos).is(BeyondTags.END_FLOOR_BLOCKS)) {
                             worldgenlevel.setBlock(blockPos, BeyondBlocks.VILET.get().defaultBlockState(), 3);
                             if (randomsource.nextBoolean())
-                                worldgenlevel.setBlock(blockPos.above(), BeyondBlocks.VILET_GROWTH.get().defaultBlockState(), 3);
+                                worldgenlevel.setBlock(blockPos.above(), BeyondBlocks.VILE_GROWTH.get().defaultBlockState(), 3);
                         }
                     }
                 }

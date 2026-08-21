@@ -5,14 +5,17 @@ import com.thebeyond.api.compat.BeyondCompatHooks;
 import com.thebeyond.client.particle.BellowJetOptions;
 import com.thebeyond.common.block.blockentities.BellowBlockEntity;
 import com.thebeyond.common.registry.BeyondBlockEntities;
+import com.thebeyond.common.registry.BeyondEffects;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySelector;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -163,9 +166,11 @@ public class BellowBlock extends BaseEntityBlock {
     public static double reachBlocks(int strength) {
         return (double) strength / LEVELS_PER_BLOCK;
     }
-
-    /** Server: pushes entities in the gust toward the facing; force scales with the signal and fades over the reach. */
     public static void serverPush(ServerLevel level, BlockPos pos, BlockState state, int signal, int strength, Direction direction) {
+        serverPush(level, pos, state, 15, 40, Direction.UP, false);
+    }
+    /** Server: pushes entities in the gust toward the facing; force scales with the signal and fades over the reach. */
+    public static void serverPush(ServerLevel level, BlockPos pos, BlockState state, int signal, int strength, Direction direction, boolean givesEffect) {
         Direction dir = direction == null ? state.getValue(FACING) : direction;
         Vec3 origin = BeyondCompatHooks.visibleOrCenter(level, pos);
         Vec3 worldDir = worldDir(level, pos, dir);
@@ -191,6 +196,7 @@ public class BellowBlock extends BaseEntityBlock {
             Vec3 v = e.getDeltaMovement();
             double curAlong = v.dot(worldDir);
             if (curAlong < target) {
+                if (givesEffect && e instanceof LivingEntity le && !le.hasEffect(BeyondEffects.WEIGHTLESS)) le.addEffect(new MobEffectInstance(BeyondEffects.WEIGHTLESS, 250,1));
                 double step = Math.min(ACCEL, (target - curAlong) * SETTLE);
                 e.setDeltaMovement(v.add(worldDir.scale(step)));
                 e.hurtMarked = true;

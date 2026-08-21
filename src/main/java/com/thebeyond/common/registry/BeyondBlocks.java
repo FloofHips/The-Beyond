@@ -56,13 +56,13 @@ public class BeyondBlocks {
                     .replaceable())
     );
     public static final DeferredBlock<Block> BLEEDING_THORNS = registerBlock("bleeding_thorns",
-            () -> new ThornsBlock(BlockBehaviour.Properties.of()
+            () -> new BleedingThornsBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_RED)
                     .strength(1.0F, 1.0F)
                     .sound(SoundType.NETHER_WOOD))
     );
     public static final DeferredBlock<Block> BLINDING_THORNS = registerBlock("blinding_thorns",
-            () -> new ThornsBlock(BlockBehaviour.Properties.of()
+            () -> new BlindingThornsBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_BLACK)
                     .strength(1.0F, 1.0F)
                     .sound(SoundType.NETHER_WOOD))
@@ -404,7 +404,7 @@ public class BeyondBlocks {
                     .mapColor(MapColor.TERRACOTTA_PURPLE)
                     .strength(0.3F, 0.0F)
                     .sound(SoundType.FUNGUS)));
-    public static final DeferredBlock<Block> VILET_GROWTH = registerBlock("vilet_growth",
+    public static final DeferredBlock<Block> VILE_GROWTH = registerBlock("vile_growth",
             () -> new FloorGrowthBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.TERRACOTTA_PURPLE)
                     .replaceable()
@@ -422,6 +422,11 @@ public class BeyondBlocks {
                     .sound(SoundType.BONE_BLOCK)));
     public static final DeferredBlock<Block> PERKA_STALK_MOUTH = registerBlock("perka_stalk_mouth",
             () -> new PerkaStalkMouthBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_PURPLE)
+                    .strength(2F, 0.5F)
+                    .sound(SoundType.BONE_BLOCK)));
+    public static final DeferredBlock<Block> COIL_VERTEBRAE = registerBlock("coil_vertebrae",
+            () -> new CoilVertebraeBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_PURPLE)
                     .strength(2F, 0.5F)
                     .sound(SoundType.BONE_BLOCK)));

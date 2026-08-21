@@ -29,4 +29,6 @@ public class BeyondFeatures {
     public static final DeferredHolder<Feature<?>, PearlPillarFeature> PEARL_PILLAR = FEATURES.register("pearl_pillar", () -> new PearlPillarFeature(NoneFeatureConfiguration.CODEC));
 
     public static final DeferredHolder<Feature<?>, PerkaStalkFeature> PERKA_STALK = FEATURES.register("perka_stalk", () -> new PerkaStalkFeature(NoneFeatureConfiguration.CODEC));
+    public static final DeferredHolder<Feature<?>, BleedingThornsFeature> BLEEDING_THORNS = FEATURES.register("bleeding_thorns", () -> new BleedingThornsFeature(NoneFeatureConfiguration.CODEC));
+    public static final DeferredHolder<Feature<?>, BlindingThornsFeature> BLINDING_THORNS = FEATURES.register("blinding_thorns", () -> new BlindingThornsFeature(NoneFeatureConfiguration.CODEC));
 }

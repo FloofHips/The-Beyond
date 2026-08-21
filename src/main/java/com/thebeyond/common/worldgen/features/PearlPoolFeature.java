@@ -32,7 +32,8 @@ public class PearlPoolFeature extends Feature<NoneFeatureConfiguration> {
     @Override
     public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
         WorldGenLevel level = context.level();
-        BlockPos origin = context.origin();
+        BlockPos originPos = context.origin();
+
         RandomSource source = context.random();
         SimplexNoise noise = new SimplexNoise(source);
 
@@ -41,14 +42,14 @@ public class PearlPoolFeature extends Feature<NoneFeatureConfiguration> {
         boolean tried;
         boolean floorOnly = source.nextBoolean();
         for (int i = 0; i < amount; i++) {
-            tried = placePool(level, BlockPos.randomInCube(source,1, origin, 7).iterator().next(), source, noise, floorOnly);
+            tried = placePool(level, BlockPos.randomInCube(source,1, originPos, 7).iterator().next(), source, noise, floorOnly, originPos);
             if (tried) attempted = tried;
         }
 
         return attempted;
     }
 
-    private boolean placePool(WorldGenLevel level, BlockPos origin, RandomSource source, SimplexNoise noise, boolean floorOnly) {
+    private boolean placePool(WorldGenLevel level, BlockPos origin, RandomSource source, SimplexNoise noise, boolean floorOnly, BlockPos base) {
 
         BlockPos start = level.getHeightmapPos(Heightmap.Types.WORLD_SURFACE_WG, origin).below();
         if (start.getY() < level.getMinBuildHeight() + 3) return false;
@@ -63,7 +64,7 @@ public class PearlPoolFeature extends Feature<NoneFeatureConfiguration> {
 
         int test = 0;
 
-        createFloor(level, noise, radius, start);
+        createFloor(level, noise, radius, start, base);
         if (!floorOnly) createPool(level, source, radius, test, start);
 
         return true;
@@ -105,13 +106,14 @@ public class PearlPoolFeature extends Feature<NoneFeatureConfiguration> {
         return true;
     }
 
-    public static void createFloor(WorldGenLevel level, SimplexNoise noise, int radius, BlockPos start) {
-        int groundRadius = radius*2;
+    public static void createFloor(WorldGenLevel level, SimplexNoise noise, int radius, BlockPos start, BlockPos origin) {
+        int groundRadius = (int) (radius*1.5f);
 
         for (int x = -groundRadius; x <= groundRadius; x++) {
             for (int y = -groundRadius; y <= 2; y++) {
                 for (int z = -groundRadius; z <= groundRadius; z++) {
                     BlockPos blockPos = start.offset(x, y, z);
+                    if (!blockPos.closerToCenterThan(origin.getCenter(), 24)) continue;
                     double distedSqr = blockPos.distSqr(start);
                     double noiseValue = noise.getValue(x * 0.1f, y, z * 0.1f);
                     float noisyRadius = (float) (groundRadius-noiseValue*2);

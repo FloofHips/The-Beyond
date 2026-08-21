@@ -148,9 +148,9 @@ public class BrubbleEntity extends PathfinderMob {
     }
 
     public void playerTouch(Player livingEntity) {
-        if (level().getDifficulty() != Difficulty.PEACEFUL && this.isAlive() && this.isWithinMeleeAttackRange(livingEntity) && this.hasLineOfSight(livingEntity)) {
+        if (level().getDifficulty() != Difficulty.PEACEFUL && !livingEntity.isCreative() && !livingEntity.isSpectator() && this.isAlive() && this.isWithinMeleeAttackRange(livingEntity) && this.hasLineOfSight(livingEntity)) {
             DamageSource damagesource = this.damageSources().mobAttack(this);
-            if (!livingEntity.isBlocking() && livingEntity.hurt(damagesource, (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE))) {
+            if (livingEntity.hurt(damagesource, (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE))) {
                 Level var4 = this.level();
                 if (var4 instanceof ServerLevel) {
                     ServerLevel serverlevel = (ServerLevel)var4;
@@ -160,6 +160,7 @@ public class BrubbleEntity extends PathfinderMob {
             this.playSound(SoundEvents.SLIME_ATTACK, 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
             this.setDeltaMovement(getDeltaMovement().add(livingEntity.position().subtract(this.position()).normalize().scale(-0.5f)));
         }
+        super.playerTouch(livingEntity);
     }
 
     protected void blockedByShield(LivingEntity entity) {
@@ -170,9 +171,10 @@ public class BrubbleEntity extends PathfinderMob {
         }
 
         this.playSound(SoundEvents.RAVAGER_STUNNED, 1.0F, 1.0F);
-        this.level().broadcastEntityEvent(this, (byte)39);
+        //this.level().broadcastEntityEvent(this, (byte)39);
         entity.push(this);
         entity.hurtMarked = true;
+        super.blockedByShield(entity);
     }
 
     protected AABB getAttackBoundingBox() {
@@ -186,7 +188,7 @@ public class BrubbleEntity extends PathfinderMob {
             aabb = this.getBoundingBox();
         }
 
-        return aabb.inflate(1.5f, 1.0f, 1.5f);
+        return aabb.inflate(1.2f, 1.2f, 1.2f);
     }
 
     @Override

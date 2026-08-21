@@ -43,7 +43,7 @@ public class PearlPillarFeature extends Feature<NoneFeatureConfiguration> {
             SimplexNoise noise = new SimplexNoise(randomsource);
             if (worldgenlevel.getBlockState(blockpos$mutableblockpos).isSolid())
                 placeRing(worldgenlevel, randomsource, blockpos$mutableblockpos.above());
-            PearlPoolFeature.createFloor(worldgenlevel,noise ,4 , blockpos$mutableblockpos);
+            PearlPoolFeature.createFloor(worldgenlevel,noise ,4 , blockpos$mutableblockpos, blockpos$mutableblockpos);
 
             return true;
         } else {

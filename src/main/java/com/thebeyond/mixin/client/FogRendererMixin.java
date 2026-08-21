@@ -21,18 +21,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class FogRendererMixin {
 
     @Inject(method = "setupFog", at = @At("HEAD"), cancellable = true)
-    private static void theBeyond$forceEndFog(Camera camera, FogRenderer.FogMode fogMode,
-                                               float farPlaneDistance, boolean shouldCreateFog,
-                                               float partialTick, CallbackInfo ci) {
-        if (camera.getEntity() != null
-                && camera.getEntity().level().dimension() == Level.END
-                && BeyondConfig.ENABLE_CUSTOM_FOG.get()) {
-            float finalFog = (float) Mth.clamp(ModClientEvents.effectFog, 0.05, 1);
+    private static void theBeyond$forceEndFog(Camera camera, FogRenderer.FogMode fogMode, float farPlaneDistance, boolean shouldCreateFog, float partialTick, CallbackInfo ci) {
+        if (camera.getEntity() != null && camera.getEntity().level().dimension() == Level.END && BeyondConfig.ENABLE_CUSTOM_FOG.get()) {
+
+            float finalFog = ModClientEvents.finalEffectFog(camera);
             float y = (float) camera.getEntity().position().y;
             // Clamp minimum fog end to 30 blocks so fog stays valid at negative Y
             // (Enderscape extends End min height to y=-64)
-            float fogEnd = Math.max((y + 30) * finalFog, 30 * finalFog);
-            RenderSystem.setShaderFogStart(15 * finalFog);
+            float fogEnd = Math.max((y*2 + 30) * finalFog, 30 * finalFog);
+
+            RenderSystem.setShaderFogStart(Mth.lerp(ModClientEvents.bossFog,15 * finalFog,0));
             RenderSystem.setShaderFogEnd(fogEnd);
             RenderSystem.setShaderFogShape(FogShape.SPHERE);
             ci.cancel();

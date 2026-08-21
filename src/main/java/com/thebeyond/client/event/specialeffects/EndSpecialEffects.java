@@ -59,6 +59,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
     private static final ResourceLocation CRACK_3_LOCATION = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/environment/thunder_3.png");
 
     private float bossFog;
+    private float effectFog;
     public static final ArrayList<ThunderCrack> thunderCracks = new ArrayList<>();
     private static long lastCrackTick = Long.MIN_VALUE;
 
@@ -223,7 +224,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         BiomeManager biomemanager = level.getBiomeManager();
         Vec3 samplePos = camera.getPosition().subtract(2.0, 2.0, 2.0).scale(0.25);
         Vec3 color = CubicSampler.gaussianSampleVec3(samplePos, (x, y, z) -> Vec3.fromRGB24(biomemanager.getNoiseBiomeAtQuart(x, y, z).value().getFogColor()));
-        return color.lerp(new Vec3(0,0,0), 1-ModClientEvents.effectFog);
+        return color.lerp(new Vec3(0,0,0), 1-effectFog);
     }
 
     /** Vanilla {@code shouldCreateWorldFog} first, then any boss-bar entry (Stellarity's
@@ -243,8 +244,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         } else {
             bossFog = (float) Mth.clamp(bossFog - 0.005, 0, 1);
         }
-
-        //if (ModClientEvents.effectFog == 0) return false;
+        effectFog = ModClientEvents.finalEffectFog(camera);
 
         PoseStack poseStack = new PoseStack();
 
@@ -377,10 +377,10 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
 
     private Vector4f getSkycolor(Vector4f color) {
         return new Vector4f(
-                Mth.lerp(ModClientEvents.effectFog, 0, color.x),
-                Mth.lerp(ModClientEvents.effectFog, 0, color.y),
-                Mth.lerp(ModClientEvents.effectFog, 0, color.z),
-                Mth.lerp(ModClientEvents.effectFog, 1, color.w)
+                Mth.lerp(effectFog, 0, color.x),
+                Mth.lerp(effectFog, 0, color.y),
+                Mth.lerp(effectFog, 0, color.z),
+                Mth.lerp(effectFog, 1, color.w)
         );
     }
 
