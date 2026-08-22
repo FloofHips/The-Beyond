@@ -1,5 +1,6 @@
 package com.thebeyond.common.entity;
 
+import com.thebeyond.client.particle.CloudColorTransitionOptions;
 import com.thebeyond.client.particle.PixelColorTransitionOptions;
 import com.thebeyond.client.particle.SmokeColorTransitionOptions;
 import com.thebeyond.common.registry.BeyondEffects;
@@ -39,11 +40,16 @@ public class SmokeFuseEntity extends ThrowableItemProjectile {
         float b = (col & 0xFF) / 255f;
 
         if (level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(new CloudColorTransitionOptions(
+                    new Vector3f(r, g, b),
+                    new Vector3f(r+0.1f, g+0.1f, b+0.1f),
+                    2.5f
+            ), this.getX()+0.3f,this.getY()+0.3f,this.getZ()+0.3f,25,1,1,1,0.01);
             serverLevel.sendParticles(new SmokeColorTransitionOptions(
                     new Vector3f(r, g, b),
                     new Vector3f(r+0.1f, g+0.1f, b+0.1f),
-                    2f
-            ), this.getX()+0.3f,this.getY()+0.3f,this.getZ()+0.3f,100,1,1,1,0.02);
+                    2.5f
+            ), this.getX()+0.3f,this.getY()+0.3f,this.getZ()+0.3f,20,1.1,1.1,1.1,0.02);
         }
     }
 

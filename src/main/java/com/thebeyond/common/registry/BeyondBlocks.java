@@ -396,6 +396,13 @@ public class BeyondBlocks {
                     .sound(SoundType.AMETHYST)
                     .strength(1.0F, 0.1F)
                     .noOcclusion()));
+public static final DeferredBlock<Block> PEARL_CHIMES = registerBlock("pearl_chimes",
+            () -> new PearlChimesBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                    .sound(SoundType.AMETHYST)
+                    .noCollission()
+                    .strength(1.0F, 0.1F)
+                    .noOcclusion()));
 
     //Chestral Hollows
     public static final DeferredBlock<Block> VILET = registerBlock("vilet",

@@ -53,6 +53,8 @@ public class BrubbleModel <T extends BrubbleEntity> extends EntityModel<BrubbleE
     public void setupAnim(BrubbleEntity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
         eye.resetPose();
         eye_float.resetPose();
+        this.bone.zRot += 0.3f*limbSwingAmount;
+
         if (entity.isFloating()) {
             this.ground.visible = false;
             this.fly.visible = true;
@@ -62,7 +64,6 @@ public class BrubbleModel <T extends BrubbleEntity> extends EntityModel<BrubbleE
                 this.fly.xRot += -0.05F - 0.05F * Mth.cos(ageInTicks * 0.3F);
             this.eye_float.x = this.eye_float.getInitialPose().x - (Math.clamp((int)(netHeadYaw / 10), -1, 1));
             this.eye_float.y = this.eye_float.getInitialPose().y + (Math.clamp( (int) (headPitch / 10), -1, 1));
-            this.bone.zRot += 0.3f*limbSwingAmount;
         } else {
             this.ground.visible = true;
             this.fly.visible = false;

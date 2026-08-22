@@ -101,6 +101,7 @@ public class ModClientEvents {
     public static float bossFog = 0;
     public static float effectFog = 1;
     public static float nomadEyes = 0;
+    public static float empathy = 0;
     @SubscribeEvent
     public static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {
         event.registerReloadListener((ResourceManagerReloadListener)
@@ -205,6 +206,9 @@ public class ModClientEvents {
         event.registerSpriteSet(BeyondParticleTypes.VOID_FLAME.get(), sprites
                 -> new FlameParticle.Provider(sprites));
 
+        event.registerSpriteSet(BeyondParticleTypes.BITE.get(), sprites
+                -> new GenericParticle.Provider(sprites));
+
         event.registerSpriteSet(BeyondParticleTypes.SMOKE.get(),
                 sprites -> new SmokeParticle.Provider(sprites));
 
@@ -216,6 +220,9 @@ public class ModClientEvents {
 
         event.registerSpriteSet(BeyondParticleTypes.CIRCLE.get(),
                 sprites -> new CircleParticle.Provider(sprites));
+
+        event.registerSpriteSet(BeyondParticleTypes.CLOUD.get(),
+                sprites -> new CloudParticle.Provider(sprites));
 
         event.registerSpriteSet(BeyondParticleTypes.CROSSHAIR.get(),
                 sprites -> new CrosshairParticle.Provider(sprites));
@@ -268,7 +275,7 @@ public class ModClientEvents {
                     stack.getOrDefault(net.minecraft.core.component.DataComponents.POTION_CONTENTS,
                             net.minecraft.world.item.alchemy.PotionContents.EMPTY);
             if (contents.potion().map(h -> h.is(BeyondPotions.DEAFENING.getKey())).orElse(false)) {
-                return 0xFF5A1535;
+                return 0x1e68b3;
             }
             return contents.getColor();
         }, net.minecraft.world.item.Items.POTION, net.minecraft.world.item.Items.SPLASH_POTION,
@@ -521,6 +528,7 @@ public class ModClientEvents {
     @SubscribeEvent
     public static void renderGui(RegisterGuiLayersEvent event) {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "nomad_eyes"), new NomadsBlessingOverlay());
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "empathy"), new EmpathyOverlay());
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "camera_viewfinder"), new CameraViewfinderLayer());
     }
 

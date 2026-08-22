@@ -5,8 +5,10 @@ import com.thebeyond.TheBeyond;
 import com.thebeyond.common.block.AuroraciteBlock;
 import com.thebeyond.common.deafening.Deafening;
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondEffects;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.player.Player;
@@ -14,8 +16,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.EntityEvent;
 import net.neoforged.neoforge.event.entity.EntityTeleportEvent;
+import net.neoforged.neoforge.event.entity.living.ArmorHurtEvent;
 import net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 @EventBusSubscriber(modid = TheBeyond.MODID)
@@ -87,5 +93,14 @@ public class BeyondEntityEvents {
         mob.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET); // brain-based mobs; no-op when the module is absent
         TheBeyond.LOGGER.debug("[Deafening] {} dropped player target (deaf + player left FOV cone/LOS)",
                 mob.getType().getDescriptionId());
+    }
+
+    @SubscribeEvent
+    public static void onEntityHurt(LivingDamageEvent.Post event) {
+        Entity entity = event.getSource().getEntity();
+        if (entity == null) return;
+
+        if (entity instanceof LivingEntity livingEntity && !livingEntity.hasEffect(BeyondEffects.EMPATHY)) return;
+        entity.hurt(event.getSource(), event.getNewDamage());
     }
 }

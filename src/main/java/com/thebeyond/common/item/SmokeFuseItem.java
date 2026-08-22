@@ -33,7 +33,7 @@ public class SmokeFuseItem extends Item implements ProjectileItem {
         if (!level.isClientSide) {
             SmokeFuseEntity fuse = new SmokeFuseEntity(BeyondEntityTypes.SMOKE_FUSE.get(), level);
             fuse.setItem(itemstack);
-            
+
             fuse.setPos(player.getX(), player.getY()+1, player.getZ());
             fuse.shootFromRotation(player, player.getXRot(), player.getYRot(), -20.0F, 0.5F, 1.0F);
             level.addFreshEntity(fuse);

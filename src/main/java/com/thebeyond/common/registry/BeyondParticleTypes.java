@@ -2,11 +2,7 @@ package com.thebeyond.common.registry;
 
 import com.mojang.serialization.MapCodec;
 import com.thebeyond.TheBeyond;
-import com.thebeyond.client.particle.BellowJetOptions;
-import com.thebeyond.client.particle.CircleColorTransitionOptions;
-import com.thebeyond.client.particle.CrosshairColorTransitionOptions;
-import com.thebeyond.client.particle.PixelColorTransitionOptions;
-import com.thebeyond.client.particle.SmokeColorTransitionOptions;
+import com.thebeyond.client.particle.*;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -27,6 +23,23 @@ public class BeyondParticleTypes {
     public static final DeferredHolder<ParticleType<?>, ParticleType<PixelColorTransitionOptions>> PIXEL = PARTICLE_TYPES.register("pixel", BeyondParticleTypes::createPixelParticleType);
     public static final DeferredHolder<ParticleType<?>, ParticleType<CrosshairColorTransitionOptions>> CROSSHAIR = PARTICLE_TYPES.register("crosshair", BeyondParticleTypes::createCrosshairParticleType);
     public static final DeferredHolder<ParticleType<?>, ParticleType<CircleColorTransitionOptions>> CIRCLE = PARTICLE_TYPES.register("circle", BeyondParticleTypes::createCircleParticleType);
+
+    public static final DeferredHolder<ParticleType<?>, ParticleType<CloudColorTransitionOptions>> CLOUD = PARTICLE_TYPES.register("cloud", BeyondParticleTypes::createCloudParticleType);
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> BITE = PARTICLE_TYPES.register("bite", () -> new SimpleParticleType(false) {});
+
+    private static ParticleType<CloudColorTransitionOptions> createCloudParticleType() {
+        return new ParticleType<CloudColorTransitionOptions>(false) {
+            @Override
+            public MapCodec<CloudColorTransitionOptions> codec() {
+                return CloudColorTransitionOptions.CODEC;
+            }
+
+            @Override
+            public StreamCodec<? super RegistryFriendlyByteBuf, CloudColorTransitionOptions> streamCodec() {
+                return CloudColorTransitionOptions.STREAM_CODEC;
+            }
+        };
+    }
 
     private static ParticleType<SmokeColorTransitionOptions> createSmokeParticleType() {
         return new ParticleType<SmokeColorTransitionOptions>(false) {

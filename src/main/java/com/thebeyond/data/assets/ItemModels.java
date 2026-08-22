@@ -46,6 +46,7 @@ public class ItemModels extends ItemModelProvider {
         items.remove(BeyondBlocks.OBIROOT_SPROUT.asItem());
         items.remove(BeyondBlocks.BLEEDING_THORN.asItem());
         items.remove(BeyondBlocks.BLINDING_THORN.asItem());
+        items.remove(BeyondBlocks.PEARL_CHIMES.asItem());
         items.remove(BeyondBlocks.AMPHORA.asItem());
         items.remove(BeyondItems.PRISMOGRAPH.asItem());
 
@@ -55,12 +56,14 @@ public class ItemModels extends ItemModelProvider {
         items.remove(BeyondItems.BRITTLE_HOE.asItem());
         items.remove(BeyondItems.BRITTLE_PICKAXE.asItem());
         items.remove(BeyondItems.SMOKE_FUSE.asItem());
+        items.remove(BeyondItems.COILED_STALK.asItem());
 
         handheldItem(BeyondItems.BRITTLE_SWORD.asItem());
         handheldItem(BeyondItems.BRITTLE_SHOVEL.asItem());
         handheldItem(BeyondItems.BRITTLE_AXE.asItem());
         handheldItem(BeyondItems.BRITTLE_HOE.asItem());
         handheldItem(BeyondItems.BRITTLE_PICKAXE.asItem());
+        handheldItem(BeyondItems.COILED_STALK.asItem());
 
         itemGeneratedModel(BeyondBlocks.VOID_CRYSTAL.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/void_crystal"));
         itemGeneratedModel(BeyondBlocks.OBIROOT_ARM.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/obiroot_arm"));
@@ -73,6 +76,7 @@ public class ItemModels extends ItemModelProvider {
         itemGeneratedModel(BeyondItems.PRISMOGRAPH.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/prismograph"));
         itemGeneratedModel(BeyondBlocks.BLEEDING_THORN.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/bleeding_thorn"));
         itemGeneratedModel(BeyondBlocks.BLINDING_THORN.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/blinding_thorn"));
+        itemGeneratedModel(BeyondBlocks.PEARL_CHIMES.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/pearl_chimes"));
 
 
         takeAll(items, i -> i instanceof BlockItem).forEach(item -> blockBasedModel(item, ""));

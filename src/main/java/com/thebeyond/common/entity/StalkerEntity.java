@@ -1,10 +1,15 @@
 package com.thebeyond.common.entity;
 
+import com.thebeyond.client.particle.CircleColorTransitionOptions;
+import com.thebeyond.client.particle.PixelColorTransitionOptions;
 import com.thebeyond.common.registry.BeyondEntityTypes;
+import com.thebeyond.common.registry.BeyondParticleTypes;
+import com.thebeyond.util.ColorUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -22,6 +27,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 
 import java.util.*;
 
@@ -207,7 +213,7 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
     private void spawnChild(BlockPos pos, Direction d) {
         StalkerEntity stalker = new StalkerEntity(BeyondEntityTypes.STALKER.get(), level());
 
-        Direction direction = entityData.get(FACING);
+        Direction direction = getFacing();
 
         BlockPos newPos = pos.offset(direction.getStepX(), direction.getStepY(), direction.getStepZ()).offset(d.getStepX(), (d.getStepY()), d.getStepZ());
         stalker.setPos(newPos.getX() + 0.5f, newPos.getY(), newPos.getZ() + 0.5f);
@@ -225,6 +231,21 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
     private void attack() {
         setViolent(true);
         yetToBud = false;
+        Vec3 pos = Vec3.atCenterOf(this.blockPosition().offset(getFacing().getStepX()*2, getFacing().getStepY()*2, getFacing().getStepZ()*2));
+        if (level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(BeyondParticleTypes.BITE.get(), pos.x, pos.y, pos.z, 1, 0, 0, 0, 0);
+            serverLevel.sendParticles(new CircleColorTransitionOptions(
+                    new Vector3f(0.6f, 0.1f, 0.0f),
+                    new Vector3f(0.6f, 0.6f, 0.1f),
+                    1f)
+                    , pos.x, pos.y, pos.z, 1, 0, 0, 0, 0);
+            serverLevel.sendParticles(new PixelColorTransitionOptions(
+                    new Vector3f(0.6f, 0.1f, 0.0f),
+                    new Vector3f(0.6f, 0.6f, 0.1f),
+                    1f
+            ), pos.x, pos.y, pos.z, 5, 0.2, 0.2, 0.2, 0.01);
+        }
+
         level().broadcastEntityEvent(this, ATTACK);
         level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EVOKER_FANGS_ATTACK, SoundSource.HOSTILE);
     }
