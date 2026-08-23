@@ -207,7 +207,10 @@ public class ModClientEvents {
                 -> new FlameParticle.Provider(sprites));
 
         event.registerSpriteSet(BeyondParticleTypes.BITE.get(), sprites
-                -> new GenericParticle.Provider(sprites));
+                -> new BiteParticle.Provider(sprites));
+
+        event.registerSpriteSet(BeyondParticleTypes.WIND.get(), sprites
+                -> new WindParticle.Provider(sprites));
 
         event.registerSpriteSet(BeyondParticleTypes.SMOKE.get(),
                 sprites -> new SmokeParticle.Provider(sprites));

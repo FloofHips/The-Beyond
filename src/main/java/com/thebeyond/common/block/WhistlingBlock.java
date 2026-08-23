@@ -3,6 +3,7 @@ package com.thebeyond.common.block;
 import com.thebeyond.client.particle.PixelColorTransitionOptions;
 import com.thebeyond.client.particle.SmokeColorTransitionOptions;
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -40,10 +41,6 @@ public class WhistlingBlock extends Block {
 
     private static void spawnParticle(Level level, BlockPos pos, RandomSource random, int x, int z) {
         Vec3 particlePos = Vec3.atCenterOf(pos.above()).add(-0.3f + random.nextFloat()*0.3f, -0.3f + random.nextFloat()*0.3f, -0.3f + random.nextFloat()*0.3f);
-        level.addParticle(new SmokeColorTransitionOptions(
-                new Vector3f(1.0f, 1.0f, 1.0f),
-                new Vector3f(0.9f, 0.5f, 0.9f),
-                2
-        ), particlePos.x, particlePos.y, particlePos.z, x*0.1, 0.01f, z*0.1);
+        level.addParticle(BeyondParticleTypes.WIND.get(), particlePos.x, particlePos.y, particlePos.z, x*0.1, 0.01f, z*0.1);
     }
 }

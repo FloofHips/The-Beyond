@@ -6,21 +6,14 @@ import net.minecraft.core.particles.SimpleParticleType;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
-public class GenericParticle extends TextureSheetParticle {
+public class BiteParticle extends TextureSheetParticle {
     private final SpriteSet sprites;
 
-    protected GenericParticle(ClientLevel level, double x, double y, double z, SpriteSet sprites) {
+    protected BiteParticle(ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, SpriteSet sprites) {
         super(level, x, y, z);
         this.sprites = sprites;
         scale(10);
-        setLifetime(15);
-    }
-
-    protected GenericParticle(ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, SpriteSet sprites) {
-        super(level, x, y, z);
-        this.sprites = sprites;
-        scale(10);
-        setLifetime(15);
+        setLifetime(20);
     }
 
     @Override
@@ -44,15 +37,15 @@ public class GenericParticle extends TextureSheetParticle {
         }
 
         public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z) {
-            GenericParticle genericParticle = new GenericParticle(level, x, y, z, 0, 0, 0, this.sprites);
-            genericParticle.pickSprite(this.sprites);
-            return genericParticle;
+            BiteParticle biteParticle = new BiteParticle(level, x, y, z, 0, 0, 0, this.sprites);
+            biteParticle.pickSprite(this.sprites);
+            return biteParticle;
         }
 
         public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
-            GenericParticle genericParticle = new GenericParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, this.sprites);
-            genericParticle.pickSprite(this.sprites);
-            return genericParticle;
+            BiteParticle biteParticle = new BiteParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, this.sprites);
+            biteParticle.pickSprite(this.sprites);
+            return biteParticle;
         }
     }
 }

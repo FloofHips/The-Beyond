@@ -5,6 +5,7 @@ import com.thebeyond.client.particle.PixelColorTransitionOptions;
 import com.thebeyond.client.particle.SmokeColorTransitionOptions;
 import com.thebeyond.common.registry.BeyondEffects;
 import com.thebeyond.common.registry.BeyondItems;
+import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.util.ColorUtils;
 import net.minecraft.core.particles.ItemParticleOption;

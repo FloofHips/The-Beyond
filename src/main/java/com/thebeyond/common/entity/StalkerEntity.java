@@ -237,7 +237,7 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
             serverLevel.sendParticles(new CircleColorTransitionOptions(
                     new Vector3f(0.6f, 0.1f, 0.0f),
                     new Vector3f(0.6f, 0.6f, 0.1f),
-                    1f)
+                    0.35f)
                     , pos.x, pos.y, pos.z, 1, 0, 0, 0, 0);
             serverLevel.sendParticles(new PixelColorTransitionOptions(
                     new Vector3f(0.6f, 0.1f, 0.0f),

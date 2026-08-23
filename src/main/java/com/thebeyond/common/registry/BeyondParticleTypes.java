@@ -26,6 +26,7 @@ public class BeyondParticleTypes {
 
     public static final DeferredHolder<ParticleType<?>, ParticleType<CloudColorTransitionOptions>> CLOUD = PARTICLE_TYPES.register("cloud", BeyondParticleTypes::createCloudParticleType);
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> BITE = PARTICLE_TYPES.register("bite", () -> new SimpleParticleType(false) {});
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> WIND = PARTICLE_TYPES.register("wind", () -> new SimpleParticleType(false) {});
 
     private static ParticleType<CloudColorTransitionOptions> createCloudParticleType() {
         return new ParticleType<CloudColorTransitionOptions>(false) {
