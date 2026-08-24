@@ -10,6 +10,8 @@ import javax.annotation.Nullable;
 import java.util.UUID;
 
 public interface Target {
+    int ANY_FACE = -1;
+
     Target NONE = new Target() {
         @Override
         public @Nullable Vec3 resolvePosition(final Level level) {
@@ -29,27 +31,20 @@ public interface Target {
 
     @Nullable Vec3 resolvePosition(Level level);
     double distance();
+    default int orientation() { return ANY_FACE; }
     default boolean clearWhenNear() { return true; }
     Target.Type type();
 
     static Target near(final Vec3 position, final double distance) {
-        return new Target.PositionTarget(position, distance);
+        return new Target.PositionTarget(position, distance, ANY_FACE);
     }
 
-    static Target exactlyAt(final Vec3 position) {
-        return near(position, 1.0E-6);
-    }
-
-    static Target nearEntity(final @Nullable Entity entity, final double distance) {
-        return entity == null ? NONE : new Target.EntityTarget(entity.getUUID(), distance, true);
+    static Target facing(final Vec3 position, final double distance, final int orientation) {
+        return new Target.PositionTarget(position, distance, orientation);
     }
 
     static Target followingEntity(final @Nullable Entity entity, final double distance) {
         return entity == null ? NONE : new Target.EntityTarget(entity.getUUID(), distance, false);
-    }
-
-    static Target exactlyAtEntity(final @Nullable Entity entity) {
-        return nearEntity(entity, 1.0E-6);
     }
 
     record EntityTarget(UUID entityUUID, double distance, boolean clearWhenNear) implements Target {
@@ -81,7 +76,7 @@ public interface Target {
         }
     }
 
-    record PositionTarget(Vec3 position, double distance) implements Target {
+    record PositionTarget(Vec3 position, double distance, int orientation) implements Target {
         @Override
         public Vec3 resolvePosition(final Level level) {
             return this.position;
@@ -97,6 +92,7 @@ public interface Target {
             buf.writeDouble(this.position.y);
             buf.writeDouble(this.position.z);
             buf.writeDouble(this.distance);
+            buf.writeInt(this.orientation);
         }
 
         public static PositionTarget read(FriendlyByteBuf buf) {
@@ -104,7 +100,7 @@ public interface Target {
             double y = buf.readDouble();
             double z = buf.readDouble();
             double distance = buf.readDouble();
-            return new PositionTarget(new Vec3(x, y, z), distance);
+            return new PositionTarget(new Vec3(x, y, z), distance, buf.readInt());
         }
     }
 

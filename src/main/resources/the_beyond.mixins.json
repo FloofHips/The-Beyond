@@ -18,6 +18,8 @@
     "EndWeatherSyncMixin",
     "ServerLevelLightningSuppressMixin",
     "JigsawStructureMixin",
+    "LevelEntityCollisionsMixin",
+    "EntityCollisionMixin",
     "AuroraciteLayerProtectionMixin",
     "AuroraciteLayerFillMixin",
     "HeightmapPlacementMultiSurfaceMixin",

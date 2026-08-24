@@ -231,7 +231,7 @@ public class LivingBlockShapeFactory {
 
     private static VoxelShape createModularCluster(RandomSource random) {
         double baseW = 0.25 + random.nextDouble() * 0.75;
-        double baseH = 0.12 + random.nextDouble() * 0.88; 
+        double baseH = 0.12 + random.nextDouble() * 0.88;
         double baseD = 0.25 + random.nextDouble() * 0.75;
 
         double baseX = (1.0 - baseW) * 0.5;
@@ -294,7 +294,7 @@ public class LivingBlockShapeFactory {
         components.add(coreBox);
 
         boolean[] usedFaces = new boolean[6];
-        int initialBranches = 3 + random.nextInt(4); 
+        int initialBranches = 3 + random.nextInt(4);
 
         for (int i = 0; i < initialBranches; i++) {
             int face = random.nextInt(6);
@@ -323,32 +323,32 @@ public class LivingBlockShapeFactory {
         double minX = 0, minY = 0, minZ = 0, maxX = 0, maxY = 0, maxZ = 0;
 
         switch (face) {
-            case 0: // Y+ 
+            case 0:
                 minY = refBox.maxY; maxY = Math.min(1.0, minY + length);
                 minX = Mth.clamp(refBox.minX + (random.nextDouble() - 0.5) * refBox.getXsize(), 0.0, 1.0 - thicknessW); maxX = Math.min(1.0, minX + thicknessW);
                 minZ = Mth.clamp(refBox.minZ + (random.nextDouble() - 0.5) * refBox.getZsize(), 0.0, 1.0 - thicknessD); maxZ = Math.min(1.0, minZ + thicknessD);
                 break;
-            case 1: // Y- 
+            case 1:
                 maxY = refBox.minY; minY = Math.max(0.0, maxY - length);
                 minX = Mth.clamp(refBox.minX + (random.nextDouble() - 0.5) * refBox.getXsize(), 0.0, 1.0 - thicknessW); maxX = Math.min(1.0, minX + thicknessW);
                 minZ = Mth.clamp(refBox.minZ + (random.nextDouble() - 0.5) * refBox.getZsize(), 0.0, 1.0 - thicknessD); maxZ = Math.min(1.0, minZ + thicknessD);
                 break;
-            case 2: // X+ 
+            case 2:
                 minX = refBox.maxX; maxX = Math.min(1.0, minX + length);
                 minY = Mth.clamp(refBox.minY + (random.nextDouble() - 0.5) * refBox.getYsize(), 0.0, 1.0 - thicknessH); maxY = Math.min(1.0, minY + thicknessH);
                 minZ = Mth.clamp(refBox.minZ + (random.nextDouble() - 0.5) * refBox.getZsize(), 0.0, 1.0 - thicknessD); maxZ = Math.min(1.0, minZ + thicknessD);
                 break;
-            case 3: // X- 
+            case 3:
                 maxX = refBox.minX; minX = Math.max(0.0, maxX - length);
                 minY = Mth.clamp(refBox.minY + (random.nextDouble() - 0.5) * refBox.getYsize(), 0.0, 1.0 - thicknessH); maxY = Math.min(1.0, minY + thicknessH);
                 minZ = Mth.clamp(refBox.minZ + (random.nextDouble() - 0.5) * refBox.getZsize(), 0.0, 1.0 - thicknessD); maxZ = Math.min(1.0, minZ + thicknessD);
                 break;
-            case 4: // Z+ 
+            case 4:
                 minZ = refBox.maxZ; maxZ = Math.min(1.0, minZ + length);
                 minX = Mth.clamp(refBox.minX + (random.nextDouble() - 0.5) * refBox.getXsize(), 0.0, 1.0 - thicknessW); maxX = Math.min(1.0, minX + thicknessW);
                 minY = Mth.clamp(refBox.minY + (random.nextDouble() - 0.5) * refBox.getYsize(), 0.0, 1.0 - thicknessH); maxY = Math.min(1.0, minY + thicknessH);
                 break;
-            case 5: // Z- 
+            case 5:
                 maxZ = refBox.minZ; minZ = Math.max(0.0, maxZ - length);
                 minX = Mth.clamp(refBox.minX + (random.nextDouble() - 0.5) * refBox.getXsize(), 0.0, 1.0 - thicknessW); maxX = Math.min(1.0, minX + thicknessW);
                 minY = Mth.clamp(refBox.minY + (random.nextDouble() - 0.5) * refBox.getYsize(), 0.0, 1.0 - thicknessH); maxY = Math.min(1.0, minY + thicknessH);
@@ -356,7 +356,7 @@ public class LivingBlockShapeFactory {
         }
 
         if (minX >= maxX || minY >= maxY || minZ >= maxZ) return;
-        
+
         AABB branchBounds = new AABB(minX, minY, minZ, maxX, maxY, maxZ);
 
         double t = 0.06;

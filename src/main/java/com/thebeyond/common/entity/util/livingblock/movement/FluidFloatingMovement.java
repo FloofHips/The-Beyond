@@ -9,10 +9,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 public class FluidFloatingMovement extends RollingMovement {
-    private static final double FLOAT_IMPULSE = 0.1;
-    private static final double WATER_SPEED = 0.16;
-    private static final double LANDING_SPEED = 0.1;
-    private static final double LANDING_IMPULSE = 0.25;
 
     @Override
     public boolean moveTowardsTarget(LivingBlock entity, final Target target, final Vec3 targetPos) {

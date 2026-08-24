@@ -15,12 +15,19 @@ public class BouncingMovement implements MovementStrategy<BouncingMovement.Data>
     private final double jumpHeight;
     private final int ticksBetweenJumps;
     private final double horizontalMovementSpeed;
+    private final boolean squash;
 
     public BouncingMovement() {
         this(1.5, 5, 0.45);
     }
 
     public BouncingMovement(final double jumpHeight, final int ticksBetweenJumps, final double horizontalMovementSpeed) {
+        this(jumpHeight, ticksBetweenJumps, horizontalMovementSpeed, true);
+    }
+
+    public BouncingMovement(final double jumpHeight, final int ticksBetweenJumps,
+                            final double horizontalMovementSpeed, final boolean squash) {
+        this.squash = squash;
         this.jumpHeight = jumpHeight;
         this.ticksBetweenJumps = ticksBetweenJumps;
         this.horizontalMovementSpeed = horizontalMovementSpeed;
@@ -38,7 +45,7 @@ public class BouncingMovement implements MovementStrategy<BouncingMovement.Data>
         if (data.stretchCooldown > 0) {
             data.stretchCooldown--;
             if (data.stretchCooldown == 0) {
-                entity.setPogoScaleTarget(POGO_ANIM_SCALE_DEFAULT, 5);
+                if (this.squash) entity.setPogoScaleTarget(POGO_ANIM_SCALE_DEFAULT, 5);
             }
         }
 
@@ -52,7 +59,7 @@ public class BouncingMovement implements MovementStrategy<BouncingMovement.Data>
         } else if (data.jumpCooldown > 0) {
             data.jumpCooldown--;
             if (data.jumpCooldown < 2 && readyToJumpAgain) {
-                entity.setPogoScaleTarget(POGO_ANIM_SCALE_SQUISH, 2);
+                if (this.squash) entity.setPogoScaleTarget(POGO_ANIM_SCALE_SQUISH, 2);
             }
 
             if (data.jumpCooldown == 0 && !readyToJumpAgain) {
@@ -73,9 +80,8 @@ public class BouncingMovement implements MovementStrategy<BouncingMovement.Data>
             double adjustedHorizontalSpeed = Mth.lerp(speedScale, 0.0, this.horizontalMovementSpeed);
             double xd = horizontalDirection.x * adjustedHorizontalSpeed;
             double zd = horizontalDirection.z * adjustedHorizontalSpeed;
-            entity.setMaxUpStep((float)this.jumpHeight);
             entity.addDeltaMovement(new Vec3(xd, jumpInitialVelocity, zd));
-            entity.setPogoScaleTarget(POGO_ANIM_SCALE_STRETCH, 2);
+            if (this.squash) entity.setPogoScaleTarget(POGO_ANIM_SCALE_STRETCH, 2);
             data.stretchCooldown = 4;
             return true;
         } else if (!data.isMidAir) {
@@ -105,7 +111,7 @@ public class BouncingMovement implements MovementStrategy<BouncingMovement.Data>
         BouncingMovement.Data data = this.getData(entity);
         data.isMidAir = false;
         data.movingTo = null;
-        entity.setPogoScaleTarget(POGO_ANIM_SCALE_DEFAULT, 2);
+        if (this.squash) entity.setPogoScaleTarget(POGO_ANIM_SCALE_DEFAULT, 2);
         entity.resetMaxUpStep();
         if (entity.onGround()) {
             MovementStrategy.resetVelocity(entity, false);
@@ -149,4 +155,3 @@ public class BouncingMovement implements MovementStrategy<BouncingMovement.Data>
         }
     }
 }
-
