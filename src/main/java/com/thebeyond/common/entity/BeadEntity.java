@@ -1,7 +1,6 @@
 package com.thebeyond.common.entity;
 
 import com.thebeyond.common.entity.util.livingblock.LivingBlock;
-import com.thebeyond.common.entity.util.livingblock.LivingBlockCollisionShapes;
 import com.thebeyond.common.entity.util.livingblock.LivingBlockShapeFactory;
 import net.caffeinemc.mods.sodium.api.util.ColorABGR;
 import net.minecraft.core.BlockPos;
@@ -55,15 +54,6 @@ public class BeadEntity extends LivingBlock {
     private static final EntityDataAccessor<Integer> DATA_BODY_COLOR = SynchedEntityData.defineId(BeadEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_WAXED = SynchedEntityData.defineId(BeadEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<String> DATA_VARIANT = SynchedEntityData.defineId(BeadEntity.class, EntityDataSerializers.STRING);
-    private static final EntityDataAccessor<Integer> DATA_BOX_GROWTH = SynchedEntityData.defineId(BeadEntity.class, EntityDataSerializers.INT);
-
-    private static final org.slf4j.Logger GROWTH_LOGGER = com.mojang.logging.LogUtils.getLogger();
-
-    private static final int GROWTH_FACES = 6;
-    private static final int GROWTH_LOG_INTERVAL = 40;
-    private static final double GROWTH_STEP = 1.0 / 16.0;
-    private static final int GROWTH_BITS = 4;
-    private static final int GROWTH_MAX = 15;
 
     private static final int[][] SILHOUETTES = {
             {4, 4, 4},
@@ -110,7 +100,6 @@ public class BeadEntity extends LivingBlock {
         entityData.define(DATA_BODY_COLOR, Color.WHITE.getRGB());
         entityData.define(DATA_WAXED, false);
         entityData.define(DATA_VARIANT, "swirl");
-        entityData.define(DATA_BOX_GROWTH, 0);
     }
 
     public void addAdditionalSaveData(CompoundTag compound) {
@@ -119,7 +108,6 @@ public class BeadEntity extends LivingBlock {
         compound.putInt("BodyColor", this.getBodyColor().getRGB());
         compound.putBoolean("IsWaxed", this.isWaxed());
         compound.putString("Variant", this.getVariant());
-        compound.putInt("BoxGrowth", this.entityData.get(DATA_BOX_GROWTH));
     }
 
     public void readAdditionalSaveData(CompoundTag compound) {
@@ -128,95 +116,48 @@ public class BeadEntity extends LivingBlock {
         this.setBodyColor(compound.getInt("BodyColor"));
         this.setWaxed(compound.getBoolean("IsWaxed"));
         this.setVariant(compound.getString("Variant"));
-        this.entityData.set(DATA_BOX_GROWTH, compound.getInt("BoxGrowth"));
     }
 
     @Override
     public void tick() {
-        if (!isWaxed()) {
-            BlockPos touched = null;
-            if (this.onGround()) {
-                touched = getOnPos();
-            } else if (this.isClimbing()) {
-                Direction facing = this.getClimbingDirection();
-                touched = BlockPos.containing(this.getBoundingBox().getCenter())
-                        .relative(facing);
-            }
-            if (touched != null) {
-                BlockState b = this.level().getBlockState(touched);
-                if (!b.isAir()) {
-                    int col = b.getMapColor(this.level(), touched).col;
-                    setBodyColor(FastColor.ARGB32.lerp(0.1f, getBodyColor().getRGB(), col));
-                    grow();
-                }
+        if (!isWaxed() && this.onGround()) {
+            BlockPos onPos = getOnPos();
+            BlockState b = this.level().getBlockState(onPos);
+            int col = b.getMapColor(this.level(), onPos).col;
+
+            if (!b.isAir()) {
+                setBodyColor(FastColor.ARGB32.lerp(0.1f, getBodyColor().getRGB(), col));
+                grow();
             }
         }
             super.tick();
     }
 
+    private boolean isStill() {
+        return xOld == getX() && yOld == getY() && zOld == getZ();
+    }
+
     public void grow() {
-        if (this.level().isClientSide() || !this.isOrientationSettled()) {
-            return;
-        }
-        int face = level().random.nextInt(GROWTH_FACES);
-        if (level().random.nextInt(2) == 0) {
-            return;
-        }
-        int growth = this.entityData.get(DATA_BOX_GROWTH);
-        int steps = (growth >> (face * GROWTH_BITS)) & GROWTH_MAX;
-        if (steps >= GROWTH_MAX) {
-            return;
-        }
-        int blocker = face >= 3 ? this.growthBlocker(face) : -1;
-        if (blocker >= 0) {
-            if (this.tickCount % GROWTH_LOG_INTERVAL == 0) {
-                AABB hull = this.getBoundingBox();
-                GROWTH_LOGGER.debug("[livingblock] grow id={} face={} steps={} refused={} size={}",
-                        this.getId(), face, steps, blocker,
-                        String.format("%.3f,%.3f,%.3f", hull.getXsize(), hull.getYsize(), hull.getZsize()));
-            }
-            return;
-        }
-        this.entityData.set(DATA_BOX_GROWTH,
-                (growth & ~(GROWTH_MAX << (face * GROWTH_BITS))) | ((steps + 1) << (face * GROWTH_BITS)));
-    }
+        VoxelShape shape = getCustomShape();
+        int i = level().random.nextInt(6);
 
-    private int growthBlocker(final int face) {
-        AABB hull = this.getBoundingBox();
-        Direction.Axis axis = this.getOrientation()
-                .worldAxisOf(Direction.Axis.values()[face - 3]);
-        if (axis == Direction.Axis.Y) {
-            return this.blockerIn(new AABB(hull.minX, hull.maxY, hull.minZ,
-                    hull.maxX, hull.maxY + GROWTH_STEP, hull.maxZ));
-        }
-        return this.blockerIn(axis == Direction.Axis.X
-                ? hull.inflate(GROWTH_STEP, 0.0, 0.0)
-                : hull.inflate(0.0, 0.0, GROWTH_STEP));
-    }
+        double minx = shape.min(Direction.Axis.X);
+        double maxx = shape.max(Direction.Axis.X);
+        double miny = shape.min(Direction.Axis.Y);
+        double maxy = shape.max(Direction.Axis.Y);
+        double minz = shape.min(Direction.Axis.Z);
+        double maxz = shape.max(Direction.Axis.Z);
 
-    private int blockerIn(final AABB slab) {
-        for (LivingBlock other : this.level().getEntitiesOfClass(LivingBlock.class, slab,
-                candidate -> candidate != this && candidate.isAlive())) {
-            LivingBlockCollisionShapes.Placement placement =
-                    LivingBlockCollisionShapes.preciseGeometry(other);
-            if (placement == null) {
-                return other.getId();
-            }
-            for (AABB box : placement.boxes()) {
-                if (box.intersects(slab)) {
-                    return other.getId();
-                }
-            }
+        switch (i) {
+            case 0: { minx = Math.max(0, minx - level().random.nextInt(2)/16f); break; }
+            case 1: { miny = Math.max(0, miny - level().random.nextInt(2)/16f); break; }
+            case 2: { minz = Math.max(0, minz - level().random.nextInt(2)/16f); break; }
+            case 3: { maxx = Math.min(1, maxx + level().random.nextInt(2)/16f); break; }
+            case 4: { maxy = Math.min(1, maxy + level().random.nextInt(2)/16f); break; }
+            case 5: { maxz = Math.min(1, maxz + level().random.nextInt(2)/16f); break; }
         }
-        return -1;
-    }
 
-    @Override
-    public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
-        super.onSyncedDataUpdated(key);
-        if (DATA_BOX_GROWTH.equals(key)) {
-            this.applyShape();
-        }
+        this.setShape(Shapes.box(minx, miny, minz, maxx, maxy, maxz));
     }
 
     @Override
@@ -251,11 +192,6 @@ public class BeadEntity extends LivingBlock {
     }
 
     @Override
-    public boolean prefersLowStep() {
-        return true;
-    }
-
-    @Override
     protected VoxelShape generateShape(final RandomSource random, final boolean entropic) {
         int[] size = SILHOUETTES[random.nextInt(SILHOUETTES.length)];
         double w = size[0] / 16.0;
@@ -263,29 +199,11 @@ public class BeadEntity extends LivingBlock {
         double d = size[2] / 16.0;
 
         if (!entropic) {
-            return this.grown(Shapes.box(0.0, 0.0, 0.0, w, h, d));
+            return Shapes.box(0.0, 0.0, 0.0, w, h, d);
         }
 
         AABB core = new AABB((1.0 - w) * 0.5, (1.0 - h) * 0.5, (1.0 - d) * 0.5,
                 (1.0 + w) * 0.5, (1.0 + h) * 0.5, (1.0 + d) * 0.5);
         return LivingBlockShapeFactory.growEntropicFrom(random, core);
-    }
-
-    private VoxelShape grown(final VoxelShape base) {
-        int growth = this.entityData.get(DATA_BOX_GROWTH);
-        if (growth == 0) {
-            return base;
-        }
-        double[] face = new double[GROWTH_FACES];
-        for (int i = 0; i < GROWTH_FACES; i++) {
-            face[i] = ((growth >> (i * GROWTH_BITS)) & GROWTH_MAX) / 16.0;
-        }
-        return Shapes.box(
-                Math.max(0.0, base.min(Direction.Axis.X) - face[0]),
-                Math.max(0.0, base.min(Direction.Axis.Y) - face[1]),
-                Math.max(0.0, base.min(Direction.Axis.Z) - face[2]),
-                Math.min(1.0, base.max(Direction.Axis.X) + face[3]),
-                Math.min(1.0, base.max(Direction.Axis.Y) + face[4]),
-                Math.min(1.0, base.max(Direction.Axis.Z) + face[5]));
     }
 }

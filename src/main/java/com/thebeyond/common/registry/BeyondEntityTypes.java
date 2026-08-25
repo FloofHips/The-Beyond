@@ -86,7 +86,6 @@ public class BeyondEntityTypes {
                     () -> EntityType.Builder.<BeadEntity>of(BeadEntity::new, MobCategory.MISC)
                             .sized(1, 1)
                             .clientTrackingRange(4)
-                            .updateInterval(1)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "bead_entity").toString()));
 
     public static final DeferredHolder<EntityType<?>, EntityType<LivingBlock>> ENTROPIC_BLOCK =

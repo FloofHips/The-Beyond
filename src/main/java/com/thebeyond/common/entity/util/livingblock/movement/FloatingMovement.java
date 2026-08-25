@@ -6,6 +6,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 public class FloatingMovement implements MovementStrategy<FloatingMovement.Data> {
+    private static final double SPEED = 0.06;
 
     public FloatingMovement.Data initData() {
         return new FloatingMovement.Data();

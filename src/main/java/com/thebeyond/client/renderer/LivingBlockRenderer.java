@@ -57,6 +57,10 @@ public class LivingBlockRenderer extends EntityRenderer<LivingBlock> {
         this.skin = skin.resolved();
     }
 
+    public LivingBlockSkin getSkin() {
+        return this.skin;
+    }
+
     @Override
     public void render(final LivingBlock entity,
                        final float entityYaw,
@@ -71,7 +75,6 @@ public class LivingBlockRenderer extends EntityRenderer<LivingBlock> {
         double sizeZ = box.getZsize();
 
         entity.getRotation(this.rotation, partialTicks);
-        Vec3 pivotOffset = entity.climbRenderOffset(this.rotation, partialTicks);
 
         AABBBuilder builder = new AABBBuilder();
         LivingBlockCollisionHandler.includeRotatedOBBCorners(entity, this.rotation, builder);
@@ -85,9 +88,7 @@ public class LivingBlockRenderer extends EntityRenderer<LivingBlock> {
         double translateY = 0.0;
         double translateZ = 0.0;
 
-        if (entity.usesClimbPivot()) {
-            translateY = -builder.edge(Direction.DOWN);
-        } else if (axis == Direction.Axis.Y) {
+        if (axis == Direction.Axis.Y) {
             translateY = climbDir == Direction.DOWN ? -edgeOffset : sizeY - edgeOffset;
         } else {
             translateY = sizeY * 0.5;
@@ -99,14 +100,13 @@ public class LivingBlockRenderer extends EntityRenderer<LivingBlock> {
         }
 
         poseStack.pushPose();
-        poseStack.translate(translateX + pivotOffset.x, translateY + pivotOffset.y,
-                translateZ + pivotOffset.z);
+        poseStack.translate(translateX, translateY, translateZ);
 
         Vector3fc pogo = entity.getPogoScale(partialTicks);
         poseStack.scale(pogo.x(), pogo.y(), pogo.z());
         poseStack.mulPose(this.rotation);
 
-        AABB bounds = entity.getBaseShapeBounds();
+        AABB bounds = entity.getShapeBounds();
         poseStack.translate(
                 -(bounds.minX + bounds.maxX) * 0.5,
                 -(bounds.minY + bounds.maxY) * 0.5,
