@@ -182,6 +182,9 @@ public class Lang extends LanguageProvider {
         add("subtitles.block.polar.charge", "Polar charge rises up");
         add("subtitles.block.polar.cool", "Polar charge cools down");
 
+        add("subtitles.block.ectoplasm.warn", "Ectoplasm decays");
+        add("subtitles.block.ectoplasm.pop", "Ectoplasm pops");
+
         add("subtitles.block.memor_faucet.open", "Faucet opens");
         add("subtitles.block.memor_faucet.close", "Faucet closes");
         add("subtitles.block.memor_faucet.power", "Faucet powers up");

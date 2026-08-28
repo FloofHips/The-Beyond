@@ -1,6 +1,7 @@
 package com.thebeyond.common.entity;
 
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.util.ColorUtils;
 import com.thebeyond.util.ITeleportingEntity;
@@ -231,6 +232,7 @@ public class EnatiousTotemEntity extends Mob implements Enemy, ITeleportingEntit
 
                 if (this.level() instanceof ServerLevel serverLevel) {
                     ((ServerLevel)this.level()).sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.OBIROOT.get().defaultBlockState()), this.getX(), this.getY(0.6666666666666666), this.getZ(), 10, (double)(this.getBbWidth() / 4.0F), (double)(this.getBbHeight() / 4.0F), (double)(this.getBbWidth() / 4.0F), 0.05);
+                    ((ServerLevel)this.level()).sendParticles(BeyondParticleTypes.WIND.get(), this.getX(), this.getY(), this.getZ(), 20, 0.1f, 0.1f, 0.1f, 0.2);
                 }
 
                 if (entity instanceof LivingEntity living) {

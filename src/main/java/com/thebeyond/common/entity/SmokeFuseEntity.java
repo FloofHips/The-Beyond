@@ -1,28 +1,15 @@
 package com.thebeyond.common.entity;
 
 import com.thebeyond.client.particle.CloudColorTransitionOptions;
-import com.thebeyond.client.particle.PixelColorTransitionOptions;
 import com.thebeyond.client.particle.SmokeColorTransitionOptions;
-import com.thebeyond.common.registry.BeyondEffects;
 import com.thebeyond.common.registry.BeyondItems;
-import com.thebeyond.common.registry.BeyondParticleTypes;
-import com.thebeyond.common.registry.BeyondSoundEvents;
-import com.thebeyond.util.ColorUtils;
-import net.minecraft.core.particles.ItemParticleOption;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.Mth;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
 import org.joml.Vector3f;
 
 public class SmokeFuseEntity extends ThrowableItemProjectile {
@@ -45,13 +32,14 @@ public class SmokeFuseEntity extends ThrowableItemProjectile {
                     new Vector3f(r, g, b),
                     new Vector3f(r+0.1f, g+0.1f, b+0.1f),
                     2.5f
-            ), this.getX()+0.3f,this.getY()+0.3f,this.getZ()+0.3f,25,1,1,1,0.01);
+            ), this.getX(),this.getY()+1,this.getZ(),50,0.8,0.8,0.8,0.01);
             serverLevel.sendParticles(new SmokeColorTransitionOptions(
                     new Vector3f(r, g, b),
                     new Vector3f(r+0.1f, g+0.1f, b+0.1f),
                     2.5f
-            ), this.getX()+0.3f,this.getY()+0.3f,this.getZ()+0.3f,20,1.1,1.1,1.1,0.02);
+            ), this.getX(),this.getY()+1,this.getZ(),15,1.1,1.1,1.1,0.02);
         }
+        this.discard();
     }
 
     @Override

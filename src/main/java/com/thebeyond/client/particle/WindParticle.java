@@ -104,14 +104,14 @@ public class WindParticle extends TextureSheetParticle {
                 .setColor(255, 255, 255, (int)(this.alpha*255))
                 .setUv(getU1(), getV0())
                 .setOverlay(OverlayTexture.NO_OVERLAY)
-                .setLight(light+100)
+                .setLight(Math.min(light+50, 255))
                 .setNormal(1, 0, 1);
 
         vc.addVertex(mat, 1, -1, 0)
                 .setColor(255, 255, 255, (int)(this.alpha*255))
                 .setUv(getU1(), getV1())
                 .setOverlay(OverlayTexture.NO_OVERLAY)
-                .setLight(light+100)
+                .setLight(Math.min(light+50, 255))
                 .setNormal(0, 0, 1);
 
 
@@ -127,14 +127,14 @@ public class WindParticle extends TextureSheetParticle {
                 .setColor(255, 255, 255, (int)(this.alpha*255))
                 .setUv(getU1(), getV1())
                 .setOverlay(OverlayTexture.NO_OVERLAY)
-                .setLight(Math.min(light+100, 255))
+                .setLight(Math.min(light+50, 255))
                 .setNormal(0, 0, 1);
 
         vc.addVertex(mat, 1, 1, 0)
                 .setColor(255, 255, 255, (int)(this.alpha*255))
                 .setUv(getU1(), getV0())
                 .setOverlay(OverlayTexture.NO_OVERLAY)
-                .setLight(Math.min(light+100, 255))
+                .setLight(Math.min(light+50, 255))
                 .setNormal(1, 0, 1);
 
         vc.addVertex(mat, -1*speed, 1, 0)
