@@ -20,7 +20,7 @@ public abstract class EntityCollisionMixin {
         cancellable = true
     )
     private void beyond$resolvePreciseCollision(Vec3 movement, CallbackInfoReturnable<Vec3> cir) {
-        if (!((Object) this instanceof LivingBlock mover)) {
+        if (!((Object) this instanceof LivingBlock mover) || !mover.orientedHull()) {
             return;
         }
 

@@ -16,7 +16,6 @@ public final class LivingBlockRoll {
     public static final double AXIS_EPSILON = 1.0E-9;
     public static final double RESIDUAL_EPSILON = 1.0E-4;
     public static final double SETTLE_RATE_DEGREES = 12.0;
-    public static final double COMPLETE_MIN_DEGREES = 20.0;
 
     private LivingBlockRoll() {
     }
@@ -38,15 +37,6 @@ public final class LivingBlockRoll {
 
     public static double residualToQuarter(final double phaseDegrees) {
         return 90.0 * Math.round(phaseDegrees / 90.0) - phaseDegrees;
-    }
-
-    public static double residualToQuarter(final double phaseDegrees, final boolean mayComplete) {
-        double nearest = residualToQuarter(phaseDegrees);
-        if (!mayComplete || nearest * phaseDegrees >= 0.0
-                || Math.abs(nearest) < COMPLETE_MIN_DEGREES) {
-            return nearest;
-        }
-        return phaseDegrees >= 0.0 ? nearest + 90.0 : nearest - 90.0;
     }
 
     public static void applyResidual(final Quaternionf dest, final int axis, final double residualDegrees) {
@@ -86,6 +76,12 @@ public final class LivingBlockRoll {
         double raw = overlap.getAsDouble() - before;
         double gained = raw;
         double scale = 1.0;
+        double safeScale = 0.0;
+        double safeGained = 0.0;
+        if (gained <= budget) {
+            safeScale = scale;
+            safeGained = gained;
+        }
         for (int pass = 0; pass < passes && gained > budget; pass++) {
             double next = scale * budget / gained;
             if (!(next < scale)) {
@@ -95,6 +91,17 @@ public final class LivingBlockRoll {
             dest.set(saved);
             applyRoll(dest, (float) (dx * scale), (float) (dz * scale));
             gained = overlap.getAsDouble() - before;
+            if (gained <= budget && scale > safeScale) {
+                safeScale = scale;
+                safeGained = gained;
+            }
+        }
+        if (gained > budget) {
+            dest.set(saved);
+            if (safeScale > 0.0) {
+                applyRoll(dest, (float) (dx * safeScale), (float) (dz * safeScale));
+            }
+            return new GatedRoll(safeScale, raw, safeGained);
         }
         return new GatedRoll(scale, raw, gained);
     }

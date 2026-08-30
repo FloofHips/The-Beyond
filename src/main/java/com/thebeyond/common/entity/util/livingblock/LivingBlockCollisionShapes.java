@@ -170,6 +170,20 @@ public final class LivingBlockCollisionShapes {
             return List.of();
         }
 
+        if (entity instanceof LivingBlock asker && !asker.usesOrientedCollision()) {
+            List<VoxelShape> plain = new ArrayList<>(list.size());
+            for (Entity other : list) {
+                if (LivingBlockCollisionHandler.carrying(entity, other)) {
+                    continue;
+                }
+                Placement precise = preciseGeometry(other);
+                for (AABB piece : precise == null ? List.of(other.getBoundingBox()) : precise.boxes()) {
+                    plain.add(Shapes.create(piece));
+                }
+            }
+            return List.copyOf(plain);
+        }
+
         List<AABB> askerBoxes = null;
         boolean askerResolved = false;
         AABB stepFootprint = entity == null ? null : stepFootprint(entity, collisionBox);

@@ -80,6 +80,9 @@ public class BouncingMovement implements MovementStrategy<BouncingMovement.Data>
             double adjustedHorizontalSpeed = Mth.lerp(speedScale, 0.0, this.horizontalMovementSpeed);
             double xd = horizontalDirection.x * adjustedHorizontalSpeed;
             double zd = horizontalDirection.z * adjustedHorizontalSpeed;
+            if (!entity.usesOrientedCollision()) {
+                entity.setMaxUpStep((float)this.jumpHeight);
+            }
             entity.addDeltaMovement(new Vec3(xd, jumpInitialVelocity, zd));
             if (this.squash) entity.setPogoScaleTarget(POGO_ANIM_SCALE_STRETCH, 2);
             data.stretchCooldown = 4;

@@ -20,7 +20,6 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.animal.Wolf;
 import net.minecraft.world.entity.player.Player;
@@ -56,6 +55,7 @@ public class BeadEntity extends LivingBlock {
     private static final EntityDataAccessor<Boolean> DATA_WAXED = SynchedEntityData.defineId(BeadEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<String> DATA_VARIANT = SynchedEntityData.defineId(BeadEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Integer> DATA_BOX_GROWTH = SynchedEntityData.defineId(BeadEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> DATA_FROZEN_SIZE = SynchedEntityData.defineId(BeadEntity.class, EntityDataSerializers.BOOLEAN);
 
     private static final org.slf4j.Logger GROWTH_LOGGER = com.mojang.logging.LogUtils.getLogger();
 
@@ -111,6 +111,7 @@ public class BeadEntity extends LivingBlock {
         entityData.define(DATA_WAXED, false);
         entityData.define(DATA_VARIANT, "swirl");
         entityData.define(DATA_BOX_GROWTH, 0);
+        entityData.define(DATA_FROZEN_SIZE, false);
     }
 
     public void addAdditionalSaveData(CompoundTag compound) {
@@ -120,6 +121,7 @@ public class BeadEntity extends LivingBlock {
         compound.putBoolean("IsWaxed", this.isWaxed());
         compound.putString("Variant", this.getVariant());
         compound.putInt("BoxGrowth", this.entityData.get(DATA_BOX_GROWTH));
+        compound.putBoolean("FrozenSize", this.entityData.get(DATA_FROZEN_SIZE));
     }
 
     public void readAdditionalSaveData(CompoundTag compound) {
@@ -129,6 +131,7 @@ public class BeadEntity extends LivingBlock {
         this.setWaxed(compound.getBoolean("IsWaxed"));
         this.setVariant(compound.getString("Variant"));
         this.entityData.set(DATA_BOX_GROWTH, compound.getInt("BoxGrowth"));
+        this.entityData.set(DATA_FROZEN_SIZE, compound.getBoolean("FrozenSize"));
     }
 
     @Override
@@ -154,7 +157,14 @@ public class BeadEntity extends LivingBlock {
             super.tick();
     }
 
+    public boolean isSizeFrozen() {
+        return this.entityData.get(DATA_FROZEN_SIZE);
+    }
+
     public void grow() {
+        if (this.entityData.get(DATA_FROZEN_SIZE)) {
+            return;
+        }
         if (this.level().isClientSide() || !this.isOrientationSettled()) {
             return;
         }
@@ -252,7 +262,7 @@ public class BeadEntity extends LivingBlock {
 
     @Override
     public boolean prefersLowStep() {
-        return true;
+        return this.usesOrientedCollision();
     }
 
     @Override

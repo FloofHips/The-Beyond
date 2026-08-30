@@ -155,6 +155,13 @@ public class LivingBlockCollisionHandler {
     }
 
     public static List<OrientedBox> getOBBs(LivingBlock entity, Quaternionf rotation, Vec3 entityPos) {
+        if (!entity.orientedHull()) {
+            return entity.axisAlignedGeometry(entityPos).obbs();
+        }
+        return posedOBBs(entity, rotation, entityPos);
+    }
+
+    public static List<OrientedBox> posedOBBs(LivingBlock entity, Quaternionf rotation, Vec3 entityPos) {
         List<AABB> localBoxes = entity.getShapeBoxes();
         AABB bounds = entity.getBaseShapeBounds();
         Vec3 pivot = new Vec3(
@@ -265,6 +272,9 @@ public class LivingBlockCollisionHandler {
 
     public static @Nullable LivingBlock anchorOwner(final LivingBlock entity, final AABB probe,
                                                     final Vec3 point, final double tolerance) {
+        if (!entity.usesOrientedCollision()) {
+            return null;
+        }
         for (LivingBlock other : entity.level().getEntitiesOfClass(LivingBlock.class, probe,
                 candidate -> candidate != entity && candidate.isAlive()
                         && entity.canCollideWith(candidate))) {
@@ -295,7 +305,9 @@ public class LivingBlockCollisionHandler {
         for (VoxelShape shape : entity.level().getBlockCollisions(entity, probe)) {
             blocks.addAll(shape.toAabbs());
         }
-        BodyTerrain bodies = bodyTerrain(entity, probe);
+        BodyTerrain bodies = entity.usesOrientedCollision()
+                ? bodyTerrain(entity, probe)
+                : new BodyTerrain(List.of(), 0, 0.0);
         List<AABB> terrain = blocks;
         if (!bodies.boxes().isEmpty()) {
             terrain = new ArrayList<>(blocks);
@@ -354,7 +366,7 @@ public class LivingBlockCollisionHandler {
     public static ClimbPoseFailure climbPoseFailure(final LivingBlock entity,
                                                      final Quaternionf rotation,
                                                      final Vec3 position, final double slop) {
-        List<OrientedBox> own = getOBBs(entity, rotation, position);
+        List<OrientedBox> own = posedOBBs(entity, rotation, position);
         Vector3f axis = new Vector3f();
         AABB envelope = null;
         for (OrientedBox mine : own) {
@@ -417,12 +429,12 @@ public class LivingBlockCollisionHandler {
     private static final double ENTZERO_WORLD_FRACTION = 0.25;
     private static final double SUPPORT_MIN_CONTACT = 0.03125;
     static final double RIM_PROBE = 1.0E-3;
-    private static final double BASE_STILL_SQR = 4.0E-4;
 
     private static final double CONTACT_FOOT = 0.1;
 
     private static final double GROUND_ON_BODY = 6.0E-2;
     private static final double SLINGSHOT_THRESHOLD = 0.05;
+
     private static final double STEP_SOURCE_EPSILON = 1.0E-9;
     private static final double VBLOCK_MIN_FALL = 1.0E-4;
     private static final float LIFT_ESCAPE_SLOP = 1.0E-7F;
@@ -479,7 +491,7 @@ public class LivingBlockCollisionHandler {
 
         Vec3 mineTarget = mover.getTargetPosition();
         double mineToTarget = mineTarget == null ? 0.0 : mineTarget.distanceToSqr(mover.position());
-        boolean mineTravelling = mineTarget != null && !mover.isAnchored();
+        boolean mineTravelling = mineTarget != null;
 
         for (LivingBlock other : others) {
             LivingBlockCollisionShapes.Placement theirs = LivingBlockCollisionShapes.preciseGeometry(other);
@@ -488,9 +500,8 @@ public class LivingBlockCollisionHandler {
             }
             Vec3 theirTarget = other.getTargetPosition();
             double theirsToTarget = theirTarget == null ? 0.0 : theirTarget.distanceToSqr(other.position());
-            boolean theirsTravelling = theirTarget != null && !other.isAnchored();
-            double share = yieldShare(mover.isAnchored(), mineTravelling, mineToTarget,
-                    other.isAnchored(), theirsTravelling, theirsToTarget);
+            boolean theirsTravelling = theirTarget != null;
+            double share = yieldShare(mineTravelling, mineToTarget, theirsTravelling, theirsToTarget);
 
             double bestDepth = 0.0;
             double bestAmount = 0.0;
@@ -667,15 +678,8 @@ public class LivingBlockCollisionHandler {
         return blocks;
     }
 
-    static double yieldShare(final boolean anchored, final boolean travelling, final double mine,
-                                     final boolean otherAnchored, final boolean otherTravelling,
-                                     final double theirs) {
-        if (anchored != otherAnchored) {
-            if (anchored) {
-                return otherTravelling ? 0.0 : 0.5;
-            }
-            return 1.0;
-        }
+    static double yieldShare(final boolean travelling, final double mine,
+                                     final boolean otherTravelling, final double theirs) {
         if (travelling != otherTravelling) {
             return travelling ? 1.0 : 0.0;
         }
@@ -739,16 +743,97 @@ public class LivingBlockCollisionHandler {
     }
 
     @Nullable
+    public static double[] rollOverlapPair(final LivingBlock mover, final double reach) {
+        AABB hull = mover.getBoundingBox().inflate(reach);
+        List<OrientedBox> terrain = blockObbs(mover, hull.inflate(TERRAIN_ESCAPE_MARGIN));
+        List<LivingBlock> neighbours = mover.level().getEntitiesOfClass(LivingBlock.class, hull,
+                candidate -> candidate != mover && candidate.isAlive());
+        Vector3f axis = new Vector3f();
+        double[] out = new double[2];
+        for (OrientedBox mine : posedOBBs(mover, mover.getRotation(), mover.position())) {
+            AABB mineBox = mine.getWorldAABB();
+            for (OrientedBox block : terrain) {
+                if (mineBox.intersects(block.getWorldAABB())) {
+                    out[0] = Math.max(out[0], OrientedBox.penetration(mine, block, axis));
+                }
+            }
+            for (LivingBlock other : neighbours) {
+                LivingBlockCollisionShapes.Placement theirs =
+                        LivingBlockCollisionShapes.preciseGeometry(other);
+                if (theirs == null) {
+                    continue;
+                }
+                for (OrientedBox box : theirs.obbs()) {
+                    if (mineBox.intersects(box.getWorldAABB())) {
+                        out[1] = Math.max(out[1], OrientedBox.penetration(mine, box, axis));
+                    }
+                }
+            }
+        }
+        return out;
+    }
+
+    public static String rollOverlapReport(final LivingBlock mover, final double reach) {
+        AABB hull = mover.getBoundingBox().inflate(reach);
+        List<OrientedBox> terrain = blockObbs(mover, hull.inflate(TERRAIN_ESCAPE_MARGIN));
+        List<LivingBlock> neighbours = mover.level().getEntitiesOfClass(LivingBlock.class, hull,
+                candidate -> candidate != mover && candidate.isAlive());
+        LivingBlockCollisionShapes.Placement rest = LivingBlockCollisionShapes.preciseGeometry(mover);
+        List<List<OrientedBox>> shapes = List.of(
+                posedOBBs(mover, mover.getRotation(), mover.position()),
+                rest == null ? List.<OrientedBox>of() : rest.obbs());
+        Vector3f axis = new Vector3f();
+        double[] worst = new double[4];
+        int blocker = -1;
+        double worstBody = 0.0;
+        for (int k = 0; k < shapes.size(); k++) {
+            for (OrientedBox mine : shapes.get(k)) {
+                AABB mineBox = mine.getWorldAABB();
+                for (OrientedBox block : terrain) {
+                    if (mineBox.intersects(block.getWorldAABB())) {
+                        worst[k * 2] = Math.max(worst[k * 2],
+                                OrientedBox.penetration(mine, block, axis));
+                    }
+                }
+                for (LivingBlock other : neighbours) {
+                    LivingBlockCollisionShapes.Placement theirs =
+                            LivingBlockCollisionShapes.preciseGeometry(other);
+                    if (theirs == null) {
+                        continue;
+                    }
+                    for (OrientedBox box : theirs.obbs()) {
+                        if (!mineBox.intersects(box.getWorldAABB())) {
+                            continue;
+                        }
+                        double depth = OrientedBox.penetration(mine, box, axis);
+                        worst[k * 2 + 1] = Math.max(worst[k * 2 + 1], depth);
+                        if (k == 0 && depth > worstBody) {
+                            worstBody = depth;
+                            blocker = other.getId();
+                        }
+                    }
+                }
+            }
+        }
+        return String.format(
+                "posedterrain=%.4f posedbody=%.4f restterrain=%.4f restbody=%.4f"
+                        + " blocker=%d neigh=%d terrain=%d posedn=%d restn=%d",
+                worst[0], worst[1], worst[2], worst[3], blocker, neighbours.size(),
+                terrain.size(), shapes.get(0).size(), shapes.get(1).size());
+    }
+
     public static java.util.function.DoubleSupplier rollOverlapProbe(final LivingBlock mover,
                                                                      final double reach) {
         AABB hull = mover.getBoundingBox().inflate(reach);
         List<OrientedBox> terrain = blockObbs(mover, hull.inflate(TERRAIN_ESCAPE_MARGIN));
         List<LivingBlockCollisionShapes.Placement> others = new ArrayList<>();
-        for (LivingBlock other : mover.level().getEntitiesOfClass(LivingBlock.class, hull,
-                candidate -> candidate != mover && candidate.isAlive())) {
-            LivingBlockCollisionShapes.Placement theirs = LivingBlockCollisionShapes.preciseGeometry(other);
-            if (theirs != null) {
-                others.add(theirs);
+        if (mover.usesOrientedCollision()) {
+            for (LivingBlock other : mover.level().getEntitiesOfClass(LivingBlock.class, hull,
+                    candidate -> candidate != mover && candidate.isAlive())) {
+                LivingBlockCollisionShapes.Placement theirs = LivingBlockCollisionShapes.preciseGeometry(other);
+                if (theirs != null) {
+                    others.add(theirs);
+                }
             }
         }
         if (terrain.isEmpty() && others.isEmpty()) {
@@ -756,12 +841,12 @@ public class LivingBlockCollisionHandler {
         }
         Vector3f axis = new Vector3f();
         return () -> {
-            LivingBlockCollisionShapes.Placement own = LivingBlockCollisionShapes.preciseGeometry(mover);
-            if (own == null) {
+            List<OrientedBox> own = posedOBBs(mover, mover.getRotation(), mover.position());
+            if (own.isEmpty()) {
                 return 0.0;
             }
             double worst = 0.0;
-            for (OrientedBox mine : own.obbs()) {
+            for (OrientedBox mine : own) {
                 AABB mineBox = mine.getWorldAABB();
                 for (OrientedBox block : terrain) {
                     if (mineBox.intersects(block.getWorldAABB())) {
@@ -839,7 +924,7 @@ public class LivingBlockCollisionHandler {
             double wanted = movement.x * movement.x + movement.z * movement.z;
             double got = resolved.x * resolved.x + resolved.z * resolved.z;
             mover.reportSolverBlocked(wanted > SOLVER_STALL_WANTED && got < wanted * SOLVER_STALL_FRACTION
-                    && mover.onGround() && !mover.isAnchored() && mover.hasMovementTarget());
+                    && mover.onGround() && mover.hasMovementTarget());
 
             boolean entityZeroed = wanted > ENTZERO_MIN_WANT_SQR && resolved.x == 0.0 && resolved.z == 0.0
                     && !colliders.isEmpty();
@@ -893,14 +978,29 @@ public class LivingBlockCollisionHandler {
         double bestReach = reach;
         double bestHeight = 0.0;
         Vec3 best = null;
+        double shyGain = 0.0;
+        double shyHeight = 0.0;
         for (double height : stepHeights(liftedHull, blocks, colliders, step, resolved.y)) {
             Vec3 candidate = collideCombined(new Vec3(stepUpMovement.x, height, stepUpMovement.z),
                     liftedHull, mine, border, perBlock, perEntity, lifted);
-            if (candidate.horizontalDistanceSqr() > bestReach) {
-                bestReach = candidate.horizontalDistanceSqr();
+            double gain = candidate.horizontalDistanceSqr();
+            if (gain > bestReach) {
+                bestReach = gain;
                 bestHeight = height;
                 best = candidate;
+                break;
+            } else if (gain > shyGain) {
+                shyGain = gain;
+                shyHeight = height;
             }
+        }
+        if (best == null && shyHeight > 0.0 && !level.isClientSide()) {
+            LOGGER.debug("[livingblock] stepshy id={} height={} gain={} need={} asked={} blocks={} bodies={}",
+                    mover.getId(), String.format("%.4f", shyHeight),
+                    String.format("%.5f", Math.sqrt(shyGain)),
+                    String.format("%.5f", Math.sqrt(reach)),
+                    String.format("%.4f", stepUpMovement.horizontalDistance()),
+                    blocks.size(), colliders.size());
         }
         {
             Vec3 candidate = best;
@@ -1281,31 +1381,6 @@ public class LivingBlockCollisionHandler {
         return worst;
     }
 
-    static @Nullable LivingBlock unsettledBaseAhead(final LivingBlock mover, final Vec3 towards) {
-        AABB hull = mover.getBoundingBox();
-        double reach = LivingBlockPivot.CONTACT;
-        AABB probe = hull.inflate(reach, 0.0, reach).expandTowards(
-                towards.x * reach, 0.0, towards.z * reach);
-        for (LivingBlock other : mover.level().getEntitiesOfClass(LivingBlock.class, probe,
-                candidate -> candidate != mover && candidate.isAlive()
-                        && !candidate.isOrientationSettled()
-                        && candidate.getDeltaMovement().horizontalDistanceSqr() < BASE_STILL_SQR
-                        && mover.canCollideWith(candidate))) {
-            LivingBlockCollisionShapes.Placement placement =
-                    LivingBlockCollisionShapes.preciseGeometry(other);
-            if (placement == null) {
-                continue;
-            }
-            for (AABB box : placement.boxes()) {
-                if (box.maxY > hull.minY + LivingBlockStep.HEIGHT + LivingBlockStep.SLACK
-                        && box.intersects(probe)) {
-                    return other;
-                }
-            }
-        }
-        return null;
-    }
-
     static int floorBody(final LivingBlock mover) {
         LivingBlockCollisionShapes.Placement own =
                 LivingBlockCollisionShapes.preciseGeometry(mover);
@@ -1469,10 +1544,13 @@ public class LivingBlockCollisionHandler {
 
     @Nullable
     public static RigidStep rigidStep(final LivingBlock mob) {
+        boolean oriented = mob.usesOrientedCollision();
         Quaternionf before = new Quaternionf(mob.getTickStartRotation()).normalize();
         Quaternionf after = new Quaternionf(mob.getRotation()).normalize();
-        Quaternionf turn = new Quaternionf(after).mul(new Quaternionf(before).conjugate()).normalize();
-        if (turnDegrees(turn) < RIGID_TURN_DEGREES) {
+        Quaternionf turn = oriented
+                ? new Quaternionf(after).mul(new Quaternionf(before).conjugate()).normalize()
+                : new Quaternionf();
+        if (oriented && turnDegrees(turn) < RIGID_TURN_DEGREES) {
             return null;
         }
         Vec3 was = new Vec3(mob.xo, mob.yo, mob.zo);
@@ -1503,6 +1581,13 @@ public class LivingBlockCollisionHandler {
         if (worst <= CARRY_SEAT_SLOP) {
             return Vec3.ZERO;
         }
+        OptionalDouble top = highestSurfaceUnder(obbs, box, box.minY, box.maxY);
+        if (top.isPresent()) {
+            double lift = top.getAsDouble() - box.minY + SEPARATION_EPSILON;
+            if (lift > 0.0) {
+                return new Vec3(0.0, Math.min(lift, limit), 0.0);
+            }
+        }
         double push = Math.min(worst + SEPARATION_EPSILON, limit);
         return new Vec3(best.x() * push, best.y() * push, best.z() * push);
     }
@@ -1530,6 +1615,7 @@ public class LivingBlockCollisionHandler {
         AABB searchArea = mob.getBoundingBox().inflate(0.5, 1.0, 0.5);
         for (Entity rider : mob.level().getEntities(mob, searchArea,
                 e -> !e.isPassenger()
+                        && !(e instanceof LivingBlock body && !body.usesOrientedCollision())
                         && (clientSide
                                 ? e instanceof Player player && player.isLocalPlayer()
                                 : !(e instanceof Player)))) {

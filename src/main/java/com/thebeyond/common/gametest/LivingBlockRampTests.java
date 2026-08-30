@@ -47,6 +47,8 @@ public final class LivingBlockRampTests {
     private static final int PROBE_MAX_TICKS = 20;
     private static final double PROBE_STEP_HEIGHT = 0.6;
     private static final double PROBE_CONTACT_INFLATE = 0.2;
+    private static final double HULL_EPSILON = 1.0E-4;
+    private static final double HULL_PROBE_REACH = 4.0;
 
     private LivingBlockRampTests() {
     }
@@ -59,45 +61,51 @@ public final class LivingBlockRampTests {
         }
     }
 
-    private static void growToCeiling(final LivingBlock bead) {
-        if (bead instanceof BeadEntity grown) {
+    private static void growToCeiling(final LivingBlock body) {
+        if (body instanceof BeadEntity grown) {
             for (int i = 0; i < GROWTH_STEPS; i++) {
                 grown.grow();
             }
         }
-        bead.refreshDimensions();
+        body.refreshDimensions();
     }
 
 
-    private static boolean tiltedEnough(final GameTestHelper helper, final LivingBlock bead) {
-        AABB hull = bead.getBoundingBox();
-        if (bead.tiltDegrees() > MIN_FIXTURE_TILT_DEG && hull.getYsize() > MIN_FIXTURE_HULL_HEIGHT) {
+    private static boolean tiltedEnough(final GameTestHelper helper, final LivingBlock body) {
+        if (!body.usesOrientedCollision()) {
+            helper.fail(String.format(Locale.ROOT,
+                    "invalid setup: %s uses an axis aligned hull, there is no tilted face to stand on",
+                    body.getType().toShortString()));
+            return false;
+        }
+        AABB hull = body.getBoundingBox();
+        if (body.tiltDegrees() > MIN_FIXTURE_TILT_DEG && hull.getYsize() > MIN_FIXTURE_HULL_HEIGHT) {
             return true;
         }
         helper.fail(String.format(Locale.ROOT,
                 "invalid setup: tilt %.1f deg, hull %.4f tall, settled=%s",
-                bead.tiltDegrees(), hull.getYsize(), bead.isOrientationSettled()));
+                body.tiltDegrees(), hull.getYsize(), body.isOrientationSettled()));
         return false;
     }
 
     @GameTest(template = "ramp", timeoutTicks = 200)
     public static void playerClimbsTiltedFace(final GameTestHelper helper) {
         floor(helper);
-        LivingBlock bead = helper.spawn(BeyondEntityTypes.BEAD.get(),
+        LivingBlock body = helper.spawn(BeyondEntityTypes.ENTROPIC_BLOCK.get(),
                 new BlockPos(SPAWN_XZ, FLOOR + 1, SPAWN_XZ));
         helper.startSequence()
                 .thenIdle(SETTLE_TICKS)
-                .thenExecute(() -> growToCeiling(bead))
+                .thenExecute(() -> growToCeiling(body))
                 .thenIdle(SETTLE_TICKS)
                 .thenExecute(() -> {
-                    bead.getRotation().identity().rotateZ((float) Math.toRadians(TILT));
-                    bead.refreshDimensions();
+                    body.getRotation().identity().rotateZ((float) Math.toRadians(TILT));
+                    body.refreshDimensions();
                 })
                 .thenExecute(() -> {
-                    if (!tiltedEnough(helper, bead)) {
+                    if (!tiltedEnough(helper, body)) {
                         return;
                     }
-                    AABB hull = bead.getBoundingBox();
+                    AABB hull = body.getBoundingBox();
 
                     Player player = helper.makeMockPlayer(GameType.SURVIVAL);
                     player.setPos(hull.maxX - CLIMB_START_INSET, hull.maxY + 0.5, hull.getCenter().z);
@@ -132,21 +140,21 @@ public final class LivingBlockRampTests {
     @GameTest(template = "ramp", timeoutTicks = 200)
     public static void playerDescendsTiltedFace(final GameTestHelper helper) {
         floor(helper);
-        LivingBlock bead = helper.spawn(BeyondEntityTypes.BEAD.get(),
+        LivingBlock body = helper.spawn(BeyondEntityTypes.ENTROPIC_BLOCK.get(),
                 new BlockPos(SPAWN_XZ, FLOOR + 1, SPAWN_XZ));
         helper.startSequence()
                 .thenIdle(SETTLE_TICKS)
-                .thenExecute(() -> growToCeiling(bead))
+                .thenExecute(() -> growToCeiling(body))
                 .thenIdle(SETTLE_TICKS)
                 .thenExecute(() -> {
-                    bead.getRotation().identity().rotateZ((float) Math.toRadians(TILT));
-                    bead.refreshDimensions();
+                    body.getRotation().identity().rotateZ((float) Math.toRadians(TILT));
+                    body.refreshDimensions();
                 })
                 .thenExecute(() -> {
-                    if (!tiltedEnough(helper, bead)) {
+                    if (!tiltedEnough(helper, body)) {
                         return;
                     }
-                    AABB hull = bead.getBoundingBox();
+                    AABB hull = body.getBoundingBox();
 
                     Player player = helper.makeMockPlayer(GameType.SURVIVAL);
                     player.setPos(hull.getCenter().x, hull.maxY + DESCEND_START_LIFT, hull.getCenter().z);
@@ -172,21 +180,21 @@ public final class LivingBlockRampTests {
     @GameTest(template = "ramp", timeoutTicks = 200)
     public static void climbDoesNotJitter(final GameTestHelper helper) {
         floor(helper);
-        LivingBlock bead = helper.spawn(BeyondEntityTypes.BEAD.get(),
+        LivingBlock body = helper.spawn(BeyondEntityTypes.ENTROPIC_BLOCK.get(),
                 new BlockPos(SPAWN_XZ, FLOOR + 1, SPAWN_XZ));
         helper.startSequence()
                 .thenIdle(SETTLE_TICKS)
-                .thenExecute(() -> growToCeiling(bead))
+                .thenExecute(() -> growToCeiling(body))
                 .thenIdle(SETTLE_TICKS)
                 .thenExecute(() -> {
-                    bead.getRotation().identity().rotateZ((float) Math.toRadians(TILT));
-                    bead.refreshDimensions();
+                    body.getRotation().identity().rotateZ((float) Math.toRadians(TILT));
+                    body.refreshDimensions();
                 })
                 .thenExecute(() -> {
-                    if (!tiltedEnough(helper, bead)) {
+                    if (!tiltedEnough(helper, body)) {
                         return;
                     }
-                    AABB hull = bead.getBoundingBox();
+                    AABB hull = body.getBoundingBox();
 
                     Player player = helper.makeMockPlayer(GameType.SURVIVAL);
                     player.setPos(hull.minX - JITTER_START_OFFSET, hull.minY, hull.getCenter().z);
@@ -219,18 +227,18 @@ public final class LivingBlockRampTests {
     @GameTest(template = "ramp", timeoutTicks = 200, required = false)
     public static void probeStepGates(final GameTestHelper helper) {
         floor(helper);
-        LivingBlock bead = helper.spawn(BeyondEntityTypes.BEAD.get(),
+        LivingBlock body = helper.spawn(BeyondEntityTypes.ENTROPIC_BLOCK.get(),
                 new BlockPos(SPAWN_XZ, FLOOR + 1, SPAWN_XZ));
         helper.startSequence()
                 .thenIdle(SETTLE_TICKS)
-                .thenExecute(() -> growToCeiling(bead))
+                .thenExecute(() -> growToCeiling(body))
                 .thenIdle(SETTLE_TICKS)
                 .thenExecute(() -> {
-                    bead.getRotation().identity().rotateZ((float) Math.toRadians(TILT));
-                    bead.refreshDimensions();
+                    body.getRotation().identity().rotateZ((float) Math.toRadians(TILT));
+                    body.refreshDimensions();
                 })
                 .thenExecute(() -> {
-                    AABB hull = bead.getBoundingBox();
+                    AABB hull = body.getBoundingBox();
                     Player p = helper.makeMockPlayer(GameType.SURVIVAL);
                     p.setPos(hull.minX + hull.getXsize() * PROBE_START_FRACTION, hull.maxY + 0.5,
                             hull.getCenter().z);
@@ -260,9 +268,62 @@ public final class LivingBlockRampTests {
                             ticks, riseFree, pieces, touchedAt,
                             slide == null ? "NULL" : String.format(Locale.ROOT, "%.4f,%.4f,%.4f",
                                     slide.x, slide.y, slide.z),
-                            destinationFree, hull.minY, hull.maxY, bead.tiltDegrees(),
+                            destinationFree, hull.minY, hull.maxY, body.tiltDegrees(),
                             p.onGround(), p.horizontalCollision, p.maxUpStep()));
                 })
                 .thenSucceed();
+    }
+
+    private static boolean sameBox(final AABB a, final AABB b) {
+        return Math.abs(a.minX - b.minX) <= HULL_EPSILON && Math.abs(a.maxX - b.maxX) <= HULL_EPSILON
+                && Math.abs(a.minY - b.minY) <= HULL_EPSILON && Math.abs(a.maxY - b.maxY) <= HULL_EPSILON
+                && Math.abs(a.minZ - b.minZ) <= HULL_EPSILON && Math.abs(a.maxZ - b.maxZ) <= HULL_EPSILON;
+    }
+
+    @GameTest(template = "ramp", timeoutTicks = 200)
+    public static void axisAlignedHullIgnoresRotation(final GameTestHelper helper) {
+        floor(helper);
+        LivingBlock bead = helper.spawn(BeyondEntityTypes.BEAD.get(),
+                new BlockPos(SPAWN_XZ, FLOOR + 1, SPAWN_XZ));
+        helper.startSequence()
+                .thenIdle(SETTLE_TICKS)
+                .thenExecute(() -> growToCeiling(bead))
+                .thenIdle(SETTLE_TICKS)
+                .thenExecute(() -> {
+                    if (bead.usesOrientedCollision()) {
+                        helper.fail(String.format(Locale.ROOT,
+                                "%s went back to oriented collision, this test guards the axis aligned hull",
+                                bead.getType().toShortString()));
+                        return;
+                    }
+                    AABB flat = bead.getBoundingBox();
+                    bead.getRotation().identity().rotateZ((float) Math.toRadians(TILT));
+                    bead.refreshDimensions();
+                    AABB turned = bead.getBoundingBox();
+                    if (!sameBox(flat, turned)) {
+                        helper.fail(String.format(Locale.ROOT,
+                                "hull followed the rotation: %.4f..%.4f became %.4f..%.4f at tilt %.1f deg",
+                                flat.minY, flat.maxY, turned.minY, turned.maxY, bead.tiltDegrees()));
+                        return;
+                    }
+                    LivingBlockCollisionHandler.RigidStep step =
+                            LivingBlockCollisionHandler.rigidStep(bead);
+                    if (step == null) {
+                        helper.fail("rigidStep gave up on an axis aligned body, riders lose their carry");
+                        return;
+                    }
+                    Vec3 near = bead.position();
+                    Vec3 far = near.add(HULL_PROBE_REACH, HULL_PROBE_REACH, HULL_PROBE_REACH);
+                    Vec3 drift = step.carry(far).subtract(step.carry(near));
+                    if (drift.length() > HULL_EPSILON) {
+                        helper.fail(String.format(Locale.ROOT,
+                                "rigidStep turn is not identity: carry drifted %.5f over %.1f blocks,"
+                                        + " turn=%.4f,%.4f,%.4f,%.4f tilt=%.1f",
+                                drift.length(), HULL_PROBE_REACH, step.turn().x(), step.turn().y(),
+                                step.turn().z(), step.turn().w(), bead.tiltDegrees()));
+                        return;
+                    }
+                    helper.succeed();
+                }).thenSucceed();
     }
 }

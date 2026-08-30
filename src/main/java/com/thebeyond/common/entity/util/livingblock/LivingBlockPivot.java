@@ -36,6 +36,7 @@ public final class LivingBlockPivot {
 
     public static final double CONTACT = 0.08;
     public static final double SLOP = 1.0E-3;
+    private static final double WALL_BAND_EPSILON = 1.0E-6;
     public static final double STEP_EPSILON = 1.0E-3;
     public static final double LATTICE_TOLERANCE = 0.25;
     private static final double TIE_SLACK = 1.0E-6;
@@ -44,7 +45,6 @@ public final class LivingBlockPivot {
     private static final float DEGENERATE_AXIS_EPSILON = 1.0E-9F;
     private static final double TWIST_LENGTH_EPSILON = 1.0E-8;
 
-    private static final double WALL_BAND_EPSILON = 1.0E-6;
     private static final double WALL_RANK_EPSILON = 1.0E-9;
     private static final double WALL_SAMPLE_OFFSET = 1.0E-3;
     private static final double PIVOT_SNAP_EPSILON = 1.0E-12;
@@ -107,6 +107,7 @@ public final class LivingBlockPivot {
         double hullMinAcross = axisX ? hull.minZ : hull.minX;
         double hullMaxAcross = axisX ? hull.maxZ : hull.maxX;
         WallContact best = null;
+        lastWallOverlap = Double.NaN;
         double bestDistance = Double.POSITIVE_INFINITY;
         double bestOverlap = Double.NEGATIVE_INFINITY;
         double bestAcross = Double.NEGATIVE_INFINITY;
@@ -116,7 +117,8 @@ public final class LivingBlockPivot {
         rejReach = 0;
         rejNearestGap = Double.NaN;
         for (AABB block : terrain) {
-            if (block.maxY < hull.minY - WALL_BAND_EPSILON || block.minY > hull.maxY + WALL_BAND_EPSILON) {
+            if (block.maxY < hull.minY - WALL_BAND_EPSILON
+                    || block.minY > hull.maxY + WALL_BAND_EPSILON) {
                 rejYBand++;
                 continue;
             }
@@ -154,6 +156,7 @@ public final class LivingBlockPivot {
             }
             bestDistance = distance;
             bestOverlap = overlap;
+            lastWallOverlap = overlap;
             bestAcross = acrossOverlap;
             best = new WallContact(new WallSurface(
                     plane, block.minY, block.maxY, minAcross, maxAcross), gap, overlap);
@@ -367,6 +370,10 @@ public final class LivingBlockPivot {
     public static int rejReach;
     public static double rejNearestGap;
     public static double lastWallDistance;
+
+    public static double lastWallOverlap;
+
+    public static boolean lastWallContactNull;
     public static int pivRejYBand;
     public static int pivRejAcross;
     public static boolean pivotOutOfReach;

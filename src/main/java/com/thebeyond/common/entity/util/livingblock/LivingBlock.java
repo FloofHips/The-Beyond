@@ -44,6 +44,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.joml.Quaternionf;
 import org.joml.Quaternionfc;
@@ -70,7 +72,7 @@ public class LivingBlock extends Mob {
     private static final EntityDataAccessor<Vector3f> DATA_CLIMB_PIVOT_WORLD = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.VECTOR3);
     private static final EntityDataAccessor<Boolean> DATA_CLIMB_PIVOT_ACTIVE = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_STEP_PHASE = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Boolean> DATA_ANCHORED = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_HULL_ORIENTED = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.BOOLEAN);
 
     private static final EntityDataAccessor<Integer> DATA_MOVEMENT_TYPE = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.INT);
 
@@ -80,6 +82,7 @@ public class LivingBlock extends Mob {
 
     private static final double SETTLED_POSE_DEGREES = 0.01;
     private static final double SETTLED_SNAP_DEGREES = 0.5;
+    private static final double MIN_SNAP_SPAN_DEGREES = 1.0E-4;
 
     private static final double UNSETTLE_ANGLE = LivingBlockPivot.UNSETTLE_ANGLE_EPSILON;
     private static final double UNSETTLE_SPEED_SQR = 4.0E-4;
@@ -94,8 +97,10 @@ public class LivingBlock extends Mob {
     private static final double TRACE_OVERLAP = 0.06;
     private static final double TRACE_BURIED = 1.0E-3;
     private static final int TRACE_AIR_TICKS = 3;
-    private static final int ANCHOR_AIR_TICKS = 10;
-    private static final double GRID_RECENTRE_MIN = 0.01;
+    private static final double GRID_RECENTRE_MIN = 1.0E-6;
+
+    private static final double GRID_RECENTRE_MAX = 0.125;
+
     private static final double TRACE_TILT_DEGREES = 5.0;
     private static final double TRACE_STILL_SQR = 1.0E-6;
     private static final int TRACE_DENSE_TICKS = 40;
@@ -137,12 +142,10 @@ public class LivingBlock extends Mob {
     private double rollGateWorstGain;
     private int slideLogTick = -2;
     private int rotClampLogTick = -2;
-    private static final int ARRIVAL_STALL_TICKS = 20;
-    private static final int STALL_GIVE_UPS = 5;
-    private static final double TARGET_PROGRESS_EPSILON = 0.01;
-    private static final double ARRIVAL_ANCHOR_SLACK = 0.35;
-    public static final double SETTLE_RADIUS = 0.02;
-    private static final int TARGET_REPLAN_LIMIT = 3;
+    private int quietLoggedState = -1;
+    private int quietLogTick = -QUIET_LOG_INTERVAL;
+    private static final int QUIET_LOG_INTERVAL = 10;
+    private static final double PIVOT_LOG_DEGREE_BUCKET = 30.0;
     private static final int ROT_LOG_INTERVAL = 20;
     private static final int QTURN_LOG_INTERVAL = 20;
     private static final int QTURN_REST = 0;
@@ -212,18 +215,21 @@ public class LivingBlock extends Mob {
     public static final float LOW_STEP_HEIGHT = (float)LivingBlockStep.HEIGHT;
     public static final float LOW_STEP_SLACK = (float)LivingBlockStep.SLACK;
     private final Vector3f lastEscape = new Vector3f();
+    private static final boolean FEATURE_GEOMETRY = false;
+    private boolean axisAlignedLogged;
+    private boolean rollUngatedLogged;
+    private boolean arcVetoSkipLogged;
+    private boolean shapeGeometryLogged;
 
     private MovementStrategy<?> movement = MV_ROLL_FLOAT;
     private float maxUpStep = 0.6F;
     private float rollAngle;
+    private double traceSpin;
+    private double traceMoved;
     private final Quaternionf tickStartRotation = new Quaternionf();
     private final Map<Integer, Long> riderHold = new HashMap<>();
     private long riderHoldUntil = Long.MIN_VALUE;
     private int floorBodyLogged = -1;
-    private int waitingBaseLogged = -1;
-    private int waitingBaseTicks;
-    private static final int BASE_WAIT_LIMIT = 40;
-    private static final double BASE_WAIT_SPEED_SQR = 2.5E-3;
     private boolean riderHoldLogged;
     private LivingBlockPivot.WallPivot climbPivot;
     private Direction climbPivotDirection = Direction.DOWN;
@@ -236,6 +242,18 @@ public class LivingBlock extends Mob {
     private boolean climbPivotAligning;
     private final Quaternionf climbPivotAlignmentTarget = new Quaternionf();
     private boolean climbPivotMovedThisTick;
+
+    private static final double FLOOR_LIFT_MAX = 0.05;
+    private static final int LANDING_WATCH_TICKS = 25;
+    private int landingWatch;
+    private int landingTick;
+    @Nullable private Direction landingDir;
+
+    private boolean vanillaOrderThisTick;
+
+    private String recentreVerdict = "";
+
+    private String pivotPhaseLast = "";
     private int climbPivotEdgeStartTick;
     private int climbPivotLastAdvanceTick = -1;
     private int climbPivotMaxAdvanceGap;
@@ -338,11 +356,6 @@ public class LivingBlock extends Mob {
     private LivingBlockOrientation orientation;
     private boolean rotationRestored;
     private int separationBackoff;
-    private int arrivalStall;
-    private double lastTargetDistance = Double.MAX_VALUE;
-    private boolean pursuingTarget = true;
-    private int targetReplans;
-    private int stallGiveUps;
     private long carriedAtTick = Long.MIN_VALUE;
     private boolean shapeIsEntropic;
     private boolean pendingFlop;
@@ -409,8 +422,10 @@ public class LivingBlock extends Mob {
         this.baseShapeBounds = shape.bounds();
         this.baseShapeBoxes = List.copyOf(shape.toAabbs());
 
-        List<AABB> boxes = LivingBlockFeatures.apply(
-                this.baseShapeBoxes, this.featurePlan().features(), this.entityData.get(DATA_GROWTH));
+        List<AABB> boxes = FEATURE_GEOMETRY
+                ? LivingBlockFeatures.apply(this.baseShapeBoxes, this.featurePlan().features(),
+                        this.entityData.get(DATA_GROWTH))
+                : this.baseShapeBoxes;
 
         this.silhouetteLocal = null;
         this.livePlacement = null;
@@ -443,7 +458,13 @@ public class LivingBlock extends Mob {
         if (this.collisionShapes == null) {
             this.cacheShapeGeometry();
         }
-        if (this.isSettledPose()) {
+        this.logShapeGeometry();
+        if (!this.orientedHull()) {
+            this.logAxisAlignedGeometry();
+            return this.collisionShapes.world(this.restingFace(), this.position());
+        }
+        boolean settled = this.isSettledPose();
+        if (settled) {
             return this.collisionShapes.world(this.getOrientation(), this.position());
         }
 
@@ -457,6 +478,35 @@ public class LivingBlock extends Mob {
         this.livePlacementRotation = new Quaternionf(this.rotation);
         this.livePlacementPosition = pos;
         return this.livePlacement;
+    }
+
+    public LivingBlockCollisionShapes.Placement axisAlignedGeometry(final Vec3 at) {
+        if (this.collisionShapes == null) {
+            this.cacheShapeGeometry();
+        }
+        return this.collisionShapes.world(this.usesOrientedCollision()
+                ? this.getOrientation() : this.restingFace(), at);
+    }
+
+    private void logShapeGeometry() {
+        if (this.shapeGeometryLogged || this.level().isClientSide()) {
+            return;
+        }
+        this.shapeGeometryLogged = true;
+        LOGGER.debug("[livingblock] shapegeom id={} type={} features={} oriented={} lowstep={} base={} pieces={}",
+                this.getId(), this.getType().toShortString(), FEATURE_GEOMETRY,
+                this.usesOrientedCollision(), this.prefersLowStep(),
+                this.baseShapeBoxes.size(), this.shapeBoxes.size());
+    }
+
+    private void logAxisAlignedGeometry() {
+        if (this.axisAlignedLogged || this.level().isClientSide()) {
+            return;
+        }
+        this.axisAlignedLogged = true;
+        LOGGER.debug("[livingblock] aabbgeom id={} type={} oriented={} tilt={} pieces={}",
+                this.getId(), this.getType().toShortString(), this.usesOrientedCollision(),
+                String.format("%.2f", this.tiltDegrees()), this.shapeBoxes.size());
     }
 
     public AABB getShapeBounds() {
@@ -504,6 +554,15 @@ public class LivingBlock extends Mob {
 
     public boolean isOrientationSettled() {
         return this.entityData.get(DATA_ORIENTATION_SETTLED);
+    }
+
+    private LivingBlockOrientation restingFace() {
+        if (this.isOrientationSettled()) {
+            return this.getOrientation();
+        }
+        return this.rotation == null
+                ? LivingBlockOrientation.IDENTITY
+                : LivingBlockOrientation.fromQuaternion(this.rotation);
     }
 
     private boolean isSettledPose() {
@@ -593,7 +652,7 @@ public class LivingBlock extends Mob {
         if (isFlat) {
             return MV_POGO;
         }
-        if (this.isNudging()) {
+        if (this.usesOrientedCollision() && this.isNudging()) {
             return MV_NUDGE;
         }
         return MV_ROLL_FLOAT;
@@ -665,7 +724,8 @@ public class LivingBlock extends Mob {
     }
 
     public void reportBlocked() {
-        if (this.level().isClientSide() || this.climbPivotSequence) {
+        if (this.level().isClientSide() || this.climbPivotSequence
+                || !this.usesOrientedCollision()) {
             return;
         }
         if (!this.isNudging()) {
@@ -688,11 +748,12 @@ public class LivingBlock extends Mob {
         }
         this.movement = movement;
         if (!this.level().isClientSide()) {
-            if (this.getMovementData() instanceof RollingMovement.Data leaving) {
+            if (this.usesOrientedCollision()
+                    && this.getMovementData() instanceof RollingMovement.Data leaving) {
                 this.rollBlocked = leaving.failedMoveAttempts;
             }
             MovementData fresh = movement.initData();
-            if (fresh instanceof RollingMovement.Data entering) {
+            if (this.usesOrientedCollision() && fresh instanceof RollingMovement.Data entering) {
                 entering.failedMoveAttempts = this.rollBlocked;
             }
             this.setMovementData(fresh);
@@ -761,6 +822,10 @@ public class LivingBlock extends Mob {
                     String.format("%.6f", stale),
                     String.format("%.3f,%.3f,%.3f", this.getX(), this.getY(), this.getZ()));
         }
+        if ((DATA_HULL_ORIENTED.equals(key) || DATA_ORIENTATION_SETTLED.equals(key))
+                && this.level().isClientSide()) {
+            this.setBoundingBox(this.makeBoundingBox());
+        }
         if (DATA_SHAPE_SEED.equals(key)) {
             this.applyShape();
         }
@@ -793,56 +858,19 @@ public class LivingBlock extends Mob {
         }
     }
 
-    private void applyPendingOrientationRestore() {
-        if (!this.pendingOrientationRestore) {
-            return;
-        }
-        this.pendingOrientationRestore = false;
-        if (!this.isOrientationSettled()) {
-            return;
-        }
-        Quaternionf target = this.getOrientation().quaternion();
-        if (angleBetween(this.rotation, target) <= Math.toDegrees(SETTLE_ANGLE_EPSILON)) {
-            return;
-        }
-        this.rollRestores++;
-        LOGGER.debug("[livingblock] restore id={} deg={} rc={} ori={} pos={}",
-                this.getId(), String.format("%.1f", angleBetween(this.rotation, target)),
-                this.rollRestores, this.getOrientation().index(),
-                String.format("%.2f,%.2f,%.2f", this.getX(), this.getY(), this.getZ()));
-        this.rollPhase = 0.0;
-        this.rollPhaseAxis = LivingBlockRoll.AXIS_NONE;
-        this.rollPending = 0.0;
-        this.rollPendingAxis = LivingBlockRoll.AXIS_NONE;
-    }
-
-    private void alignClientRotation() {
-        if (!this.isOrientationSettled()) {
-            return;
-        }
-        LivingBlockOrientation target = this.getOrientation();
-        double error = angularDistance(this.rotation, target);
-        if (error <= 0.0) {
-            return;
-        }
-        if (error < SETTLE_ANGLE_EPSILON) {
-            this.rotation.set(target.quaternion());
-        } else {
-            this.rotation.slerp(target.quaternion(), CLIENT_ROTATION_CATCHUP);
-        }
-    }
-
     public void reissueMovementTarget(final Target target) {
         if (!this.level().isClientSide()) {
             this.movement.resetMovement(this);
             this.nudgeUntil = -1;
-            this.targetReplans = 0;
-            this.lastTargetDistance = Double.MAX_VALUE;
         }
         this.setMovementTarget(target);
     }
 
     public void setMovementTarget(final Target target) {
+        if (!this.usesOrientedCollision()) {
+            this.entityData.set(MOVEMENT_TARGET, target == null ? Target.NONE : target);
+            return;
+        }
         this.noteClimbOrder();
         Target next = target == null ? Target.NONE : target;
         Target previous = this.entityData.get(MOVEMENT_TARGET);
@@ -856,14 +884,8 @@ public class LivingBlock extends Mob {
                         this.getId(), wasClimbing, wasNudging, previous.type(), next.type());
             }
         }
-        this.setAnchored(false);
         this.riderHoldUntil = Long.MIN_VALUE;
         this.rollBlocked = 0;
-        this.stallGiveUps = 0;
-        this.arrivalStall = 0;
-        this.lastTargetDistance = Double.MAX_VALUE;
-        this.pursuingTarget = true;
-        this.targetReplans = 0;
         this.entityData.set(MOVEMENT_TARGET, next);
     }
 
@@ -902,7 +924,7 @@ public class LivingBlock extends Mob {
         entityData.define(DATA_CLIMB_PIVOT_ACTIVE, false);
 
         entityData.define(DATA_STEP_PHASE, false);
-        entityData.define(DATA_ANCHORED, false);
+        entityData.define(DATA_HULL_ORIENTED, false);
 
     }
 
@@ -927,8 +949,274 @@ public class LivingBlock extends Mob {
         return this.getClimbingDirection().getAxis() != Axis.Y;
     }
 
+    @Override
+    public boolean causeFallDamage(final float fallDistance, final float multiplier,
+                                   final DamageSource source) {
+        if (this.usesOrientedCollision()) {
+            return super.causeFallDamage(fallDistance, multiplier, source);
+        }
+        this.resetFallDistance();
+        return false;
+    }
+
+    private double floorGap(final AABB hull) {
+        AABB probe = new AABB(hull.minX, hull.minY - FLOOR_LIFT_MAX, hull.minZ,
+                hull.maxX, hull.minY + FLOOR_LIFT_MAX, hull.maxZ).deflate(1.0E-4);
+        double top = Double.NEGATIVE_INFINITY;
+        for (BlockPos pos : BlockPos.betweenClosed(
+                BlockPos.containing(probe.minX, probe.minY, probe.minZ),
+                BlockPos.containing(probe.maxX, probe.maxY, probe.maxZ))) {
+            for (AABB piece : this.level().getBlockState(pos)
+                    .getCollisionShape(this.level(), pos).toAabbs()) {
+                AABB world = piece.move(pos.getX(), pos.getY(), pos.getZ());
+                if (world.intersects(probe)) {
+                    top = Math.max(top, world.maxY);
+                }
+            }
+        }
+        return top == Double.NEGATIVE_INFINITY ? Double.NaN : hull.minY - top;
+    }
+
+    private void liftOutOfFloor() {
+        if (this.usesOrientedCollision() || this.climbPivotSequence) {
+            return;
+        }
+        double gap = this.floorGap(this.getBoundingBox());
+        if (Double.isNaN(gap) || gap >= -1.0E-9 || gap < -FLOOR_LIFT_MAX) {
+            return;
+        }
+        this.setPos(this.getX(), this.getY() - gap, this.getZ());
+    }
+
+    private void logLanding(final Direction direction) {
+        if (this.level().isClientSide()) {
+            return;
+        }
+        this.landingWatch = LANDING_WATCH_TICKS;
+        this.landingTick = 0;
+        this.landingDir = direction;
+        this.landingSample("arc");
+    }
+
+    private void tickLandingWatch() {
+        if (this.landingWatch <= 0 || this.level().isClientSide()) {
+            return;
+        }
+        this.landingWatch--;
+        this.landingTick++;
+        boolean settled = this.onGround() && Math.abs(this.getDeltaMovement().y) < 1.0E-3;
+        this.landingSample(settled ? "settled" : this.landingWatch == 0 ? "expired" : "fall");
+        if (settled || this.landingWatch == 0) {
+            this.landingWatch = 0;
+            this.landingDir = null;
+        }
+    }
+
+    private void landingSample(final String phase) {
+        AABB hull = this.getBoundingBox();
+        AABB below = new AABB(hull.minX, hull.minY - 1.6, hull.minZ,
+                hull.maxX, hull.minY + 0.1, hull.maxZ).deflate(1.0E-4);
+        StringBuilder support = new StringBuilder();
+        int count = 0;
+        for (BlockPos pos : BlockPos.betweenClosed(
+                BlockPos.containing(below.minX, below.minY, below.minZ),
+                BlockPos.containing(below.maxX, below.maxY, below.maxZ))) {
+            BlockState state = this.level().getBlockState(pos);
+            for (AABB piece : state.getCollisionShape(this.level(), pos).toAabbs()) {
+                AABB world = piece.move(pos.getX(), pos.getY(), pos.getZ());
+                if (!world.intersects(below)) {
+                    continue;
+                }
+                if (count++ > 0) {
+                    support.append(' ');
+                }
+                support.append(String.format("%s@%.2f,%.2f,%.2f..%.2f,%.2f,%.2f",
+                        state.getBlock().getDescriptionId(), world.minX, world.minY, world.minZ,
+                        world.maxX, world.maxY, world.maxZ));
+            }
+        }
+        AABB drop = hull.move(0.0, -0.05, 0.0);
+        int engine = 0;
+        for (VoxelShape ignored : this.level().getBlockCollisions(this, drop)) {
+            engine++;
+        }
+        LOGGER.debug("[livingblock] landing id={} phase={} n={} dir={} hull={} feet={} ground={} vcol={} step={} vy={} climb={} pivot={} nograv={} free={} engine={} support={} boxes={}",
+                this.getId(), phase, this.landingTick, this.landingDir,
+                String.format("%.3f,%.3f,%.3f..%.3f,%.3f,%.3f", hull.minX, hull.minY, hull.minZ,
+                        hull.maxX, hull.maxY, hull.maxZ),
+                String.format("%.4f", hull.minY), this.onGround(), this.verticalCollision,
+                String.format("%.2f", this.maxUpStep()),
+                String.format("%.4f", this.getDeltaMovement().y),
+                this.getClimbingDirection(), this.climbPivotSequence, this.isNoGravity(),
+                this.level().noCollision(this, drop), engine,
+                count == 0 ? "NONE" : support.toString(), count);
+    }
+
     public boolean usesClimbPivot() {
         return !this.isEntropicForm();
+    }
+
+    public boolean usesOrientedCollision() {
+        return this.isEntropicForm();
+    }
+
+    public boolean orientedHull() {
+        return this.usesOrientedCollision() || this.entityData.get(DATA_HULL_ORIENTED);
+    }
+
+    private boolean wallArcRunning() {
+        return this.climbPivotSequence && !this.climbPivotAligning && !this.descentSequence
+                && !this.stepApproaching && !this.stepLifting && !this.stepHolding
+                && !this.stepDropping && !this.entityData.get(DATA_STEP_PHASE);
+    }
+
+    private static final int CARRY_PUSH_GRACE = 5;
+
+    private boolean holdingGround;
+
+    private Vec3 frozenFrom = Vec3.ZERO;
+    private int frozenTicks;
+
+    private static final boolean TRACE_WRITERS = true;
+
+    private String lastArcRefusal = "";
+    private double penLast;
+    private StringBuilder writerTrace;
+    private int writerTraceTick = -1;
+
+    @Override
+    public void setPos(final double x, final double y, final double z) {
+        if (TRACE_WRITERS && this.level() != null && !this.level().isClientSide()) {
+            double dx = x - this.getX();
+            double dy = y - this.getY();
+            double dz = z - this.getZ();
+            if (dx * dx + dy * dy + dz * dz > 1.0E-12) {
+                this.noteWriter(dx, dy, dz);
+            }
+        }
+        super.setPos(x, y, z);
+    }
+
+    private void noteWriter(final double dx, final double dy, final double dz) {
+        if (this.writerTrace == null) {
+            this.writerTrace = new StringBuilder();
+        }
+        if (this.writerTraceTick != this.tickCount) {
+            this.writerTraceTick = this.tickCount;
+            this.writerTrace.setLength(0);
+        }
+        if (this.writerTrace.length() > 420) {
+            return;
+        }
+        String who = StackWalker.getInstance().walk(frames -> frames.skip(2).limit(10)
+                .map(StackWalker.StackFrame::getMethodName)
+                .filter(name -> !name.equals("setPos") && !name.equals("noteWriter"))
+                .findFirst().orElse("?"));
+        this.writerTrace.append(who).append('(')
+                .append(String.format("%.3f,%.3f,%.3f", dx, dy, dz)).append(") ");
+    }
+
+    private void tickWriterTrace() {
+        if (!TRACE_WRITERS || this.level().isClientSide()) {
+            return;
+        }
+        Target order = this.getMovementTarget();
+        if (order == null || order == Target.NONE) {
+            return;
+        }
+        RollingMovement.Data data = this.getMovementData() instanceof RollingMovement.Data d ? d : null;
+        AABB hull = this.getBoundingBox();
+        Vec3 vel = this.getDeltaMovement();
+        Vec3 want = order.resolvePosition(this.level());
+        double pen = this.penetrationNow();
+        double dpen = pen - this.penLast;
+        this.penLast = pen;
+        LOGGER.debug("[livingblock] beadtrace id={} t={} writers=[{}] hull={} pos={} vel={} gap={} ground={} air={} settled={} oriented={} seq={} align={} phase={} climb={} step={} moveticks={} fails={} route={} pen={} dpen={} arcref={} tilt={} ori={} inwall={} spin={} moved={} dem={} carry={}",
+                this.getId(), this.tickCount,
+                this.writerTrace == null ? "" : this.writerTrace.toString().trim(),
+                String.format("%.3fx%.3fx%.3f", hull.getXsize(), hull.getYsize(), hull.getZsize()),
+                String.format("%.3f,%.3f,%.3f", this.getX(), this.getY(), this.getZ()),
+                String.format("%.4f,%.4f,%.4f", vel.x, vel.y, vel.z),
+                want == null ? "none" : String.format("%.2f",
+                        Math.sqrt(Mth.square(want.x - this.getX()) + Mth.square(want.z - this.getZ()))),
+                this.onGround(), this.airTicks, this.isOrientationSettled(),
+                this.orientedHull(),
+                this.climbPivotSequence, this.climbPivotAligning,
+                this.entityData.get(DATA_STEP_PHASE), this.getClimbingDirection(),
+                data == null ? "-" : String.valueOf(data.movingTo),
+                data == null ? -1 : data.moveTicks,
+                data == null ? -1 : data.failedMoveAttempts,
+                data == null ? "-" : data.lastRoute,
+                String.format("%.4f", pen), String.format("%+.4f", dpen),
+                this.lastArcRefusal.isEmpty() ? "-" : this.lastArcRefusal,
+                String.format("%.1f", this.tiltDegrees()),
+                this.getOrientation().index(), this.isInWall(),
+                String.format("%.2f", this.traceSpin), String.format("%.4f", this.traceMoved),
+                String.format("%.1f", this.rollAngle),
+                String.format("%.1f", 90.0 * Math.sqrt(this.rollCarryX * this.rollCarryX
+                        + this.rollCarryZ * this.rollCarryZ)));
+        if (this.writerTrace != null) {
+            this.writerTrace.setLength(0);
+        }
+    }
+
+    private void tickFrozenWatch() {
+        if (this.level().isClientSide()) {
+            return;
+        }
+        Target target = this.getMovementTarget();
+        if (target == null || target == Target.NONE
+                || this.position().distanceToSqr(this.frozenFrom) > 1.0E-6) {
+            this.frozenFrom = this.position();
+            this.frozenTicks = 0;
+            return;
+        }
+        if (++this.frozenTicks % 60 != 0) {
+            return;
+        }
+        RollingMovement.Data data = this.getMovementData() instanceof RollingMovement.Data d ? d : null;
+        AABB hull = this.getBoundingBox();
+        Vec3 wanted = target.resolvePosition(this.level());
+        double gap = wanted == null ? Double.NaN
+                : Math.sqrt(new Vec3(wanted.x - this.getX(), 0.0, wanted.z - this.getZ()).lengthSqr());
+        LOGGER.debug("[livingblock] frozen id={} ticks={} target={} mv={} moveticks={} gap={}/{} step={} fails={} streak={} route={} settled={} seq={} align={} phase={} ground={} air={} inwall={} tilt={} ori={} hull={} pos={}",
+                this.getId(), this.frozenTicks, target.getClass().getSimpleName(),
+                this.movement.getClass().getSimpleName(),
+                data == null ? -1 : data.moveTicks,
+                String.format("%.3f", gap), String.format("%.3f", target.distance()),
+                data == null ? "-" : String.valueOf(data.movingTo),
+                data == null ? -1 : data.failedMoveAttempts,
+                data == null ? -1 : data.climbRefusalStreak,
+                data == null ? "-" : data.lastRoute,
+                this.isOrientationSettled(),
+                this.climbPivotSequence, this.climbPivotAligning,
+                this.entityData.get(DATA_STEP_PHASE), this.onGround(), this.airTicks,
+                this.isInWall(), String.format("%.1f", this.tiltDegrees()),
+                this.getOrientation().index(),
+                String.format("%.3fx%.3fx%.3f", hull.getXsize(), hull.getYsize(), hull.getZsize()),
+                String.format("%.3f,%.3f,%.3f", this.getX(), this.getY(), this.getZ()));
+    }
+
+    private void refreshHullOrientation() {
+        if (this.level().isClientSide() || this.usesOrientedCollision()) {
+            return;
+        }
+        boolean want = this.wallArcRunning();
+        if (want == this.entityData.get(DATA_HULL_ORIENTED)) {
+            return;
+        }
+        AABB before = this.getBoundingBox();
+        double penBefore = this.penetrationNow();
+        this.entityData.set(DATA_HULL_ORIENTED, want);
+        this.setBoundingBox(this.makeBoundingBox());
+        AABB after = this.getBoundingBox();
+        double penAfter = this.penetrationNow();
+        LOGGER.debug("[livingblock] hulloriented id={} on={} tilt={} penbefore={} penafter={} before={} after={} pos={}",
+                this.getId(), want, String.format("%.1f", this.tiltDegrees()),
+                String.format("%.4f", penBefore), String.format("%.4f", penAfter),
+                String.format("%.3fx%.3fx%.3f", before.getXsize(), before.getYsize(), before.getZsize()),
+                String.format("%.3fx%.3fx%.3f", after.getXsize(), after.getYsize(), after.getZsize()),
+                String.format("%.3f,%.3f,%.3f", this.getX(), this.getY(), this.getZ()));
     }
 
     public boolean prefersLowStep() {
@@ -1330,6 +1618,10 @@ public class LivingBlock extends Mob {
 
     public boolean canBeginDescent(final Direction direction) {
         if (this.level().isClientSide()) {
+            return false;
+        }
+        if (!this.usesOrientedCollision()) {
+            this.descentDump(direction, "aabbdrop", null, null);
             return false;
         }
         if (!this.usesClimbPivot() || this.isClimbing() || !this.onGround()
@@ -1813,23 +2105,23 @@ public class LivingBlock extends Mob {
         }
         this.climbPivotLogTick = this.tickCount;
         boolean wallMiss = "wall".equals(reason);
-        LOGGER.debug("[livingblock] climbpivot id={} event=capturemiss dir={} reason={} subcause={} candidates={} distance={} gap={} ground={} leashed={} pos={}",
+        LOGGER.debug("[livingblock] climbpivot id={} event=capturemiss dir={} reason={} subcause={} candidates={} distance={} gap={} overlap={} ground={} leashed={} pos={}",
                 this.getId(), direction, reason,
                 wallMiss ? String.format("noterrain=%d yband=%d across=%d reach=%d nearestgap=%s",
                         LivingBlockPivot.rejNoTerrain, LivingBlockPivot.rejYBand,
                         LivingBlockPivot.rejAcross, LivingBlockPivot.rejReach,
                         Double.isNaN(LivingBlockPivot.rejNearestGap) ? "nan"
                                 : String.format("%.5f", LivingBlockPivot.rejNearestGap)) : "-",
-                wallMiss ? 0 : LivingBlockPivot.lastWallCandidates,
-                wallMiss ? "nan" : String.format("%.4f", LivingBlockPivot.lastWallDistance),
+                LivingBlockPivot.lastWallCandidates,
+                String.format("%.4f", LivingBlockPivot.lastWallDistance),
                 Double.isFinite(gap) ? String.format("%.4f", gap) : "nan",
+                Double.isNaN(LivingBlockPivot.lastWallOverlap) ? "nan"
+                        : String.format("%.4f", LivingBlockPivot.lastWallOverlap),
                 this.onGround(), this.isLeashed(),
                 String.format("%.3f,%.3f,%.3f", this.getX(), this.getY(), this.getZ()));
     }
 
     public void escalateBlockedClimb() {
-        this.stallGiveUps = STALL_GIVE_UPS;
-        this.arrivalStall = ARRIVAL_STALL_TICKS - 1;
         this.nudgeUntil = -1;
     }
 
@@ -2127,7 +2419,23 @@ public class LivingBlock extends Mob {
     public ClimbPivotAdvance advanceClimbPivot(final Direction direction) {
         ClimbPivotAdvance advance = this.advanceClimbPivotStep(direction);
         this.climbPivotStalled = advance == ClimbPivotAdvance.BLOCKED && this.climbPivotSequence;
+        this.logPivotPhase(advance, direction);
         return advance;
+    }
+
+    private void logPivotPhase(final ClimbPivotAdvance advance, final Direction direction) {
+        if (this.usesOrientedCollision() || this.level().isClientSide()) {
+            return;
+        }
+        String phase = advance + "/" + direction + "/" + this.climbPivotSequence
+                + "/" + (int) (this.climbPivotDegreesRemaining / PIVOT_LOG_DEGREE_BUCKET);
+        if (phase.equals(this.pivotPhaseLast)) {
+            return;
+        }
+        this.pivotPhaseLast = phase;
+        LOGGER.debug("[livingblock] pivot id={} phase={} dir={} step={}/{} degrees={} moved={}",
+                this.getId(), advance, direction, this.climbPivotStep, this.climbPivotLimit,
+                String.format("%.2f", this.climbPivotDegreesRemaining), this.climbPivotMovedThisTick);
     }
 
     private ClimbPivotAdvance advanceClimbPivotStep(final Direction direction) {
@@ -2162,14 +2470,49 @@ public class LivingBlock extends Mob {
             return this.advanceClimbAlignment(direction, shapePivot);
         }
         if (this.climbPivot == null || this.climbPivotDirection != direction) {
+            this.setBoundingBox(this.makeBoundingBox());
             LivingBlockPivot.WallContact wall = LivingBlockCollisionHandler.climbWallContact(
                     this, direction, CLIMB_PIVOT_REACH);
             boolean bodyWall = LivingBlockCollisionHandler.lastWallFromBody();
+            double faceLeft = wall == null ? Double.NaN
+                    : wall.surface().maxY() - this.getBoundingBox().minY;
+            double bodyRise = this.getBaseShapeBounds().getYsize();
+            if (wall != null && faceLeft > LivingBlockPivot.SLOP
+                    && faceLeft < bodyRise - LivingBlockPivot.SLOP) {
+                LivingBlockPivot.WallPivot half = LivingBlockPivot.wallPivot(
+                        this.getShapeBoxes(), this.getShapeBounds(), shapePivot, this.rotation,
+                        this.position(), direction, wall.surface(), CLIMB_PIVOT_CONTACT);
+                ClimbArc halfArc = half == null ? null : this.climbArc(half, direction, shapePivot);
+                LOGGER.debug("[livingblock] halfquarter id={} dir={} left={} surface={} edge={} arc={} steps={} top={} deg={} why={}",
+                        this.getId(), direction,
+                        String.format("%.4f/%.3f", faceLeft, bodyRise),
+                        String.format("plane=%.3f y=%.3f..%.3f across=%.3f..%.3f",
+                                wall.surface().plane(), wall.surface().minY(), wall.surface().maxY(),
+                                wall.surface().minAcross(), wall.surface().maxAcross()),
+                        half == null ? "none" : String.format("%.3f,%.3f,%.3f",
+                                half.world().x, half.world().y, half.world().z),
+                        halfArc == null ? "none" : String.valueOf(halfArc.clear()),
+                        halfArc == null ? -1 : halfArc.steps(),
+                        halfArc == null ? "-" : String.valueOf(halfArc.top()),
+                        halfArc == null ? "-" : String.format("%.2f", halfArc.degrees()),
+                        halfArc == null ? "-" : halfArc.refusal());
+                if (halfArc == null || !halfArc.clear()) {
+                    this.climbWhy(direction, "partialrise", String.format("left=%.3f", faceLeft));
+                    this.clearClimbPivot();
+                    return ClimbPivotAdvance.RELEASED;
+                }
+                this.climbWhy(direction, "partialtake", String.format("left=%.3f top=%b",
+                        faceLeft, halfArc.top()));
+            }
             if (wall == null) {
                 this.climbApproachTicks = 0;
                 ClimbPivotAdvance continued = this.continueDescent(direction, shapePivot);
                 if (continued != null) {
                     return continued;
+                }
+                if (!this.usesOrientedCollision()) {
+                    this.climbWhy(direction, "aabbdrop", "descent=off");
+                    return ClimbPivotAdvance.BLOCKED;
                 }
                 DescentLook look = this.descentHeldLook != null
                         && this.descentHeldDir == direction
@@ -2246,6 +2589,10 @@ public class LivingBlock extends Mob {
                     this.position(), direction, wall.surface(), reach);
             ClimbArc arc = candidate == null ? null
                     : this.climbArc(candidate, direction, shapePivot);
+            if (arc != null && arc.clear() && !arc.top()
+                    && faceLeft <= LivingBlockPivot.SLOP) {
+                arc = new ClimbArc(true, arc.steps(), true, arc.degrees(), arc.refusal());
+            }
             boolean tiltResidue = this.tiltDegrees() > CLIMB_ALIGN_MIN_TILT;
             if (candidate != null && (arc == null || !arc.clear() && tiltResidue)) {
                 Quaternionf target = this.climbAlignmentTarget(candidate, shapePivot);
@@ -2356,10 +2703,14 @@ public class LivingBlock extends Mob {
                     new Vector3f((float)world.x, (float)world.y, (float)world.z));
             this.entityData.set(DATA_CLIMB_PIVOT_ACTIVE, true);
             this.climbFlow("start", direction);
-            LOGGER.debug("[livingblock] climbpivot id={} event=start dir={} edge={} steps={} angle={} top={} pos={}",
+            LOGGER.debug("[livingblock] climbpivot id={} event=start dir={} edge={} face={} left={} steps={} angle={} top={} pos={}",
                     this.getId(), direction,
                     String.format("%.3f,%.3f,%.3f", candidate.world().x, candidate.world().y,
                             candidate.world().z),
+                    String.format("%.3f..%.3f a=%.3f..%.3f p=%.3f", wall.surface().minY(),
+                            wall.surface().maxY(), wall.surface().minAcross(),
+                            wall.surface().maxAcross(), wall.surface().plane()),
+                    String.format("%.3f", faceLeft),
                     this.climbPivotLimit, String.format("%.2f", this.climbPivotDegreesTotal),
                     this.climbPivotCompletes,
                     String.format("%.3f,%.3f,%.3f", this.getX(), this.getY(), this.getZ()));
@@ -2389,11 +2740,13 @@ public class LivingBlock extends Mob {
                     climbFailure(midpoint, midpointFailure, turn, turnFailure),
                     this.climbPivotMaxAdvanceGap, String.format("%.6f", this.climbPivotRuntimeDrift),
                     String.format("%.3f,%.3f,%.3f", this.getX(), this.getY(), this.getZ()));
+            this.logLanding(direction);
             return ClimbPivotAdvance.BLOCKED;
         }
         this.entityData.set(DATA_ORIENTATION_SETTLED, false);
         this.rotation.set(turn.rotation());
         this.setPos(turn.position());
+        this.hasImpulse = true;
         this.setDeltaMovement(Vec3.ZERO);
         this.setOnGround(false);
         this.pendingFlop = false;
@@ -2420,6 +2773,7 @@ public class LivingBlock extends Mob {
                     this.tickCount - this.climbPivotEdgeStartTick + 1,
                     this.climbPivotMaxAdvanceGap, String.format("%.6f", this.climbPivotRuntimeDrift),
                     String.format("%.3f,%.3f,%.3f", this.getX(), this.getY(), this.getZ()));
+            this.logLanding(direction);
             if (complete && this.descentQuarterOnly) {
                 this.climbPivot = null;
                 this.climbPivotStep = 0;
@@ -2612,8 +2966,8 @@ public class LivingBlock extends Mob {
                     : LivingBlockCollisionHandler.climbPoseFailure(
                             this, turn.rotation(), turn.position(), CLIMB_PIVOT_SLOP);
             if (midpoint == null || midpointFailure != null || turn == null || turnFailure != null) {
-                return new ClimbArc(false, steps, false, degrees,
-                        climbFailure(midpoint, midpointFailure, turn, turnFailure));
+                this.lastArcRefusal = climbFailure(midpoint, midpointFailure, turn, turnFailure);
+                return new ClimbArc(false, steps, false, degrees, this.lastArcRefusal);
             }
             pose = turn.rotation();
             position = turn.position();
@@ -2705,7 +3059,6 @@ public class LivingBlock extends Mob {
         this.rollPending = 0.0;
         this.rollPendingAxis = LivingBlockRoll.AXIS_NONE;
     }
-
 
     @Override
     public void readAdditionalSaveData(CompoundTag input) {
@@ -2821,6 +3174,37 @@ public class LivingBlock extends Mob {
         return LivingBlockOrientation.fromQuaternion(rotation).quaternion();
     }
 
+    private static Quaternionf snapToNearestRightAngleLegacy(Quaternionfc rotation) {
+        Vector3f localForward = Direction.NORTH.step().rotate(rotation);
+        Vector3f localUp = Direction.UP.step().rotate(rotation);
+        return new Quaternionf()
+                .lookAlong(nearestStep(localForward.x, localForward.y, localForward.z, Direction.NORTH).step(),
+                        nearestStep(localUp.x, localUp.y, localUp.z, Direction.UP).step())
+                .conjugate();
+    }
+
+    private static Direction nearestStep(final float x, final float y, final float z,
+                                         final Direction orElse) {
+        float absX = Math.abs(x);
+        float absY = Math.abs(y);
+        float absZ = Math.abs(z);
+        if (absX > absZ && absX > absY) {
+            return x < 0.0F ? Direction.WEST : Direction.EAST;
+        } else if (absZ > absX && absZ > absY) {
+            return z < 0.0F ? Direction.NORTH : Direction.SOUTH;
+        } else if (absY > absX && absY > absZ) {
+            return y < 0.0F ? Direction.DOWN : Direction.UP;
+        } else {
+            return orElse;
+        }
+    }
+
+    private Quaternionf snapNearest(final Quaternionfc source) {
+        return this.usesOrientedCollision()
+                ? snapToNearestRightAngle(source)
+                : snapToNearestRightAngleLegacy(source);
+    }
+
     @Override
     public void tick() {
         if (this.hurtTime > 0) {
@@ -2855,6 +3239,8 @@ public class LivingBlock extends Mob {
         if (pivotSequence) {
             this.setDeltaMovement(Vec3.ZERO);
         }
+        this.refreshHullOrientation();
+        this.vanillaOrderThisTick = !this.usesOrientedCollision();
         this.markTickStart();
         this.rollDeltaX += this.rollCarryX;
         this.rollDeltaZ += this.rollCarryZ;
@@ -2868,7 +3254,7 @@ public class LivingBlock extends Mob {
         if (!pivotSequence && this.rollSoundTime-- <= 0
                 && !this.normalStepSounds() && !this.movement.flopsOnLanding()
                 && !this.lastRotation.equals(this.rotation, ROLL_ROTATION_DELTA_EPSILON)) {
-            Quaternionf groundAngle = snapToNearestRightAngle(this.rotation);
+            Quaternionf groundAngle = this.snapNearest(this.rotation);
             Quaternionf lastToGround = new Quaternionf(this.lastRotation);
             lastToGround.conjugate();
             lastToGround.mul(groundAngle);
@@ -2892,7 +3278,7 @@ public class LivingBlock extends Mob {
         }
         this.rollDeltaX = 0.0F;
         this.rollDeltaZ = 0.0F;
-        if (!pivotSequence || this.climbPivotAligning) {
+        if (this.usesOrientedCollision() && (!pivotSequence || this.climbPivotAligning)) {
             this.bleedRollResidual();
         }
         if (!this.level().isClientSide() && (!pivotSequence || this.climbPivotAligning)) {
@@ -2903,11 +3289,11 @@ public class LivingBlock extends Mob {
         this.snapSettledPose();
         this.rotationRestored = true;
         if (this.tickCount % ROT_LOG_INTERVAL == 0) {
-            LOGGER.debug("[livingblock] rot side={} id={} q={} settled={} anchored={} ground={} res={} axis={} phase={} fb={} rc={} pend={} rej={} ori={} data={} pos={}",
+            LOGGER.debug("[livingblock] rot side={} id={} q={} settled={} ground={} res={} axis={} phase={} fb={} rc={} pend={} rej={} ori={} data={} pos={}",
                     this.level().isClientSide() ? "C" : "S", this.getId(),
                     String.format("%.2f,%.2f,%.2f,%.2f",
                             this.rotation.w(), this.rotation.x(), this.rotation.y(), this.rotation.z()),
-                    this.isOrientationSettled(), this.isAnchored(), this.onGround(),
+                    this.isOrientationSettled(), this.onGround(),
                     String.format("%.1f", Math.toDegrees(angularDistance(this.rotation,
                             LivingBlockOrientation.fromQuaternion(this.rotation)))),
                     this.rollPhaseAxis, String.format("%.1f", this.rollPhase), this.rollFallbacks,
@@ -2924,7 +3310,10 @@ public class LivingBlock extends Mob {
                 && this.movement instanceof RollingMovement rolling) {
             rolling.advanceClimbPivot(this);
         }
+        this.refreshHullOrientation();
+        this.tickFrozenWatch();
 
+        this.tickLandingWatch();
         if (!this.level().isClientSide()) {
             this.assignShapeSeed();
         }
@@ -2944,7 +3333,7 @@ public class LivingBlock extends Mob {
             BlockPos flopPos = this.getOnPosLegacy();
             BlockState flopState = this.level().getBlockState(flopPos);
             this.playFaceLandingSound(flopPos, flopState,
-                    LivingBlockCollisionHandler.groundContactSpan(this, snapToNearestRightAngle(this.rotation)));
+                    LivingBlockCollisionHandler.groundContactSpan(this, this.snapNearest(this.rotation)));
             this.level().gameEvent(net.minecraft.world.level.gameevent.GameEvent.STEP, flopPos, net.minecraft.world.level.gameevent.GameEvent.Context.of(this, flopState));
         }
 
@@ -2969,87 +3358,41 @@ public class LivingBlock extends Mob {
 
             this.releaseStuckSequence();
 
-            if (!this.level().isClientSide() && this.isAnchored() && !this.onGround()
-                    && this.airTicks > ANCHOR_AIR_TICKS) {
-                LOGGER.debug("[livingblock] unanchor id={} air={} settled={} tilt={} vel={} pos={}",
-                        this.getId(), this.airTicks, this.isOrientationSettled(),
-                        String.format("%.1f", this.tiltDegrees()), vec(this.getDeltaMovement()),
-                        String.format("%.2f,%.2f,%.2f", this.getX(), this.getY(), this.getZ()));
-                this.setAnchored(false);
-            }
-
             Target target = this.getMovementTarget();
             Vec3 targetPos = target.resolvePosition(this.level());
-            if (targetPos != null && !this.isAnchored() && !this.isHoldingForRider()
-                    && !this.waitingForBase(targetPos)) {
+            if (targetPos != null && !this.isHoldingForRider()) {
                 boolean moved = this.movement.moveTowardsTarget(this, target, targetPos);
-                boolean tracked = !this.level().isClientSide() && target.type() == Target.Type.POSITION;
-                double distance = Math.sqrt(targetPos.distanceToSqr(this.position()));
-                if (tracked && distance < this.lastTargetDistance - TARGET_PROGRESS_EPSILON) {
-                    this.lastTargetDistance = distance;
-                    this.arrivalStall = 0;
-                }
-
                 if (!moved && target.clearWhenNear()) {
-                    if (this.pursuingTarget) {
-                        this.pursuingTarget = false;
-                        this.movement.resetMovement(this);
+                    if (this.vanillaOrderThisTick) {
+                        this.setMovementTarget(Target.NONE);
                     }
-                    if (tracked && this.onGround() && this.reachedTarget(target, targetPos)) {
-                        LOGGER.debug("[livingblock] anchor id={} dist={} radius={} tilt={} target={} pos={}",
-                                this.getId(), String.format("%.4f", distance),
-                                String.format("%.3f", settleRadius(target)),
-                                String.format("%.1f", this.tiltDegrees()),
-                                String.format("%.3f,%.3f,%.3f", targetPos.x, targetPos.y, targetPos.z),
-                                String.format("%.3f,%.3f,%.3f", this.getX(), this.getY(), this.getZ()));
-                        this.snapToSlot(targetPos);
-                        this.setAnchored(true);
-                        this.arrivalStall = 0;
-                        this.stallGiveUps = 0;
-                    }
-                } else {
-                    this.pursuingTarget = true;
-                }
-
-                if (this.isClimbing()) {
-                    this.arrivalStall = 0;
-                }
-                if (tracked && !this.isAnchored() && !this.isClimbing()
-                        && ++this.arrivalStall >= ARRIVAL_STALL_TICKS) {
-                    this.arrivalStall = 0;
-                    this.lastTargetDistance = distance;
-                    this.stallGiveUps++;
-                    boolean giveUp = this.stallGiveUps >= STALL_GIVE_UPS;
-                    boolean near = distance <= target.distance() + ARRIVAL_ANCHOR_SLACK;
-                    LOGGER.debug("[livingblock] stall id={} tries={} giveup={} near={} replans={} dist={} moved={} ground={} tilt={} pos={}",
-                            this.getId(), this.stallGiveUps, giveUp, near, this.targetReplans,
-                            String.format("%.2f", distance), moved, this.onGround(),
-                            String.format("%.1f", this.tiltDegrees()),
-                            String.format("%.2f,%.2f,%.2f", this.getX(), this.getY(), this.getZ()));
-                    if (!giveUp) {
-                        if (!this.isNudging()) {
-                            this.reportBlocked();
-                        }
-                    } else if (near && this.onGround()) {
-                        this.stallGiveUps = 0;
-                        if (this.isOrientationSettled()) {
-                            this.setAnchored(true);
-                        } else if (!this.isNudging()) {
-                            this.reportBlocked();
-                        }
-                    } else if (++this.targetReplans <= TARGET_REPLAN_LIMIT) {
-                        this.stallGiveUps = 0;
-                        this.lastTargetDistance = Double.MAX_VALUE;
-                        this.pursuingTarget = true;
-                        this.movement.resetMovement(this);
-                    } else {
-                        LOGGER.debug("[livingblock] abandon id={} dist={} replans={} pos={}",
-                                this.getId(), String.format("%.2f", distance), this.targetReplans,
-                                String.format("%.2f,%.2f,%.2f", this.getX(), this.getY(), this.getZ()));
-                        this.clearMovementTarget();
-                    }
+                    this.movement.resetMovement(this);
                 }
             }
+        }
+
+        boolean mover = this.vanillaOrderThisTick && !this.level().isClientSide()
+                && this.isEffectiveAi();
+        Vec3 movePre = this.position();
+        Vec3 moveDelta = this.getDeltaMovement();
+        if (mover) {
+            this.setBoundingBox(this.makeBoundingBox());
+            this.liftOutOfFloor();
+        }
+        AABB moveHull = this.getBoundingBox();
+        double floorGap = this.floorGap(moveHull);
+        if (mover) {
+            this.move(MoverType.SELF, this.getDeltaMovement());
+        }
+        if (this.landingWatch > 0 && !this.level().isClientSide()) {
+            LOGGER.debug("[livingblock] movetrace id={} ran={} ai={} vanilla={} hull={} gap={} pre={} delta={} post={} ground={} vcol={}",
+                    this.getId(), mover, this.isEffectiveAi(), this.vanillaOrderThisTick,
+                    String.format("%.4f|%.10f|%.4f", moveHull.minX, moveHull.minY, moveHull.minZ),
+                    String.format("%.3e", floorGap),
+                    String.format("%.4f|%.4f|%.4f", movePre.x, movePre.y, movePre.z),
+                    String.format("%.4f|%.4f|%.4f", moveDelta.x, moveDelta.y, moveDelta.z),
+                    String.format("%.4f,%.4f,%.4f", this.getX(), this.getY(), this.getZ()),
+                    this.onGround(), this.verticalCollision);
         }
 
         AABB nudgeBounds = this.getBoundingBox();
@@ -3061,10 +3404,10 @@ public class LivingBlock extends Mob {
         BlockPos posBelow = this.getBlockPosBelowThatAffectsMyMovement();
         float blockFriction = this.onGround() ? this.level().getBlockState(posBelow).getBlock().getFriction() : 1.0F;
         float friction = blockFriction * 0.96F;
-        float frictionY = isClimbing ? 0.57600003F : 1.0F;
+        float frictionY = isClimbing ? 0.57600003F : (this.vanillaOrderThisTick ? 0.98F : 1.0F);
         this.setDeltaMovement(this.getDeltaMovement().multiply(friction, frictionY, friction));
 
-        if (isClimbing && this.onGround()) {
+        if (this.vanillaOrderThisTick ? !isClimbing || this.onGround() : isClimbing && this.onGround()) {
             this.applyGravity();
         }
 
@@ -3087,12 +3430,63 @@ public class LivingBlock extends Mob {
         boolean lockedTilted = this.onGround()
                 && this.tiltDegrees() > Math.toDegrees(UNSETTLE_ANGLE);
         double stillLimit = lockedTilted ? RIGHTING_SPEED_SQR : Mth.square(0.001);
-        if (!this.descentSequence && !this.climbPivotMovedThisTick && (this.onGround()
-                && this.getDeltaMovement().horizontalDistanceSqr() < stillLimit
-                || isClimbing && Math.abs(this.getDeltaMovement().y) < 0.001)) {
+        boolean quiet = !this.descentSequence && !this.climbPivotMovedThisTick
+                && (this.onGround()
+                        && this.getDeltaMovement().horizontalDistanceSqr() < stillLimit
+                        || isClimbing && Math.abs(this.getDeltaMovement().y) < 0.001);
+        int quietState = quiet ? 1 : 0;
+        if (!this.level().isClientSide() && quietState != this.quietLoggedState
+                && this.tickCount - this.quietLogTick >= QUIET_LOG_INTERVAL) {
+            this.quietLoggedState = quietState;
+            this.quietLogTick = this.tickCount;
+            LOGGER.debug("[livingblock] quiet id={} open={} vel={} limit={} ground={} climb={} desc={} pivot={} tilt={} pos={}",
+                    this.getId(), quiet,
+                    String.format("%.5f", Math.sqrt(this.getDeltaMovement().horizontalDistanceSqr())),
+                    String.format("%.5f", Math.sqrt(stillLimit)), this.onGround(), isClimbing,
+                    this.descentSequence, this.climbPivotMovedThisTick,
+                    String.format("%.1f", this.tiltDegrees()),
+                    String.format("%.2f,%.2f,%.2f", this.getX(), this.getY(), this.getZ()));
+        }
+        if (quiet) {
             Vec3 blockGridDeltaFull = this.blockPosition().getBottomCenter().subtract(this.position());
             Vec3 blockGridDelta = new Vec3(blockGridDeltaFull.x, 0, blockGridDeltaFull.z);
             double blockGridOffset = blockGridDelta.length();
+            if (!this.usesOrientedCollision()) {
+                if (!this.entityData.get(DATA_CLIMB_PIVOT_ACTIVE)) {
+                    double legacyAlpha = Mth.clamp(blockGridOffset * 64.0, 0.5, 1.0);
+                    Quaternionf legacyBefore = new Quaternionf(this.rotation);
+                    Quaternionf legacyTarget = this.snapNearest(this.rotation);
+                    if (!legacyTarget.isFinite()) {
+                        legacyTarget = snapToNearestRightAngle(this.rotation);
+                    }
+                    double legacySpan = angleBetween(this.rotation, legacyTarget);
+                    if (legacySpan > MIN_SNAP_SPAN_DEGREES) {
+                        double legacyStep = Math.min(legacyAlpha * legacySpan, LivingBlockPivot.DEGREES);
+                        this.rotation.slerp(legacyTarget, (float) (legacyStep / legacySpan));
+                    }
+                    if (!this.level().isClientSide()) {
+                        double moved = angleBetween(legacyBefore, this.rotation);
+                        if (moved > 0.05) {
+                            LOGGER.debug("[livingblock] legacysnap id={} alpha={} moved={} offset={} tilt={} ground={} pos={}",
+                                    this.getId(), String.format("%.3f", legacyAlpha),
+                                    String.format("%.2f", moved),
+                                    String.format("%.5f", blockGridOffset),
+                                    String.format("%.2f", this.tiltDegrees()), this.onGround(),
+                                    String.format("%.3f,%.3f,%.3f", this.getX(), this.getY(), this.getZ()));
+                        }
+                    }
+                }
+                if (blockGridOffset > GRID_RECENTRE_MIN && blockGridOffset <= GRID_RECENTRE_MAX
+                        && this.isIdle() && !this.level().isClientSide()) {
+                    boolean groundedBeforeRecentre = this.onGround();
+                    double beforeRecentreX = this.getX();
+                    double beforeRecentreZ = this.getZ();
+                    this.move(MoverType.SELF, blockGridDelta);
+                    this.setOnGround(groundedBeforeRecentre);
+                    this.xo += this.getX() - beforeRecentreX;
+                    this.zo += this.getZ() - beforeRecentreZ;
+                }
+            } else {
             this.finishRollTurn(QTURN_REST);
             if (!this.level().isClientSide()
                     && Math.abs(this.rollPending) < LivingBlockRoll.RESIDUAL_EPSILON
@@ -3112,7 +3506,7 @@ public class LivingBlock extends Mob {
                 double penBefore = this.penetrationNow();
                 Quaternionf beforeSnap = new Quaternionf(this.rotation);
                 Quaternionf preSnap = new Quaternionf(this.rotation);
-                Quaternionf target = snapToNearestRightAngle(this.rotation);
+                Quaternionf target = this.snapNearest(this.rotation);
                 if (this.descentEndTick != Integer.MIN_VALUE
                         && this.tickCount - this.descentEndTick <= DESCENT_SETTLE_TICKS
                         && this.descentEndDir.getAxis().isHorizontal()) {
@@ -3123,9 +3517,7 @@ public class LivingBlock extends Mob {
                     }
                 }
                 double span = angleBetween(this.rotation, target);
-                this.rotation.slerp(target, span > LivingBlockRoll.SETTLE_RATE_DEGREES
-                        ? (float) (LivingBlockRoll.SETTLE_RATE_DEGREES / span)
-                        : (float) rotationAlpha);
+                this.rotation.slerp(target, (float) rotationAlpha);
                 this.descentWrite("snaprotation");
                 if (this.descentEndTick != Integer.MIN_VALUE
                         && this.tickCount - this.descentEndTick <= 10) {
@@ -3147,13 +3539,28 @@ public class LivingBlock extends Mob {
                     }
                 }
             }
-            if (blockGridOffset > GRID_RECENTRE_MIN && blockGridOffset <= 0.125
-                    && this.getMovementTarget().type() != Target.Type.POSITION
-                    && (this.isIdle() || this.isAnchored()) && !this.level().isClientSide()) {
+            boolean recentreMin = blockGridOffset > GRID_RECENTRE_MIN;
+            boolean recentreMax = blockGridOffset <= GRID_RECENTRE_MAX;
+            boolean recentreIdle = this.isIdle();
+            if (!this.level().isClientSide()) {
+                String verdict = recentreMin + "/" + recentreMax + "/" + recentreIdle;
+                if (!verdict.equals(this.recentreVerdict)) {
+                    this.recentreVerdict = verdict;
+                    LOGGER.debug("[livingblock] recentre id={} offset={} min={} max={} idle={} held={} pos={}",
+                            this.getId(), String.format("%.5f", blockGridOffset), recentreMin,
+                            recentreMax, recentreIdle, this.isHoldingForRider(),
+                            String.format("%.3f,%.3f,%.3f", this.getX(), this.getY(), this.getZ()));
+                }
+            }
+            if (recentreMin && recentreMax && recentreIdle && !this.level().isClientSide()) {
                 boolean groundedBeforeRecentre = this.onGround();
+                double beforeRecentreX = this.getX();
+                double beforeRecentreZ = this.getZ();
                 this.move(MoverType.SELF, blockGridDelta);
                 this.setOnGround(groundedBeforeRecentre);
-                this.descentWrite("recentre");
+                this.xo += this.getX() - beforeRecentreX;
+                this.zo += this.getZ() - beforeRecentreZ;
+            }
             }
             //setBoundingBox(rotateAABB());
         }
@@ -3168,6 +3575,9 @@ public class LivingBlock extends Mob {
         }
 
         double spin = angleBetween(this.tickStartRotation, this.rotation);
+        this.traceSpin = spin;
+        this.traceMoved = this.position().distanceTo(new Vec3(this.xo, this.yo, this.zo));
+        this.tickWriterTrace();
         if (spin > SPIN_LOG_DEGREES && this.tickCount % SPIN_LOG_INTERVAL == 0
                 && !this.level().isClientSide()) {
             LOGGER.debug("[livingblock] spin id={} total={} roll={} snap={} ground={} settled={} moved={}",
@@ -3210,11 +3620,13 @@ public class LivingBlock extends Mob {
             double sizeZ = bounds.getZsize();
             boolean rollAirborne = !this.onGround() && this.rollAirTicks > ROLL_AIR_GRACE;
             float airRoll = this.tumbleAirborne || this.isStepDriving() ? 1.0F
-                    : this.isLeashed() ? AIR_DRAG_ROLL : 0.0F;
-            float rotationSpeed = !isClimbing && rollAirborne ? airRoll : 1.0F;
+                    : this.isLeashed() || !this.usesOrientedCollision() ? AIR_DRAG_ROLL : 0.0F;
+            float rotationSpeed = this.usesOrientedCollision()
+                    ? (!isClimbing && rollAirborne ? airRoll : 1.0F)
+                    : (!isClimbing && !this.onGround() ? (this.tumbleAirborne ? 1.0F : 0.5F) : 1.0F);
             double moveX = this.getX() - this.xo;
             double moveZ = this.getZ() - this.zo;
-            if (!isClimbing) {
+            if (!isClimbing && this.usesOrientedCollision()) {
                 int axis = LivingBlockRoll.dominantAxis(moveX, moveZ, this.rollPhaseAxis);
                 if (axis != this.rollPhaseAxis) {
                     this.rollAxisFlips++;
@@ -3228,12 +3640,14 @@ public class LivingBlock extends Mob {
                 }
             }
 
+            boolean oriented = this.usesOrientedCollision();
             if (!isClimbing) {
                 if (sizeZ > 1.0E-5F) {
                     double sideLength = sizeZ < sizeY
                             ? Mth.lerp((double)tilt, Math.sqrt(sizeZ / sizeY) * sizeY, sizeY)
                             : Mth.lerp((double)tilt, sizeZ, Math.sqrt(sizeY / sizeZ) * sizeZ);
-                    double step = moveZ * rotationSpeed / quantizedSide(sideLength, false);
+                    double step = moveZ * rotationSpeed
+                            / quantizedSide(sideLength, !oriented);
                     this.rollDeltaX = this.rollDeltaX + (float)step;
                     if (this.rollPhaseAxis == 0) {
                         this.rollPhase += step * 90.0;
@@ -3244,13 +3658,16 @@ public class LivingBlock extends Mob {
                     double sideLength = sizeX < sizeY
                             ? Mth.lerp((double)tilt, Math.sqrt(sizeX / sizeY) * sizeY, sizeY)
                             : Mth.lerp((double)tilt, sizeX, Math.sqrt(sizeY / sizeX) * sizeX);
-                    double step = moveX * rotationSpeed / quantizedSide(sideLength, false);
+                    double step = moveX * rotationSpeed
+                            / quantizedSide(sideLength, !oriented);
                     this.rollDeltaZ = this.rollDeltaZ - (float)step;
                     if (this.rollPhaseAxis == 2) {
                         this.rollPhase -= step * 90.0;
                     }
                 }
-            } else if (!this.climbPivotMovedThisTick && this.isEntropicForm()) {
+            }
+
+            if (isClimbing && !this.climbPivotMovedThisTick) {
                 Direction groundDirection = this.getClimbingDirection();
                 boolean onXAxis = groundDirection.getAxis() == Direction.Axis.X;
                 double size = onXAxis ? sizeZ : sizeX;
@@ -3260,13 +3677,18 @@ public class LivingBlock extends Mob {
                 int sign = groundDirection.getAxisDirection().getStep();
                 float roll = (float)((this.getY() - this.yo) * rotationSpeed / sideLength * sign);
                 if (onXAxis) {
-                    this.rollDeltaZ -= roll;
+                    this.rollDeltaZ += this.usesOrientedCollision() ? -roll : roll;
                 } else {
                     this.rollDeltaX += roll;
                 }
             }
         }
 
+        if (this.landingWatch > 0 && !this.level().isClientSide()) {
+            LOGGER.debug("[livingblock] tickend id={} pos={} vy={} ground={}", this.getId(),
+                    String.format("%.4f,%.4f,%.4f", this.getX(), this.getY(), this.getZ()),
+                    String.format("%.4f", this.getDeltaMovement().y), this.onGround());
+        }
         this.previousFallSpeed = this.getDeltaMovement().y;
 
         if (!this.level().isClientSide()) {
@@ -3331,6 +3753,9 @@ public class LivingBlock extends Mob {
     }
 
     private void easeOutOfOverlap() {
+        if (!this.usesOrientedCollision()) {
+            return;
+        }
         if (this.separationBackoff > 0) {
             this.separationBackoff--;
             return;
@@ -3385,8 +3810,8 @@ public class LivingBlock extends Mob {
         return this.movement.normalStepSounds();
     }
 
-    private static double quantizedSide(final double sideLength, final boolean isClimbing) {
-        return isClimbing ? sideLength : LivingBlockRoll.quantizedSide(sideLength);
+    private static double quantizedSide(final double sideLength, final boolean raw) {
+        return raw ? sideLength : LivingBlockRoll.quantizedSide(sideLength);
     }
 
     private void finishRollTurn(final int cause) {
@@ -3399,17 +3824,16 @@ public class LivingBlock extends Mob {
         }
         double phase = this.rollPhase;
         this.rollPendingAxis = this.rollPhaseAxis;
-        boolean mayComplete = !this.isAnchored() && this.rollingIsPossible();
-        double residual = LivingBlockRoll.residualToQuarter(phase, mayComplete);
+        double residual = LivingBlockRoll.residualToQuarter(phase);
         this.rollPending += residual;
         this.rollPhase = 0.0;
         if ((cause == QTURN_AXIS || Math.abs(phase) >= LivingBlockRoll.RESIDUAL_EPSILON)
                 && this.tickCount - this.qturnLogTick >= QTURN_LOG_INTERVAL) {
             this.qturnLogTick = this.tickCount;
-            LOGGER.debug("[livingblock] qturn side={} id={} cause={} phase={} res={} may={} axis={} pend={} flips={} ground={} pos={}",
+            LOGGER.debug("[livingblock] qturn side={} id={} cause={} phase={} res={} axis={} pend={} flips={} ground={} pos={}",
                     this.level().isClientSide() ? "C" : "S", this.getId(),
                     cause == QTURN_AXIS ? "axis" : "rest",
-                    String.format("%.1f", phase), String.format("%.1f", residual), mayComplete,
+                    String.format("%.1f", phase), String.format("%.1f", residual),
                     this.rollPendingAxis, String.format("%.1f", this.rollPending),
                     this.rollAxisFlips, this.onGround(),
                     String.format("%.2f,%.2f,%.2f", this.getX(), this.getY(), this.getZ()));
@@ -3559,6 +3983,14 @@ public class LivingBlock extends Mob {
         if (this.level().isClientSide() || this.isClimbing() || !this.onGround()) {
             return true;
         }
+        if (!this.usesOrientedCollision()) {
+            if (!this.arcVetoSkipLogged) {
+                this.arcVetoSkipLogged = true;
+                LOGGER.debug("[livingblock] arcveto id={} type={} state=disabled reason=axisalignedhull dir={}",
+                        this.getId(), this.getType().toShortString(), direction);
+            }
+            return true;
+        }
         float dx = direction.getStepZ() != 0 ? Math.signum(direction.getStepZ()) : 0.0F;
         float dz = direction.getStepX() != 0 ? -Math.signum(direction.getStepX()) : 0.0F;
         if (dx == 0.0F && dz == 0.0F) {
@@ -3617,6 +4049,9 @@ public class LivingBlock extends Mob {
     }
 
     private void depenetrateTerrain() {
+        if (this.climbPivotSequence || this.landingWatch > 0) {
+            return;
+        }
         LivingBlockCollisionShapes.Placement own = LivingBlockCollisionShapes.preciseGeometry(this);
         if (own == null) {
             return;
@@ -3670,14 +4105,56 @@ public class LivingBlock extends Mob {
         }
         java.util.function.DoubleSupplier overlap =
                 LivingBlockCollisionHandler.rollOverlapProbe(this, this.rollReach());
+        boolean tell = !this.level().isClientSide();
         if (overlap == null) {
+            if (tell) {
+                LOGGER.debug("[livingblock] rollprobe id={} state=noprobe dx={} dz={} carry={},{} tilt={}",
+                        this.getId(), String.format("%.4f", dx), String.format("%.4f", dz),
+                        String.format("%.4f", this.rollCarryX), String.format("%.4f", this.rollCarryZ),
+                        String.format("%.2f", this.tiltDegrees()));
+            }
             applyMovementRotation(dx, dz, this.rotation);
             return;
         }
+        if (tell) {
+            LOGGER.debug("[livingblock] rollprobe id={} state=gated dx={} dz={} carry={},{} tilt={} ground={} settled={} {}",
+                    this.getId(), String.format("%.4f", dx), String.format("%.4f", dz),
+                    String.format("%.4f", this.rollCarryX), String.format("%.4f", this.rollCarryZ),
+                    String.format("%.2f", this.tiltDegrees()), this.onGround(),
+                    this.isOrientationSettled(),
+                    LivingBlockCollisionHandler.rollOverlapReport(this, this.rollReach()));
+        }
         Quaternionf beforeRoll = new Quaternionf(this.rotation);
+        double[] gainBefore = tell
+                ? LivingBlockCollisionHandler.rollOverlapPair(this, this.rollReach()) : null;
+        double[] demand = null;
+        if (tell) {
+            Quaternionf probePose = new Quaternionf(this.rotation);
+            LivingBlockRoll.applyRoll(this.rotation, dx, dz);
+            demand = LivingBlockCollisionHandler.rollOverlapPair(this, this.rollReach());
+            this.rotation.set(probePose);
+        }
         LivingBlockRoll.GatedRoll gate = LivingBlockRoll.gateRoll(this.rotation, dx, dz,
                 ROLL_GATE_BUDGET, ROLL_GATE_PASSES, overlap);
+        if (gainBefore != null) {
+            double[] after = LivingBlockCollisionHandler.rollOverlapPair(this, this.rollReach());
+            LOGGER.debug("[livingblock] rollgain id={} scale={} terrainbefore={} terrainafter={} terraingain={} terraindemand={} bodybefore={} bodyafter={} bodygain={} bodydemand={} budget={} dx={} dz={}",
+                    this.getId(), String.format("%.3f", gate.scale()),
+                    String.format("%.5f", gainBefore[0]), String.format("%.5f", after[0]),
+                    String.format("%+.5f", after[0] - gainBefore[0]),
+                    String.format("%+.5f", demand[0] - gainBefore[0]),
+                    String.format("%.5f", gainBefore[1]), String.format("%.5f", after[1]),
+                    String.format("%+.5f", after[1] - gainBefore[1]),
+                    String.format("%+.5f", demand[1] - gainBefore[1]),
+                    String.format("%.5f", ROLL_GATE_BUDGET),
+                    String.format("%.4f", dx), String.format("%.4f", dz));
+        }
         if (gate.scale() >= 1.0) {
+            if (tell) {
+                LOGGER.debug("[livingblock] rollgate id={} state=full scale={} dx={} dz={}",
+                        this.getId(), String.format("%.3f", gate.scale()),
+                        String.format("%.4f", dx), String.format("%.4f", dz));
+            }
             return;
         }
         if (this.prefersLowStep() && this.seatRollByTipping(beforeRoll, dx, dz, gate)) {
@@ -3799,15 +4276,42 @@ public class LivingBlock extends Mob {
 
     @Override
     public boolean isPushable() {
-        return false;
+        return !this.usesOrientedCollision() && !this.isDeadOrDying() && !this.holdingGround;
     }
 
     @Override
     public void push(Entity entity) {
+        if (!this.usesOrientedCollision()) {
+            this.pushAgainst(entity, false);
+        }
+    }
+
+    @Override
+    protected void doPush(final Entity entity) {
+        this.pushAgainst(entity, true);
+    }
+
+    private void pushAgainst(final Entity other, final boolean ours) {
+        if (this.heldRider(other.getId(), this.level().getGameTime(), CARRY_PUSH_GRACE)) {
+            return;
+        }
+        this.holdingGround = other instanceof Player;
+        try {
+            if (ours) {
+                super.doPush(other);
+            } else {
+                super.push(other);
+            }
+        } finally {
+            this.holdingGround = false;
+        }
     }
 
     @Override
     protected void pushEntities() {
+        if (!this.usesOrientedCollision()) {
+            super.pushEntities();
+        }
     }
 
     @Override
@@ -3823,8 +4327,19 @@ public class LivingBlock extends Mob {
         return this.movement.adjustStepUpMovement(this, movement);
     }
 
+    @Override
+    public void travel(final Vec3 input) {
+        if (this.vanillaOrderThisTick) {
+            this.calculateEntityAnimation(false);
+            return;
+        }
+        super.travel(input);
+    }
+
     public void resetMaxUpStep() {
-        this.maxUpStep = (float)Math.min(0.6, this.getBaseShapeBounds().getYsize());
+        this.maxUpStep = this.usesOrientedCollision()
+                ? (float)Math.min(0.6, this.getBaseShapeBounds().getYsize())
+                : 0.6F;
     }
 
     private void applyTumbleDynamics() {
@@ -3895,6 +4410,9 @@ public class LivingBlock extends Mob {
         if (this.shapeBoxes == null || this.rotation == null) {
             return super.makeBoundingBox();
         }
+        if (!this.orientedHull()) {
+            return this.boundingBoxFor(this.restingFace());
+        }
         if (this.isSettledPose()) {
             return this.boundingBoxFor(this.orientation);
         }
@@ -3930,7 +4448,13 @@ public class LivingBlock extends Mob {
 
         if (settled && nearest.index() != this.entityData.get(DATA_ORIENTATION)) {
             AABB candidate = this.boundingBoxFor(nearest);
-            if (this.level().noBlockCollision(this, candidate.deflate(SETTLE_FIT_EPSILON))) {
+            boolean fits = this.level().noBlockCollision(this, candidate.deflate(SETTLE_FIT_EPSILON));
+            if (fits || !this.usesOrientedCollision()) {
+                if (!fits) {
+                    LOGGER.debug("[livingblock] facemiss id={} index={} box={} pos={}",
+                            this.getId(), nearest.index(), candidate,
+                            String.format("%.3f,%.3f,%.3f", this.getX(), this.getY(), this.getZ()));
+                }
                 this.entityData.set(DATA_ORIENTATION, nearest.index());
             } else {
                 settled = false;
@@ -4011,75 +4535,6 @@ public class LivingBlock extends Mob {
         this.xOld += applied.x;
         this.yOld += applied.y;
         this.zOld += applied.z;
-    }
-
-    public boolean isAnchored() {
-        return this.entityData.get(DATA_ANCHORED);
-    }
-
-    private void setAnchored(final boolean value) {
-        if (this.entityData.get(DATA_ANCHORED) != value) {
-            this.entityData.set(DATA_ANCHORED, value);
-        }
-    }
-
-    private boolean reachedTarget(final Target target, final Vec3 targetPos) {
-        Vec3 pos = this.position();
-        double radius = target.distance();
-        if (!this.isOrientationSettled()) {
-            return false;
-        }
-        if (Math.abs(targetPos.y - pos.y) > radius) {
-            return false;
-        }
-        if (targetPos.subtract(pos).horizontalDistanceSqr() <= Mth.square(settleRadius(target))) {
-            return this.facingAsAsked(target);
-        }
-        return BlockPos.containing(targetPos).getBottomCenter().subtract(pos).horizontalDistanceSqr()
-                <= Mth.square(radius);
-    }
-
-    private void snapToSlot(final Vec3 targetPos) {
-        Vec3 delta = new Vec3(targetPos.x - this.getX(), 0.0, targetPos.z - this.getZ());
-        double reach = delta.horizontalDistanceSqr();
-        if (reach < SNAP_MIN_SQR || reach > Mth.square(SETTLE_RADIUS)) {
-            return;
-        }
-        boolean grounded = this.onGround();
-        this.move(MoverType.SELF, delta);
-        this.setOnGround(grounded);
-        LOGGER.debug("[livingblock] snap id={} asked={} left={} pos={}",
-                this.getId(), String.format("%.4f", Math.sqrt(reach)),
-                String.format("%.4f", Math.sqrt(new Vec3(targetPos.x - this.getX(), 0.0,
-                        targetPos.z - this.getZ()).horizontalDistanceSqr())),
-                String.format("%.4f,%.4f,%.4f", this.getX(), this.getY(), this.getZ()));
-    }
-
-    private static final double SNAP_MIN_SQR = 1.0E-8;
-
-    private static final int FACE_WAIT_TICKS = 120;
-
-    private boolean facingAsAsked(final Target target) {
-        int wanted = target.orientation();
-        if (wanted == Target.ANY_FACE || this.getOrientation().index() == wanted) {
-            this.faceWaitTicks = 0;
-            return true;
-        }
-        if (++this.faceWaitTicks < FACE_WAIT_TICKS) {
-            return false;
-        }
-        LOGGER.debug("[livingblock] face id={} asked={} got={} ticks={} pos={}",
-                this.getId(), wanted, this.getOrientation().index(), this.faceWaitTicks,
-                String.format("%.3f,%.3f,%.3f", this.getX(), this.getY(), this.getZ()));
-        this.faceWaitTicks = 0;
-        return true;
-    }
-
-    private int faceWaitTicks;
-
-    public static double settleRadius(final Target target) {
-        return target.type() == Target.Type.POSITION
-                ? Math.min(target.distance(), SETTLE_RADIUS) : target.distance();
     }
 
     @Override
@@ -4184,11 +4639,11 @@ public class LivingBlock extends Mob {
             return;
         }
         LOGGER.debug("[livingblock] trace id={} n={} pos={} vel={} ground={} air={} settled={} tilt={} "
-                        + "anchored={} climb={} step={} buried={} escape={} terrain={} obb={} with={} "
+                        + "climb={} step={} buried={} escape={} terrain={} obb={} with={} "
                         + "push={} applied={} in={} world={} full={} rise={} boxes={} blocks={} colliders={}",
                 this.getId(), this.troubleTicks, vec(this.position()), vec(this.getDeltaMovement()),
                 this.onGround(), this.airTicks, this.isOrientationSettled(),
-                String.format("%.1f", tilt), this.isAnchored(), this.getClimbingDirection(),
+                String.format("%.1f", tilt), this.getClimbingDirection(),
                 String.format("%.2f", this.maxUpStep()), String.format("%.4f", this.traceBuried),
                 vec(this.traceEscape), this.traceTerrain, String.format("%.4f", this.traceOverlap),
                 this.traceWith, vec(this.tracePush), vec(this.traceApplied), vec(this.traceIn),
@@ -4291,45 +4746,10 @@ public class LivingBlock extends Mob {
     private static final double STUCK_KICK = 0.02;
     private static final double RIGHTING_SPEED_SQR = 4.0E-4;
 
-    private boolean waitingForBase(final Vec3 targetPos) {
-        if (this.climbPivotSequence || this.isClimbing()
-                || this.getDeltaMovement().horizontalDistanceSqr() > BASE_WAIT_SPEED_SQR) {
-            return false;
-        }
-        Vec3 towards = targetPos.subtract(this.position());
-        if (towards.horizontalDistanceSqr() < 1.0E-8) {
-            return false;
-        }
-        LivingBlock base = LivingBlockCollisionHandler.unsettledBaseAhead(this, towards.normalize());
-        if (base == null) {
-            if (this.waitingBaseLogged >= 0 && !this.level().isClientSide()) {
-                LOGGER.debug("[livingblock] waitbase id={} end over={}", this.getId(),
-                        this.waitingBaseLogged);
-            }
-            this.waitingBaseLogged = -1;
-            this.waitingBaseTicks = 0;
-            return false;
-        }
-        if (++this.waitingBaseTicks > BASE_WAIT_LIMIT) {
-            if (this.waitingBaseLogged >= 0 && !this.level().isClientSide()) {
-                LOGGER.debug("[livingblock] waitbase id={} giveup base={} ticks={}",
-                        this.getId(), base.getId(), this.waitingBaseTicks);
-            }
-            this.waitingBaseLogged = -1;
-            return false;
-        }
-        this.setDeltaMovement(0.0, this.getDeltaMovement().y, 0.0);
-        if (this.waitingBaseLogged != base.getId() && !this.level().isClientSide()) {
-            this.waitingBaseLogged = base.getId();
-            LOGGER.debug("[livingblock] waitbase id={} start base={} basetilt={} baseside={} side={} pos={}",
-                    this.getId(), base.getId(), String.format("%.2f", base.tiltDegrees()),
-                    extent(base.getBoundingBox()), extent(this.getBoundingBox()),
-                    String.format("%.2f,%.2f,%.2f", this.getX(), this.getY(), this.getZ()));
-        }
-        return true;
-    }
-
     private void groundOnBody() {
+        if (!this.usesOrientedCollision()) {
+            return;
+        }
         if (this.onGround() || this.getDeltaMovement().y > 0.0) {
             return;
         }
@@ -4358,6 +4778,9 @@ public class LivingBlock extends Mob {
     }
 
     public boolean isHoldingForRider() {
+        if (!this.usesOrientedCollision()) {
+            return false;
+        }
         boolean holding = this.level().getGameTime() < this.riderHoldUntil;
         if (!holding && this.riderHoldLogged) {
             this.riderHoldLogged = false;
