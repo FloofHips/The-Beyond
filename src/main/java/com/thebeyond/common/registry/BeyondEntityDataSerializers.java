@@ -1,13 +1,19 @@
 package com.thebeyond.common.registry;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.entity.util.livingblock.movement.*;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.syncher.EntityDataSerializer;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
+
+import java.nio.ByteBuffer;
 
 public class BeyondEntityDataSerializers {
     public static final DeferredRegister<EntityDataSerializer<?>> ENTITY_DATA_SERIALIZERS =
@@ -106,4 +112,31 @@ public class BeyondEntityDataSerializers {
                     };
                 }
             });
+
+
+
+    public record TrinketGrowth(byte[] growths) {}
+    private static final int MAX_GROWTH_SIZE = 16 * 16;
+    private static final Codec<byte[]> GROWTH_BYTES = Codec.BYTE_BUFFER.xmap(
+            bb -> {
+                byte[] a = new byte[bb.remaining()];
+                bb.get(a);
+                return a;
+            },
+            ByteBuffer::wrap);
+
+    public static final Codec<TrinketGrowth> TRINKET_GROWTH_CODEC =
+            RecordCodecBuilder.create(instance -> instance.group(
+                    GROWTH_BYTES.fieldOf("growths").forGetter(TrinketGrowth::growths)
+            ).apply(instance, TrinketGrowth::new));
+
+    public static final StreamCodec<ByteBuf, TrinketGrowth> TRINKET_GROWTH_STREAM_CODEC =
+            StreamCodec.composite(
+                    ByteBufCodecs.byteArray(MAX_GROWTH_SIZE), TrinketGrowth::growths,
+                    TrinketGrowth::new);
+
+
+    public static final DeferredHolder<EntityDataSerializer<?>, EntityDataSerializer<TrinketGrowth>> TRINKET_GROWTH =
+            ENTITY_DATA_SERIALIZERS.register("trinket_growth", () -> EntityDataSerializer.forValueType(TRINKET_GROWTH_STREAM_CODEC));
+
 }

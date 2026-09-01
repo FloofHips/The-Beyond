@@ -26,7 +26,7 @@ import javax.annotation.Nullable;
 public class LivingBlockCollisionHandler {
 
     private static final org.slf4j.Logger LOGGER = LogUtils.getLogger();
-
+    protected static final boolean shouldLog = false;
     private static final float CONTACT_TOLERANCE = 0.01F;
 
     private static void cornerAt(Vector3f dest, AABB box, int index, double cx, double cy, double cz) {
@@ -192,7 +192,7 @@ public class LivingBlockCollisionHandler {
 
         if (residual > anchorWorstResidual * 2.0 + 1.0E-9) {
             anchorWorstResidual = residual;
-            LOGGER.debug("[livingblock] anchor id={} residual={} lift={} boxes={}",
+            if (shouldLog) LOGGER.debug("[livingblock] anchor id={} residual={} lift={} boxes={}",
                     id, residual, lift, obbs.size());
         }
 
@@ -471,7 +471,7 @@ public class LivingBlockCollisionHandler {
                 hull.inflate(RIM_PROBE), other -> other != mover && other.isAlive());
         boolean sample = mover.tickCount % OVERLAP_LOG_INTERVAL == 0;
         if (others.isEmpty() && sample) {
-            LOGGER.debug("[livingblock] sep id={} others=0 near={} hull={} boxes={}",
+            if (shouldLog) LOGGER.debug("[livingblock] sep id={} others=0 near={} hull={} boxes={}",
                     mover.getId(),
                     mover.level().getEntitiesOfClass(LivingBlock.class, hull.inflate(1.0),
                             other -> other != mover && other.isAlive()).size(),
@@ -560,7 +560,7 @@ public class LivingBlockCollisionHandler {
             rimmed = -1;
         }
         if (mover.recordRim(rimmed) && rimmed >= 0) {
-            LOGGER.debug("[livingblock] rim id={} over={} push={}", mover.getId(), rimmed,
+            if (shouldLog) LOGGER.debug("[livingblock] rim id={} over={} push={}", mover.getId(), rimmed,
                     fmt(new Vec3(pushX, 0.0, pushZ)));
         }
         List<OrientedBox> terrain = blockObbs(mover, hull.inflate(TERRAIN_ESCAPE_MARGIN));
@@ -595,7 +595,7 @@ public class LivingBlockCollisionHandler {
 
         mover.recordOverlap(worst, worstOther == null ? -1 : worstOther.getId());
         if (!others.isEmpty() && (sample || worst > OVERLAP_LOG_THRESHOLD)) {
-            LOGGER.debug("[livingblock] sep id={} others={} obb={} aabb={} with={} state={} piecesA={} sideB={} piecesB={} roll={} snap={} push={} ground={} hull={}",
+            if (shouldLog) LOGGER.debug("[livingblock] sep id={} others={} obb={} aabb={} with={} state={} piecesA={} sideB={} piecesB={} roll={} snap={} push={} ground={} hull={}",
                     mover.getId(), others.size(), String.format("%.3f", worst),
                     String.format("%.3f", phantom),
                     worstOther == null ? -1 : worstOther.getId(),
@@ -941,7 +941,7 @@ public class LivingBlockCollisionHandler {
                 boolean byBlock = blockedDown
                         ? world.y > movement.y + VBLOCK_MIN_FALL
                         : world.y < movement.y - VBLOCK_MIN_FALL;
-                LOGGER.debug("[livingblock] vblock id={} dir={} want={} got={} terrain={} by={} climb={} air={} blocks={} colliders={} pos={}",
+                if (shouldLog) LOGGER.debug("[livingblock] vblock id={} dir={} want={} got={} terrain={} by={} climb={} air={} blocks={} colliders={} pos={}",
                         mover.getId(), blockedUp ? "up" : "down",
                         String.format("%.4f", movement.y),
                         String.format("%.4f", resolved.y), String.format("%.4f", world.y),
@@ -960,7 +960,7 @@ public class LivingBlockCollisionHandler {
         Vector3f escape = new Vector3f();
         if (liftDeepensOverlap(mine, perEntity, escape)) {
             if (!level.isClientSide() && mover.tickCount % SWEEP_LOG_INTERVAL == 0) {
-                LOGGER.debug("[livingblock] liftveto id={} escape={} step={} colliders={}",
+                if (shouldLog) LOGGER.debug("[livingblock] liftveto id={} escape={} step={} colliders={}",
                         mover.getId(),
                         String.format("%.3f,%.3f,%.3f", escape.x(), escape.y(), escape.z()),
                         String.format("%.2f", step), colliders.size());
@@ -995,7 +995,7 @@ public class LivingBlockCollisionHandler {
             }
         }
         if (best == null && shyHeight > 0.0 && !level.isClientSide()) {
-            LOGGER.debug("[livingblock] stepshy id={} height={} gain={} need={} asked={} blocks={} bodies={}",
+            if (shouldLog) LOGGER.debug("[livingblock] stepshy id={} height={} gain={} need={} asked={} blocks={} bodies={}",
                     mover.getId(), String.format("%.4f", shyHeight),
                     String.format("%.5f", Math.sqrt(shyGain)),
                     String.format("%.5f", Math.sqrt(reach)),
@@ -1020,7 +1020,7 @@ public class LivingBlockCollisionHandler {
                                 break;
                             }
                         }
-                        LOGGER.debug("[livingblock] slingshot id={} up={} height={} maxUpStep={} from={} ground={} in={} settled={}",
+                        if (shouldLog) LOGGER.debug("[livingblock] slingshot id={} up={} height={} maxUpStep={} from={} ground={} in={} settled={}",
                                 mover.getId(), String.format("%.3f", stepped.y),
                                 String.format("%.3f", height), step,
                                 fromEntity ? "entity" : "block", mover.onGround(),
@@ -1091,7 +1091,7 @@ public class LivingBlockCollisionHandler {
             return resolved;
         }
         if (!mover.level().isClientSide() && mover.shouldLogSlide()) {
-            LOGGER.debug("[livingblock] slide id={} n={} in={} tan={} out={} colliders={} boxes={}",
+            if (shouldLog) LOGGER.debug("[livingblock] slide id={} n={} in={} tan={} out={} colliders={} boxes={}",
                     mover.getId(),
                     String.format("%.3f,%.3f,%.3f", normal.x(), normal.y(), normal.z()),
                     String.format("%.4f,%.4f", movement.x, movement.z),
@@ -1328,7 +1328,7 @@ public class LivingBlockCollisionHandler {
             }
         }
         if (face == null) {
-            LOGGER.debug("[livingblock] bodyslide who={} gate=noface neighbours={} boxes={} maxY={}",
+            if (shouldLog) LOGGER.debug("[livingblock] bodyslide who={} gate=noface neighbours={} boxes={} maxY={}",
                     mover.getType().toShortString(), neighbours, boxes,
                     String.format("%.4f", bestY));
             return null;
@@ -1349,7 +1349,7 @@ public class LivingBlockCollisionHandler {
         if (destinationFree(mover, box.move(half), now)) {
             return half;
         }
-        LOGGER.debug("[livingblock] bodyslide who={} gate=desttaken face={} slide={} now={} dest={} half={} blocks={}",
+        if (shouldLog) LOGGER.debug("[livingblock] bodyslide who={} gate=desttaken face={} slide={} now={} dest={} half={} blocks={}",
                 mover.getType().toShortString(), fmt(face), fmt(slide),
                 String.format("%.7f", now),
                 String.format("%.7f", bodyOverlapAt(mover, box.move(slide))),
@@ -1657,7 +1657,7 @@ public class LivingBlockCollisionHandler {
                 double limit = Math.max(CARRY_LIFT_LIMIT, Math.abs(base.y));
                 delta = delta.add(0.0, Math.min(limit, gap), 0.0);
                 if (mob.tickCount % OVERLAP_LOG_INTERVAL == 0) {
-                    LOGGER.debug("[livingblock] lift id={} rider={} gap={}",
+                    if (shouldLog) LOGGER.debug("[livingblock] lift id={} rider={} gap={}",
                             mob.getId(), rider.getType().toShortString(), String.format("%.3f", gap));
                 }
             }
@@ -1666,7 +1666,7 @@ public class LivingBlockCollisionHandler {
                         box.move(delta.x, delta.y, delta.z), CARRY_ESCAPE_LIMIT);
                 delta = delta.add(escape);
                 if (escape.lengthSqr() > CARRY_EPSILON_SQR) {
-                    LOGGER.debug("[livingblock] riderout side={} id={} rider={} escape={} pieces={} turned={}",
+                    if (shouldLog) LOGGER.debug("[livingblock] riderout side={} id={} rider={} escape={} pieces={} turned={}",
                             clientSide ? "C" : "S", mob.getId(), rider.getType().toShortString(),
                             String.format("%.3f,%.3f,%.3f", escape.x, escape.y, escape.z),
                             obbs.size(),
@@ -1682,7 +1682,7 @@ public class LivingBlockCollisionHandler {
                     && mob.raiseRiderMissBar(Math.abs(box.minY - exact.getAsDouble()));
             if (exact.isPresent() && (spike || rigidRider || step != null
                     || mob.tickCount % OVERLAP_LOG_INTERVAL == 0)) {
-                LOGGER.debug("[livingblock] riderobb side={} id={} rider={} pieces={} footprint={} feet={} exact={} hull={} rigid={} carry={} turned={}",
+                if (shouldLog) LOGGER.debug("[livingblock] riderobb side={} id={} rider={} pieces={} footprint={} feet={} exact={} hull={} rigid={} carry={} turned={}",
                         clientSide ? "C" : "S", mob.getId(), rider.getType().toShortString(),
                         obbs.size(), extent(box),
                         String.format("%.3f", box.minY),
