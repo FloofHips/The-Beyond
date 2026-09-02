@@ -343,7 +343,7 @@ public class LivingBlock extends Mob {
     private List<AABB> shapeBoxes;
     private AABB baseShapeBounds;
     private List<AABB> baseShapeBoxes;
-    private LivingBlockFeatures.Plan featurePlan;
+    protected List<TrinketGrowth.Feature> featurePlan;
     private int featurePlanSeed;
     private final RandomSource growthRandom = RandomSource.create();
     private LivingBlockCollisionShapes collisionShapes;
@@ -375,7 +375,7 @@ public class LivingBlock extends Mob {
     public VoxelShape getCustomShape() {
         return this.customShape;
     }
-
+    public int getFeaturePlanSeed() { return this.entityData.get(DATA_FEATURE_SEED);}
     @Nullable
     @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData spawnData) {
@@ -385,6 +385,9 @@ public class LivingBlock extends Mob {
 
     public boolean isEntropicForm() {
         return this.getType().is(BeyondTags.ENTROPIC_FORM);
+    }
+    public int getGrowthStage() {
+        return this.entityData.get(DATA_GROWTH);
     }
 
     private void assignShapeSeed() {
@@ -413,7 +416,7 @@ public class LivingBlock extends Mob {
     public void setShape(VoxelShape shape) {
         this.customShape = shape;
         this.baseShapeBounds = null;
-        this.featurePlan = null;
+        //this.featurePlan = null;
         this.cacheShapeGeometry();
         this.refreshDimensions();
     }
@@ -423,10 +426,12 @@ public class LivingBlock extends Mob {
         this.baseShapeBounds = shape.bounds();
         this.baseShapeBoxes = List.copyOf(shape.toAabbs());
 
-        List<AABB> boxes = FEATURE_GEOMETRY
-                ? LivingBlockFeatures.apply(this.baseShapeBoxes, this.featurePlan().features(),
-                        this.entityData.get(DATA_GROWTH))
-                : this.baseShapeBoxes;
+//        List<AABB> boxes = FEATURE_GEOMETRY
+//                ? LivingBlockFeatures.apply(this.baseShapeBoxes, this.featurePlan().features(),
+//                        this.entityData.get(DATA_GROWTH))
+//                : this.baseShapeBoxes;
+
+        List<AABB> boxes = this.baseShapeBoxes;
 
         this.silhouetteLocal = null;
         this.livePlacement = null;
@@ -443,17 +448,17 @@ public class LivingBlock extends Mob {
                 this.shapeBoxes, this.shapeBounds, this.shapeCenterX, centerY, this.shapeCenterZ);
     }
 
-    private LivingBlockFeatures.Plan featurePlan() {
-        int seed = this.entityData.get(DATA_FEATURE_SEED);
-        LivingBlockFeatures.Plan cached = this.featurePlan;
-        if (cached != null && this.featurePlanSeed == seed) {
-            return cached;
-        }
-        LivingBlockFeatures.Plan plan = LivingBlockFeatures.generate(this.baseShapeBoxes, seed);
-        this.featurePlan = plan;
-        this.featurePlanSeed = seed;
-        return plan;
-    }
+    //private List<TrinketGrowth.Feature> featurePlan() {
+    //    int seed = this.entityData.get(DATA_FEATURE_SEED);
+    //    List<TrinketGrowth.Feature> cached = this.featurePlan;
+    //    if (cached != null && this.featurePlanSeed == seed) {
+    //        return cached;
+    //    }
+    //    List<TrinketGrowth.Feature> plan = TrinketGrowth.generate(this.baseShapeBoxes, seed);
+    //    this.featurePlan = plan;
+    //    this.featurePlanSeed = seed;
+    //    return plan;
+    //}
 
     public LivingBlockCollisionShapes.Placement getCollisionGeometry() {
         if (this.collisionShapes == null) {
@@ -3801,7 +3806,7 @@ public class LivingBlock extends Mob {
         if (stage >= LivingBlockFeatures.MAX_GROWTH_STAGE || this.isDeadOrDying()) {
             return;
         }
-        if (this.growthRandom.nextInt(GROWTH_TICK_CHANCE) != 0) {
+        if (this.growthRandom.nextInt(1) != 0) {
             return;
         }
         this.entityData.set(DATA_GROWTH, stage + 1);

@@ -112,31 +112,4 @@ public class BeyondEntityDataSerializers {
                     };
                 }
             });
-
-
-
-    public record TrinketGrowth(byte[] growths) {}
-    private static final int MAX_GROWTH_SIZE = 16 * 16;
-    private static final Codec<byte[]> GROWTH_BYTES = Codec.BYTE_BUFFER.xmap(
-            bb -> {
-                byte[] a = new byte[bb.remaining()];
-                bb.get(a);
-                return a;
-            },
-            ByteBuffer::wrap);
-
-    public static final Codec<TrinketGrowth> TRINKET_GROWTH_CODEC =
-            RecordCodecBuilder.create(instance -> instance.group(
-                    GROWTH_BYTES.fieldOf("growths").forGetter(TrinketGrowth::growths)
-            ).apply(instance, TrinketGrowth::new));
-
-    public static final StreamCodec<ByteBuf, TrinketGrowth> TRINKET_GROWTH_STREAM_CODEC =
-            StreamCodec.composite(
-                    ByteBufCodecs.byteArray(MAX_GROWTH_SIZE), TrinketGrowth::growths,
-                    TrinketGrowth::new);
-
-
-    public static final DeferredHolder<EntityDataSerializer<?>, EntityDataSerializer<TrinketGrowth>> TRINKET_GROWTH =
-            ENTITY_DATA_SERIALIZERS.register("trinket_growth", () -> EntityDataSerializer.forValueType(TRINKET_GROWTH_STREAM_CODEC));
-
 }

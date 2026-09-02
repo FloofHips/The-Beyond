@@ -6,6 +6,7 @@ import com.thebeyond.TheBeyond;
 import com.thebeyond.client.renderer.util.LivingBlockMeshBaker;
 import com.thebeyond.common.entity.BeadEntity;
 import com.thebeyond.common.entity.util.livingblock.LivingBlock;
+import com.thebeyond.common.entity.util.livingblock.TrinketGrowth.*;
 import com.thebeyond.common.registry.BeyondRenderTypes;
 import com.thebeyond.util.RenderUtils;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -78,22 +79,49 @@ public class BeadRenderer extends LivingBlockRenderer {
         float minY = (float) shapeBounds.min(Direction.Axis.Y);
         float minZ = (float) shapeBounds.min(Direction.Axis.Z);
 
-        byte[][] up = trinket.getGrowth(Direction.UP);
+        List<Feature> plan = trinket.getFeaturePlan();
+        int stage = trinket.getGrowthStage();
 
-        for (int i = 0; i < up.length; i++) {
-            for (int j = 0; j < up[i].length; j++) {
-                if (up[i][j]==(byte)0) continue;
-                if (up[i][j]==(byte)-1) RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(HOLE_SMALL)), matrix, normalMatrix, packedLight, r*255, g*255, b*255, 230, Direction.Axis.Y, true, minX+(i/16f), maxY+0.002f, minZ+(j/16f),  3, 3);
-                if (up[i][j]==(byte)-2) RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(HOLE_MEDIUM)), matrix, normalMatrix, packedLight, r*255, g*255, b*255, 230, Direction.Axis.Y, true, minX+(i/16f), maxY+0.001f, minZ+(j/16f),  4, 4);
-                if (up[i][j]==(byte)-3) RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(HOLE_BIG)), matrix, normalMatrix, packedLight, r*255, g*255, b*255, 230, Direction.Axis.Y, true, minX+(i/16f), maxY, minZ+(j/16f),  7, 7);
+        int tWidth = trinket.getWidth();
+        int tHeight = trinket.getHeight();
+        int tDepth = trinket.getDepth();
+        if (plan == null) return;
+
+        for (Feature f : plan) {
+            SizeClass size = f.sizeAt(stage);
+            Direction d = f.face();
+            int width = f.getWidth(size);
+            int x = f.x();
+            int y = f.y();
+
+            final int offset = 3 - ((f.kind()==Kind.SPIKE) ? 2 : size.toInt());
+            switch (d) {
+                case UP -> {
+                    if (x + width > tWidth || y + width > tDepth) continue;
+                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r*255, g*255, b*255, 230F, Direction.Axis.Y, true, minX+(x/16f), maxY+(0.0001f*offset), minZ+(y/16f), width, width);
+                }
+                case DOWN -> {
+                    if (x + width > tWidth || y + width > tDepth) continue;
+                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r * 255, g * 255, b * 255, 230, Direction.Axis.Y, false, minX+(x/16f), minY-(0.0001f*offset), minZ+(y/16f), width, width);
+                }
+                case WEST -> {
+                    if (x + width > tHeight || y + width > tDepth) continue;
+                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r * 255, g * 255, b * 255, 230, Direction.Axis.X, true, minX-(0.0001f*offset), minY+(x/16f), minZ+(y/16f), width, width);
+                }
+                case EAST -> {
+                    if (x + width > tHeight || y + width > tDepth) continue;
+                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r * 255, g * 255, b * 255, 230, Direction.Axis.X, false, maxX+(0.0001f*offset), minY+(x/16f), minZ+(y/16f), width, width);
+                }
+                case NORTH -> {
+                    if (x + width > tWidth || y + width > tHeight) continue;
+                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r * 255, g * 255, b * 255, 230, Direction.Axis.Z, true, minX+(x/16f), minY+(y/16f), minZ-(0.0001f*offset), width, width);
+                }
+                case SOUTH -> {
+                    if (x + width > tWidth || y + width > tHeight) continue;
+                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r * 255, g * 255, b * 255, 230, Direction.Axis.Z, false, minX+(x/16f), minY+(y/16f), maxZ+(0.0001f*offset), width, width);
+                }
             }
         }
-
-        RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(HOLE_SMALL)), matrix, normalMatrix, packedLight, r*255, g*255, b*255, 230, Direction.Axis.Y, false, minX, minY, minZ, 3, 3);
-        RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(HOLE_SMALL)), matrix, normalMatrix, packedLight, r*255, g*255, b*255, 230, Direction.Axis.X, true, minX, minY, minZ,  3, 3);
-        RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(HOLE_SMALL)), matrix, normalMatrix, packedLight, r*255, g*255, b*255, 230, Direction.Axis.X, false, maxX, minY, minZ, 3, 3);
-        RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(HOLE_SMALL)), matrix, normalMatrix, packedLight, r*255, g*255, b*255, 230, Direction.Axis.Z, true, minX, minY, minZ,  3, 3);
-        RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(HOLE_SMALL)), matrix, normalMatrix, packedLight, r*255, g*255, b*255, 230, Direction.Axis.Z, false, minX, minY, maxZ, 3, 3);
     }
 
     @Override

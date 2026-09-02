@@ -1,15 +1,11 @@
 package com.thebeyond.common.entity;
 
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.thebeyond.common.entity.util.livingblock.LivingBlock;
 import com.thebeyond.common.entity.util.livingblock.LivingBlockCollisionShapes;
-import com.thebeyond.common.registry.BeyondEntityDataSerializers;
-import net.minecraft.commands.CommandSourceStack;
+import com.thebeyond.common.entity.util.livingblock.TrinketGrowth;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.ComponentUtils;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -34,6 +30,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.util.Arrays;
+import java.util.List;
 
 public class BeadEntity extends LivingBlock {
     private static final EntityDataAccessor<Integer> DATA_DYE_COLOR = SynchedEntityData.defineId(BeadEntity .class, EntityDataSerializers.INT);
@@ -45,31 +42,6 @@ public class BeadEntity extends LivingBlock {
     private static final EntityDataAccessor<Byte> DATA_WIDTH = SynchedEntityData.defineId(BeadEntity.class, EntityDataSerializers.BYTE);
     private static final EntityDataAccessor<Byte> DATA_HEIGHT = SynchedEntityData.defineId(BeadEntity.class, EntityDataSerializers.BYTE);
     private static final EntityDataAccessor<Byte> DATA_DEPTH = SynchedEntityData.defineId(BeadEntity.class, EntityDataSerializers.BYTE);
-
-    private static final EntityDataAccessor<BeyondEntityDataSerializers.TrinketGrowth> DATA_GROWTH_UP = SynchedEntityData.defineId(BeadEntity.class,    BeyondEntityDataSerializers.TRINKET_GROWTH.get());
-    private static final EntityDataAccessor<BeyondEntityDataSerializers.TrinketGrowth> DATA_GROWTH_DOWN = SynchedEntityData.defineId(BeadEntity.class,  BeyondEntityDataSerializers.TRINKET_GROWTH.get());
-    private static final EntityDataAccessor<BeyondEntityDataSerializers.TrinketGrowth> DATA_GROWTH_WEST = SynchedEntityData.defineId(BeadEntity.class,  BeyondEntityDataSerializers.TRINKET_GROWTH.get());
-    private static final EntityDataAccessor<BeyondEntityDataSerializers.TrinketGrowth> DATA_GROWTH_EAST = SynchedEntityData.defineId(BeadEntity.class,  BeyondEntityDataSerializers.TRINKET_GROWTH.get());
-    private static final EntityDataAccessor<BeyondEntityDataSerializers.TrinketGrowth> DATA_GROWTH_NORTH = SynchedEntityData.defineId(BeadEntity.class, BeyondEntityDataSerializers.TRINKET_GROWTH.get());
-    private static final EntityDataAccessor<BeyondEntityDataSerializers.TrinketGrowth> DATA_GROWTH_SOUTH = SynchedEntityData.defineId(BeadEntity.class, BeyondEntityDataSerializers.TRINKET_GROWTH.get());
-
-    private static final BeyondEntityDataSerializers.TrinketGrowth DEFAULT = new BeyondEntityDataSerializers.TrinketGrowth(new byte[]{
-            -2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,-3,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,-1,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,-1,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,-2,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 });
 
     private static final int[][] SILHOUETTES = {
             {4, 4, 4},
@@ -94,6 +66,8 @@ public class BeadEntity extends LivingBlock {
     private void setWaxed(boolean waxed) {this.entityData.set(DATA_WAXED, waxed);}
     public String getVariant() {return this.entityData.get(DATA_VARIANT);}
     private void setVariant(String variant) {this.entityData.set(DATA_VARIANT, variant);}
+    public List<TrinketGrowth.Feature> getFeaturePlan() {return featurePlan;}
+    public void setFeaturePlan(List<TrinketGrowth.Feature> plan) {featurePlan = plan;}
 
     public int getHeight() {return this.entityData.get(DATA_HEIGHT);}
     private void setHeight(byte height) {this.entityData.set(DATA_HEIGHT, height);}
@@ -101,19 +75,6 @@ public class BeadEntity extends LivingBlock {
     private void setWidth(byte width) {this.entityData.set(DATA_WIDTH, width);}
     public int getDepth() {return this.entityData.get(DATA_DEPTH);}
     private void setDepth(byte depth) {this.entityData.set(DATA_DEPTH, depth);}
-
-
-    public byte[][] getGrowth(Direction direction) {
-        switch (direction) {
-            case UP -> splitArray(this.entityData.get(DATA_GROWTH_UP).growths(), getWidth(), getDepth());
-            case DOWN -> splitArray(this.entityData.get(DATA_GROWTH_DOWN).growths(), getWidth(), getDepth());
-            case WEST -> splitArray(this.entityData.get(DATA_GROWTH_WEST).growths(), getDepth(), getHeight());
-            case EAST -> splitArray(this.entityData.get(DATA_GROWTH_EAST).growths(), getDepth(), getHeight());
-            case NORTH -> splitArray(this.entityData.get(DATA_GROWTH_NORTH).growths(), getWidth(), getHeight());
-            case SOUTH -> splitArray(this.entityData.get(DATA_GROWTH_SOUTH).growths(), getWidth(), getHeight());
-        }
-        return splitArray(this.entityData.get(DATA_GROWTH_UP).growths(), getWidth(), getDepth());
-    }
 
     public static byte[][] splitArray(byte[] array, int x, int y) {
         byte[][] array2d = new byte[x][y];
@@ -123,7 +84,7 @@ public class BeadEntity extends LivingBlock {
 
         startRow = Math.max(0, Math.min(startRow, 16 - y));
         startCol = Math.max(0, Math.min(startCol, 16 - x));
-        
+
         for (int i = 0; i < x; i++) {
             for (int j = 0; j < y; j++) {
                 int index = (startRow + j) * 16 + (startCol + i);
@@ -158,13 +119,6 @@ public class BeadEntity extends LivingBlock {
         entityData.define(DATA_WIDTH, (byte)1);
         entityData.define(DATA_HEIGHT, (byte)1);
         entityData.define(DATA_DEPTH, (byte)1);
-
-        entityData.define(DATA_GROWTH_UP,    DEFAULT);
-        entityData.define(DATA_GROWTH_DOWN,  DEFAULT);
-        entityData.define(DATA_GROWTH_WEST,  DEFAULT);
-        entityData.define(DATA_GROWTH_EAST,  DEFAULT);
-        entityData.define(DATA_GROWTH_NORTH, DEFAULT);
-        entityData.define(DATA_GROWTH_SOUTH, DEFAULT);
     }
 
     public void addAdditionalSaveData(CompoundTag compound) {
@@ -178,13 +132,6 @@ public class BeadEntity extends LivingBlock {
         compound.putByte("Width", (byte) this.getWidth());
         compound.putByte("Height", (byte) this.getHeight());
         compound.putByte("Depth", (byte) this.getDepth());
-
-        compound.putByteArray("GrowthUp", this.entityData.get(DATA_GROWTH_UP).growths());
-        compound.putByteArray("GrowthDown", this.entityData.get(DATA_GROWTH_DOWN).growths());
-        compound.putByteArray("GrowthWest", this.entityData.get(DATA_GROWTH_WEST).growths());
-        compound.putByteArray("GrowthEast", this.entityData.get(DATA_GROWTH_EAST).growths());
-        compound.putByteArray("GrowthNorth", this.entityData.get(DATA_GROWTH_NORTH).growths());
-        compound.putByteArray("GrowthSouth", this.entityData.get(DATA_GROWTH_SOUTH).growths());
     }
 
     public void readAdditionalSaveData(CompoundTag compound) {
@@ -198,20 +145,6 @@ public class BeadEntity extends LivingBlock {
         if (compound.contains("Depth")) this.setDepth(compound.getByte("Depth"));
 
         this.entityData.set(DATA_FROZEN_SIZE, compound.getBoolean("FrozenSize"));
-
-        readGrowthData(compound, "GrowthUp", DATA_GROWTH_UP);
-        readGrowthData(compound, "GrowthDown", DATA_GROWTH_DOWN);
-        readGrowthData(compound, "GrowthWest", DATA_GROWTH_WEST);
-        readGrowthData(compound, "GrowthEast", DATA_GROWTH_EAST);
-        readGrowthData(compound, "GrowthNorth", DATA_GROWTH_NORTH);
-        readGrowthData(compound, "GrowthSouth", DATA_GROWTH_SOUTH);
-    }
-
-    public <T> void readGrowthData(CompoundTag compound, String data, EntityDataAccessor<BeyondEntityDataSerializers.TrinketGrowth> key) {
-        if (compound.contains(data)) {
-            byte[] s = compound.getByteArray(data);
-            this.entityData.set(key, new BeyondEntityDataSerializers.TrinketGrowth(s));
-        }
     }
 
     @Override
@@ -234,7 +167,13 @@ public class BeadEntity extends LivingBlock {
                 }
             }
         }
-            super.tick();
+
+        if (tickCount%20 == 0 && getFeaturePlan()==null) {
+            List<AABB> base = List.of(new AABB(-getWidth()/2f, -getHeight()/2f, -getDepth()/2f, getWidth()/2f, getHeight()/2f, getDepth()/2f));
+            setFeaturePlan(TrinketGrowth.generate(base, RandomSource.create(this.getFeaturePlanSeed())));
+        }
+
+        super.tick();
     }
 
     public void grow() {
@@ -261,24 +200,6 @@ public class BeadEntity extends LivingBlock {
                 return;
             }
         }
-
-        //int growth = this.entityData.get(DATA_BOX_GROWTH);
-        //int steps = (growth >> (face * GROWTH_BITS)) & GROWTH_MAX;
-        //if (steps >= GROWTH_MAX) {
-        //    return;
-        //}
-        //int blocker = face >= 3 ? this.growthBlocker(face) : -1;
-        //if (blocker >= 0) {
-        //    if (this.tickCount % GROWTH_LOG_INTERVAL == 0) {
-        //        AABB hull = this.getBoundingBox();
-        //        if (shouldLog) GROWTH_LOGGER.debug("[livingblock] grow id={} face={} steps={} refused={} size={}",
-        //                this.getId(), face, steps, blocker,
-        //                String.format("%.3f,%.3f,%.3f", hull.getXsize(), hull.getYsize(), hull.getZsize()));
-        //    }
-        //    return;
-        //}
-        //this.entityData.set(DATA_BOX_GROWTH,
-        //        (growth & ~(GROWTH_MAX << (face * GROWTH_BITS))) | ((steps + 1) << (face * GROWTH_BITS)));
     }
 
     private int blockerIn(final AABB slab) {
@@ -358,22 +279,4 @@ public class BeadEntity extends LivingBlock {
         }
         return Shapes.box(0.0, 0.0, 0.0, getWidth()/16f, getHeight()/16f, getDepth()/16f);
     }
-
-    //private VoxelShape grown(final VoxelShape base) {
-    //    int growth = this.entityData.get(DATA_BOX_GROWTH);
-    //    if (growth == 0) {
-    //        return base;
-    //    }
-    //    double[] face = new double[GROWTH_FACES];
-    //    for (int i = 0; i < GROWTH_FACES; i++) {
-    //        face[i] = ((growth >> (i * GROWTH_BITS)) & GROWTH_MAX) / 16.0;
-    //    }
-    //    return Shapes.box(
-    //            Math.max(0.0, base.min(Direction.Axis.X) - face[0]),
-    //            Math.max(0.0, base.min(Direction.Axis.Y) - face[1]),
-    //            Math.max(0.0, base.min(Direction.Axis.Z) - face[2]),
-    //            Math.min(1.0, base.max(Direction.Axis.X) + face[3]),
-    //            Math.min(1.0, base.max(Direction.Axis.Y) + face[4]),
-    //            Math.min(1.0, base.max(Direction.Axis.Z) + face[5]));
-    //}
 }
