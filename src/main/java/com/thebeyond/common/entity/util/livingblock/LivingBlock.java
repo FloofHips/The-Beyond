@@ -58,7 +58,7 @@ import javax.annotation.Nullable;
 public class LivingBlock extends Mob {
 
     private static final Logger LOGGER = LogUtils.getLogger();
-    protected static final boolean shouldLog = false;
+    public static final boolean shouldLog = false;
 
     protected static final EntityDataAccessor<MovementData> MOVEMENT_DATA = SynchedEntityData.defineId(LivingBlock.class, BeyondEntityDataSerializers.MOVEMENT_DATA.get());
     protected static final EntityDataAccessor<Target> MOVEMENT_TARGET = SynchedEntityData.defineId(LivingBlock.class, BeyondEntityDataSerializers.TARGET.get());
@@ -436,9 +436,11 @@ public class LivingBlock extends Mob {
         this.silhouetteLocal = null;
         this.livePlacement = null;
         this.shapeBoxes = boxes;
-        this.shapeBounds = boxes == this.baseShapeBoxes
-                ? this.baseShapeBounds
-                : LivingBlockFeatures.union(this.baseShapeBounds, LivingBlockFeatures.bounds(boxes));
+//        this.shapeBounds = boxes == this.baseShapeBoxes
+//                ? this.baseShapeBounds
+//                : LivingBlockFeatures.union(this.baseShapeBounds, LivingBlockFeatures.bounds(boxes));
+
+        this.shapeBounds = this.baseShapeBounds;
 
         double centerY = Mth.lerp(0.5, this.baseShapeBounds.minY, this.baseShapeBounds.maxY);
         this.shapeCenterX = Mth.lerp(0.5, this.baseShapeBounds.minX, this.baseShapeBounds.maxX);
@@ -3074,7 +3076,7 @@ public class LivingBlock extends Mob {
         }
         if (input.contains("growth_stage")) {
             this.entityData.set(DATA_GROWTH,
-                    Mth.clamp(input.getInt("growth_stage"), 0, LivingBlockFeatures.MAX_GROWTH_STAGE));
+                    Mth.clamp(input.getInt("growth_stage"), 0, 100));
         }
         if (input.contains("shape_seed")) {
             this.entityData.set(DATA_SHAPE_SEED, input.getInt("shape_seed"));
@@ -3803,10 +3805,10 @@ public class LivingBlock extends Mob {
 
     private void tickFeatureGrowth() {
         int stage = this.entityData.get(DATA_GROWTH);
-        if (stage >= LivingBlockFeatures.MAX_GROWTH_STAGE || this.isDeadOrDying()) {
+        if (stage >= 100 || this.isDeadOrDying()) {
             return;
         }
-        if (this.growthRandom.nextInt(1) != 0) {
+        if (this.growthRandom.nextInt(100) != 0) {
             return;
         }
         this.entityData.set(DATA_GROWTH, stage + 1);

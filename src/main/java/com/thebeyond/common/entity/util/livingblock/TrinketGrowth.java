@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TrinketGrowth {
-    static ResourceLocation HOLE_BIG = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/bauble/hole_big.png");
+    public static ResourceLocation HOLE_BIG = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/bauble/hole_big.png");
     static ResourceLocation HOLE_MEDIUM = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/bauble/hole_medium.png");
     static ResourceLocation HOLE_SMALL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/bauble/hole_small.png");
     static ResourceLocation SPIKE_BASE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/bauble/spike_base.png");
@@ -71,7 +71,7 @@ public class TrinketGrowth {
                         int spawnStage = random.nextInt(10) + i + j;
                         Kind kind = size == 2 ? (random.nextFloat() < 0.3 ? Kind.SPIKE : Kind.HOLE) : Kind.HOLE;
 
-                        full.add(new Feature(kind, d, i, j, spawnStage, spawnStage + random.nextInt(20), kind == Kind.SPIKE ? intToSize(random.nextInt(1, 4)) : intToSize(size)));
+                        full.add(new Feature(kind, d, i, j, spawnStage, Math.max(spawnStage + random.nextInt(100), 100), kind == Kind.SPIKE ? intToSize(random.nextInt(1, 4)) : intToSize(size)));
                     }
                 }
             }

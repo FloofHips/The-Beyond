@@ -16,6 +16,8 @@ import javax.annotation.Nullable;
 
 import java.util.List;
 
+import static com.thebeyond.common.entity.util.livingblock.LivingBlock.shouldLog;
+
 public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
     private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
     private static final int STEP_LOG_INTERVAL = 20;
@@ -62,7 +64,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
         }
         data.climbStallTicks = 0;
         data.climbLastY = Double.NEGATIVE_INFINITY;
-        LOGGER.debug("[livingblock] climbstall id={} y={} dir={}",
+        if (shouldLog) LOGGER.debug("[livingblock] climbstall id={} y={} dir={}",
                 entity.getId(), String.format("%.4f", entity.getY()), entity.getClimbingDirection());
         return true;
     }
@@ -187,7 +189,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
             data.moveTicks = Math.max(0, data.moveTicks - 1);
             if (data.moveTicks == 0 && data.movingTo != null && !entity.level().isClientSide()) {
                 Vec3 want = data.movingTo.position;
-                LOGGER.debug("[livingblock] land id={} wantx={} wantz={} gotx={} gotz={} errx={} errz={} ground={}",
+                if (shouldLog) LOGGER.debug("[livingblock] land id={} wantx={} wantz={} gotx={} gotz={} errx={} errz={} ground={}",
                         entity.getId(), String.format("%.4f", want.x), String.format("%.4f", want.z),
                         String.format("%.4f", entity.getX()), String.format("%.4f", entity.getZ()),
                         String.format("%+.4f", entity.getX() - want.x),
@@ -260,7 +262,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
             data.moveTicks = Math.max(0, data.moveTicks - 1);
             if (data.moveTicks == 0 && data.movingTo != null && !entity.level().isClientSide()) {
                 Vec3 want = data.movingTo.position;
-                LOGGER.debug("[livingblock] land id={} wantx={} wantz={} gotx={} gotz={} errx={} errz={} ground={}",
+                if (shouldLog) LOGGER.debug("[livingblock] land id={} wantx={} wantz={} gotx={} gotz={} errx={} errz={} ground={}",
                         entity.getId(), String.format("%.4f", want.x), String.format("%.4f", want.z),
                         String.format("%.4f", entity.getX()), String.format("%.4f", entity.getZ()),
                         String.format("%+.4f", entity.getX() - want.x),
@@ -304,7 +306,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
                 centre.x + half, hull.minY - 1.0E-4, centre.z + half);
         boolean held = !entity.level().noBlockCollision(entity, under);
         if (!held && !entity.level().isClientSide()) {
-            LOGGER.debug("[livingblock] ledge id={} dir={} cell={},{} drop={} order={} hull={} pos={}",
+            if (shouldLog) LOGGER.debug("[livingblock] ledge id={} dir={} cell={},{} drop={} order={} hull={} pos={}",
                     entity.getId(), direction,
                     String.format("%.1f", centre.x), String.format("%.1f", centre.z),
                     String.format("%.3f", drop),
@@ -346,7 +348,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
 
                 if (!blockCollision && !entityHit && entity.onGround()) {
                     if (!entity.level().isClientSide()) {
-                        LOGGER.debug("[livingblock] mount id={} dir={} over={} feet={} ent={}",
+                        if (shouldLog) LOGGER.debug("[livingblock] mount id={} dir={} over={} feet={} ent={}",
                                 entity.getId(), direction, nextBlockPos.above().getY(),
                                 String.format("%.3f", entity.getBoundingBox().minY), entityHit);
                         data.stairFrom = entity.blockPosition();
@@ -446,7 +448,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
             return;
         }
         data.lastClimb3 = state;
-        LOGGER.debug("[livingblock] climb3 id={} route={} dir={} taken={} feet={} step={}",
+        if (shouldLog) LOGGER.debug("[livingblock] climb3 id={} route={} dir={} taken={} feet={} step={}",
                 entity.getId(), route, direction, taken,
                 String.format("%.3f", entity.getBoundingBox().minY),
                 String.format("%.2f", entity.maxUpStep()));
@@ -468,7 +470,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
             return;
         }
         data.stairTicks = 0;
-        LOGGER.debug("[livingblock] stair id={} dx={} dy={} dz={} dir={} from={} to={} ground={} feet={}",
+        if (shouldLog) LOGGER.debug("[livingblock] stair id={} dx={} dy={} dz={} dir={} from={} to={} ground={} feet={}",
                 entity.getId(), here.getX() - data.stairFrom.getX(),
                 here.getY() - data.stairFrom.getY(), here.getZ() - data.stairFrom.getZ(),
                 data.stairDirection, data.stairFrom.toShortString(), here.toShortString(),
@@ -526,7 +528,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
             data.climbRefusedTick = entity.tickCount;
             data.climbRefusedPos = entity.position();
             if (data.climbRefusalStreak >= CLIMB_REFUSAL_STREAK) {
-                LOGGER.debug("[livingblock] climbrefusal id={} dir={} pos={}",
+                if (shouldLog) LOGGER.debug("[livingblock] climbrefusal id={} dir={} pos={}",
                         entity.getId(), refused,
                         String.format("%.3f,%.3f,%.3f", entity.getX(), entity.getY(), entity.getZ()));
                 data.climbRefusalStreak = 0;
@@ -608,7 +610,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
                 List<LivingBlock> hidden = entity.level().getEntitiesOfClass(LivingBlock.class, nextPosBounds,
                         other -> other != entity && other.isAlive());
                 if (!hidden.isEmpty()) {
-                    LOGGER.debug("[livingblock] step id={} hidden={} maxUpStep={} feet={}",
+                    if (shouldLog) LOGGER.debug("[livingblock] step id={} hidden={} maxUpStep={} feet={}",
                             entity.getId(), hidden.size(), entity.maxUpStep(),
                             String.format("%.2f", entity.getBoundingBox().minY));
                 }
@@ -677,7 +679,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
 
                 if (!blockCollision && entity.onGround()) {
                     if (!entity.level().isClientSide()) {
-                        LOGGER.debug("[livingblock] mount id={} dir={} over={} feet={} ent={}",
+                        if (shouldLog) LOGGER.debug("[livingblock] mount id={} dir={} over={} feet={} ent={}",
                                 entity.getId(), direction, nextBlockPos.above().getY(),
                                 String.format("%.3f", entity.getBoundingBox().minY), entityHit);
                         data.stairFrom = entity.blockPosition();
@@ -759,7 +761,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
         double nearestGain = nearest.getStepX() * delta.x + nearest.getStepZ() * delta.z;
         if (heldGain <= 0.0 || nearestGain > heldGain + AXIS_HYSTERESIS) {
             if (!entity.level().isClientSide()) {
-                LOGGER.debug("[livingblock] axis id={} from={} to={} heldgain={} newgain={}",
+                if (shouldLog) LOGGER.debug("[livingblock] axis id={} from={} to={} heldgain={} newgain={}",
                         entity.getId(), held, nearest, String.format("%.3f", heldGain),
                         String.format("%.3f", nearestGain));
             }
@@ -792,7 +794,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
         data.structuralTick = entity.tickCount;
         data.structuralPos = entity.position();
         if (!entity.level().isClientSide()) {
-            LOGGER.debug("[livingblock] structural id={} dir={} for={} pos={}", entity.getId(),
+            if (shouldLog) LOGGER.debug("[livingblock] structural id={} dir={} for={} pos={}", entity.getId(),
                     direction, STRUCTURAL_REFUSAL_TICKS,
                     String.format("%.3f,%.3f,%.3f", entity.getX(), entity.getY(), entity.getZ()));
         }
@@ -840,7 +842,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
             return;
         }
         data.lastRoute = route;
-        LOGGER.debug("[livingblock] route id={} type={} bodyheight={} rise={} step={}",
+        if (shouldLog) LOGGER.debug("[livingblock] route id={} type={} bodyheight={} rise={} step={}",
                 entity.getId(), route,
                 String.format("%.4f", entity.getBaseShapeBounds().getYsize()),
                 Double.isInfinite(rise) ? "inf" : String.format("%.4f", rise),
@@ -858,7 +860,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
                 double window = entity.getGravity() * 2.0;
                 boolean braked = movement.y <= 0.0 && movement.y >= -window;
                 if (!entity.level().isClientSide() && braked != data.lastBraked) {
-                    LOGGER.debug("[livingblock] airbrake id={} braked={} vy={} window={} hspeed={} feet={}",
+                    if (shouldLog) LOGGER.debug("[livingblock] airbrake id={} braked={} vy={} window={} hspeed={} feet={}",
                             entity.getId(), braked, String.format("%.5f", movement.y),
                             String.format("%.5f", -window),
                             String.format("%.5f", movement.horizontalDistance()),
@@ -1008,7 +1010,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
                 AABB aabb = entity.getBoundingBox().deflate(1.0E-6).move(this.direction.getStepX() * CLIMB_REACH, this.direction.getStepY() * CLIMB_REACH, this.direction.getStepZ() * CLIMB_REACH);
                 boolean touching = !entity.level().noCollision(entity, aabb);
                 if (entity.tickCount % CLIMB_LOG_INTERVAL == 0 && !entity.level().isClientSide()) {
-                    LOGGER.debug("[livingblock] climbdrive id={} type={} dir={} touching={} targetY={} deltaY={} scale={} velY={}",
+                    if (shouldLog) LOGGER.debug("[livingblock] climbdrive id={} type={} dir={} touching={} targetY={} deltaY={} scale={} velY={}",
                             entity.getId(), this.type, this.direction, touching,
                             String.format("%.3f", this.position.y), String.format("%.3f", delta.y),
                             String.format("%.3f", scale), String.format("%.4f", entity.getDeltaMovement().y));

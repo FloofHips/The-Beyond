@@ -23,10 +23,11 @@ import java.util.OptionalDouble;
 
 import javax.annotation.Nullable;
 
+import static com.thebeyond.common.entity.util.livingblock.LivingBlock.shouldLog;
+
 public class LivingBlockCollisionHandler {
 
     private static final org.slf4j.Logger LOGGER = LogUtils.getLogger();
-    protected static final boolean shouldLog = false;
     private static final float CONTACT_TOLERANCE = 0.01F;
 
     private static void cornerAt(Vector3f dest, AABB box, int index, double cx, double cy, double cz) {

@@ -9,6 +9,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.FastColor;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyInstance;
@@ -17,13 +18,17 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
@@ -149,7 +154,7 @@ public class BeadEntity extends LivingBlock {
 
     @Override
     public void tick() {
-        if (!isWaxed()) {
+        if (!isWaxed() && tickCount%250 == 0) {
             BlockPos touched = null;
             if (this.onGround()) {
                 touched = getOnPos();
@@ -183,9 +188,6 @@ public class BeadEntity extends LivingBlock {
         if (this.level().isClientSide() || !this.isOrientationSettled()) {
             return;
         }
-        if (tickCount%20 != 0) {
-            return;
-        }
         switch(level().random.nextInt(3)) {
             case 0: {
                 if (getWidth() < 16) setWidth((byte) (getWidth() + 1));
@@ -200,23 +202,6 @@ public class BeadEntity extends LivingBlock {
                 return;
             }
         }
-    }
-
-    private int blockerIn(final AABB slab) {
-        for (LivingBlock other : this.level().getEntitiesOfClass(LivingBlock.class, slab,
-                candidate -> candidate != this && candidate.isAlive())) {
-            LivingBlockCollisionShapes.Placement placement =
-                    LivingBlockCollisionShapes.preciseGeometry(other);
-            if (placement == null) {
-                return other.getId();
-            }
-            for (AABB box : placement.boxes()) {
-                if (box.intersects(slab)) {
-                    return other.getId();
-                }
-            }
-        }
-        return -1;
     }
 
     @Override
@@ -247,6 +232,66 @@ public class BeadEntity extends LivingBlock {
         }
 
         return super.mobInteract(player, hand);
+    }
+
+    @Override
+    public InteractionResult interactAt(Player player, Vec3 vec, InteractionHand hand) {
+
+        ItemStack stack = player.getItemInHand(hand);
+        if (!(stack.getItem() instanceof BlockItem blockItem)) return super.interactAt(player, vec, hand);
+
+        Vec3 eyePos = player.getEyePosition();
+        Vec3 lookVec = player.getLookAngle();
+        Vec3 end = eyePos.add(lookVec.scale(5));
+
+        AABB aabb = this.getBoundingBox();
+        Vec3 hitVec = aabb.clip(eyePos, end).orElse(null);
+        if (hitVec == null) return super.interactAt(player, vec, hand);
+        Direction face = getHitDirection(hitVec, aabb);
+        if (face == null) return super.interactAt(player, vec, hand);
+
+        BlockPos pos = this.blockPosition().offset(face.getStepX(), face.getStepY(), face.getStepZ());
+
+        if (!player.mayUseItemAt(pos, face, stack)) return super.interactAt(player, vec, hand);;
+        if (!level().mayInteract(player, pos)) return super.interactAt(player, vec, hand);;
+        if (!level().getBlockState(pos).canBeReplaced()) return super.interactAt(player, vec, hand);;
+
+        BlockPlaceContext context = new BlockPlaceContext(player, hand, stack,
+                new BlockHitResult(hitVec, face, pos, false));
+
+        if (!level().isClientSide) {
+            InteractionResult result = blockItem.place(context);
+
+            if (result.consumesAction()) {
+                BlockState placed = level().getBlockState(pos);
+                SoundType sound = placed.getSoundType();
+                level().playSound(null, pos, sound.getPlaceSound(), SoundSource.BLOCKS, (sound.getVolume() + 1.0F) / 2.0F, sound.getPitch() * 0.8F);
+
+                return InteractionResult.SUCCESS;
+            }
+        }
+        return super.interactAt(player, vec, hand);
+    }
+
+    private Direction getHitDirection(Vec3 hit, AABB box) {
+        double dx = hit.x - box.minX;
+        double dy = hit.y - box.minY;
+        double dz = hit.z - box.minZ;
+
+        double maxDx = box.maxX - box.minX;
+        double maxDy = box.maxY - box.minY;
+        double maxDz = box.maxZ - box.minZ;
+
+        double epsilon = 1e-4;
+
+        if (Math.abs(dx) < epsilon) return Direction.WEST;
+        if (Math.abs(dx - maxDx) < epsilon) return Direction.EAST;
+        if (Math.abs(dy) < epsilon) return Direction.DOWN;
+        if (Math.abs(dy - maxDy) < epsilon) return Direction.UP;
+        if (Math.abs(dz) < epsilon) return Direction.NORTH;
+        if (Math.abs(dz - maxDz) < epsilon) return Direction.SOUTH;
+
+        return null;
     }
 
     public static AttributeSupplier.Builder createAttributes() {
