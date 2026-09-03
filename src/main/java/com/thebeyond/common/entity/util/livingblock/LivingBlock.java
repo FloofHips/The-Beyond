@@ -62,20 +62,20 @@ public class LivingBlock extends Mob {
 
     protected static final EntityDataAccessor<MovementData> MOVEMENT_DATA = SynchedEntityData.defineId(LivingBlock.class, BeyondEntityDataSerializers.MOVEMENT_DATA.get());
     protected static final EntityDataAccessor<Target> MOVEMENT_TARGET = SynchedEntityData.defineId(LivingBlock.class, BeyondEntityDataSerializers.TARGET.get());
-    private static final EntityDataAccessor<Direction> DATA_CLIMBING_DIRECTION = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.DIRECTION);
-    private static final EntityDataAccessor<Integer> DATA_SHAPE_SEED = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> DATA_FEATURE_SEED = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> DATA_GROWTH = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Byte> DATA_ORIENTATION = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.BYTE);
-    private static final EntityDataAccessor<Boolean> DATA_ORIENTATION_SETTLED = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Quaternionf> DATA_ROTATION = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.QUATERNION);
-    private static final EntityDataAccessor<Vector3f> DATA_CLIMB_PIVOT_LOCAL = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.VECTOR3);
-    private static final EntityDataAccessor<Vector3f> DATA_CLIMB_PIVOT_WORLD = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.VECTOR3);
-    private static final EntityDataAccessor<Boolean> DATA_CLIMB_PIVOT_ACTIVE = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Boolean> DATA_STEP_PHASE = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Boolean> DATA_HULL_ORIENTED = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.BOOLEAN);
+    protected static final EntityDataAccessor<Direction> DATA_CLIMBING_DIRECTION = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.DIRECTION);
+    protected static final EntityDataAccessor<Integer> DATA_SHAPE_SEED = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.INT);
+    protected static final EntityDataAccessor<Integer> DATA_FEATURE_SEED = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.INT);
+    protected static final EntityDataAccessor<Integer> DATA_GROWTH = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.INT);
+    protected static final EntityDataAccessor<Byte> DATA_ORIENTATION = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.BYTE);
+    protected static final EntityDataAccessor<Boolean> DATA_ORIENTATION_SETTLED = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.BOOLEAN);
+    protected static final EntityDataAccessor<Quaternionf> DATA_ROTATION = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.QUATERNION);
+    protected static final EntityDataAccessor<Vector3f> DATA_CLIMB_PIVOT_LOCAL = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.VECTOR3);
+    protected static final EntityDataAccessor<Vector3f> DATA_CLIMB_PIVOT_WORLD = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.VECTOR3);
+    protected static final EntityDataAccessor<Boolean> DATA_CLIMB_PIVOT_ACTIVE = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.BOOLEAN);
+    protected static final EntityDataAccessor<Boolean> DATA_STEP_PHASE = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.BOOLEAN);
+    protected static final EntityDataAccessor<Boolean> DATA_HULL_ORIENTED = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.BOOLEAN);
 
-    private static final EntityDataAccessor<Integer> DATA_MOVEMENT_TYPE = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.INT);
+    protected static final EntityDataAccessor<Integer> DATA_MOVEMENT_TYPE = SynchedEntityData.defineId(LivingBlock.class, EntityDataSerializers.INT);
 
     private static final double SETTLE_ANGLE_EPSILON = LivingBlockPivot.SETTLE_ANGLE_EPSILON;
     private static final double SETTLE_FIT_EPSILON = 1.0E-4;
@@ -163,24 +163,24 @@ public class LivingBlock extends Mob {
 
     private static final int GROWTH_TICK_CHANCE = 750;
 
-    private final Quaternionf lastRotation = new Quaternionf();
-    private final Quaternionf drawnFrom = new Quaternionf();
-    private final Quaternionf rotation = new Quaternionf();
+    protected final Quaternionf lastRotation = new Quaternionf();
+    protected final Quaternionf drawnFrom = new Quaternionf();
+    protected final Quaternionf rotation = new Quaternionf();
 
-    private float rollDeltaX;
-    private float rollDeltaZ;
-    private float rollCarryX;
-    private float rollCarryZ;
-    private int rollPhaseAxis = LivingBlockRoll.AXIS_NONE;
-    private double rollPhase;
-    private int rollPendingAxis = LivingBlockRoll.AXIS_NONE;
-    private double rollPending;
-    private int rollFallbacks;
-    private int rollRestores;
-    private int orientationRejects;
-    private boolean pendingOrientationRestore;
-    private int nudgeStart;
-    private int rollSoundTime;
+    protected float rollDeltaX;
+    protected float rollDeltaZ;
+    protected float rollCarryX;
+    protected float rollCarryZ;
+    protected int rollPhaseAxis = LivingBlockRoll.AXIS_NONE;
+    protected double rollPhase;
+    protected int rollPendingAxis = LivingBlockRoll.AXIS_NONE;
+    protected double rollPending;
+    protected int rollFallbacks;
+    protected int rollRestores;
+    protected int orientationRejects;
+    protected boolean pendingOrientationRestore;
+    protected int nudgeStart;
+    protected int rollSoundTime;
 
     private static final int ROLL_SOUND_MIN_TIME = 4;
     private static final double ROLL_SOUND_MIN_ANGLE = 10.0;
@@ -355,7 +355,7 @@ public class LivingBlock extends Mob {
     private double shapeCenterX;
     private double shapeCenterZ;
     private LivingBlockOrientation orientation;
-    private boolean rotationRestored;
+    protected boolean rotationRestored;
     private int separationBackoff;
     private long carriedAtTick = Long.MIN_VALUE;
     private boolean shapeIsEntropic;
@@ -3104,7 +3104,7 @@ public class LivingBlock extends Mob {
         }
     }
 
-    private static boolean isUsableRotation(final Quaternionfc value) {
+    protected static boolean isUsableRotation(final Quaternionfc value) {
         float lengthSqr = value.x() * value.x() + value.y() * value.y()
                 + value.z() * value.z() + value.w() * value.w();
         return Float.isFinite(lengthSqr) && lengthSqr > 1.0E-6F;

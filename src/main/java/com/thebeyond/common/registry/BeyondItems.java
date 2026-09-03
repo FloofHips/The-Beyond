@@ -5,8 +5,12 @@ import com.thebeyond.client.model.equipment.AnchorLeggingsModel;
 import com.thebeyond.client.model.equipment.EtherCloakModel;
 import com.thebeyond.common.item.*;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.*;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -110,6 +114,7 @@ public class BeyondItems {
     public static final DeferredItem<Item> SNAPSHOT = registerItem("snapshot", () -> new SnapshotItem(new Item.Properties().stacksTo(16)));
 
     public static final DeferredItem<Item> OCARINA = registerItem("ocarina", () -> new OcarinaItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> TRINKET_BUCKET = registerItem("trinket_bucket", () -> new NoFluidMobBucketItem(BeyondEntityTypes.BEAD.get(), Fluids.EMPTY, SoundEvents.BUCKET_EMPTY_TADPOLE, (new Item.Properties()).stacksTo(1).component(DataComponents.BUCKET_ENTITY_DATA, CustomData.EMPTY)));
 
     @SuppressWarnings("unchecked")
     public static <T extends Item> DeferredItem<T> registerItem(final String name, final Supplier<? extends Item> item) {
