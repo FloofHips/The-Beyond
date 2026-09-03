@@ -7,8 +7,11 @@ import com.thebeyond.common.item.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.component.DyedItemColor;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -109,7 +112,11 @@ public class BeyondItems {
     // Block-click places the camera block; in-air or sneaking shoots it handheld.
     public static final DeferredItem<Item> PRISMOGRAPH = registerItem("prismograph", () -> new PrismographBlockItem(BeyondBlocks.PRISMOGRAPH.get(), new Item.Properties().stacksTo(1)));
     public static final DeferredItem<Item> SNAPSHOT = registerItem("snapshot", () -> new SnapshotItem(new Item.Properties().stacksTo(16).rarity(BeyondEnums.REMEMBRANCE.getValue())));
+    public static final DeferredItem<Item> PINHOLE_CAMERA = registerItem("pinhole_camera", () -> new CameraBlockItem(BeyondBlocks.CAMERA.get(), new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> SNAPSHOT = registerItem("snapshot", () -> new SnapshotItem(new Item.Properties().stacksTo(16)));
 
+    public static final DeferredItem<Item> OCARINA = registerItem("ocarina", () -> new OcarinaItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> TRINKET_BUCKET = registerItem("trinket_bucket", () -> new NoFluidMobBucketItem(BeyondEntityTypes.BEAD.get(), Fluids.EMPTY, SoundEvents.BUCKET_EMPTY_TADPOLE, (new Item.Properties()).stacksTo(1).component(DataComponents.BUCKET_ENTITY_DATA, CustomData.EMPTY)));
     public static final DeferredItem<Item> STALKER_SEGMENT = registerItem("stalker_segment", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> SMOKE_FUSE = registerItem("smoke_fuse", () -> new SmokeFuseItem(new Item.Properties().component(DataComponents.DYED_COLOR, new DyedItemColor(DyeColor.BLACK.getFireworkColor(), true))));
     public static final DeferredItem<Item> COILED_STALK = registerItem("coiled_stalk", () -> new CoilItem(new Item.Properties()));

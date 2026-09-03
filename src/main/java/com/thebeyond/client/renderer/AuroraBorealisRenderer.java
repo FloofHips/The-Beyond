@@ -33,12 +33,6 @@ public class AuroraBorealisRenderer {
     public static final ResourceLocation AURORA_3_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/aurora_3");
     public static final ResourceLocation AURORA_CRUMBLING_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/aurora_crumbling");
 
-    private static final ResourceLocation AURORA_CRUMBLING_TEX = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_crumbling.png");
-    private static final ResourceLocation AURORA_0_TEX = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_0.png");
-    private static final ResourceLocation AURORA_1_TEX = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_1.png");
-    private static final ResourceLocation AURORA_2_TEX = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_2.png");
-    private static final ResourceLocation AURORA_3_TEX = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/models/aurora_3.png");
-
     // Relative-chunk offsets for the player's chunk; recomputed on chunk-boundary crossing, not per frame.
     private static final java.util.List<long[]> activeOffsets = new java.util.ArrayList<>();
     private static long activeKey = Long.MIN_VALUE;
@@ -174,28 +168,6 @@ public class AuroraBorealisRenderer {
             case 1 -> AURORA_1_MODEL;
             case 2 -> AURORA_2_MODEL;
             default -> AURORA_3_MODEL;
-        };
-    }
-
-    public static ResourceLocation getAuroraTexture(int relX, int relZ, ChunkPos chunkPos, int renderDistance) {
-        double worldX = chunkPos.getMiddleBlockX();
-        double worldZ = chunkPos.getMiddleBlockZ();
-        double distanceFromCenter = Math.sqrt(worldX * worldX + worldZ * worldZ);
-
-        if (distanceFromCenter < renderDistance * 16 * 0.7) {
-            return AURORA_CRUMBLING_TEX;
-        }
-
-        if (Math.abs(relZ) == renderDistance-1 || Math.abs(relZ) == renderDistance+1 || Math.abs(relZ) == renderDistance) {
-            return AURORA_CRUMBLING_TEX;
-        }
-
-        int i = chunkPos.x + chunkPos.z;
-        return switch (i % 3) {
-            case 0 -> AURORA_0_TEX;
-            case 1 -> AURORA_1_TEX;
-            case 2 -> AURORA_2_TEX;
-            default -> AURORA_3_TEX;
         };
     }
 }

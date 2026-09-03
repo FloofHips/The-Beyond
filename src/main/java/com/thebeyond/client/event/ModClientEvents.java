@@ -57,6 +57,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.DyedItemColor;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.*;
 import net.minecraft.world.level.levelgen.synth.PerlinSimplexNoise;
 import net.minecraft.world.level.material.FluidState;
@@ -121,6 +122,9 @@ public class ModClientEvents {
         EntityRenderers.register(BeyondEntityTypes.UNSTABLE_SEED.get(), UnstableSeedRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.LANTERN.get(), LanternRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.ABYSSAL_NOMAD.get(), AbyssalNomadRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.BEAD.get(), BeadRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.TEST_BLOCK.get(), LivingBlockRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.ENTROPIC_BLOCK.get(), EntropicBlockRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.TOTEM_OF_RESPITE.get(), TotemOfRespiteRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.GRAVISTAR.get(), ThrownItemRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.SMOKE_FUSE.get(), ThrownItemRenderer::new);

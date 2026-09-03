@@ -1,9 +1,9 @@
 package com.thebeyond;
 
+import com.thebeyond.common.registry.BeyondEntityDataSerializers;
 import com.thebeyond.common.network.BeyondNetworking;
 import com.thebeyond.common.registry.*;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.server.packs.PackSelectionConfig;
 import net.minecraft.server.packs.PackType;
@@ -57,6 +57,7 @@ public class TheBeyond {
         BeyondAttachments.ATTACHMENT_TYPES.register(modEventBus);
         BeyondMenus.MENUS.register(modEventBus);
         BeyondCriteriaTriggers.TRIGGERS.register(modEventBus);
+        BeyondEntityDataSerializers.ENTITY_DATA_SERIALIZERS.register(modEventBus);
 
         modEventBus.addListener(BeyondTabs::addCreative);
         modEventBus.addListener(BeyondNetworking::onRegisterPayloads);

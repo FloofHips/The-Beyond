@@ -2,6 +2,7 @@ package com.thebeyond.common.registry;
 
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.entity.*;
+import com.thebeyond.common.entity.util.livingblock.LivingBlock;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
@@ -77,7 +78,6 @@ public class BeyondEntityTypes {
                             .sized(1, 1)
                             .clientTrackingRange(4)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rising_block").toString()));
-
     public static final DeferredHolder<EntityType<?>, EntityType<BrubbleEntity>> BRUBBLE =
             ENTITY_TYPES.register("brubble",
                     () -> EntityType.Builder.<BrubbleEntity>of(BrubbleEntity::new, MobCategory.MONSTER)
@@ -94,4 +94,25 @@ public class BeyondEntityTypes {
                     () -> EntityType.Builder.<CoilEntity>of(CoilEntity::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "coiled_stalk").toString()));
+    public static final DeferredHolder<EntityType<?>, EntityType<LivingBlock>> TEST_BLOCK =
+            ENTITY_TYPES.register("test_block",
+                    () -> EntityType.Builder.<LivingBlock>of(LivingBlock::new, MobCategory.MISC)
+                            .sized(1, 1)
+                            .clientTrackingRange(4)
+                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "test_block").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<BeadEntity>> BEAD =
+            ENTITY_TYPES.register("bead_entity",
+                    () -> EntityType.Builder.<BeadEntity>of(BeadEntity::new, MobCategory.MISC)
+                            .sized(1, 1)
+                            .clientTrackingRange(4)
+                            .updateInterval(1)
+                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "bead_entity").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<LivingBlock>> ENTROPIC_BLOCK =
+            ENTITY_TYPES.register("entropic_block",
+                    () -> EntityType.Builder.<LivingBlock>of(LivingBlock::new, MobCategory.MISC)
+                            .sized(1, 1)
+                            .clientTrackingRange(4)
+                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "entropic_block").toString()));
 }
