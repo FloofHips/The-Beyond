@@ -3,6 +3,7 @@ package com.thebeyond.client.renderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.thebeyond.TheBeyond;
+import com.thebeyond.client.event.ModClientEvents;
 import com.thebeyond.client.model.*;
 import com.thebeyond.client.compat.ShaderCompatLib;
 import com.thebeyond.common.entity.LanternEntity;
@@ -89,7 +90,7 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
         int transMax = 10;
         float alpha = Math.max(((transMax - distance) / (float) transMax), entity.level().getRainLevel(partialTicks));
 
-        int finalAlpha = (int) Math.max(255 * alpha, entity.getAlpha());
+        int finalAlpha = ModClientEvents.aimingWithCamera() ? 255 : (int) Math.max(255 * alpha, entity.getAlpha());
         // Pack ARGB manually: Color(r=255, g=finalAlpha, b=255, a=finalAlpha).
         // Magenta/pink tint as finalAlpha drops — the ghostly fade aesthetic.
         int color = (finalAlpha << 24) | (0xFF << 16) | (finalAlpha << 8) | 0xFF;

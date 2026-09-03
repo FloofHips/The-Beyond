@@ -17,6 +17,7 @@ import com.thebeyond.client.renderer.*;
 import com.thebeyond.client.renderer.blockentities.*;
 import com.thebeyond.common.item.*;
 import com.thebeyond.common.registry.*;
+import com.thebeyond.mixin.CreativeModeInventoryScreenAccessor;
 import com.thebeyond.util.ColorUtils;
 import com.thebeyond.util.RenderUtils;
 import com.thebeyond.client.particle.BellowJetParticle;
@@ -35,6 +36,9 @@ import com.thebeyond.compat.sodium.client.SodiumSecondaryView;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColors;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.builders.CubeDeformation;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -47,6 +51,7 @@ import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.*;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -54,6 +59,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.DyedItemColor;
@@ -72,6 +78,7 @@ import net.neoforged.neoforge.client.event.sound.PlaySoundEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
+import net.neoforged.neoforge.client.gui.GuiLayerManager;
 import net.neoforged.neoforge.common.util.TriState;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
@@ -539,6 +546,30 @@ public class ModClientEvents {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "camera_viewfinder"), new CameraViewfinderLayer());
     }
 
+    @SubscribeEvent
+    public static void onRenderCreativeInventory(ScreenEvent.Render.Pre event) {
+        Screen screen = event.getScreen();
+        if (!(screen instanceof CreativeModeInventoryScreenAccessor creativeScreen)) {
+            return;
+        }
+        CreativeModeTab selectedTab = CreativeModeInventoryScreenAccessor.getSelectedTab();
+        if (selectedTab == null) {
+            return;
+        }
+        ResourceLocation tabKey = BuiltInRegistries.CREATIVE_MODE_TAB.getKey(selectedTab);
+        if (tabKey == null || !(tabKey.toString().equals("the_beyond:the_beyond"))) {
+            return;
+        }
+
+        GuiGraphics guiGraphics = event.getGuiGraphics();
+        Collection<ItemStack> items = selectedTab.getDisplayItems();
+
+        // for tomorrow .
+        //for (int i = 0; i < items.size(); i++) {
+        //    guiGraphics.renderItem((ItemStack) items.toArray()[i], 20 + i * 16,20);
+        //}
+    }
+
     /** Clear the aim when the camera leaves the player's hands, else the viewfinder sticks on. */
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
@@ -557,11 +588,17 @@ public class ModClientEvents {
     private static final ResourceLocation CAMERA_VIEWFINDER_LAYER =
             ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "camera_viewfinder");
 
-    private static boolean aimingWithCamera() {
+    public static boolean aimingWithCamera() {
         if (!CameraAim.isAiming()) {
             return false;
         }
         Player player = Minecraft.getInstance().player;
+        if (!Minecraft.getInstance().options.getCameraType().isFirstPerson()) {
+            CameraAim.clear();
+            player.displayClientMessage(Component.translatable("prismograph.first_person"), true);
+            return false;
+        };
+
         return player != null
                 && (player.getMainHandItem().getItem() instanceof PrismographBlockItem
                 || player.getOffhandItem().getItem() instanceof PrismographBlockItem);

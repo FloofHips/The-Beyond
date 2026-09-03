@@ -90,11 +90,23 @@ public class NoFluidMobBucketItem extends MobBucketItem {
         }
         int bodyColor = -1;
         int dyeColor = -1;
+        int size = 0;
 
         if (customdata.contains("BodyColor")) bodyColor = customdata.copyTag().getInt("BodyColor");
         if (customdata.contains("DyeColor")) dyeColor = customdata.copyTag().getInt("DyeColor");
+        if (customdata.contains("Width") && customdata.contains("Height") && customdata.contains("Depth")) size = customdata.copyTag().getInt("Width") + customdata.copyTag().getInt("Height") + customdata.copyTag().getInt("Depth");
 
+        DyeColor dyeColor1 = DyeColor.byId(dyeColor);
+
+        tooltipComponents.add(intToComponent(size));
         tooltipComponents.add(Component.translatable("item.color", new Object[]{String.format(Locale.ROOT, "#%06X", bodyColor)}).withStyle(ChatFormatting.GRAY).withColor(bodyColor));
-        tooltipComponents.add(Component.translatable("item.color", new Object[]{String.format(Locale.ROOT, "#%06X", dyeColor)}).withStyle(ChatFormatting.GRAY).withColor(DyeColor.byId(dyeColor).getTextColor()));
+        tooltipComponents.add(Component.translatable("trinket.growth_color", dyeColor1.getName()).withStyle(ChatFormatting.GRAY).withColor(dyeColor1.getTextColor()));
+    }
+
+    public Component intToComponent(int size) {
+        if (size < 24) return Component.translatable("trinket.small").withStyle(ChatFormatting.GRAY);
+        if (size < 34) return Component.translatable("trinket.medium").withStyle(ChatFormatting.GRAY);
+        if (size > 34) return Component.translatable("trinket.large").withStyle(ChatFormatting.GRAY);
+        return Component.literal("...").withStyle(ChatFormatting.GRAY);
     }
 }

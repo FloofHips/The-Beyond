@@ -1,10 +1,12 @@
 package com.thebeyond.common.registry;
 
 import com.thebeyond.TheBeyond;
+import com.thebeyond.common.creative.BeyondCreativeModeTab;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
@@ -20,20 +22,41 @@ public class BeyondTabs {
             .title(Component.translatable("itemGroup.the_beyond"))
             .withTabsBefore(CreativeModeTabs.COMBAT)
             .withSearchBar()
-            .icon(() -> BeyondBlocks.POLAR_PILLAR.asItem().getDefaultInstance())
-            .displayItems((parameters, output) -> {
-                BeyondItems.ITEMS.getEntries().forEach((i) -> {
-                            output.accept(i.get().asItem());
-                        }
-                );
-                // Deafening potion is a thrown tool: list the functional splash + lingering variants. The
-                // drinkable shell is only the brew intermediate (no effect on drink), so it is not listed here.
-                output.accept(PotionContents.createItemStack(Items.SPLASH_POTION, BeyondPotions.DEAFENING));
-                output.accept(PotionContents.createItemStack(Items.LINGERING_POTION, BeyondPotions.DEAFENING));
-            }).build());
+            .icon(() -> BeyondItems.REMEMBRANCE_LACE.get().getDefaultInstance())
+            .build());
+
+    //.displayItems((parameters, output) -> {
+    //    BeyondItems.ITEMS.getEntries().forEach((i) -> {
+    //                output.accept(i.get().asItem());
+    //            }
+    //    );
+    //    // Deafening potion is a thrown tool: list the functional splash + lingering variants. The
+    //    // drinkable shell is only the brew intermediate (no effect on drink), so it is not listed here.
+    //    output.accept(PotionContents.createItemStack(Items.SPLASH_POTION, BeyondPotions.DEAFENING));
+    //    output.accept(PotionContents.createItemStack(Items.LINGERING_POTION, BeyondPotions.DEAFENING));
 
     public static void addCreative(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS)
-            event.accept(BeyondBlocks.POLAR_PILLAR.get());
+        if (event.getTabKey() == CreativeModeTabs.OP_BLOCKS) {
+            event.accept(BeyondItems.LINER.get());
+            event.accept(BeyondItems.HOLLOWER.get());
+            event.accept(BeyondItems.FILLER.get());
+        }
+        if (event.getTabKey() == THE_BEYOND.getKey()) {
+            event.accept(BeyondItems.LINER.get());
+            event.accept(BeyondItems.HOLLOWER.get());
+            event.accept(BeyondItems.FILLER.get());
+
+            event.accept(BeyondItems.FERROPETAL   .get());
+            event.accept(BeyondItems.MAGNET       .get());
+            event.accept(BeyondItems.FERROJELLY   .get());
+
+            event.accept(BeyondItems.VOID_CRYSTAL       .get());
+            event.accept(BeyondItems.GRAVISTAR          .get());
+            event.accept(BeyondItems.GELLID_VOID_BUCKET .get());
+            event.accept(BeyondItems.ABYSSAL_SHROUD     .get());
+            event.accept(BeyondItems.LANTERN_SHED       .get());
+
+            event.accept(BeyondItems.TOTEM_OF_RESPITE   .get());
+        }
     }
 }

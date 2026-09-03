@@ -18,10 +18,8 @@ public class EmpathyEffect extends MobEffect {
     public void onEffectAdded(LivingEntity livingEntity, int amplifier) {
 
         if (livingEntity instanceof Player player) {
-            //if (player == Minecraft.getInstance().player) {
-                ModClientEvents.empathy = 1;
-                player.level().playSound(player, player.getX(), player.getY(), player.getZ(), BeyondSoundEvents.ABYSSAL_NOMAD_NOD.get(), SoundSource.NEUTRAL);
-            //}
+            ModClientEvents.empathy = 1;
+            player.level().playSound(player, player.getX(), player.getY(), player.getZ(), BeyondSoundEvents.ABYSSAL_NOMAD_NOD.get(), SoundSource.NEUTRAL);
         }
 
         super.onEffectAdded(livingEntity, amplifier);
