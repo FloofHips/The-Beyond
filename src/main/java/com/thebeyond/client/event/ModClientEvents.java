@@ -546,30 +546,6 @@ public class ModClientEvents {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "camera_viewfinder"), new CameraViewfinderLayer());
     }
 
-    @SubscribeEvent
-    public static void onRenderCreativeInventory(ScreenEvent.Render.Pre event) {
-        Screen screen = event.getScreen();
-        if (!(screen instanceof CreativeModeInventoryScreenAccessor creativeScreen)) {
-            return;
-        }
-        CreativeModeTab selectedTab = CreativeModeInventoryScreenAccessor.getSelectedTab();
-        if (selectedTab == null) {
-            return;
-        }
-        ResourceLocation tabKey = BuiltInRegistries.CREATIVE_MODE_TAB.getKey(selectedTab);
-        if (tabKey == null || !(tabKey.toString().equals("the_beyond:the_beyond"))) {
-            return;
-        }
-
-        GuiGraphics guiGraphics = event.getGuiGraphics();
-        Collection<ItemStack> items = selectedTab.getDisplayItems();
-
-        // for tomorrow .
-        //for (int i = 0; i < items.size(); i++) {
-        //    guiGraphics.renderItem((ItemStack) items.toArray()[i], 20 + i * 16,20);
-        //}
-    }
-
     /** Clear the aim when the camera leaves the player's hands, else the viewfinder sticks on. */
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {

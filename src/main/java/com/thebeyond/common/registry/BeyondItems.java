@@ -78,11 +78,12 @@ public class BeyondItems {
     public static final DeferredItem<Item> LIVE_FLAME = registerItem("live_flame", () -> new LiveFlameItem(new Item.Properties().durability(12000)));
     public static final DeferredItem<Item> LIVID_FLAME = registerItem("livid_flame", () -> new LiveFlameItem(new Item.Properties().durability(6000).rarity(Rarity.RARE)));
 
-    public static final DeferredItem<SpawnEggItem> LANTERN_SPAWN_EGG  = ITEMS.register("lantern_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.LANTERN.get(),15136255, 16777215,new Item.Properties()));
+    public static final DeferredItem<SpawnEggItem> LANTERN_SPAWN_EGG        = ITEMS.register("lantern_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.LANTERN.get(),15136255, 16777215,new Item.Properties()));
     public static final DeferredItem<SpawnEggItem> ABYSSAL_NOMAD_SPAWN_EGG  = ITEMS.register("abyssal_nomad_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ABYSSAL_NOMAD.get(),-7693156, -13703706,new Item.Properties()));
-    public static final DeferredItem<SpawnEggItem> ENDERGLOP_SPAWN_EGG  = ITEMS.register("enderglop_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENDERGLOP.get(),0x7127f8, -297995,new Item.Properties()));
-    public static final DeferredItem<SpawnEggItem> ENADRAKE_SPAWN_EGG  = ITEMS.register("enadrake_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENADRAKE.get(),-13213601, -297995,new Item.Properties()));
-    public static final DeferredItem<SpawnEggItem> ENATIOUS_TOTEM_SPAWN_EGG  = ITEMS.register("enatious_totem_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENATIOUS_TOTEM.get(),-13213601, -2169180,new Item.Properties()));
+    public static final DeferredItem<SpawnEggItem> ENDERGLOP_SPAWN_EGG      = ITEMS.register("enderglop_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENDERGLOP.get(),0x7127f8, -297995,new Item.Properties()));
+    public static final DeferredItem<SpawnEggItem> ENADRAKE_SPAWN_EGG       = ITEMS.register("enadrake_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENADRAKE.get(),-13213601, -297995,new Item.Properties()));
+    public static final DeferredItem<SpawnEggItem> ENATIOUS_TOTEM_SPAWN_EGG = ITEMS.register("enatious_totem_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENATIOUS_TOTEM.get(),-13213601, -2169180,new Item.Properties()));
+    public static final DeferredItem<SpawnEggItem> BRUBBLE_SPAWN_EGG        = ITEMS.register("brubble_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.BRUBBLE.get(),-14808526, -16738616,new Item.Properties()));
 
     public static final DeferredItem<Item> REMEMBRANCE_BEADS    = registerRemembrance("beads_remembrance");
     public static final DeferredItem<Item> REMEMBRANCE_IDOL     = registerRemembrance("idol_remembrance");

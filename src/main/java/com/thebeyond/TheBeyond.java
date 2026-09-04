@@ -1,5 +1,6 @@
 package com.thebeyond;
 
+import com.thebeyond.client.event.CreativeTabEvents;
 import com.thebeyond.common.registry.BeyondEntityDataSerializers;
 import com.thebeyond.common.network.BeyondNetworking;
 import com.thebeyond.common.registry.*;
@@ -59,7 +60,7 @@ public class TheBeyond {
         BeyondCriteriaTriggers.TRIGGERS.register(modEventBus);
         BeyondEntityDataSerializers.ENTITY_DATA_SERIALIZERS.register(modEventBus);
 
-        modEventBus.addListener(BeyondTabs::addCreative);
+        modEventBus.addListener(CreativeTabEvents::addCreative);
         modEventBus.addListener(BeyondNetworking::onRegisterPayloads);
         modEventBus.addListener(com.thebeyond.common.data.BeyondDataMapTypes::onRegisterDataMaps);
         modEventBus.addListener(this::addBuiltinPacks);
