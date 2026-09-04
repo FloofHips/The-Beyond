@@ -47,6 +47,12 @@ public class CreativeTabEvents {
     static boolean changed = false;
     static boolean biomes = false;
 
+    static ResourceLocation BIOME = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/gui/container/creative_inventory/biome.png");
+    static ResourceLocation CATEGORY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/gui/container/creative_inventory/category.png");
+
+    static int buttonX = 174;
+    static int buttonY = 5;
+
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         category_items = new ArrayList<ItemStack>();
@@ -445,13 +451,20 @@ public class CreativeTabEvents {
         for (int i = 0; i < 5; i++) {
             Slot slot = mainScreen.getMenu().slots.get(i*9);
             if (slot.getItem().has(DataComponents.CUSTOM_NAME)) {
-                Component text = slot.getItem().get(DataComponents.CUSTOM_NAME);
+                Component icon = slot.getItem().get(DataComponents.CUSTOM_NAME);
+                Component text = Component.translatable("inventory.the_beyond.category." + slot.getItem().get(DataComponents.CUSTOM_NAME).getString());
                 //TODO change the gray to match inventory gray
-                guiGraphics.fill(mainScreen.getGuiLeft() + slot.x-1, mainScreen.getGuiTop() + slot.y-1,mainScreen.getGuiLeft() + slot.x + 162, mainScreen.getGuiTop() + slot.y + 17, Color.LIGHT_GRAY.getRGB());
-                guiGraphics.blit(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/container/creative_inventory/"+text.getString().toLowerCase()+".png"), mainScreen.getGuiLeft() + slot.x, mainScreen.getGuiTop() + slot.y,0,0,16,16,16,16);
+                guiGraphics.fill(mainScreen.getGuiLeft() + slot.x-1, mainScreen.getGuiTop() + slot.y-1,mainScreen.getGuiLeft() + slot.x + 162, mainScreen.getGuiTop() + slot.y + 17, new Color(198, 198,198).getRGB());
+                guiGraphics.blit(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/container/creative_inventory/"+icon.getString()+".png"), mainScreen.getGuiLeft() + slot.x, mainScreen.getGuiTop() + slot.y,0,0,16,16,16,16);
                 guiGraphics.drawString(Minecraft.getInstance().font, text, mainScreen.getGuiLeft() + slot.x + 19, mainScreen.getGuiTop() + slot.y+4, Color.DARK_GRAY.getRGB(), false);
             }
         }
+
+        guiGraphics.blit(getTexture(), mainScreen.getGuiLeft() + buttonX, mainScreen.getGuiTop() + buttonY,0,0,14,8,14,8);
+    }
+
+    public static ResourceLocation getTexture() {
+        return biomes ? BIOME : CATEGORY;
     }
 
     @SubscribeEvent
@@ -467,9 +480,10 @@ public class CreativeTabEvents {
         if (selectedTab == null) return;
         ResourceLocation tabKey = BuiltInRegistries.CREATIVE_MODE_TAB.getKey(selectedTab);
         if (tabKey == null || !(tabKey.toString().equals("the_beyond:the_beyond"))) return;
+        CreativeModeInventoryScreen mainScreen = (CreativeModeInventoryScreen) creativeScreen;
 
         if (selectedTab instanceof CreativeModeTabAccessor creativeTab) {
-
+            if(!isOverArea(mainScreen.getGuiLeft() + buttonX, mainScreen.getGuiTop() + buttonY, 14, 8, event.getMouseX(), event.getMouseY())) return;
             if (biomes) {
                 creativeTab.setDisplayItems(category_items);
                 biomes = !biomes;
@@ -480,6 +494,12 @@ public class CreativeTabEvents {
             }
             creativeScreen.callRefreshSearchResults();
         }
+    }
+
+    public static boolean isOverArea(int x, int y, int xSize, int ySize, double mouseX, double mouseY) {
+        if (mouseX < x || mouseX > x+xSize) return false;
+        if (mouseY < y || mouseY > y+ySize) return false;
+        return true;
     }
 
     public static void addCreative(BuildCreativeModeTabContentsEvent event) {
