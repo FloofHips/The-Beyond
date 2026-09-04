@@ -24,6 +24,7 @@ public class BeyondTabs {
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> THE_BEYOND = CREATIVE_MODE_TABS.register(MODID, () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.the_beyond"))
             .withTabsBefore(CreativeModeTabs.COMBAT)
+            .withSearchBar()
             .icon(() -> BeyondItems.REMEMBRANCE_LACE.get().getDefaultInstance())
             //.displayItems((parameters, output) -> {
             //    BeyondItems.ITEMS.getEntries().forEach((i) -> {

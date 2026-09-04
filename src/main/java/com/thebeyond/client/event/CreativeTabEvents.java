@@ -44,9 +44,19 @@ public class CreativeTabEvents {
     static float headerAlpha = 0f;
     static float emptyAlpha = 0f;
 
+    static boolean changed = false;
+    static boolean biomes = false;
+
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         category_items = new ArrayList<ItemStack>();
+        biome_items = new ArrayList<ItemStack>();
+
+        createCategoryItems();
+        createBiomeItems();
+    }
+
+    private static void createCategoryItems() {
         Map<String, Collection<ItemStack>> categories = new HashMap<>();
 
         categories.put("building", new ArrayList<ItemStack>());
@@ -56,12 +66,12 @@ public class CreativeTabEvents {
         categories.put("artifacts", new ArrayList<ItemStack>());
         categories.put("mobs", new ArrayList<ItemStack>());
 
-        categories.get("building").add(createHeadertack(headerAlpha+=0.001f, Component.literal("Building")));
-        categories.get("functional").add(createHeadertack(headerAlpha+=0.001f, Component.literal("Functional")));
-        categories.get("equipment").add(createHeadertack(headerAlpha+=0.001f, Component.literal("Equipment")));
-        categories.get("ingredients").add(createHeadertack(headerAlpha+=0.001f, Component.literal("Ingredients")));
-        categories.get("mobs").add(createHeadertack(headerAlpha+=0.001f, Component.literal("Mobs")));
-        categories.get("artifacts").add(createHeadertack(headerAlpha+=0.001f, Component.literal("Artifacts")));
+        categories.get("building").add(createHeadertack(headerAlpha+=0.001f, Component.literal("building")));
+        categories.get("functional").add(createHeadertack(headerAlpha+=0.001f, Component.literal("functional")));
+        categories.get("equipment").add(createHeadertack(headerAlpha+=0.001f, Component.literal("equipment")));
+        categories.get("ingredients").add(createHeadertack(headerAlpha+=0.001f, Component.literal("ingredients")));
+        categories.get("mobs").add(createHeadertack(headerAlpha+=0.001f, Component.literal("mobs")));
+        categories.get("artifacts").add(createHeadertack(headerAlpha+=0.001f, Component.literal("artifacts")));
 
         for (Collection<ItemStack> c : categories.values()) {
             initCategory(c);
@@ -167,8 +177,8 @@ public class CreativeTabEvents {
         categories.get("equipment").add(BeyondItems.OCARINA.toStack());
         categories.get("equipment").add(BeyondItems.SMOKE_FUSE.toStack());
         categories.get("equipment").add(BeyondItems.COILED_STALK.toStack());
-        categories.get("functional").add(PotionContents.createItemStack(Items.SPLASH_POTION, BeyondPotions.DEAFENING));
-        categories.get("functional").add(PotionContents.createItemStack(Items.LINGERING_POTION, BeyondPotions.DEAFENING));
+        categories.get("equipment").add(PotionContents.createItemStack(Items.SPLASH_POTION, BeyondPotions.DEAFENING));
+        categories.get("equipment").add(PotionContents.createItemStack(Items.LINGERING_POTION, BeyondPotions.DEAFENING));
 
         categories.get("artifacts").add(BeyondItems.REMEMBRANCE_BEADS.toStack());
         categories.get("artifacts").add(BeyondItems.REMEMBRANCE_IDOL.toStack());
@@ -205,6 +215,181 @@ public class CreativeTabEvents {
         category_items.addAll(categories.get("ingredients"));
         category_items.addAll(categories.get("mobs"));
         category_items.addAll(categories.get("artifacts"));
+    }
+
+
+    private static void createBiomeItems() {
+        Map<String, Collection<ItemStack>> categories = new HashMap<>();
+
+        categories.put("the end", new ArrayList<ItemStack>());
+        categories.put("attracta expanse", new ArrayList<ItemStack>());
+        categories.put("peer lands", new ArrayList<ItemStack>());
+        categories.put("the paths", new ArrayList<ItemStack>());
+        categories.put("lustrous echoes", new ArrayList<ItemStack>());
+        categories.put("fumarole uplands", new ArrayList<ItemStack>());
+        categories.put("chestral hollows", new ArrayList<ItemStack>());
+
+        categories.get("the end").add(createHeadertack(headerAlpha+=0.001f, Component.literal("the_end")));
+        categories.get("attracta expanse").add(createHeadertack(headerAlpha+=0.001f, Component.literal("attracta_expanse")));
+        categories.get("peer lands").add(createHeadertack(headerAlpha+=0.001f, Component.literal("peer_lands")));
+        categories.get("the paths").add(createHeadertack(headerAlpha+=0.001f, Component.literal("the_paths")));
+        categories.get("lustrous echoes").add(createHeadertack(headerAlpha+=0.001f, Component.literal("lustrous_echoes")));
+        categories.get("fumarole uplands").add(createHeadertack(headerAlpha+=0.001f, Component.literal("fumarole_uplands")));
+        categories.get("chestral hollows").add(createHeadertack(headerAlpha+=0.001f, Component.literal("chestral_hollows")));
+
+        for (Collection<ItemStack> c : categories.values()) {
+            initCategory(c);
+        }
+
+        categories.get("the end").add(Blocks.END_STONE.asItem().getDefaultInstance());
+        categories.get("the end").add(Blocks.END_STONE_BRICKS.asItem().getDefaultInstance());
+        categories.get("the end").add(Blocks.END_STONE_BRICK_STAIRS.asItem().getDefaultInstance());
+        categories.get("the end").add(Blocks.END_STONE_BRICK_SLAB.asItem().getDefaultInstance());
+        categories.get("the end").add(Blocks.END_STONE_BRICK_WALL.asItem().getDefaultInstance());
+        categories.get("the end").add(BeyondBlocks.ENGRAVED_END_STONE.toStack());
+        categories.get("the end").add(Blocks.PURPUR_BLOCK.asItem().getDefaultInstance());
+        categories.get("the end").add(Blocks.PURPUR_PILLAR.asItem().getDefaultInstance());
+        categories.get("the end").add(Blocks.PURPUR_STAIRS.asItem().getDefaultInstance());
+        categories.get("the end").add(Blocks.PURPUR_SLAB.asItem().getDefaultInstance());
+        categories.get("the end").add(Items.SHULKER_SPAWN_EGG.getDefaultInstance());
+        categories.get("the end").add(Items.SHULKER_SHELL.getDefaultInstance());
+        categories.get("the end").add(Items.SHULKER_BOX.getDefaultInstance());
+        categories.get("the end").add(Items.ELYTRA.getDefaultInstance());
+        categories.get("the end").add(Blocks.CHORUS_PLANT.asItem().getDefaultInstance());
+        categories.get("the end").add(Blocks.CHORUS_FLOWER.asItem().getDefaultInstance());
+        categories.get("the end").add(Items.CHORUS_FRUIT.getDefaultInstance());
+        categories.get("the end").add(Items.POPPED_CHORUS_FRUIT.getDefaultInstance());
+        categories.get("the end").add(Blocks.END_ROD.asItem().getDefaultInstance());
+        categories.get("the end").add(BeyondBlocks.ZYMOTE.toStack());
+        categories.get("the end").add(BeyondBlocks.REACHING_ZYMOTE.toStack());
+        categories.get("the end").add(BeyondBlocks.CREEPING_ZYMOTE.toStack());
+        categories.get("the end").add(BeyondBlocks.PORTELAIN.toStack());
+        categories.get("the end").add(BeyondBlocks.GUSTER.toStack());
+        categories.get("the end").add(BeyondBlocks.PORTELAIN_PILLAR.toStack());
+        categories.get("the end").add(BeyondBlocks.AMPHORA.toStack());
+        categories.get("the end").add(BeyondBlocks.PORTELAIN_TILES.toStack());
+        categories.get("the end").add(BeyondBlocks.PORTELAIN_MOSAIC.toStack());
+        categories.get("the end").add(BeyondBlocks.PORTELAIN_STAIRS.toStack());
+        categories.get("the end").add(BeyondBlocks.PORTELAIN_SLAB.toStack());
+        categories.get("the end").add(BeyondBlocks.PORTELAIN_DOOR.toStack());
+        categories.get("the end").add(BeyondBlocks.BONFIRE.toStack());
+        categories.get("the end").add(BeyondItems.VOID_CRYSTAL.toStack());
+        categories.get("the end").add(BeyondItems.GRAVISTAR.toStack());
+
+        categories.get("the end").add(BeyondItems.LANTERN_SPAWN_EGG.toStack());
+        categories.get("the end").add(BeyondItems.LANTERN_SHED.toStack());
+        categories.get("the end").add(BeyondItems.ECTOPLASM.toStack());
+        categories.get("the end").add(BeyondItems.TOTEM_OF_RESPITE.toStack());
+        categories.get("the end").add(BeyondItems.ETHER_CLOAK.toStack());
+
+        categories.get("the end").add(BeyondItems.REMEMBRANCE_BEADS.toStack());
+        categories.get("the end").add(BeyondItems.REMEMBRANCE_IDOL.toStack());
+        categories.get("the end").add(BeyondItems.REMEMBRANCE_BRACE.toStack());
+        categories.get("the end").add(BeyondItems.REMEMBRANCE_RING.toStack());
+        categories.get("the end").add(BeyondItems.REMEMBRANCE_MEMORY.toStack());
+        categories.get("the end").add(BeyondItems.REMEMBRANCE_HORN.toStack());
+        categories.get("the end").add(BeyondItems.REMEMBRANCE_LACE.toStack());
+        categories.get("the end").add(BeyondItems.REMEMBRANCE_BROCHE.toStack());
+        categories.get("the end").add(BeyondItems.REMEMBRANCE_LIFE.toStack());
+        categories.get("the end").add(BeyondItems.REMEMBRANCE_HOME.toStack());
+        categories.get("the end").add(BeyondItems.REMEMBRANCE_EYE.toStack());
+        categories.get("the end").add(BeyondItems.REMEMBRANCE_SPIKE.toStack());
+        categories.get("the end").add(BeyondItems.REMEMBRANCE_ORNAMENT.toStack());
+        categories.get("the end").add(BeyondItems.REMEMBRANCE_MOUNT.toStack());
+        categories.get("the end").add(BeyondItems.REMEMBRANCE_HAND.toStack());
+        categories.get("the end").add(BeyondItems.REMEMBRANCE_CLOTH.toStack());
+
+        categories.get("the paths").add(BeyondBlocks.AURORACITE.toStack());
+        categories.get("the paths").add(BeyondItems.ABYSSAL_NOMAD_SPAWN_EGG.toStack());
+        categories.get("the paths").add(BeyondItems.ABYSSAL_SHROUD.toStack());
+        categories.get("the paths").add(BeyondItems.PATHFINDER_BOOTS.toStack());
+        categories.get("the paths").add(BeyondBlocks.MEMOR.toStack());
+        categories.get("the paths").add(BeyondBlocks.CHISELED_MEMOR.toStack());
+        categories.get("the paths").add(BeyondBlocks.MEMOR_PILLAR.toStack());
+        categories.get("the paths").add(BeyondBlocks.MEMOR_STAIRS.toStack());
+        categories.get("the paths").add(BeyondBlocks.MEMOR_FAUCET.toStack());
+
+        categories.get("attracta expanse").add(BeyondBlocks.PLATE_BLOCK.toStack());
+        categories.get("attracta expanse").add(BeyondBlocks.PLATED_END_STONE.toStack());
+        categories.get("attracta expanse").add(BeyondBlocks.POLAR_PILLAR.toStack());
+        categories.get("attracta expanse").add(BeyondBlocks.POLAR_BULB.toStack());
+        categories.get("attracta expanse").add(BeyondBlocks.POLAR_ANTENNA.toStack());
+        categories.get("attracta expanse").add(BeyondItems.MAGNOLILLY.toStack());
+        categories.get("attracta expanse").add(BeyondItems.ANCHOR_LEGGINGS.toStack());
+        categories.get("attracta expanse").add(BeyondItems.MAGNET.toStack());
+        categories.get("attracta expanse").add(BeyondItems.FERROPETAL.toStack());
+        categories.get("attracta expanse").add(BeyondItems.ENDERGLOP_SPAWN_EGG.toStack());
+        categories.get("attracta expanse").add(BeyondItems.FERROJELLY.toStack());
+        categories.get("attracta expanse").add(BeyondBlocks.FERROJELLY_BLOCK.toStack());
+
+        categories.get("peer lands").add(BeyondBlocks.OBIROOT.toStack());
+        categories.get("peer lands").add(BeyondBlocks.PEEPING_OBIROOT.toStack());
+        categories.get("peer lands").add(BeyondBlocks.XYLEM.toStack());
+        categories.get("peer lands").add(BeyondItems.ENADRAKE_SPAWN_EGG.toStack());
+        categories.get("peer lands").add(BeyondBlocks.OBIROOT_SPROUT.toStack());
+        categories.get("peer lands").add(PotionContents.createItemStack(Items.SPLASH_POTION, BeyondPotions.DEAFENING));
+        categories.get("peer lands").add(PotionContents.createItemStack(Items.LINGERING_POTION, BeyondPotions.DEAFENING));
+        categories.get("peer lands").add(BeyondBlocks.ENADRAKE_HUT.toStack());
+        categories.get("peer lands").add(BeyondBlocks.ENADRAKE_FLARE.toStack());
+        categories.get("peer lands").add(BeyondBlocks.REFUGE.toStack());
+        categories.get("peer lands").add(BeyondBlocks.OBIROOT_ARM.toStack());
+        categories.get("peer lands").add(BeyondItems.ENATIOUS_TOTEM_SPAWN_EGG.toStack());
+        categories.get("peer lands").add(BeyondBlocks.ENATIOUS_TOTEM_SEED.toStack());
+
+        categories.get("fumarole uplands").add(BeyondBlocks.GAUSSANITE.toStack());
+        categories.get("fumarole uplands").add(BeyondBlocks.GAUSS_VENT.toStack());
+        categories.get("fumarole uplands").add(BeyondBlocks.BELLOW.toStack());
+        categories.get("fumarole uplands").add(BeyondBlocks.SOOT_BLOCK.toStack());
+        categories.get("fumarole uplands").add(BeyondBlocks.BRITTLE_METAL.toStack());
+        categories.get("fumarole uplands").add(BeyondBlocks.MOLTEN_METAL.toStack());
+        categories.get("fumarole uplands").add(BeyondBlocks.BRITTLE_METAL_BLOCK.toStack());
+        categories.get("fumarole uplands").add(BeyondBlocks.BRITTLE_METAL_STAIRS.toStack());
+        categories.get("fumarole uplands").add(BeyondBlocks.BRITTLE_METAL_SLAB.toStack());
+        categories.get("fumarole uplands").add(BeyondBlocks.BRITTLE_METAL_DOOR.toStack());
+        categories.get("fumarole uplands").add(BeyondItems.BRITTLE_SWORD.toStack());
+        categories.get("fumarole uplands").add(BeyondItems.BRITTLE_SHOVEL.toStack());
+        categories.get("fumarole uplands").add(BeyondItems.BRITTLE_PICKAXE.toStack());
+        categories.get("fumarole uplands").add(BeyondItems.BRITTLE_AXE.toStack());
+        categories.get("fumarole uplands").add(BeyondItems.BRITTLE_HOE.toStack());
+        categories.get("fumarole uplands").add(BeyondItems.BRITTLE_METAL_SHEET.toStack());
+        categories.get("fumarole uplands").add(BeyondItems.PRISMUTH.toStack());
+        categories.get("fumarole uplands").add(BeyondBlocks.PROJECTOR.toStack());
+        categories.get("fumarole uplands").add(BeyondItems.PRISMOGRAPH.toStack());
+        categories.get("fumarole uplands").add(BeyondBlocks.BLINDING_THORN.toStack());
+        categories.get("fumarole uplands").add(BeyondItems.SMOKE_FUSE.toStack());
+        categories.get("fumarole uplands").add(BeyondItems.BRUBBLE_SPAWN_EGG.toStack());
+
+        categories.get("lustrous echoes").add(BeyondBlocks.NACRE.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.UNSTABLE_NACRE.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.PEARL.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.PEARL_BRICKS.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.COBBLED_PEARL.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.COBBLED_PEARL_BRICKS.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.PEARL_MIRROR.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.PEARL_CHIMES.toStack());
+        categories.get("lustrous echoes").add(BeyondItems.OCARINA.toStack());
+        categories.get("lustrous echoes").add(BeyondItems.TRINKET_BUCKET.toStack());
+
+        categories.get("chestral hollows").add(BeyondBlocks.VILET.toStack());
+        categories.get("chestral hollows").add(BeyondBlocks.VILE_GROWTH.toStack());
+        categories.get("chestral hollows").add(BeyondBlocks.BLEEDING_THORN.toStack());
+        categories.get("chestral hollows").add(BeyondBlocks.PERKA_STALK.toStack());
+        categories.get("chestral hollows").add(BeyondBlocks.PERKA_STALK_MOUTH.toStack());
+        categories.get("chestral hollows").add(BeyondItems.STALKER_SEGMENT.toStack());
+        categories.get("chestral hollows").add(BeyondItems.COILED_STALK.toStack());
+        categories.get("chestral hollows").add(BeyondBlocks.COIL_VERTEBRAE.toStack());
+
+        for (Collection<ItemStack> c : categories.values()) {
+            padOutCategory(c);
+        }
+
+        biome_items.addAll(categories.get("attracta expanse"));
+        biome_items.addAll(categories.get("peer lands"));
+        biome_items.addAll(categories.get("the paths"));
+        biome_items.addAll(categories.get("lustrous echoes"));
+        biome_items.addAll(categories.get("fumarole uplands"));
+        biome_items.addAll(categories.get("chestral hollows"));
+        biome_items.addAll(categories.get("the end"));
     }
 
     public static void initCategory(Collection<ItemStack> items) {
@@ -250,13 +435,21 @@ public class CreativeTabEvents {
         GuiGraphics guiGraphics = event.getGuiGraphics();
         CreativeModeInventoryScreen mainScreen = (CreativeModeInventoryScreen) creativeScreen;
 
+        if (!changed && selectedTab instanceof CreativeModeTabAccessor creativeTab) {
+            CreativeModeInventoryScreen inventoryScreen = (CreativeModeInventoryScreen) creativeScreen;
+            inventoryScreen.getMenu().items.clear();
+            inventoryScreen.getMenu().items.addAll(category_items);
+            changed = true;
+        }
+
         for (int i = 0; i < 5; i++) {
             Slot slot = mainScreen.getMenu().slots.get(i*9);
             if (slot.getItem().has(DataComponents.CUSTOM_NAME)) {
                 Component text = slot.getItem().get(DataComponents.CUSTOM_NAME);
+                //TODO change the gray to match inventory gray
                 guiGraphics.fill(mainScreen.getGuiLeft() + slot.x-1, mainScreen.getGuiTop() + slot.y-1,mainScreen.getGuiLeft() + slot.x + 162, mainScreen.getGuiTop() + slot.y + 17, Color.LIGHT_GRAY.getRGB());
                 guiGraphics.blit(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/container/creative_inventory/"+text.getString().toLowerCase()+".png"), mainScreen.getGuiLeft() + slot.x, mainScreen.getGuiTop() + slot.y,0,0,16,16,16,16);
-                guiGraphics.drawString(Minecraft.getInstance().font, text, mainScreen.getGuiLeft() + slot.x + 18, mainScreen.getGuiTop() + slot.y+4, Color.DARK_GRAY.getRGB(), false);
+                guiGraphics.drawString(Minecraft.getInstance().font, text, mainScreen.getGuiLeft() + slot.x + 19, mainScreen.getGuiTop() + slot.y+4, Color.DARK_GRAY.getRGB(), false);
             }
         }
     }
@@ -264,24 +457,6 @@ public class CreativeTabEvents {
     @SubscribeEvent
     public static void onRenderToolTip(RenderTooltipEvent.Pre event) {
         if (event.getItemStack().getItem() == BeyondItems.GRAVISTAR.get()) event.setCanceled(true);
-    }
-
-    @SubscribeEvent
-    public static void onInit(ScreenEvent.Init.Pre event) {
-        //TODO this thing doesn't even work LOL
-        //you still have to reopen the inventory to refresh.
-        Screen screen = event.getScreen();
-        if (!(screen instanceof CreativeModeInventoryScreenAccessor creativeScreen)) return;
-        CreativeModeTab selectedTab = CreativeModeInventoryScreenAccessor.getSelectedTab();
-        if (selectedTab == null) return;
-        ResourceLocation tabKey = BuiltInRegistries.CREATIVE_MODE_TAB.getKey(selectedTab);
-        if (tabKey == null || !(tabKey.toString().equals("the_beyond:the_beyond"))) return;
-
-        if (selectedTab instanceof CreativeModeTabAccessor creativeTab) {
-                //creativeScreen.callRefreshCurrentTabContents(category_items);
-                creativeTab.setDisplayItems(category_items);
-                //creativeScreen.callRefreshSearchResults();
-        }
     }
 
     @SubscribeEvent
@@ -294,14 +469,18 @@ public class CreativeTabEvents {
         if (tabKey == null || !(tabKey.toString().equals("the_beyond:the_beyond"))) return;
 
         if (selectedTab instanceof CreativeModeTabAccessor creativeTab) {
-            if (creativeTab.getDisplayItems().size()<2) {
-                creativeScreen.callRefreshCurrentTabContents(category_items);
+
+            if (biomes) {
                 creativeTab.setDisplayItems(category_items);
-                //creativeScreen.callRefreshSearchResults();
+                biomes = !biomes;
             }
+                else {
+                creativeTab.setDisplayItems(biome_items);
+                biomes = !biomes;
+            }
+            creativeScreen.callRefreshSearchResults();
         }
     }
-
 
     public static void addCreative(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.OP_BLOCKS) {
