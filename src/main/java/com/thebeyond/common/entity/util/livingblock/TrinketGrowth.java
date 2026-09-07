@@ -10,10 +10,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TrinketGrowth {
-    public static ResourceLocation HOLE_BIG = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/bauble/hole_big.png");
-    static ResourceLocation HOLE_MEDIUM = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/bauble/hole_medium.png");
-    static ResourceLocation HOLE_SMALL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/bauble/hole_small.png");
-    static ResourceLocation SPIKE_BASE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/bauble/spike_base.png");
+    public static ResourceLocation HOLE_BIG = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/trinket/hole_big.png");
+    static ResourceLocation HOLE_MEDIUM = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/trinket/hole_medium.png");
+    static ResourceLocation HOLE_SMALL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/trinket/hole_small.png");
+    static ResourceLocation SPIKE_BASE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/trinket/spike_base.png");
 
     public enum Kind {
         HOLE,

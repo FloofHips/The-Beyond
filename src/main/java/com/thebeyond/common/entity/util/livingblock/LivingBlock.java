@@ -307,7 +307,7 @@ public class LivingBlock extends Mob {
     private boolean climbFlowOrdered;
     private int climbWhyTick = Integer.MIN_VALUE;
     private String climbWhyLast = "";
-    private final Map<String, Integer> beadWhyTicks = new HashMap<>();
+    private final Map<String, Integer> trinketWhyTicks = new HashMap<>();
     private int climbPivotAnchorId = -1;
     private @Nullable Vec3 climbPivotAnchorLocal;
     private boolean climbPivotStalled;
@@ -1139,7 +1139,7 @@ public class LivingBlock extends Mob {
         double pen = this.penetrationNow();
         double dpen = pen - this.penLast;
         this.penLast = pen;
-        if (shouldLog) LOGGER.debug("[livingblock] beadtrace id={} t={} writers=[{}] hull={} pos={} vel={} gap={} ground={} air={} settled={} oriented={} seq={} align={} phase={} climb={} step={} moveticks={} fails={} route={} pen={} dpen={} arcref={} tilt={} ori={} inwall={} spin={} moved={} dem={} carry={}",
+        if (shouldLog) LOGGER.debug("[livingblock] trinkettrace id={} t={} writers=[{}] hull={} pos={} vel={} gap={} ground={} air={} settled={} oriented={} seq={} align={} phase={} climb={} step={} moveticks={} fails={} route={} pen={} dpen={} arcref={} tilt={} ori={} inwall={} spin={} moved={} dem={} carry={}",
                 this.getId(), this.tickCount,
                 this.writerTrace == null ? "" : this.writerTrace.toString().trim(),
                 String.format("%.3fx%.3fx%.3f", hull.getXsize(), hull.getYsize(), hull.getZsize()),
@@ -1261,8 +1261,8 @@ public class LivingBlock extends Mob {
         AABB hull = this.getBoundingBox();
         AABB probe = LivingBlockStep.probe(hull, direction);
         List<AABB> surfaces = new ArrayList<>();
-        int beads = 0;
-        double beadTop = Double.NEGATIVE_INFINITY;
+        int trinkets = 0;
+        double trinketTop = Double.NEGATIVE_INFINITY;
         for (BlockPos pos : BlockPos.betweenClosed(
                 BlockPos.containing(probe.minX, probe.minY, probe.minZ),
                 BlockPos.containing(probe.maxX, probe.maxY, probe.maxZ))) {
@@ -1275,14 +1275,14 @@ public class LivingBlock extends Mob {
                 LivingBlockCollisionHandler.bodyTerrain(this, probe);
         for (AABB box : bodies.boxes()) {
             surfaces.add(box);
-            beads++;
-            beadTop = Math.max(beadTop, box.maxY);
+            trinkets++;
+            trinketTop = Math.max(trinketTop, box.maxY);
         }
         LivingBlockStep.Verdict verdict = LivingBlockStep.ahead(surfaces, hull, direction);
-        if (beads > 0 || bodies.refused() > 0) {
+        if (trinkets > 0 || bodies.refused() > 0) {
             this.climbWhy(direction, "stepbody", String.format(
                     "boxes=%d refused=%d worsttilt=%.2f bodytop=%.4f feet=%.4f verdict=%s rise=%.4f",
-                    beads, bodies.refused(), bodies.worstTilt(), beadTop, hull.minY,
+                    trinkets, bodies.refused(), bodies.worstTilt(), trinketTop, hull.minY,
                     verdict.reason(), verdict.rise()));
         }
         return verdict;
@@ -1383,8 +1383,8 @@ public class LivingBlock extends Mob {
                 LivingBlockCollisionHandler.bodyTerrain(this, sweep);
         surfaces.addAll(bodies.boxes());
         if ((!bodies.boxes().isEmpty() || bodies.refused() > 0)
-                && this.beadWhyDue("descentground")) {
-            this.beadWhy("descentground", String.format("boxes=%d refused=%d worsttilt=%.2f",
+                && this.trinketWhyDue("descentground")) {
+            this.trinketWhy("descentground", String.format("boxes=%d refused=%d worsttilt=%.2f",
                     bodies.boxes().size(), bodies.refused(), bodies.worstTilt()));
         }
         return surfaces;
@@ -1473,8 +1473,8 @@ public class LivingBlock extends Mob {
         }
         double ledgeGap = this.descentWallBody ? this.anchorGap(next.world()) : 0.0;
         if (ledgeGap > BODY_ANCHOR_HOLD) {
-            if (this.beadWhyDue("descentanchorlost")) {
-                this.beadWhy("descentanchorlost", String.format(
+            if (this.trinketWhyDue("descentanchorlost")) {
+                this.trinketWhy("descentanchorlost", String.format(
                         "dir=%s left=%.4f pen=%.5f point=%.3f,%.3f,%.3f", direction, ledgeGap,
                         this.penetrationNow(), next.world().x, next.world().y, next.world().z));
             }
@@ -2194,21 +2194,21 @@ public class LivingBlock extends Mob {
     private static final double BODY_ANCHOR_TOLERANCE = 1.0E-6;
     private static final double BODY_ANCHOR_HOLD = LivingBlockPivot.CONTACT;
 
-    private static final int BEAD_WHY_INTERVAL = 20;
+    private static final int TRINKET_WHY_INTERVAL = 20;
 
-    public boolean beadWhyDue(final String gate) {
+    public boolean trinketWhyDue(final String gate) {
         if (this.level().isClientSide()) {
             return false;
         }
-        Integer last = this.beadWhyTicks.get(gate);
-        return last == null || this.tickCount - last >= BEAD_WHY_INTERVAL;
+        Integer last = this.trinketWhyTicks.get(gate);
+        return last == null || this.tickCount - last >= TRINKET_WHY_INTERVAL;
     }
 
-    public void beadWhy(final String gate, final String extra) {
-        if (!this.beadWhyDue(gate)) {
+    public void trinketWhy(final String gate, final String extra) {
+        if (!this.trinketWhyDue(gate)) {
             return;
         }
-        this.beadWhyTicks.put(gate, this.tickCount);
+        this.trinketWhyTicks.put(gate, this.tickCount);
         if (shouldLog) LOGGER.debug("[livingblock] bodyanchor id={} gate={} {} tilt={} settled={} ground={} seq={} pos={}",
                 this.getId(), gate, extra, String.format("%.2f", this.tiltDegrees()),
                 this.isOrientationSettled(), this.onGround(), this.climbPivotSequence,
@@ -2245,7 +2245,7 @@ public class LivingBlock extends Mob {
             this.climbPivotAnchorId = owner.getId();
             this.climbPivotAnchorLocal = LivingBlockPivot.localPoint(owner.getShapeBoxes(),
                     owner.shapePivot(), owner.getRotation(), owner.position(), world);
-            this.beadWhy("anchorowner", String.format(
+            this.trinketWhy("anchorowner", String.format(
                     "owner=%d point=%.3f,%.3f,%.3f local=%.3f,%.3f,%.3f",
                     owner.getId(), world.x, world.y, world.z, this.climbPivotAnchorLocal.x,
                     this.climbPivotAnchorLocal.y, this.climbPivotAnchorLocal.z));
@@ -2260,7 +2260,7 @@ public class LivingBlock extends Mob {
         }
         this.climbPivotAnchorId = bodySuspected ? ANCHOR_UNIDENTIFIED : ANCHOR_NONE;
         if (bodySuspected) {
-            this.beadWhy("anchornoid", String.format(
+            this.trinketWhy("anchornoid", String.format(
                     "point=%.3f,%.3f,%.3f", world.x, world.y, world.z));
         }
     }
@@ -2271,8 +2271,8 @@ public class LivingBlock extends Mob {
             if (gap <= BODY_ANCHOR_HOLD) {
                 return null;
             }
-            if (this.beadWhyDue("anchorlost")) {
-                this.beadWhy("anchorlost", String.format(
+            if (this.trinketWhyDue("anchorlost")) {
+                this.trinketWhy("anchorlost", String.format(
                         "dir=%s step=%d/%d left=%.4f pen=%.5f point=%.3f,%.3f,%.3f",
                         direction, this.climbPivotStep, this.climbPivotLimit, gap,
                         this.penetrationNow(), this.climbPivot.world().x,
@@ -2284,7 +2284,7 @@ public class LivingBlock extends Mob {
         Vec3 held = this.climbPivot.world();
         if (!(this.level().getEntity(this.climbPivotAnchorId) instanceof LivingBlock owner)
                 || !owner.isAlive()) {
-            this.beadWhy("anchornoowner", String.format("owner=%d point=%.3f,%.3f,%.3f",
+            this.trinketWhy("anchornoowner", String.format("owner=%d point=%.3f,%.3f,%.3f",
                     this.climbPivotAnchorId, held.x, held.y, held.z));
             this.clearClimbPivot();
             return ClimbPivotAdvance.RELEASED;
@@ -2292,7 +2292,7 @@ public class LivingBlock extends Mob {
         double moved = LivingBlockPivot.anchorDrift(owner.getShapeBoxes(), owner.shapePivot(),
                 owner.getRotation(), owner.position(), this.climbPivotAnchorLocal, held);
         if (moved > BODY_ANCHOR_HOLD) {
-            this.beadWhy("anchorjumped", String.format(
+            this.trinketWhy("anchorjumped", String.format(
                     "owner=%d moved=%.4f limit=%.4f point=%.3f,%.3f,%.3f",
                     this.climbPivotAnchorId, moved, BODY_ANCHOR_HOLD, held.x, held.y, held.z));
             this.clearClimbPivot();
@@ -2305,7 +2305,7 @@ public class LivingBlock extends Mob {
                     this.climbPivot.surface());
             this.entityData.set(DATA_CLIMB_PIVOT_WORLD,
                     new Vector3f((float)now.x, (float)now.y, (float)now.z));
-            this.beadWhy("anchorfollow", String.format("owner=%d moved=%.5f point=%.3f,%.3f,%.3f",
+            this.trinketWhy("anchorfollow", String.format("owner=%d moved=%.5f point=%.3f,%.3f,%.3f",
                     this.climbPivotAnchorId, moved, now.x, now.y, now.z));
         }
         return null;

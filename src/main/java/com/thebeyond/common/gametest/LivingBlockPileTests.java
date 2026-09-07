@@ -1,7 +1,7 @@
 package com.thebeyond.common.gametest;
 
 import com.thebeyond.TheBeyond;
-import com.thebeyond.common.entity.BeadEntity;
+import com.thebeyond.common.entity.TrinketEntity;
 import com.thebeyond.common.entity.util.livingblock.movement.Target;
 import com.thebeyond.common.registry.BeyondEntityTypes;
 import net.minecraft.core.BlockPos;
@@ -37,7 +37,7 @@ public final class LivingBlockPileTests {
 
     private static final int[] GROW_X = {1, 3, 5, 7};
     private static final int[] GROW_Z = {1, 4, 7, 10};
-    private static final int BEADS = 12;
+    private static final int TRINKETS = 12;
 
     private static final int GROWTH_STEPS = 400;
     private static final int SETTLE_TICKS = 10;
@@ -172,9 +172,9 @@ public final class LivingBlockPileTests {
     @GameTest(template = "pile", timeoutTicks = 900)
     public static void orderOverhead(final GameTestHelper helper) {
         floor(helper);
-        final List<BeadEntity> beads = new ArrayList<>();
+        final List<TrinketEntity> beads = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
-            BeadEntity bead = helper.spawn(BeyondEntityTypes.BEAD.get(),
+            TrinketEntity bead = helper.spawn(BeyondEntityTypes.TRINKET.get(),
                     new BlockPos(2 + 3 * i, STAND, 3));
             bead.getRandom().setSeed(900L + i);
             beads.add(bead);
@@ -184,7 +184,7 @@ public final class LivingBlockPileTests {
                 .thenExecute(() -> grow(beads))
                 .thenIdle(SETTLE_TICKS)
                 .thenExecute(() -> {
-                    for (BeadEntity bead : beads) {
+                    for (TrinketEntity bead : beads) {
                         BlockPos above = bead.blockPosition().above(6).east();
                         bead.setMovementTarget(Target.near(above.getCenter(), RADIUS_TIGHT));
                     }
@@ -197,10 +197,10 @@ public final class LivingBlockPileTests {
                 .thenSucceed();
     }
 
-    private static void overhead(final GameTestHelper helper, final List<BeadEntity> beads,
+    private static void overhead(final GameTestHelper helper, final List<TrinketEntity> beads,
                                  final String phase) {
         Vec3 origin = originOf(helper);
-        for (BeadEntity bead : beads) {
+        for (TrinketEntity bead : beads) {
             Vec3 spot = bead.position();
             LOGGER.debug(String.format(Locale.ROOT,
                     "[pileshape] overhead phase=%s id=%d pos=%.3f,%.3f,%.3f held=%b ground=%b climb=%b",
@@ -231,8 +231,8 @@ public final class LivingBlockPileTests {
         }
     }
 
-    private static void grow(final List<BeadEntity> beads) {
-        for (BeadEntity bead : beads) {
+    private static void grow(final List<TrinketEntity> beads) {
+        for (TrinketEntity bead : beads) {
             for (int i = 0; i < GROWTH_STEPS; i++) {
                 bead.grow();
             }
@@ -245,15 +245,15 @@ public final class LivingBlockPileTests {
         arena(helper, corner);
         final String mode = (corner ? "corner" : "axis")
                 + (radius > RADIUS_TIGHT ? "-wide" : "-tight");
-        final List<BeadEntity> beads = new ArrayList<>();
+        final List<TrinketEntity> beads = new ArrayList<>();
         int index = 0;
         outer:
         for (int gx : GROW_X) {
             for (int gz : GROW_Z) {
-                if (index >= BEADS) {
+                if (index >= TRINKETS) {
                     break outer;
                 }
-                BeadEntity bead = helper.spawn(BeyondEntityTypes.BEAD.get(),
+                TrinketEntity bead = helper.spawn(BeyondEntityTypes.TRINKET.get(),
                         new BlockPos(gx, STAND, gz));
                 bead.getRandom().setSeed(seed * 1000L + index);
                 beads.add(bead);
@@ -285,19 +285,19 @@ public final class LivingBlockPileTests {
             }
         }
         Collections.shuffle(pool, new Random(seed * 7919L + (corner ? 1 : 0)));
-        return pool.subList(0, BEADS);
+        return pool.subList(0, TRINKETS);
     }
 
-    private static void place(final GameTestHelper helper, final List<BeadEntity> beads,
+    private static void place(final GameTestHelper helper, final List<TrinketEntity> beads,
                               final List<BlockPos> start, final int seed, final String mode) {
         for (int i = 0; i < beads.size(); i++) {
             Vec3 spot = helper.absolutePos(start.get(i)).getBottomCenter();
-            BeadEntity bead = beads.get(i);
+            TrinketEntity bead = beads.get(i);
             bead.moveTo(spot.x, spot.y, spot.z, bead.getYRot(), bead.getXRot());
             bead.setDeltaMovement(Vec3.ZERO);
         }
         int full = 0;
-        for (BeadEntity bead : beads) {
+        for (TrinketEntity bead : beads) {
             AABB hull = bead.getBoundingBox();
             if (hull.getXsize() >= HULL_FULL && hull.getYsize() >= HULL_FULL
                     && hull.getZsize() >= HULL_FULL) {
@@ -316,12 +316,12 @@ public final class LivingBlockPileTests {
                 seed, mode, beads.size(), full, cells));
     }
 
-    private static void order(final GameTestHelper helper, final List<BeadEntity> beads,
+    private static void order(final GameTestHelper helper, final List<TrinketEntity> beads,
                               final int seed, final String mode, final boolean corner,
                               final double radius) {
         BlockPos at = corner ? new BlockPos(WALL_X, STAND, WALL_Z) : new BlockPos(WALL_X, STAND, AIM_Z);
         Vec3 aim = helper.absolutePos(at).getCenter();
-        for (BeadEntity bead : beads) {
+        for (TrinketEntity bead : beads) {
             bead.setMovementTarget(Target.near(aim, radius));
         }
         Vec3 origin = originOf(helper);
@@ -331,10 +331,10 @@ public final class LivingBlockPileTests {
                 aim.z - origin.z, radius));
     }
 
-    private static void report(final GameTestHelper helper, final List<BeadEntity> beads,
+    private static void report(final GameTestHelper helper, final List<TrinketEntity> beads,
                                final int seed, final String mode, final String phase) {
         Set<Long> occupied = new HashSet<>();
-        for (BeadEntity bead : beads) {
+        for (TrinketEntity bead : beads) {
             BlockPos cell = cellOf(helper, bead);
             occupied.add(key(cell.getX(), cell.getY(), cell.getZ()));
         }
@@ -344,7 +344,7 @@ public final class LivingBlockPileTests {
         StringBuilder cells = new StringBuilder();
         StringBuilder treads = new StringBuilder();
 
-        for (BeadEntity bead : beads) {
+        for (TrinketEntity bead : beads) {
             BlockPos cell = cellOf(helper, bead);
             int cx = cell.getX();
             int cy = cell.getY();
@@ -409,7 +409,7 @@ public final class LivingBlockPileTests {
         return Vec3.atLowerCornerOf(helper.absolutePos(BlockPos.ZERO));
     }
 
-    private static BlockPos cellOf(final GameTestHelper helper, final BeadEntity bead) {
+    private static BlockPos cellOf(final GameTestHelper helper, final TrinketEntity bead) {
         Vec3 origin = originOf(helper);
         Vec3 spot = bead.position();
         return BlockPos.containing(spot.x - origin.x, spot.y - origin.y + 1.0E-4, spot.z - origin.z);

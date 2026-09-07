@@ -84,6 +84,7 @@ public class BeyondItems {
     public static final DeferredItem<SpawnEggItem> ENADRAKE_SPAWN_EGG       = ITEMS.register("enadrake_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENADRAKE.get(),-13213601, -297995,new Item.Properties()));
     public static final DeferredItem<SpawnEggItem> ENATIOUS_TOTEM_SPAWN_EGG = ITEMS.register("enatious_totem_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENATIOUS_TOTEM.get(),-13213601, -2169180,new Item.Properties()));
     public static final DeferredItem<SpawnEggItem> BRUBBLE_SPAWN_EGG        = ITEMS.register("brubble_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.BRUBBLE.get(),-14808526, -16738616,new Item.Properties()));
+    public static final DeferredItem<SpawnEggItem> BAUBLE_SPAWN_EGG        = ITEMS.register("bauble_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.BAUBLE.get(),-2955531, -1,new Item.Properties()));
 
     public static final DeferredItem<Item> REMEMBRANCE_BEADS    = registerRemembrance("beads_remembrance");
     public static final DeferredItem<Item> REMEMBRANCE_IDOL     = registerRemembrance("idol_remembrance");
@@ -114,7 +115,7 @@ public class BeyondItems {
     public static final DeferredItem<Item> PRISMOGRAPH = registerItem("prismograph", () -> new PrismographBlockItem(BeyondBlocks.PRISMOGRAPH.get(), new Item.Properties().stacksTo(1)));
     public static final DeferredItem<Item> SNAPSHOT = registerItem("snapshot", () -> new SnapshotItem(new Item.Properties().stacksTo(16).rarity(BeyondEnums.REMEMBRANCE.getValue())));
     public static final DeferredItem<Item> OCARINA = registerItem("ocarina", () -> new OcarinaItem(new Item.Properties().stacksTo(1)));
-    public static final DeferredItem<Item> TRINKET_BUCKET = registerItem("trinket_bucket", () -> new NoFluidMobBucketItem(BeyondEntityTypes.BEAD.get(), Fluids.EMPTY, SoundEvents.BUCKET_EMPTY_TADPOLE, (new Item.Properties()).stacksTo(1).component(DataComponents.BUCKET_ENTITY_DATA, CustomData.EMPTY)));
+    public static final DeferredItem<Item> TRINKET_BUCKET = registerItem("trinket_bucket", () -> new NoFluidMobBucketItem(BeyondEntityTypes.TRINKET.get(), Fluids.EMPTY, SoundEvents.BUCKET_EMPTY_TADPOLE, (new Item.Properties()).stacksTo(1).component(DataComponents.BUCKET_ENTITY_DATA, CustomData.EMPTY)));
     public static final DeferredItem<Item> STALKER_SEGMENT = registerItem("stalker_segment", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> SMOKE_FUSE = registerItem("smoke_fuse", () -> new SmokeFuseItem(new Item.Properties().component(DataComponents.DYED_COLOR, new DyedItemColor(DyeColor.BLACK.getFireworkColor(), true))));
     public static final DeferredItem<Item> COILED_STALK = registerItem("coiled_stalk", () -> new CoilItem(new Item.Properties()));

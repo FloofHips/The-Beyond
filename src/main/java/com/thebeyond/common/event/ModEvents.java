@@ -26,9 +26,8 @@ public class ModEvents {
         event.put(BeyondEntityTypes.LANTERN.get(), LanternEntity.createAttributes().build());
         event.put(BeyondEntityTypes.ABYSSAL_NOMAD.get(), AbyssalNomadEntity.createAttributes().build());
         event.put(BeyondEntityTypes.BRUBBLE.get(), BrubbleEntity.createAttributes().build());
-        event.put(BeyondEntityTypes.TEST_BLOCK.get(), LivingBlock.createAttributes().build());
-        event.put(BeyondEntityTypes.ENTROPIC_BLOCK.get(), LivingBlock.createAttributes().build());
-        event.put(BeyondEntityTypes.BEAD.get(), BeadEntity.createAttributes().build());
+        event.put(BeyondEntityTypes.BAUBLE.get(), BaubleEntity.createAttributes().build());
+        event.put(BeyondEntityTypes.TRINKET.get(), TrinketEntity.createAttributes().build());
     }
 
     /** Registered on both sides; a Dist.CLIENT-only registration would skip dedicated servers. */

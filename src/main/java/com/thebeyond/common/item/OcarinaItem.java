@@ -1,19 +1,8 @@
 package com.thebeyond.common.item;
 
-import com.thebeyond.api.compat.BeyondCompatHooks;
-import com.thebeyond.client.particle.CircleColorTransitionOptions;
-import com.thebeyond.client.particle.CrosshairColorTransitionOptions;
-import com.thebeyond.common.entity.AbyssalNomadEntity;
-import com.thebeyond.common.entity.BeadEntity;
+import com.thebeyond.common.entity.TrinketEntity;
 import com.thebeyond.common.entity.util.livingblock.movement.Target;
-import com.thebeyond.common.registry.BeyondCriteriaTriggers;
-import com.thebeyond.common.registry.BeyondSoundEvents;
-import com.thebeyond.common.registry.BeyondTags;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.LivingEntity;
@@ -68,8 +57,8 @@ public class OcarinaItem extends Item {
                 AABB detectionBox = new AABB(a).inflate(8);
 
                 Vec3 centre = pos.getCenter();
-                List<BeadEntity> entities = level.getEntitiesOfClass(BeadEntity.class, detectionBox);
-                for (BeadEntity bead : entities) {
+                List<TrinketEntity> entities = level.getEntitiesOfClass(TrinketEntity.class, detectionBox);
+                for (TrinketEntity bead : entities) {
                     bead.setMovementTarget(Target.near(centre, CALL_RADIUS));
                 }
                 LOGGER.debug("[ocarina] call plan=emergent beads={} face={} target={} radius={}",

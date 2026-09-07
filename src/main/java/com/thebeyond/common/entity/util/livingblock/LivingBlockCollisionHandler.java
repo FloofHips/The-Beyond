@@ -332,10 +332,10 @@ public class LivingBlockCollisionHandler {
         }
         String gate = lastWallFromBody ? "wallcaught"
                 : contact == null ? "wallnocontact" : "wallnotchosen";
-        if (!entity.beadWhyDue(gate)) {
+        if (!entity.trinketWhyDue(gate)) {
             return;
         }
-        entity.beadWhy(gate,
+        entity.trinketWhy(gate,
                 String.format("dir=%s boxes=%d refused=%d worsttilt=%.2f plane=%s gap=%s",
                         direction, bodies.boxes().size(), bodies.refused(), bodies.worstTilt(),
                         contact == null ? "-" : String.format("%.4f", contact.surface().plane()),

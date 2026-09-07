@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/template_wall_post",
+  "textures": {
+    "wall": "the_beyond:block/cobbled_pearl_bricks"
+  }
+}

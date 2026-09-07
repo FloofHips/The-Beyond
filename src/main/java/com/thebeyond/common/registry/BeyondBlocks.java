@@ -3,13 +3,23 @@ package com.thebeyond.common.registry;
 import com.google.common.collect.Sets;
 import com.thebeyond.common.block.*;
 import com.thebeyond.common.fluid.GellidVoidBlock;
+import com.thebeyond.util.BlockUtils;
+import net.minecraft.core.BlockPos;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.phys.BlockHitResult;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -128,6 +138,8 @@ public class BeyondBlocks {
             PORTELAIN.get().defaultBlockState(),
             BlockBehaviour.Properties.ofFullCopy(PORTELAIN.get()).sound(SoundType.NETHER_BRICKS)));
     public static final DeferredBlock<Block> PORTELAIN_SLAB = registerBlock("portelain_slab", () -> new SlabBlock(
+            BlockBehaviour.Properties.ofFullCopy(PORTELAIN.get()).sound(SoundType.NETHER_BRICKS)));
+    public static final DeferredBlock<Block> PORTELAIN_WALL = registerBlock("portelain_wall", () -> new WallBlock(
             BlockBehaviour.Properties.ofFullCopy(PORTELAIN.get()).sound(SoundType.NETHER_BRICKS)));
 
     public static final DeferredBlock<Block> AURORACITE = registerBlock("auroracite",
@@ -360,13 +372,76 @@ public class BeyondBlocks {
     // Pearlescent Expanse
     public static final DeferredBlock<Block> NACRE = registerBlock("nacre",
             () -> new Block(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                    .mapColor(MapColor.WARPED_WART_BLOCK)
+                    .strength(2.0F, 2.0F)
+                    .sound(SoundType.GRAVEL)) {
+
+                @Override
+                protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+                    if (!level.isClientSide()) {
+                        if (!stack.is(ItemTags.HOES)) return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
+                        return BlockUtils.useItemOn(stack, RAKED_NACRE.get().defaultBlockState(), level, pos, player, hand, hitResult);
+                    }
+
+                    return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
+                }
+            }
+    );
+    public static final DeferredBlock<Block> RAKED_NACRE = registerBlock("raked_nacre",
+            () -> new RakedNacreBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.WARPED_WART_BLOCK)
                     .strength(2.0F, 2.0F)
                     .sound(SoundType.GRAVEL))
     );
     public static final DeferredBlock<Block> UNSTABLE_NACRE = registerBlock("unstable_nacre",
             () -> new NacreBlock(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                    .mapColor(MapColor.WARPED_HYPHAE)
+                    .strength(2.0F, 2.0F)
+                    .sound(SoundType.GRAVEL))
+    );
+    public static final DeferredBlock<Block> RICH_NACRE = registerBlock("rich_nacre",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_BLACK)
+                    .strength(2.0F, 2.0F)
+                    .sound(SoundType.GRAVEL)) {
+
+                @Override
+                protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+                    if (!level.isClientSide()) {
+                        if (!stack.is(ItemTags.HOES)) return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
+                        return BlockUtils.useItemOn(stack, RICH_RAKED_NACRE.get().defaultBlockState(), level, pos, player, hand, hitResult);
+                    }
+
+                    return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
+                }
+            }
+    );
+    public static final DeferredBlock<Block> RICH_RAKED_NACRE = registerBlock("rich_raked_nacre",
+            () -> new RakedNacreBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_BLACK)
+                    .strength(2.0F, 2.0F)
+                    .sound(SoundType.GRAVEL))
+    );
+    public static final DeferredBlock<Block> PALE_NACRE = registerBlock("pale_nacre",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.SNOW)
+                    .strength(2.0F, 2.0F)
+                    .sound(SoundType.GRAVEL)) {
+
+                @Override
+                protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+                    if (!level.isClientSide()) {
+                        if (!stack.is(ItemTags.HOES)) return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
+                        return BlockUtils.useItemOn(stack, PALE_RAKED_NACRE.get().defaultBlockState(), level, pos, player, hand, hitResult);
+                    }
+
+                    return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
+                }
+            }
+    );
+    public static final DeferredBlock<Block> PALE_RAKED_NACRE = registerBlock("pale_raked_nacre",
+            () -> new RakedNacreBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.SNOW)
                     .strength(2.0F, 2.0F)
                     .sound(SoundType.GRAVEL))
     );
@@ -375,11 +450,27 @@ public class BeyondBlocks {
                     .mapColor(MapColor.TERRACOTTA_WHITE)
                     .strength(0.5F, 0.0F)
                     .sound(BeyondSoundTypes.MEMOR)));
+    public static final DeferredBlock<Block> PEARL_STAIRS = registerBlock("pearl_stairs", () -> new StairBlock(
+            PEARL.get().defaultBlockState(),
+            BlockBehaviour.Properties.ofFullCopy(PEARL.get()).sound(SoundType.NETHER_BRICKS)));
+    public static final DeferredBlock<Block> PEARL_SLAB = registerBlock("pearl_slab", () -> new SlabBlock(
+            BlockBehaviour.Properties.ofFullCopy(PEARL.get()).sound(SoundType.NETHER_BRICKS)));
+    public static final DeferredBlock<Block> PEARL_WALL = registerBlock("pearl_wall", () -> new WallBlock(
+            BlockBehaviour.Properties.ofFullCopy(PEARL.get()).sound(SoundType.NETHER_BRICKS)));
+
     public static final DeferredBlock<Block> PEARL_BRICKS = registerBlock("pearl_bricks",
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.TERRACOTTA_WHITE)
                     .strength(0.6F, 0.1F)
                     .sound(SoundType.AMETHYST)));
+    public static final DeferredBlock<Block> PEARL_BRICK_STAIRS = registerBlock("pearl_brick_stairs", () -> new StairBlock(
+            PEARL_BRICKS.get().defaultBlockState(),
+            BlockBehaviour.Properties.ofFullCopy(PEARL_BRICKS.get()).sound(SoundType.NETHER_BRICKS)));
+    public static final DeferredBlock<Block> PEARL_BRICK_SLAB = registerBlock("pearl_brick_slab", () -> new SlabBlock(
+            BlockBehaviour.Properties.ofFullCopy(PEARL_BRICKS.get()).sound(SoundType.NETHER_BRICKS)));
+    public static final DeferredBlock<Block> PEARL_BRICK_WALL = registerBlock("pearl_brick_wall", () -> new WallBlock(
+            BlockBehaviour.Properties.ofFullCopy(PEARL_BRICKS.get()).sound(SoundType.NETHER_BRICKS)));
+
     public static final DeferredBlock<Block> COBBLED_PEARL = registerBlock("cobbled_pearl",
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.TERRACOTTA_WHITE)
@@ -390,6 +481,14 @@ public class BeyondBlocks {
                     .mapColor(MapColor.TERRACOTTA_WHITE)
                     .strength(0.6F, 0.1F)
                     .sound(SoundType.AMETHYST)));
+    public static final DeferredBlock<Block> COBBLED_PEARL_BRICK_STAIRS = registerBlock("cobbled_pearl_brick_stairs", () -> new StairBlock(
+            COBBLED_PEARL_BRICKS.get().defaultBlockState(),
+            BlockBehaviour.Properties.ofFullCopy(COBBLED_PEARL_BRICKS.get()).sound(SoundType.NETHER_BRICKS)));
+    public static final DeferredBlock<Block> COBBLED_PEARL_BRICK_SLAB = registerBlock("cobbled_pearl_brick_slab", () -> new SlabBlock(
+            BlockBehaviour.Properties.ofFullCopy(COBBLED_PEARL_BRICKS.get()).sound(SoundType.NETHER_BRICKS)));
+    public static final DeferredBlock<Block> COBBLED_PEARL_BRICK_WALL = registerBlock("cobbled_pearl_brick_wall", () -> new WallBlock(
+            BlockBehaviour.Properties.ofFullCopy(COBBLED_PEARL_BRICKS.get()).sound(SoundType.NETHER_BRICKS)));
+
     public static final DeferredBlock<Block> PEARL_MIRROR = registerBlock("pearl_mirror",
             () -> new MirrorBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.TERRACOTTA_WHITE)

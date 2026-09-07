@@ -41,6 +41,8 @@ public class BlockStates extends BlockStateProvider {
         basicBlock(BeyondBlocks.PEARL);
         basicBlock(BeyondBlocks.PEARL_BRICKS);
         basicBlock(BeyondBlocks.SOOT_BLOCK);
+        basicBlock(BeyondBlocks.RICH_NACRE);
+        basicBlock(BeyondBlocks.PALE_NACRE);
 
         //rotatedPillarBlock(BeyondBlocks.XYLEM);
         //rotatedPillarBlock(BeyondBlocks.FERROJELLY_BLOCK);
@@ -58,12 +60,32 @@ public class BlockStates extends BlockStateProvider {
         doorBlock((DoorBlock) BeyondBlocks.PORTELAIN_DOOR.get(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/portelain_door_bottom"), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/portelain_door_top"));
         doorBlock((DoorBlock) BeyondBlocks.BRITTLE_METAL_DOOR.get(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/brittle_metal_door_bottom"), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/brittle_metal_door_top"));
 
+        blocks.remove(BeyondBlocks.COBBLED_PEARL_BRICK_STAIRS);
+        blocks.remove(BeyondBlocks.COBBLED_PEARL_BRICK_SLAB);
+        blocks.remove(BeyondBlocks.COBBLED_PEARL_BRICK_WALL);
+
+        blocks.remove(BeyondBlocks.PEARL_BRICK_STAIRS);
+        blocks.remove(BeyondBlocks.PEARL_BRICK_SLAB);
+        blocks.remove(BeyondBlocks.PEARL_BRICK_WALL);
+
+        brickStairsBlock(BeyondBlocks.COBBLED_PEARL_BRICK_STAIRS);
+        brickWallBlock(BeyondBlocks.COBBLED_PEARL_BRICK_WALL);
+
+        brickStairsBlock(BeyondBlocks.PEARL_BRICK_STAIRS);
+        brickWallBlock(BeyondBlocks.PEARL_BRICK_WALL);
+
         DataHelper.takeAll(blocks, b -> b.get() instanceof RotatedPillarBlock).forEach(this::rotatedPillarBlock);
         DataHelper.takeAll(blocks, b -> b.get() instanceof StairBlock).forEach(this::stairsBlock);
         DataHelper.takeAll(blocks, b -> b.get() instanceof WallBlock).forEach(this::wallBlock);
         DataHelper.takeAll(blocks, b -> b.get() instanceof FenceBlock).forEach(this::fenceBlock);
         Collection<DeferredBlock<Block>> slabs = DataHelper.takeAll(blocks, b -> b.get() instanceof SlabBlock);
+
+        slabs.remove(BeyondBlocks.COBBLED_PEARL_BRICK_SLAB);
+        slabs.remove(BeyondBlocks.PEARL_BRICK_SLAB);
         slabs.forEach(this::slabBlock);
+
+        brickSlabBlock(BeyondBlocks.COBBLED_PEARL_BRICK_SLAB);
+        brickSlabBlock(BeyondBlocks.PEARL_BRICK_SLAB);
     }
 
     public void basicBlock(DeferredBlock<Block> block) {
@@ -109,6 +131,21 @@ public class BlockStates extends BlockStateProvider {
     public void slabBlock(DeferredBlock<Block> blockRegistryObject) {
         String name = blockRegistryObject.getId().getPath();
         String baseName = name.substring(0, name.length() - 5);
+        slabBlock((SlabBlock) blockRegistryObject.get(), prefix(baseName), prefix("block/" + baseName));
+    }
+    public void brickWallBlock(DeferredBlock<Block> blockRegistryObject) {
+        String name = blockRegistryObject.getId().getPath();
+        String baseName = name.substring(0, name.length() - 5)+"s";
+        wallBlock((WallBlock) blockRegistryObject.get(), prefix("block/" + baseName));
+    }
+    public void brickStairsBlock(DeferredBlock<Block> blockRegistryObject) {
+        String name = blockRegistryObject.getId().getPath();
+        String baseName = name.substring(0, name.length() - 7)+"s";
+        stairsBlock((StairBlock) blockRegistryObject.get(), prefix("block/" + baseName));
+    }
+    public void brickSlabBlock(DeferredBlock<Block> blockRegistryObject) {
+        String name = blockRegistryObject.getId().getPath();
+        String baseName = name.substring(0, name.length() - 5)+"s";
         slabBlock((SlabBlock) blockRegistryObject.get(), prefix(baseName), prefix("block/" + baseName));
     }
     private ResourceLocation prefix(String s) {

@@ -9,6 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.SpawnEggItem;
+import net.minecraft.world.level.block.WallBlock;
 import net.neoforged.neoforge.client.model.generators.ItemModelProvider;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 
@@ -77,12 +78,19 @@ public class ItemModels extends ItemModelProvider {
         itemGeneratedModel(BeyondBlocks.BLEEDING_THORN.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/bleeding_thorn"));
         itemGeneratedModel(BeyondBlocks.BLINDING_THORN.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/blinding_thorn"));
         itemGeneratedModel(BeyondBlocks.PEARL_CHIMES.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/pearl_chimes"));
-
+        items.removeIf(i -> i instanceof BlockItem item && item.getBlock() instanceof WallBlock);
 
         takeAll(items, i -> i instanceof BlockItem).forEach(item -> blockBasedModel(item, ""));
         takeAll(items, i -> i instanceof SpawnEggItem).forEach(this::spawnEggGeneratedModel);
 
         items.forEach(item -> itemGeneratedModel(item, resourceItem(itemName(item))));
+
+        wallInventory(BeyondBlocks.PORTELAIN_WALL.asItem().getDescriptionId().split("\\.")[2], ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/portelain"));
+        wallInventory(BeyondBlocks.PEARL_WALL.asItem().getDescriptionId().split("\\.")[2], ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/pearl"));
+        wallInventory(BeyondBlocks.PEARL_BRICK_WALL.asItem().getDescriptionId().split("\\.")[2], ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/pearl_bricks"));
+        wallInventory(BeyondBlocks.COBBLED_PEARL_BRICK_WALL.asItem().getDescriptionId().split("\\.")[2], ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/cobbled_pearl_bricks"));
+
+
     }
     public void spawnEggGeneratedModel(Item item) {
         withExistingParent(itemName(item), "item/template_spawn_egg");

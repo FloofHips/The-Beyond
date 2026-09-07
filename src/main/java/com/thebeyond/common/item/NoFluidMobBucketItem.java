@@ -73,7 +73,7 @@ public class NoFluidMobBucketItem extends MobBucketItem {
     }
 
     private void spawn(ServerLevel serverLevel, ItemStack bucketedMobStack, BlockPos pos) {
-        Entity var5 = BeyondEntityTypes.BEAD.get().spawn(serverLevel, bucketedMobStack, (Player)null, pos, MobSpawnType.BUCKET, true, false);
+        Entity var5 = BeyondEntityTypes.TRINKET.get().spawn(serverLevel, bucketedMobStack, (Player)null, pos, MobSpawnType.BUCKET, true, false);
         if (var5 instanceof Bucketable bucketable) {
             CustomData customdata = (CustomData)bucketedMobStack.getOrDefault(DataComponents.BUCKET_ENTITY_DATA, CustomData.EMPTY);
             bucketable.loadFromBucketTag(customdata.copyTag());

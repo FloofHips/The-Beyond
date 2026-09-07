@@ -2,6 +2,7 @@ package com.thebeyond.data.assets;
 
 import com.thebeyond.TheBeyond;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.effect.MobEffect;
@@ -89,6 +90,12 @@ public class Lang extends LanguageProvider {
         safeAdd("entity.the_beyond.poison_seed", "Poison Seed");
         safeAdd("entity.the_beyond.unstable_seed", "Unstable Seed");
         safeAdd("entity.the_beyond.rising_block", "Rising Block");
+        safeAdd("entity.the_beyond.brubble", "Brubble");
+        safeAdd("entity.the_beyond.bauble", "Bauble");
+        safeAdd("entity.the_beyond.sibling", "Sibling");
+        safeAdd("entity.the_beyond.trinket", "Trinket");
+        safeAdd("entity.the_beyond.smoke_fuse", "Smoke Fuse");
+        safeAdd("entity.the_beyond.coiled_stalk", "Coiled Stalk");
 
         // Fluid type translation — shown by Jade and other overlay mods for fluid tooltips.
         safeAdd("fluid_type.the_beyond.gellid_void", "Gellid Void");
@@ -97,11 +104,15 @@ public class Lang extends LanguageProvider {
         // don't appear in BuiltInRegistries.BIOME at datagen time and can't be iterated like
         // the registries above. Add them by hand. Without these keys, mods that surface
         // biome names (Xaero's, EMI, /locate output, F3) show the raw resource path.
+
         add("biome.the_beyond.attracta_expanse", "Attracta Expanse");
         add("biome.the_beyond.pearlescent_planes", "Pearlescent Planes");
         add("biome.the_beyond.peer_lands", "Peer Lands");
         add("biome.the_beyond.the_paths", "The Paths");
         add("biome.the_beyond.true_void", "True Void");
+        add("biome.the_beyond.lustrous_echoes", "Lustrous Echoes");
+        add("biome.the_beyond.fumarole_uplands", "Fumarole Uplands");
+        add("biome.the_beyond.chestral_hollows", "Chestral Hollows");
 
         add("itemGroup.the_beyond", "The Beyond");
 
@@ -111,6 +122,21 @@ public class Lang extends LanguageProvider {
         add("screen.the_beyond.projector.rotate", "Rotate");
         add("screen.the_beyond.projector.flip", "Flip");
         add("screen.the_beyond.refuge.block", "Block %s");
+
+        add("inventory.the_beyond.category.building", "Building");
+        add("inventory.the_beyond.category.functional", "Functional");
+        add("inventory.the_beyond.category.equipment", "Equipment");
+        add("inventory.the_beyond.category.ingredients", "Ingredients");
+        add("inventory.the_beyond.category.mobs", "Mobs");
+        add("inventory.the_beyond.category.artifacts", "Artifacts");
+
+        add("inventory.the_beyond.category.the_end", "The End");
+        add("inventory.the_beyond.category.attracta_expanse", "Attracta Expanse");
+        add("inventory.the_beyond.category.peer_lands", "Peer Lands");
+        add("inventory.the_beyond.category.the_paths", "The Paths");
+        add("inventory.the_beyond.category.lustrous_echoes", "Lustrous Echoes");
+        add("inventory.the_beyond.category.fumarole_uplands", "Fumarole Uplands");
+        add("inventory.the_beyond.category.chestral_hollows", "Chestral Hollows");
 
         // Sounds
         add("subtitles.block.void_crystal.shatter", "Crystal shatters");
@@ -207,10 +233,6 @@ public class Lang extends LanguageProvider {
         add("subtitles.item.flame.fail", "Flame extinguishes");
 
         add("subtitles.item.anchor_leggings.smash_ground", "Anchors down");
-
-        // Advancements
-        //add("advancements.the_beyond.root.title", "The Beyond");
-        //add("advancements.the_beyond.root.description", "");
 
         add("advancements.the_beyond.befriend_lantern.title", "Equivalent Exchange");
         add("advancements.the_beyond.befriend_lantern.description", "Gain a lantern's trust using a soul torch");

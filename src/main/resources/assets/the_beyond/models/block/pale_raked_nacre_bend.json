@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/template_farmland",
+  "textures": {
+    "dirt": "the_beyond:block/pale_nacre",
+    "top": "the_beyond:block/pale_raked_nacre_bend"
+  }
+}
+
+

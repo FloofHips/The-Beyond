@@ -5,7 +5,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.renderer.util.LivingBlockMeshBaker;
-import com.thebeyond.common.entity.BeadEntity;
+import com.thebeyond.common.entity.TrinketEntity;
 import com.thebeyond.common.entity.util.livingblock.LivingBlock;
 import com.thebeyond.common.entity.util.livingblock.TrinketGrowth;
 import com.thebeyond.common.entity.util.livingblock.TrinketGrowth.*;
@@ -25,8 +25,8 @@ import org.joml.Matrix4f;
 import java.awt.*;
 import java.util.List;
 
-public class BeadRenderer extends LivingBlockRenderer {
-    public static ResourceLocation SPIKE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/bauble/spike.png");
+public class TrinketRenderer extends LivingBlockRenderer {
+    public static ResourceLocation SPIKE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/trinket/spike.png");
 
     private static final AABB[][] SPIKE_AABBS = new AABB[6][4];
     static {
@@ -53,17 +53,17 @@ public class BeadRenderer extends LivingBlockRenderer {
         }
     }
 
-    public BeadRenderer(final EntityRendererProvider.Context context) {
-        super(context, "textures/entity/bauble/edges.png", "textures/entity/bauble/outline.png");
+    public TrinketRenderer(final EntityRendererProvider.Context context) {
+        super(context, "textures/entity/trinket/edges.png", "textures/entity/trinket/outline.png");
     }
 
     @Override
     protected void renderShape(LivingBlock entity, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         Color color = Color.white;
         Color color2 = new Color(DyeColor.WHITE.getTextureDiffuseColor());
-        if (entity instanceof BeadEntity beadEntity) {
-            color = beadEntity.getBodyColor();
-            Color c = new Color(beadEntity.getDyeColor().getTextureDiffuseColor());
+        if (entity instanceof TrinketEntity trinketEntity) {
+            color = trinketEntity.getBodyColor();
+            Color c = new Color(trinketEntity.getDyeColor().getTextureDiffuseColor());
 
             color2 = new Color(FastColor.ARGB32.lerp(0.6f, color.getRGB(), c.getRGB()));
         }
@@ -92,11 +92,11 @@ public class BeadRenderer extends LivingBlockRenderer {
             }
         }
 
-        if (entity instanceof BeadEntity trinket)
+        if (entity instanceof TrinketEntity trinket)
             renderAdditional(trinket,  matrix, normalMatrix, poseStack, buffer, packedLight, color2.getRed(), color2.getGreen(), color2.getBlue(), 1);
     }
 
-    private void renderAdditional(BeadEntity trinket, Matrix4f matrix, Matrix3f normalMatrix, PoseStack poseStack, MultiBufferSource buffer, int packedLight, float r, float g, float b, float a) {
+    private void renderAdditional(TrinketEntity trinket, Matrix4f matrix, Matrix3f normalMatrix, PoseStack poseStack, MultiBufferSource buffer, int packedLight, float r, float g, float b, float a) {
         AABB shapeBounds = trinket.getShapeBounds().inflate(0.002);
         float maxX = (float) shapeBounds.max(Direction.Axis.X);
         float maxY = (float) shapeBounds.max(Direction.Axis.Y);
@@ -172,8 +172,8 @@ public class BeadRenderer extends LivingBlockRenderer {
 
     @Override
     public ResourceLocation getTextureLocation(LivingBlock entity) {
-        if (entity instanceof BeadEntity beadEntity)
-            return ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/bauble/" + beadEntity.getVariant() + ".png");
+        if (entity instanceof TrinketEntity trinketEntity)
+            return ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/trinket/" + trinketEntity.getVariant() + ".png");
         return null;
     }
 }

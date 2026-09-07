@@ -1,7 +1,7 @@
 package com.thebeyond.common.gametest;
 
 import com.thebeyond.TheBeyond;
-import com.thebeyond.common.entity.BeadEntity;
+import com.thebeyond.common.entity.TrinketEntity;
 import com.thebeyond.common.entity.util.livingblock.LivingBlock;
 import com.thebeyond.common.entity.util.livingblock.LivingBlockCollisionHandler;
 import com.thebeyond.common.registry.BeyondEntityTypes;
@@ -62,7 +62,7 @@ public final class LivingBlockRampTests {
     }
 
     private static void growToCeiling(final LivingBlock body) {
-        if (body instanceof BeadEntity grown) {
+        if (body instanceof TrinketEntity grown) {
             for (int i = 0; i < GROWTH_STEPS; i++) {
                 grown.grow();
             }
@@ -283,7 +283,7 @@ public final class LivingBlockRampTests {
     @GameTest(template = "ramp", timeoutTicks = 200)
     public static void axisAlignedHullIgnoresRotation(final GameTestHelper helper) {
         floor(helper);
-        LivingBlock bead = helper.spawn(BeyondEntityTypes.BEAD.get(),
+        LivingBlock bead = helper.spawn(BeyondEntityTypes.TRINKET.get(),
                 new BlockPos(SPAWN_XZ, FLOOR + 1, SPAWN_XZ));
         helper.startSequence()
                 .thenIdle(SETTLE_TICKS)

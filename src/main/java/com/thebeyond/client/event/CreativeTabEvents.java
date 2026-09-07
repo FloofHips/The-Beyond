@@ -102,6 +102,7 @@ public class CreativeTabEvents {
         categories.get("building").add(BeyondBlocks.PORTELAIN_MOSAIC.toStack());
         categories.get("building").add(BeyondBlocks.PORTELAIN_STAIRS.toStack());
         categories.get("building").add(BeyondBlocks.PORTELAIN_SLAB.toStack());
+        categories.get("building").add(BeyondBlocks.PORTELAIN_WALL.toStack());
         categories.get("building").add(BeyondBlocks.PORTELAIN_DOOR.toStack());
         categories.get("building").add(BeyondBlocks.AURORACITE.toStack());
         categories.get("building").add(BeyondBlocks.PLATE_BLOCK.toStack());
@@ -119,10 +120,24 @@ public class CreativeTabEvents {
         categories.get("building").add(BeyondBlocks.BRITTLE_METAL_SLAB.toStack());
         categories.get("building").add(BeyondBlocks.BRITTLE_METAL_DOOR.toStack());
         categories.get("building").add(BeyondBlocks.NACRE.toStack());
+        categories.get("building").add(BeyondBlocks.RAKED_NACRE.toStack());
+        categories.get("building").add(BeyondBlocks.PALE_NACRE.toStack());
+        categories.get("building").add(BeyondBlocks.PALE_RAKED_NACRE.toStack());
+        categories.get("building").add(BeyondBlocks.RICH_NACRE.toStack());
+        categories.get("building").add(BeyondBlocks.RICH_RAKED_NACRE.toStack());
         categories.get("building").add(BeyondBlocks.PEARL.toStack());
+        categories.get("building").add(BeyondBlocks.PEARL_STAIRS.toStack());
+        categories.get("building").add(BeyondBlocks.PEARL_SLAB.toStack());
+        categories.get("building").add(BeyondBlocks.PEARL_WALL.toStack());
         categories.get("building").add(BeyondBlocks.PEARL_BRICKS.toStack());
+        categories.get("building").add(BeyondBlocks.PEARL_BRICK_STAIRS.toStack());
+        categories.get("building").add(BeyondBlocks.PEARL_BRICK_SLAB.toStack());
+        categories.get("building").add(BeyondBlocks.PEARL_BRICK_WALL.toStack());
         categories.get("building").add(BeyondBlocks.COBBLED_PEARL.toStack());
         categories.get("building").add(BeyondBlocks.COBBLED_PEARL_BRICKS.toStack());
+        categories.get("building").add(BeyondBlocks.COBBLED_PEARL_BRICK_STAIRS.toStack());
+        categories.get("building").add(BeyondBlocks.COBBLED_PEARL_BRICK_SLAB.toStack());
+        categories.get("building").add(BeyondBlocks.COBBLED_PEARL_BRICK_WALL.toStack());
         categories.get("building").add(BeyondBlocks.PEARL_MIRROR.toStack());
         categories.get("building").add(BeyondBlocks.PEARL_CHIMES.toStack());
         categories.get("building").add(BeyondBlocks.VILET.toStack());
@@ -209,6 +224,7 @@ public class CreativeTabEvents {
         categories.get("mobs").add(BeyondItems.ENADRAKE_SPAWN_EGG.toStack());
         categories.get("mobs").add(BeyondItems.ENATIOUS_TOTEM_SPAWN_EGG.toStack());
         categories.get("mobs").add(BeyondItems.BRUBBLE_SPAWN_EGG.toStack());
+        categories.get("mobs").add(BeyondItems.BAUBLE_SPAWN_EGG.toStack());
         categories.get("mobs").add(BeyondItems.TRINKET_BUCKET.toStack());
 
         for (Collection<ItemStack> c : categories.values()) {
@@ -277,6 +293,7 @@ public class CreativeTabEvents {
         categories.get("the end").add(BeyondBlocks.PORTELAIN_MOSAIC.toStack());
         categories.get("the end").add(BeyondBlocks.PORTELAIN_STAIRS.toStack());
         categories.get("the end").add(BeyondBlocks.PORTELAIN_SLAB.toStack());
+        categories.get("the end").add(BeyondBlocks.PORTELAIN_WALL.toStack());
         categories.get("the end").add(BeyondBlocks.PORTELAIN_DOOR.toStack());
         categories.get("the end").add(BeyondBlocks.BONFIRE.toStack());
         categories.get("the end").add(BeyondItems.VOID_CRYSTAL.toStack());
@@ -365,15 +382,30 @@ public class CreativeTabEvents {
         categories.get("fumarole uplands").add(BeyondItems.SMOKE_FUSE.toStack());
         categories.get("fumarole uplands").add(BeyondItems.BRUBBLE_SPAWN_EGG.toStack());
 
-        categories.get("lustrous echoes").add(BeyondBlocks.NACRE.toStack());
         categories.get("lustrous echoes").add(BeyondBlocks.UNSTABLE_NACRE.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.NACRE.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.RAKED_NACRE.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.PALE_NACRE.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.PALE_RAKED_NACRE.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.RICH_NACRE.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.RICH_RAKED_NACRE.toStack());
         categories.get("lustrous echoes").add(BeyondBlocks.PEARL.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.PEARL_STAIRS.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.PEARL_SLAB.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.PEARL_WALL.toStack());
         categories.get("lustrous echoes").add(BeyondBlocks.PEARL_BRICKS.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.PEARL_BRICK_STAIRS.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.PEARL_BRICK_SLAB.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.PEARL_BRICK_WALL.toStack());
         categories.get("lustrous echoes").add(BeyondBlocks.COBBLED_PEARL.toStack());
         categories.get("lustrous echoes").add(BeyondBlocks.COBBLED_PEARL_BRICKS.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.COBBLED_PEARL_BRICK_STAIRS.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.COBBLED_PEARL_BRICK_SLAB.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.COBBLED_PEARL_BRICK_WALL.toStack());
         categories.get("lustrous echoes").add(BeyondBlocks.PEARL_MIRROR.toStack());
         categories.get("lustrous echoes").add(BeyondBlocks.PEARL_CHIMES.toStack());
         categories.get("lustrous echoes").add(BeyondItems.OCARINA.toStack());
+        categories.get("lustrous echoes").add(BeyondItems.BAUBLE_SPAWN_EGG.toStack());
         categories.get("lustrous echoes").add(BeyondItems.TRINKET_BUCKET.toStack());
 
         categories.get("chestral hollows").add(BeyondBlocks.VILET.toStack());
@@ -453,7 +485,6 @@ public class CreativeTabEvents {
             if (slot.getItem().has(DataComponents.CUSTOM_NAME)) {
                 Component icon = slot.getItem().get(DataComponents.CUSTOM_NAME);
                 Component text = Component.translatable("inventory.the_beyond.category." + slot.getItem().get(DataComponents.CUSTOM_NAME).getString());
-                //TODO change the gray to match inventory gray
                 guiGraphics.fill(mainScreen.getGuiLeft() + slot.x-1, mainScreen.getGuiTop() + slot.y-1,mainScreen.getGuiLeft() + slot.x + 162, mainScreen.getGuiTop() + slot.y + 17, new Color(198, 198,198).getRGB());
                 guiGraphics.blit(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/container/creative_inventory/"+icon.getString()+".png"), mainScreen.getGuiLeft() + slot.x, mainScreen.getGuiTop() + slot.y,0,0,16,16,16,16);
                 guiGraphics.drawString(Minecraft.getInstance().font, text, mainScreen.getGuiLeft() + slot.x + 19, mainScreen.getGuiTop() + slot.y+4, Color.DARK_GRAY.getRGB(), false);

@@ -94,25 +94,26 @@ public class BeyondEntityTypes {
                     () -> EntityType.Builder.<CoilEntity>of(CoilEntity::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "coiled_stalk").toString()));
-    public static final DeferredHolder<EntityType<?>, EntityType<LivingBlock>> TEST_BLOCK =
-            ENTITY_TYPES.register("test_block",
-                    () -> EntityType.Builder.<LivingBlock>of(LivingBlock::new, MobCategory.MISC)
+    public static final DeferredHolder<EntityType<?>, EntityType<BaubleEntity>> BAUBLE =
+            ENTITY_TYPES.register("bauble",
+                    () -> EntityType.Builder.<BaubleEntity>of(BaubleEntity::new, MobCategory.MISC)
                             .sized(1, 1)
                             .clientTrackingRange(4)
-                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "test_block").toString()));
+                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "bauble").toString()));
 
-    public static final DeferredHolder<EntityType<?>, EntityType<BeadEntity>> BEAD =
-            ENTITY_TYPES.register("bead_entity",
-                    () -> EntityType.Builder.<BeadEntity>of(BeadEntity::new, MobCategory.MISC)
+    public static final DeferredHolder<EntityType<?>, EntityType<TrinketEntity>> TRINKET =
+            ENTITY_TYPES.register("trinket",
+                    () -> EntityType.Builder.<TrinketEntity>of(TrinketEntity::new, MobCategory.MISC)
                             .sized(1, 1)
                             .clientTrackingRange(4)
                             .updateInterval(1)
-                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "bead_entity").toString()));
+                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "trinket").toString()));
 
     public static final DeferredHolder<EntityType<?>, EntityType<LivingBlock>> ENTROPIC_BLOCK =
             ENTITY_TYPES.register("entropic_block",
                     () -> EntityType.Builder.<LivingBlock>of(LivingBlock::new, MobCategory.MISC)
                             .sized(1, 1)
                             .clientTrackingRange(4)
+                            .updateInterval(1)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "entropic_block").toString()));
 }

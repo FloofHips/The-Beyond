@@ -50,23 +50,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-public class BeadEntity extends LivingBlock implements Bucketable {
-    private static final EntityDataAccessor<Integer> DATA_DYE_COLOR = SynchedEntityData.defineId(BeadEntity .class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> DATA_BODY_COLOR = SynchedEntityData.defineId(BeadEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Boolean> DATA_WAXED = SynchedEntityData.defineId(BeadEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<String> DATA_VARIANT = SynchedEntityData.defineId(BeadEntity.class, EntityDataSerializers.STRING);
-    //private static final EntityDataAccessor<Boolean> DATA_FROZEN_SIZE = SynchedEntityData.defineId(BeadEntity.class, EntityDataSerializers.BOOLEAN);
-
-    private static final EntityDataAccessor<Byte> DATA_WIDTH = SynchedEntityData.defineId(BeadEntity.class, EntityDataSerializers.BYTE);
-    private static final EntityDataAccessor<Byte> DATA_HEIGHT = SynchedEntityData.defineId(BeadEntity.class, EntityDataSerializers.BYTE);
-    private static final EntityDataAccessor<Byte> DATA_DEPTH = SynchedEntityData.defineId(BeadEntity.class, EntityDataSerializers.BYTE);
-
-    private static final int[][] SILHOUETTES = {
-            {4, 4, 4},
-            {4, 12, 4},
-            {8, 12, 4},
-            {8, 8, 8}
-    };
+public class TrinketEntity extends BaubleEntity implements Bucketable {
+    private static final EntityDataAccessor<Integer> DATA_DYE_COLOR = SynchedEntityData.defineId(TrinketEntity .class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_BODY_COLOR = SynchedEntityData.defineId(TrinketEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> DATA_WAXED = SynchedEntityData.defineId(TrinketEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<String> DATA_VARIANT = SynchedEntityData.defineId(TrinketEntity.class, EntityDataSerializers.STRING);
 
     private static final String[] VARIANTS = {
             "swirl", "losange", "perforated", "pyramid", "eyes"
@@ -87,14 +75,7 @@ public class BeadEntity extends LivingBlock implements Bucketable {
     public List<TrinketGrowth.Feature> getFeaturePlan() {return featurePlan;}
     public void setFeaturePlan(List<TrinketGrowth.Feature> plan) {featurePlan = plan;}
 
-    public int getHeight() {return this.entityData.get(DATA_HEIGHT);}
-    private void setHeight(byte height) {this.entityData.set(DATA_HEIGHT, height);}
-    public int getWidth() {return this.entityData.get(DATA_WIDTH);}
-    private void setWidth(byte width) {this.entityData.set(DATA_WIDTH, width);}
-    public int getDepth() {return this.entityData.get(DATA_DEPTH);}
-    private void setDepth(byte depth) {this.entityData.set(DATA_DEPTH, depth);}
-
-    public BeadEntity(final EntityType<? extends Mob> type, final Level level) {
+    public TrinketEntity(final EntityType<? extends Mob> type, final Level level) {
         super(type, level);
     }
 
@@ -114,10 +95,6 @@ public class BeadEntity extends LivingBlock implements Bucketable {
         entityData.define(DATA_WAXED, false);
         entityData.define(DATA_VARIANT, "swirl");
         //entityData.define(DATA_FROZEN_SIZE, false);
-
-        entityData.define(DATA_WIDTH, (byte)1);
-        entityData.define(DATA_HEIGHT, (byte)1);
-        entityData.define(DATA_DEPTH, (byte)1);
     }
 
     public void addAdditionalSaveData(CompoundTag compound) {
@@ -126,11 +103,6 @@ public class BeadEntity extends LivingBlock implements Bucketable {
         compound.putInt("BodyColor", this.getBodyColor().getRGB());
         compound.putBoolean("IsWaxed", this.isWaxed());
         compound.putString("Variant", this.getVariant());
-        //compound.putBoolean("FrozenSize", this.entityData.get(DATA_FROZEN_SIZE));
-
-        compound.putByte("Width", (byte) this.getWidth());
-        compound.putByte("Height", (byte) this.getHeight());
-        compound.putByte("Depth", (byte) this.getDepth());
     }
 
     public void readAdditionalSaveData(CompoundTag compound) {
@@ -139,11 +111,6 @@ public class BeadEntity extends LivingBlock implements Bucketable {
         this.setBodyColor(compound.getInt("BodyColor"));
         this.setWaxed(compound.getBoolean("IsWaxed"));
         this.setVariant(compound.getString("Variant"));
-        if (compound.contains("Height")) this.setHeight(compound.getByte("Height"));
-        if (compound.contains("Width")) this.setWidth(compound.getByte("Width"));
-        if (compound.contains("Depth")) this.setDepth(compound.getByte("Depth"));
-
-        //this.entityData.set(DATA_FROZEN_SIZE, compound.getBoolean("FrozenSize"));
     }
 
     @Override
@@ -192,14 +159,6 @@ public class BeadEntity extends LivingBlock implements Bucketable {
                 if (getDepth() < 16) setDepth((byte) (getDepth() + 1));
                 return;
             }
-        }
-    }
-
-    @Override
-    public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
-        super.onSyncedDataUpdated(key);
-        if (DATA_DEPTH.equals(key) || DATA_HEIGHT.equals(key) || DATA_WIDTH.equals(key)) {
-            this.applyShape();
         }
     }
 
@@ -289,28 +248,6 @@ public class BeadEntity extends LivingBlock implements Bucketable {
     @Override
     protected void registerGoals() {
         super.registerGoals();
-    }
-
-    @Override
-    public boolean prefersLowStep() {
-        return this.usesOrientedCollision();
-    }
-
-    @Override
-    protected VoxelShape generateShape(final RandomSource random, final boolean entropic) {
-        if (getWidth() == (byte) 1 || getDepth() == (byte) 1 || getHeight() == (byte) 1) {
-            int[] size = SILHOUETTES[random.nextInt(SILHOUETTES.length)];
-            double w = size[0] / 16.0;
-            double h = size[1] / 16.0;
-            double d = size[2] / 16.0;
-
-            setWidth((byte) (w*16));
-            setHeight((byte) (h*16));
-            setDepth((byte) (d*16));
-
-            return Shapes.box(0.0, 0.0, 0.0, w, h, d);
-        }
-        return Shapes.box(0.0, 0.0, 0.0, getWidth()/16f, getHeight()/16f, getDepth()/16f);
     }
 
     @Override

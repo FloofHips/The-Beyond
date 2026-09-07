@@ -63,8 +63,8 @@ public class PearlPoolFeature extends Feature<NoneFeatureConfiguration> {
         }
 
         int test = 0;
-
-        createFloor(level, noise, radius, start, base);
+        boolean white = source.nextBoolean();
+        createFloor(level, noise, radius, start, base, white);
         if (!floorOnly) createPool(level, source, radius, test, start);
 
         return true;
@@ -106,7 +106,7 @@ public class PearlPoolFeature extends Feature<NoneFeatureConfiguration> {
         return true;
     }
 
-    public static void createFloor(WorldGenLevel level, SimplexNoise noise, int radius, BlockPos start, BlockPos origin) {
+    public static void createFloor(WorldGenLevel level, SimplexNoise noise, int radius, BlockPos start, BlockPos origin, boolean white) {
         int groundRadius = (int) (radius*1.5f);
 
         for (int x = -groundRadius; x <= groundRadius; x++) {
@@ -121,8 +121,10 @@ public class PearlPoolFeature extends Feature<NoneFeatureConfiguration> {
                         if (level.getBlockState(blockPos.above()).isAir() && level.getBlockState(blockPos).is(BeyondTags.END_DECORATOR_REPLACEABLE)) {
                             if (noiseValue < 0.1f)
                               level.setBlock(blockPos, BeyondBlocks.NACRE.get().defaultBlockState(), 3);
-                            else
-                                level.setBlock(blockPos, BeyondBlocks.PLATE_BLOCK.get().defaultBlockState(), 3);
+                            else {
+                                if (white) level.setBlock(blockPos, BeyondBlocks.PALE_NACRE.get().defaultBlockState(), 3);
+                                else level.setBlock(blockPos, BeyondBlocks.RICH_NACRE.get().defaultBlockState(), 3);
+                            }
                         }
                     }
                 }
