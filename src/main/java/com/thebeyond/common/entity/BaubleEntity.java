@@ -1,6 +1,8 @@
 package com.thebeyond.common.entity;
 
+import com.thebeyond.api.worldgen.BeyondTerrainState;
 import com.thebeyond.common.entity.util.livingblock.LivingBlock;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -9,11 +11,13 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
@@ -29,7 +33,6 @@ public class BaubleEntity extends LivingBlock {
     public void setWidth(byte width) {this.entityData.set(DATA_WIDTH, width);}
     public int getDepth() {return this.entityData.get(DATA_DEPTH);}
     public void setDepth(byte depth) {this.entityData.set(DATA_DEPTH, depth);}
-    public boolean hasBeenHurt = false;
 
     public static final int[][] SILHOUETTES = {
             {4, 4, 4},
@@ -39,6 +42,7 @@ public class BaubleEntity extends LivingBlock {
     };
     public BaubleEntity(EntityType<? extends Mob> type, Level level) {
         super(type, level);
+        this.setPersistenceRequired();
     }
     public static AttributeSupplier.Builder createAttributes() {
         return Monster.createMonsterAttributes().add(Attributes.MOVEMENT_SPEED, 0.2);
@@ -56,9 +60,9 @@ public class BaubleEntity extends LivingBlock {
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder entityData) {
         super.defineSynchedData(entityData);
-        entityData.define(DATA_WIDTH, (byte) 4);
-        entityData.define(DATA_HEIGHT, (byte) 4);
-        entityData.define(DATA_DEPTH, (byte) 4);
+        entityData.define(DATA_WIDTH, (byte) 1);
+        entityData.define(DATA_HEIGHT, (byte) 1);
+        entityData.define(DATA_DEPTH, (byte) 1);
     }
     public void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
@@ -99,9 +103,18 @@ public class BaubleEntity extends LivingBlock {
         return Shapes.box(0.0, 0.0, 0.0, getWidth()/16f, getHeight()/16f, getDepth()/16f);
     }
 
+    public static boolean checkSpawnRules(EntityType<BaubleEntity> entityType, ServerLevelAccessor serverLevelAccessor, MobSpawnType mobSpawnType, BlockPos blockPos, RandomSource randomSource) {
+        return serverLevelAccessor.getBlockState(blockPos).isAir() && !serverLevelAccessor.getBlockState(blockPos.below()).isAir();
+    }
+
     @Override
     public boolean hurt(DamageSource source, float amount) {
         return super.hurt(source, amount);
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
     }
 
     public boolean canFuse() {

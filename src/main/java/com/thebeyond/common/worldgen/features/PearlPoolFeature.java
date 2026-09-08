@@ -63,8 +63,7 @@ public class PearlPoolFeature extends Feature<NoneFeatureConfiguration> {
         }
 
         int test = 0;
-        boolean white = source.nextBoolean();
-        createFloor(level, noise, radius, start, base, white);
+        createFloor(level, noise, radius, start, base);
         if (!floorOnly) createPool(level, source, radius, test, start);
 
         return true;
@@ -106,7 +105,7 @@ public class PearlPoolFeature extends Feature<NoneFeatureConfiguration> {
         return true;
     }
 
-    public static void createFloor(WorldGenLevel level, SimplexNoise noise, int radius, BlockPos start, BlockPos origin, boolean white) {
+    public static void createFloor(WorldGenLevel level, SimplexNoise noise, int radius, BlockPos start, BlockPos origin) {
         int groundRadius = (int) (radius*1.5f);
 
         for (int x = -groundRadius; x <= groundRadius; x++) {
@@ -119,12 +118,8 @@ public class PearlPoolFeature extends Feature<NoneFeatureConfiguration> {
                     float noisyRadius = (float) (groundRadius-noiseValue*2);
                     if (distedSqr <= noisyRadius * noisyRadius) {
                         if (level.getBlockState(blockPos.above()).isAir() && level.getBlockState(blockPos).is(BeyondTags.END_DECORATOR_REPLACEABLE)) {
-                            if (noiseValue < 0.1f)
-                              level.setBlock(blockPos, BeyondBlocks.NACRE.get().defaultBlockState(), 3);
-                            else {
-                                if (white) level.setBlock(blockPos, BeyondBlocks.PALE_NACRE.get().defaultBlockState(), 3);
-                                else level.setBlock(blockPos, BeyondBlocks.RICH_NACRE.get().defaultBlockState(), 3);
-                            }
+                            if (noiseValue < 0.1f) level.setBlock(blockPos, BeyondBlocks.NACRE.get().defaultBlockState(), 3);
+                            else level.setBlock(blockPos, BeyondBlocks.RICH_NACRE.get().defaultBlockState(), 3);
                         }
                     }
                 }

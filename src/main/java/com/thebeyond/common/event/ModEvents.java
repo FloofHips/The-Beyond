@@ -48,6 +48,14 @@ public class ModEvents {
                 AbyssalNomadEntity::checkMonsterSpawnRules,
                 RegisterSpawnPlacementsEvent.Operation.OR
         );
+
+        event.register(
+                BeyondEntityTypes.BAUBLE.get(),
+                SpawnPlacementTypes.ON_GROUND,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                BaubleEntity::checkSpawnRules,
+                RegisterSpawnPlacementsEvent.Operation.OR
+        );
     }
 
     /** Custom synced datapack registry for snapshot filters; entries load from data/<ns>/the_beyond/grade/*.json. */

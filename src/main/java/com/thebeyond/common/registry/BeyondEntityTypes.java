@@ -15,7 +15,7 @@ public class BeyondEntityTypes {
             DeferredRegister.create(Registries.ENTITY_TYPE, TheBeyond.MODID);
     public static final DeferredHolder<EntityType<?>, EntityType<LanternEntity>> LANTERN =
             ENTITY_TYPES.register("lantern",
-                    () -> EntityType.Builder.of(LanternEntity::new, MobCategory.CREATURE)
+                    () -> EntityType.Builder.of(LanternEntity::new, MobCategory.AMBIENT)
                             .sized(1F, 1F)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "lantern").toString()));
     public static final DeferredHolder<EntityType<?>, EntityType<AbyssalNomadEntity>> ABYSSAL_NOMAD =
@@ -96,7 +96,7 @@ public class BeyondEntityTypes {
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "coiled_stalk").toString()));
     public static final DeferredHolder<EntityType<?>, EntityType<BaubleEntity>> BAUBLE =
             ENTITY_TYPES.register("bauble",
-                    () -> EntityType.Builder.<BaubleEntity>of(BaubleEntity::new, MobCategory.MISC)
+                    () -> EntityType.Builder.<BaubleEntity>of(BaubleEntity::new, MobCategory.CREATURE)
                             .sized(1, 1)
                             .clientTrackingRange(4)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "bauble").toString()));

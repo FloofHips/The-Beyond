@@ -24,17 +24,17 @@ public class BlindingThornsBlock extends ThornsBlock{
 
     @Override
     protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        if (level instanceof ServerLevel serverLevel) {
+        if (level instanceof ServerLevel serverLevel && random.nextBoolean()) {
             serverLevel.sendParticles(new CloudColorTransitionOptions(
                     new Vector3f(0.0f, 0.0f, 0.0f),
                     new Vector3f(0.1f, 0.0f, 0.2f),
                     2.5f
-            ), pos.getX()+0.3f,pos.getY()+0.3f,pos.getZ()+0.3f,20,1,1,1,0.01);
+            ), pos.getX()+0.3f,pos.getY()+0.3f,pos.getZ()+0.3f,10,1,1,1,0.01);
             serverLevel.sendParticles(new SmokeColorTransitionOptions(
                     new Vector3f(0.0f, 0.0f, 0.0f),
                     new Vector3f(0.1f, 0.0f, 0.2f),
                     2.5f
-            ), pos.getX()+0.3f,pos.getY()+0.3f,pos.getZ()+0.3f,15,1.1,1.1,1.1,0.02);
+            ), pos.getX()+0.3f,pos.getY()+0.3f,pos.getZ()+0.3f,5,1.1,1.1,1.1,0.02);
         }
         super.tick(state, level, pos, random);
     }

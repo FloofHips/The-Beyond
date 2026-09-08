@@ -1,0 +1,85 @@
+{
+  "elements": [
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:garden/garden3",
+        "projection": "rigid",
+        "processors": "minecraft:empty"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:garden/garden2",
+        "projection": "rigid",
+        "processors": "minecraft:empty"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:garden/garden1",
+        "projection": "rigid",
+        "processors": "minecraft:empty"
+      },
+      "weight": 1
+    },{
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:garden/garden3",
+        "projection": "rigid",
+        "processors": "the_beyond:nacre_pale"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:garden/garden2",
+        "projection": "rigid",
+        "processors": "the_beyond:nacre_pale"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:garden/garden1",
+        "projection": "rigid",
+        "processors": "the_beyond:nacre_pale"
+      },
+      "weight": 1
+    },{
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:garden/garden3",
+        "projection": "rigid",
+        "processors": "the_beyond:nacre_rich"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:garden/garden2",
+        "projection": "rigid",
+        "processors": "the_beyond:nacre_rich"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "the_beyond:garden/garden1",
+        "projection": "rigid",
+        "processors": "the_beyond:nacre_rich"
+      },
+      "weight": 1
+    }
+  ],
+  "fallback": "minecraft:empty",
+  "name": "the_beyond:misc/garden"
+}

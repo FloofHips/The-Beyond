@@ -18,6 +18,8 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FarmBlock;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -106,6 +108,62 @@ public class RakedNacreBlock extends Block {
         if (head == Direction.EAST && tail == Direction.SOUTH) return RakedProperty.SE;
 
         return RakedProperty.NS;
+    }
+
+    @Override
+    protected BlockState rotate(BlockState state, Rotation rotation) {
+        RakedProperty property = state.getValue(RAKE_DIRECTION);
+        return switch (rotation) {
+            case CLOCKWISE_90 -> switch (property) {
+                case EW -> state.setValue(RAKE_DIRECTION, RakedProperty.NS);
+                case NS -> state.setValue(RAKE_DIRECTION, RakedProperty.EW);
+                case SE -> state.setValue(RAKE_DIRECTION, RakedProperty.SW);
+                case SW -> state.setValue(RAKE_DIRECTION, RakedProperty.NW);
+                case NE -> state.setValue(RAKE_DIRECTION, RakedProperty.SE);
+                case NW -> state.setValue(RAKE_DIRECTION, RakedProperty.NE);
+            };
+            case CLOCKWISE_180 -> switch (property) {
+                case EW -> state.setValue(RAKE_DIRECTION, RakedProperty.EW);
+                case NS -> state.setValue(RAKE_DIRECTION, RakedProperty.NS);
+                case SE -> state.setValue(RAKE_DIRECTION, RakedProperty.NW);
+                case SW -> state.setValue(RAKE_DIRECTION, RakedProperty.NE);
+                case NE -> state.setValue(RAKE_DIRECTION, RakedProperty.SW);
+                case NW -> state.setValue(RAKE_DIRECTION, RakedProperty.SE);
+            };
+            case COUNTERCLOCKWISE_90 -> switch (property) {
+                case EW -> state.setValue(RAKE_DIRECTION, RakedProperty.NS);
+                case NS -> state.setValue(RAKE_DIRECTION, RakedProperty.EW);
+                case SE -> state.setValue(RAKE_DIRECTION, RakedProperty.NE);
+                case SW -> state.setValue(RAKE_DIRECTION, RakedProperty.SE);
+                case NE -> state.setValue(RAKE_DIRECTION, RakedProperty.NW);
+                case NW -> state.setValue(RAKE_DIRECTION, RakedProperty.SW);
+            };
+            default -> state;
+        };
+    }
+
+    @Override
+    protected BlockState mirror(BlockState state, Mirror mirror) {
+        RakedProperty property = state.getValue(RAKE_DIRECTION);
+        return switch (mirror) {
+            case LEFT_RIGHT -> switch (property) {
+                case EW -> state.setValue(RAKE_DIRECTION, RakedProperty.EW);
+                case NS -> state.setValue(RAKE_DIRECTION, RakedProperty.NS);
+                case SE -> state.setValue(RAKE_DIRECTION, RakedProperty.NE);
+                case SW -> state.setValue(RAKE_DIRECTION, RakedProperty.NW);
+                case NE -> state.setValue(RAKE_DIRECTION, RakedProperty.SE);
+                case NW -> state.setValue(RAKE_DIRECTION, RakedProperty.SW);
+            };
+            case FRONT_BACK -> switch (property) {
+                case EW -> state.setValue(RAKE_DIRECTION, RakedProperty.EW);
+                case NS -> state.setValue(RAKE_DIRECTION, RakedProperty.NS);
+                case SE -> state.setValue(RAKE_DIRECTION, RakedProperty.SW);
+                case SW -> state.setValue(RAKE_DIRECTION, RakedProperty.SE);
+                case NE -> state.setValue(RAKE_DIRECTION, RakedProperty.NW);
+                case NW -> state.setValue(RAKE_DIRECTION, RakedProperty.NE);
+            };
+            default -> state;
+        };
     }
 
     static {

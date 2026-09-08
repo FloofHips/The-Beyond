@@ -41,7 +41,10 @@ public class WindParticle extends TextureSheetParticle {
     public void tick() {
         super.tick();
         setSpriteFromAge(sprites);
-        this.yd = Mth.lerp(0.1, this.yd, this.yd + (random.nextBoolean() ? -0.005 : 0.005));
+        float weatherMultiplier = level.isRaining() ? 0.05f : 0.005f;
+        this.yd = Mth.lerp(0.1, this.yd, this.yd + (random.nextBoolean() ? -weatherMultiplier : weatherMultiplier));
+        this.xd = Mth.lerp(0.1, this.xd, this.xd + (random.nextBoolean() ? -weatherMultiplier*0.5f : weatherMultiplier*0.5f));
+        this.zd = Mth.lerp(0.1, this.zd, this.zd + (random.nextBoolean() ? -weatherMultiplier*0.5f : weatherMultiplier*0.5f));
         if (this.age < 10) {
             this.alpha += 0.1f;
         }

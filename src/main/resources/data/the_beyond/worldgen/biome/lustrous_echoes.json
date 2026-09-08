@@ -36,7 +36,12 @@
   "spawners": {
     "ambient": [],
     "axolotls": [],
-    "creature": [],
+    "creature": [{
+      "type": "the_beyond:bauble",
+      "maxCount": 400,
+      "minCount": 20,
+      "weight": 10
+    }],
     "misc": [],
     "monster": [],
     "underground_water_creature": [],
