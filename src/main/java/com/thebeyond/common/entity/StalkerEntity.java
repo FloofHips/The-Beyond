@@ -18,6 +18,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Difficulty;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -228,10 +229,25 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
         level().playSound(null, pos.getX(), pos.getY(), pos.getZ(), SoundEvents.BEEHIVE_EXIT, SoundSource.HOSTILE);
     }
 
+    @Override
+    public boolean hurt(DamageSource source, float amount) {
+        if (this.getOwner()!=null) this.getOwner().hurt(source, amount/1.2f);
+        return super.hurt(source, amount);
+    }
+
     private void attack() {
         setViolent(true);
         yetToBud = false;
         Vec3 pos = Vec3.atCenterOf(this.blockPosition().offset(getFacing().getStepX()*2, getFacing().getStepY()*2, getFacing().getStepZ()*2));
+
+        AABB attackBox = new AABB(this.blockPosition()).inflate(1.7f);
+        List<LivingEntity> entities = level().getEntitiesOfClass(LivingEntity.class, attackBox);
+
+        for (LivingEntity entity : entities) {
+            if (entity instanceof StalkerEntity) continue;
+            entity.hurt(this.damageSources().mobAttack(this), 4f);
+        }
+
         if (level() instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(BeyondParticleTypes.BITE.get(), pos.x, pos.y, pos.z, 1, 0, 0, 0, 0);
             serverLevel.sendParticles(new CircleColorTransitionOptions(

@@ -86,20 +86,16 @@ public class PearlPoolFeature extends Feature<NoneFeatureConfiguration> {
             }
         }
 
-        holePos = start.offset((radius + 1) / 2, 0, 0);
-
         placePearlRim(level, source);
         pearlPos.clear();
 
         if (radius < 2) return true;
 
-        for (int y = 3; y < 10; y++) {
+        for (int y = 2; y < 10; y++) {
             BlockPos offset = start.offset((radius + 1) / 2, y, 0);
-            if (level.getBlockState(offset).is(BeyondBlocks.PEARL.get())) {
-                this.setBlock(level, offset, BeyondBlocks.PEARL.get().defaultBlockState());
-            } else {
-                this.setBlock(level, offset.offset(0,-2,0), Blocks.AIR.defaultBlockState());
-                break;
+
+            if (level.getBlockState(offset).is(BeyondBlocks.PEARL.get()) && y%2==0) {
+                this.setBlock(level, offset, Blocks.AIR.defaultBlockState());
             }
         }
         return true;
@@ -116,10 +112,16 @@ public class PearlPoolFeature extends Feature<NoneFeatureConfiguration> {
                     double distedSqr = blockPos.distSqr(start);
                     double noiseValue = noise.getValue(x * 0.1f, y, z * 0.1f);
                     float noisyRadius = (float) (groundRadius-noiseValue*2);
+                    float smallRadius = (float) ((groundRadius-2));
+                    float smallerRadius = (float) ((groundRadius-3));
                     if (distedSqr <= noisyRadius * noisyRadius) {
                         if (level.getBlockState(blockPos.above()).isAir() && level.getBlockState(blockPos).is(BeyondTags.END_DECORATOR_REPLACEABLE)) {
-                            if (noiseValue < 0.1f) level.setBlock(blockPos, BeyondBlocks.NACRE.get().defaultBlockState(), 3);
-                            else level.setBlock(blockPos, BeyondBlocks.RICH_NACRE.get().defaultBlockState(), 3);
+                            if (distedSqr <= smallerRadius * smallerRadius) level.setBlock(blockPos, BeyondBlocks.RICH_NACRE.get().defaultBlockState(), 3);
+                            else {
+                                if (!level.getBlockState(blockPos.above()).is(BeyondBlocks.RICH_NACRE.get())) {
+                                    level.setBlock(blockPos, BeyondBlocks.NACRE.get().defaultBlockState(), 3);
+                                }
+                            }
                         }
                     }
                 }

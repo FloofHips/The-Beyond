@@ -23,13 +23,17 @@
     [],
     [],
     [],
-    [],
+    [
+      "the_beyond:solo_garden"
+    ],
     [
       "the_beyond:void_flame"
     ],
     [],
     [],
-    []
+    [
+      "the_beyond:blinding_thorns"
+    ]
   ],
   "has_precipitation": false,
   "spawn_costs": {},

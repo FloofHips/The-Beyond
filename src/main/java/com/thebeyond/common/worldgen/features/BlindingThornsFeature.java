@@ -20,10 +20,10 @@ public class BlindingThornsFeature extends ThornsFeature {
             for (Direction d : Direction.values()) {
                 if (d.getAxis().isVertical()) continue;
                 placeThorn(level, pos.offset(d.getStepX(), 0,d.getStepZ()));
-                level.setBlock(pos.offset(d.getStepX(), -1,d.getStepZ()), getFloorBlock(), 3);
+                //level.setBlock(pos.offset(d.getStepX(), -1,d.getStepZ()), getFloorBlock(), 3);
             }
 
-            level.setBlock(pos.offset(0, -1,0), getFloorBlock(), 3);
+            //level.setBlock(pos.offset(0, -1,0), getFloorBlock(), 3);
             for (int i = 0; i < randomsource.nextInt(5, 20); i++) {
                 placeThorn(level, pos.offset(0, i, 0));
                 if (randomsource.nextFloat() < 0.3f) {

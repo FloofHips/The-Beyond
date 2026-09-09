@@ -27,9 +27,12 @@
     [
       "the_beyond:creeping_zymote"
     ],
-    [],
     [
       "the_beyond:perka_stalk"
+    ],
+    [
+      "the_beyond:bleeding_thorns",
+      "the_beyond:blinding_thorns"
     ],
     [
       "minecraft:chorus_plant"

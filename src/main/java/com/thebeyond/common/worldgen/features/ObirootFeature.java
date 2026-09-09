@@ -32,7 +32,7 @@ public class ObirootFeature extends Feature<NoneFeatureConfiguration> {
         if(f==0)
             createSmallCore(level, origin);
         else
-            createCore(level, origin, f + 1);
+            createCore(level, origin, f);
 
         return true;
     }

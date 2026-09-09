@@ -16,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class ThornsFeature  extends Feature<NoneFeatureConfiguration> {
+public abstract class ThornsFeature extends Feature<NoneFeatureConfiguration> {
     List<BlockPos> thornsPos = new ArrayList<>();
 
     public ThornsFeature(Codec<NoneFeatureConfiguration> codec) {
@@ -57,9 +57,9 @@ public abstract class ThornsFeature  extends Feature<NoneFeatureConfiguration> {
     public void placeBranch(WorldGenLevel level, RandomSource randomsource, BlockPos pos) {
         if (randomsource.nextInt(4) == 0) {
             placeThorn(level, pos);
-            if (randomsource.nextBoolean() && level.isEmptyBlock(pos.below())) {
-                level.setBlock(pos.below(), getFloorBlock(),3);
-            }
+            //if (randomsource.nextBoolean() && level.isEmptyBlock(pos.below())) {
+            //    level.setBlock(pos.below(), getFloorBlock(),3);
+            //}
         }
     }
 }
