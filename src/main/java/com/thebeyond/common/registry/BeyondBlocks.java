@@ -370,6 +370,12 @@ public class BeyondBlocks {
     );
 
     // Pearlescent Expanse
+    public static final DeferredBlock<Block> BEDAZZLED_END_STONE = registerBlock("bedazzled_end_stone",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.SAND)
+                    .strength(2.0F, 2.0F)
+                    .sound(BeyondSoundTypes.END_STONE))
+    );
     public static final DeferredBlock<Block> NACRE = registerBlock("nacre",
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.WARPED_WART_BLOCK)

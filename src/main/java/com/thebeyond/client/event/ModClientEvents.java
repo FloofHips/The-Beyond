@@ -127,6 +127,7 @@ public class ModClientEvents {
         EntityRenderers.register(BeyondEntityTypes.GRAVISTAR.get(), ThrownItemRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.SMOKE_FUSE.get(), ThrownItemRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.COILED_STALK.get(), ThrownItemRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.PEARL_BEAD.get(), ThrownItemRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.RISING_BLOCK.get(), FallingBlockRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.BRUBBLE.get(), BrubbleRenderer::new);
 
@@ -319,7 +320,7 @@ public class ModClientEvents {
         //        return ColorUtils.getNoiseColor(pos, B, PR, P, G, Y);
         //    }
         //    return 0xFFFFFF;
-        //}, BeyondBlocks.PEARL.get(), BeyondBlocks.PEARL_BRICKS.get());
+        //}, BeyondBlocks.PEARL_BEAD.get(), BeyondBlocks.PEARL_BRICKS.get());
     }
 
     @SubscribeEvent(priority = EventPriority.LOW)

@@ -78,22 +78,32 @@ public class BeyondEntityTypes {
                             .sized(1, 1)
                             .clientTrackingRange(4)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rising_block").toString()));
+
     public static final DeferredHolder<EntityType<?>, EntityType<BrubbleEntity>> BRUBBLE =
             ENTITY_TYPES.register("brubble",
                     () -> EntityType.Builder.<BrubbleEntity>of(BrubbleEntity::new, MobCategory.MONSTER)
                             .sized(0.9f, 0.9f)
                             .clientTrackingRange(4)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "brubble").toString()));
+
     public static final DeferredHolder<EntityType<?>, EntityType<SmokeFuseEntity>> SMOKE_FUSE =
             ENTITY_TYPES.register("smoke_fuse",
                     () -> EntityType.Builder.<SmokeFuseEntity>of(SmokeFuseEntity::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "smoke_fuse").toString()));
+
     public static final DeferredHolder<EntityType<?>, EntityType<CoilEntity>> COILED_STALK =
             ENTITY_TYPES.register("coiled_stalk",
                     () -> EntityType.Builder.<CoilEntity>of(CoilEntity::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "coiled_stalk").toString()));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<PearlItemEntity>> PEARL_BEAD =
+            ENTITY_TYPES.register("pearl_bead",
+                    () -> EntityType.Builder.<PearlItemEntity>of(PearlItemEntity::new, MobCategory.MISC)
+                            .sized(0.5F, 0.5F)
+                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "pearl_bead").toString()));
+
     public static final DeferredHolder<EntityType<?>, EntityType<BaubleEntity>> BAUBLE =
             ENTITY_TYPES.register("bauble",
                     () -> EntityType.Builder.<BaubleEntity>of(BaubleEntity::new, MobCategory.CREATURE)

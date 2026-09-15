@@ -43,6 +43,7 @@ public class BlockStates extends BlockStateProvider {
         basicBlock(BeyondBlocks.SOOT_BLOCK);
         basicBlock(BeyondBlocks.RICH_NACRE);
         basicBlock(BeyondBlocks.PALE_NACRE);
+        basicBlock(BeyondBlocks.BEDAZZLED_END_STONE);
 
         //rotatedPillarBlock(BeyondBlocks.XYLEM);
         //rotatedPillarBlock(BeyondBlocks.FERROJELLY_BLOCK);

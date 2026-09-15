@@ -89,6 +89,7 @@ public class CreativeTabEvents {
         categories.get("building").add(Blocks.END_STONE_BRICK_SLAB.asItem().getDefaultInstance());
         categories.get("building").add(Blocks.END_STONE_BRICK_WALL.asItem().getDefaultInstance());
         categories.get("building").add(BeyondBlocks.ENGRAVED_END_STONE.toStack());
+        categories.get("building").add(BeyondBlocks.BEDAZZLED_END_STONE.toStack());
         categories.get("building").add(BeyondBlocks.MEMOR.toStack());
         categories.get("building").add(BeyondBlocks.CHISELED_MEMOR.toStack());
         categories.get("building").add(BeyondBlocks.MEMOR_PILLAR.toStack());
@@ -173,6 +174,7 @@ public class CreativeTabEvents {
         categories.get("functional").add(BeyondBlocks.PEARL_MIRROR.toStack());
         categories.get("functional").add(BeyondBlocks.PERKA_STALK_MOUTH.toStack());
         categories.get("functional").add(BeyondBlocks.COIL_VERTEBRAE.toStack());
+        categories.get("functional").add(BeyondItems.PEARL_BEAD.toStack());
 
         categories.get("ingredients").add(BeyondItems.FERROPETAL.toStack());
         categories.get("ingredients").add(BeyondItems.FERROJELLY.toStack());
@@ -389,6 +391,8 @@ public class CreativeTabEvents {
         categories.get("lustrous echoes").add(BeyondBlocks.PALE_RAKED_NACRE.toStack());
         categories.get("lustrous echoes").add(BeyondBlocks.RICH_NACRE.toStack());
         categories.get("lustrous echoes").add(BeyondBlocks.RICH_RAKED_NACRE.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.BEDAZZLED_END_STONE.toStack());
+        categories.get("lustrous echoes").add(BeyondItems.PEARL_BEAD.toStack());
         categories.get("lustrous echoes").add(BeyondBlocks.PEARL.toStack());
         categories.get("lustrous echoes").add(BeyondBlocks.PEARL_STAIRS.toStack());
         categories.get("lustrous echoes").add(BeyondBlocks.PEARL_SLAB.toStack());

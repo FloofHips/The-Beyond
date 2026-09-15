@@ -11,17 +11,15 @@
   "size": 1,
   "spawn_overrides": {
     "creature": {
-
       "bounding_box": "full",
       "spawns": [
         {
           "type": "the_beyond:bauble",
           "weight": 1000,
-          "minCount": 100,
-          "maxCount": 1000
+          "minCount": 1,
+          "maxCount": 5
         }
       ]
-
     }
   },
   "start_pool": "the_beyond:misc/garden",
