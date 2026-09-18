@@ -28,6 +28,7 @@ public class ModEvents {
         event.put(BeyondEntityTypes.BRUBBLE.get(), BrubbleEntity.createAttributes().build());
         event.put(BeyondEntityTypes.BAUBLE.get(), BaubleEntity.createAttributes().build());
         event.put(BeyondEntityTypes.TRINKET.get(), TrinketEntity.createAttributes().build());
+        event.put(BeyondEntityTypes.SIBLING.get(), SiblingEntity.createAttributes().build());
     }
 
     /** Registered on both sides; a Dist.CLIENT-only registration would skip dedicated servers. */
@@ -54,7 +55,7 @@ public class ModEvents {
                 SpawnPlacementTypes.ON_GROUND,
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 BaubleEntity::checkSpawnRules,
-                RegisterSpawnPlacementsEvent.Operation.OR
+                RegisterSpawnPlacementsEvent.Operation.REPLACE
         );
     }
 

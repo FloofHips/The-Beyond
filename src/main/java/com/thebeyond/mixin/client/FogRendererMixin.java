@@ -30,9 +30,9 @@ public class FogRendererMixin {
             // (Enderscape extends End min height to y=-64)
             float fogEnd = Math.max((y*2 + 30) * finalFog, 30 * finalFog);
 
+            RenderSystem.setShaderFogShape(FogShape.SPHERE);
             RenderSystem.setShaderFogStart(Mth.lerp(ModClientEvents.bossFog,15 * finalFog,0));
             RenderSystem.setShaderFogEnd(fogEnd);
-            RenderSystem.setShaderFogShape(FogShape.SPHERE);
             ci.cancel();
         }
     }

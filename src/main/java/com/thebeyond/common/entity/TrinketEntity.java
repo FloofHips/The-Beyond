@@ -56,22 +56,22 @@ public class TrinketEntity extends BaubleEntity implements Bucketable {
     private static final EntityDataAccessor<Boolean> DATA_WAXED = SynchedEntityData.defineId(TrinketEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<String> DATA_VARIANT = SynchedEntityData.defineId(TrinketEntity.class, EntityDataSerializers.STRING);
 
-    private static final String[] VARIANTS = {
+    public static final String[] VARIANTS = {
             "swirl", "losange", "perforated", "pyramid", "eyes"
     };
 
     public DyeColor getDyeColor() {
         return DyeColor.byId((Integer)this.entityData.get(DATA_DYE_COLOR));
     }
-    private void setDyeColor(DyeColor dye) {
+    public void setDyeColor(DyeColor dye) {
         this.entityData.set(DATA_DYE_COLOR, dye.getId());
     }
     public Color getBodyColor() {return new Color(this.entityData.get(DATA_BODY_COLOR));}
-    private void setBodyColor(int color) {this.entityData.set(DATA_BODY_COLOR, color);}
+    public void setBodyColor(int color) {this.entityData.set(DATA_BODY_COLOR, color);}
     public Boolean isWaxed() {return this.entityData.get(DATA_WAXED);}
-    private void setWaxed(boolean waxed) {this.entityData.set(DATA_WAXED, waxed);}
+    public void setWaxed(boolean waxed) {this.entityData.set(DATA_WAXED, waxed);}
     public String getVariant() {return this.entityData.get(DATA_VARIANT);}
-    private void setVariant(String variant) {this.entityData.set(DATA_VARIANT, variant);}
+    public void setVariant(String variant) {this.entityData.set(DATA_VARIANT, variant);}
     public List<TrinketGrowth.Feature> getFeaturePlan() {return featurePlan;}
     public void setFeaturePlan(List<TrinketGrowth.Feature> plan) {featurePlan = plan;}
 
@@ -179,6 +179,21 @@ public class TrinketEntity extends BaubleEntity implements Bucketable {
         }
 
         return bucketMobPickup(player, hand, this).orElse(super.mobInteract(player, hand));
+    }
+
+    @Override
+    protected InteractionResult baubleInteract(Player player, InteractionHand hand) {
+        return InteractionResult.PASS;
+    }
+
+    @Override
+    protected void baubleTick() {
+
+    }
+
+    @Override
+    protected void baubleHurt() {
+
     }
 
     @Override

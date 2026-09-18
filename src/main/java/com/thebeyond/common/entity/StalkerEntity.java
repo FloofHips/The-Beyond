@@ -22,7 +22,11 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.targeting.TargetingConditions;
+import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -47,6 +51,7 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
     public final AnimationState retreatAnimationState = new AnimationState();
     public int children = 0;
     public boolean base = false;
+    public Vec3 originalTarget = null;
 
     public List<Direction> directions = new ArrayList<>(List.of(Direction.values()));
     public static final int MAX_GENERATION = 10;
@@ -220,6 +225,7 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
         stalker.setPos(newPos.getX() + 0.5f, newPos.getY(), newPos.getZ() + 0.5f);
         stalker.setFacing(d);
         stalker.setGeneration(getGeneration()+1);
+        if (level().random.nextBoolean() && this.originalTarget!=null) stalker.setOriginalTarget(this.originalTarget);
         level().addFreshEntity(stalker);
         stalker.setOwner(this.getUUID());
         stalker.level().broadcastEntityEvent(stalker, SPREAD);
@@ -231,7 +237,8 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        if (this.getOwner()!=null) this.getOwner().hurt(source, amount/1.2f);
+        if (this.getOwner()!=null) this.getOwner().hurt(source, amount);
+        if (source == this.damageSources().inWall()) return false;
         return super.hurt(source, amount);
     }
 
@@ -266,10 +273,26 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
         level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EVOKER_FANGS_ATTACK, SoundSource.HOSTILE);
     }
 
+    public void setOriginalTarget(Vec3 originalTarget) {
+        this.originalTarget = originalTarget;
+    }
+
     private Vec3 getTargetDelta() {
-        LivingEntity target = level().getNearestPlayer(this, 20);
-        if (target == null) return null;
-        return target.position().subtract(this.position());
+        if (this.originalTarget == null) {
+            LivingEntity target = level().getNearestEntity(
+                    LivingEntity.class,
+                    TargetingConditions.forCombat().range(32.0).selector(entity -> !(((LivingEntity)entity) instanceof StalkerEntity)),
+                    this,
+                    this.getX(),
+                    this.getY(),
+                    this.getZ(),
+                    this.getBoundingBox().inflate(6.0, 6.0, 6.0)
+            );
+
+            if (target == null) return null;
+            return target.position().subtract(this.position());
+        }
+        return this.originalTarget.subtract(this.position());
     }
 
     private Direction getTargetDirection(Vec3 delta) {

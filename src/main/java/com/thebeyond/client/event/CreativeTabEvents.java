@@ -227,6 +227,7 @@ public class CreativeTabEvents {
         categories.get("mobs").add(BeyondItems.ENATIOUS_TOTEM_SPAWN_EGG.toStack());
         categories.get("mobs").add(BeyondItems.BRUBBLE_SPAWN_EGG.toStack());
         categories.get("mobs").add(BeyondItems.BAUBLE_SPAWN_EGG.toStack());
+        categories.get("mobs").add(BeyondItems.SIBLING_SPAWN_EGG.toStack());
         categories.get("mobs").add(BeyondItems.TRINKET_BUCKET.toStack());
 
         for (Collection<ItemStack> c : categories.values()) {
@@ -410,6 +411,7 @@ public class CreativeTabEvents {
         categories.get("lustrous echoes").add(BeyondBlocks.PEARL_CHIMES.toStack());
         categories.get("lustrous echoes").add(BeyondItems.OCARINA.toStack());
         categories.get("lustrous echoes").add(BeyondItems.BAUBLE_SPAWN_EGG.toStack());
+        categories.get("lustrous echoes").add(BeyondItems.SIBLING_SPAWN_EGG.toStack());
         categories.get("lustrous echoes").add(BeyondItems.TRINKET_BUCKET.toStack());
 
         categories.get("chestral hollows").add(BeyondBlocks.VILET.toStack());

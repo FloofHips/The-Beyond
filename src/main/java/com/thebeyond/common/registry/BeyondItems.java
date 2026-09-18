@@ -85,6 +85,7 @@ public class BeyondItems {
     public static final DeferredItem<SpawnEggItem> ENATIOUS_TOTEM_SPAWN_EGG = ITEMS.register("enatious_totem_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENATIOUS_TOTEM.get(),-13213601, -2169180,new Item.Properties()));
     public static final DeferredItem<SpawnEggItem> BRUBBLE_SPAWN_EGG        = ITEMS.register("brubble_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.BRUBBLE.get(),-14808526, -16738616,new Item.Properties()));
     public static final DeferredItem<SpawnEggItem> BAUBLE_SPAWN_EGG        = ITEMS.register("bauble_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.BAUBLE.get(),-2955531, -1,new Item.Properties()));
+    public static final DeferredItem<SpawnEggItem> SIBLING_SPAWN_EGG        = ITEMS.register("sibling_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.SIBLING.get(),-2955531, -1,new Item.Properties()));
 
     public static final DeferredItem<Item> REMEMBRANCE_BEADS    = registerRemembrance("beads_remembrance");
     public static final DeferredItem<Item> REMEMBRANCE_IDOL     = registerRemembrance("idol_remembrance");

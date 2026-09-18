@@ -35,4 +35,6 @@ public class BeyondModelLayers {
             new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "stalker"), "main");
     public static final ModelLayerLocation BRUBBLE =
             new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "brubble"), "main");
+    public static final ModelLayerLocation SIBLING =
+            new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "sibling"), "main");
 }

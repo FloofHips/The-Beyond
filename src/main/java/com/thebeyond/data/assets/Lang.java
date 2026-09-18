@@ -271,13 +271,19 @@ public class Lang extends LanguageProvider {
         add("advancements.the_beyond.gift_enadrake.description", "Gift an enadrake an item");
 
         add("advancements.the_beyond.gift_rare_enadrake.title", "Wealth and Equality");
-        add("advancements.the_beyond.gift_rare_enadrake.description", "Gift an enadrake an item of epic rarity");
+        add("advancements.the_beyond.gift_rare_enadrake.description", "Collect the Enadrake flare block after gifting an enadrake an item of epic rarity");
 
         add("advancements.the_beyond.complete_refuge.title", "Growth and Infrastructure");
-        add("advancements.the_beyond.complete_refuge.description", "Place a refuge near an enadrake village and let them activate it for you");
+        add("advancements.the_beyond.complete_refuge.description", "Place a refuge near an enadrake village and supply them with enough items to activate it");
 
         add("advancements.the_beyond.full_power_magnet.title", "Slingshot");
         add("advancements.the_beyond.full_power_magnet.description", "Use a magnet to pull yourself somewhere 32 blocks away");
+
+        //CONFIG
+        add("the_beyond.config.enable_custom_fog", "Custom fog");
+        add("the_beyond.config.enable_custom_sky", "Custom sky");
+        add("the_beyond.config.enable_swirling_clouds", "Swirling main island clouds");
+        add("the_beyond.config.mirror_occlusion_model_based", "Mirror occlusion model based");
     }
 
     /** Tracks keys already registered so {@link #add(String, String)} can skip duplicates

@@ -221,6 +221,7 @@ public class GaussGeyserFeature extends Feature<NoneFeatureConfiguration> {
 
                     if (distedSqr <= noisyRadius * noisyRadius) {
                         if ((level.getBlockState(blockPos).isAir() || level.getBlockState(blockPos).is(BeyondBlocks.BLINDING_THORN.get())) && level.getBlockState(blockPos.above()).isSolid()) {
+                            level.setBlock(blockPos.above(), BeyondBlocks.GAUSSANITE.get().defaultBlockState(), 3);
                             level.setBlock(blockPos, BeyondBlocks.SOOT_BLOCK.get().defaultBlockState(), 3);
                             if (brambled) brambleUpSoot(level, randomsource, blockPos);
                         }

@@ -44,6 +44,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.entity.FallingBlockRenderer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
+import net.minecraft.client.renderer.entity.ZombieRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.*;
@@ -128,6 +129,7 @@ public class ModClientEvents {
         EntityRenderers.register(BeyondEntityTypes.SMOKE_FUSE.get(), ThrownItemRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.COILED_STALK.get(), ThrownItemRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.PEARL_BEAD.get(), ThrownItemRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.SIBLING.get(), SiblingRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.RISING_BLOCK.get(), FallingBlockRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.BRUBBLE.get(), BrubbleRenderer::new);
 
@@ -180,6 +182,7 @@ public class ModClientEvents {
         event.registerLayerDefinition(BeyondModelLayers.ABYSSAL_NOMAD_GLOW, () -> AbyssalNomadModel.createBodyLayer(new CubeDeformation(-0.1f)));
         event.registerLayerDefinition(BeyondModelLayers.STALKER, StalkerModel::createBodyLayer);
         event.registerLayerDefinition(BeyondModelLayers.BRUBBLE, BrubbleModel::createBodyLayer);
+        event.registerLayerDefinition(BeyondModelLayers.SIBLING, SiblingModel::createBodyLayer);
 
 
         BeyondItems.ITEMS.getEntries().stream()
@@ -308,19 +311,6 @@ public class ModClientEvents {
             }
             return 0xFFFFFF;
         }, BeyondBlocks.AURORACITE.get());
-
-        //colors.register((state, reader, pos, tintIndex) -> {
-        //    if (pos != null) {
-        //        Vec3 B = new Vec3(202, 222, 234);
-        //        Vec3 PR = new Vec3(168, 200, 207);
-        //        Vec3 P = new Vec3(255, 227, 248);
-        //        Vec3 G = new Vec3(202, 234, 221);
-        //        Vec3 Y = new Vec3(239, 250, 218);
-//
-        //        return ColorUtils.getNoiseColor(pos, B, PR, P, G, Y);
-        //    }
-        //    return 0xFFFFFF;
-        //}, BeyondBlocks.PEARL_BEAD.get(), BeyondBlocks.PEARL_BRICKS.get());
     }
 
     @SubscribeEvent(priority = EventPriority.LOW)
@@ -776,6 +766,7 @@ public class ModClientEvents {
     }
 
     public static void renderClouds(PoseStack poseStack, float translate, float scale, float time, ResourceLocation model, MultiBufferSource.BufferSource buffer) {
+        if (BeyondConfig.ENABLE_MAIN_ISLAND_CLOUDS.isFalse()) return;
         poseStack.pushPose();
         boolean flag = scale == 50;
 

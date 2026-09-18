@@ -1,14 +1,7 @@
 package com.thebeyond.common.registry;
 
 import com.thebeyond.TheBeyond;
-import com.thebeyond.common.block.blockentities.BellowBlockEntity;
-import com.thebeyond.common.block.blockentities.PrismographBlockEntity;
-import com.thebeyond.common.block.blockentities.ProjectorBlockEntity;
-import com.thebeyond.common.block.blockentities.BonfireBlockEntity;
-import com.thebeyond.common.block.blockentities.EnadrakeHutBlockEntity;
-import com.thebeyond.common.block.blockentities.MemorFaucetBlockEntity;
-import com.thebeyond.common.block.blockentities.MirrorBlockEntity;
-import com.thebeyond.common.block.blockentities.RefugeBlockEntity;
+import com.thebeyond.common.block.blockentities.*;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -40,5 +33,8 @@ public class BeyondBlockEntities {
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BellowBlockEntity>> BELLOW = BLOCK_ENTITY_TYPES.
             register("bellow", () -> BlockEntityType.Builder.of(BellowBlockEntity::new, BeyondBlocks.BELLOW.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<PerkaStalkMouthBlockEntity>> PERKA_STALK_MOUTH = BLOCK_ENTITY_TYPES.
+            register("perka_stalk_mouth", () -> BlockEntityType.Builder.of(PerkaStalkMouthBlockEntity::new, BeyondBlocks.PERKA_STALK_MOUTH.get()).build(null));
 
 }

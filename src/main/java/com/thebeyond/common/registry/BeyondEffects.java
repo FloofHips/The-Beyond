@@ -30,7 +30,7 @@ public class BeyondEffects {
     public static final DeferredHolder<MobEffect, MobEffect> NOMADS_BLESSING = MOB_EFFECTS.register("nomads_blessing", () -> new NomadsBlessingEffect(
             MobEffectCategory.BENEFICIAL,
             0x26ce55));
-    public static final DeferredHolder<MobEffect, MobEffect> EMPATHY = MOB_EFFECTS.register("empathy", () -> new EmpathyEffect(
+    public static final DeferredHolder<MobEffect, MobEffect> EMPATHY = MOB_EFFECTS.register("empathy", () -> new GenericEffect(
             MobEffectCategory.NEUTRAL,
             -1));
 }

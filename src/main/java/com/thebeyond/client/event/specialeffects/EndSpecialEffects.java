@@ -3,6 +3,7 @@ package com.thebeyond.client.event.specialeffects;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Axis;
+import com.thebeyond.BeyondConfig;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.compat.ShaderCompatLib;
 import com.thebeyond.client.event.ModClientEvents;
@@ -67,7 +68,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
     private VertexBuffer starBuffer;
 
     public EndSpecialEffects() {
-        super(Float.NaN, false, SkyType.NORMAL, false, false);
+        super(Float.NaN, false, SkyType.END, false, false);
         this.createStars();
         this.bossFog = 0;
     }
@@ -239,6 +240,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
     }
 
     public boolean renderSky(ClientLevel level, int ticks, float partialTick, Matrix4f modelViewMatrix, Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
+        if (BeyondConfig.ENABLE_CUSTOM_SKY.isFalse()) return false;
         if (isBossFightActive()) {
             bossFog = (float) Mth.clamp(bossFog + 0.005, 0, 1);
         } else {
@@ -283,7 +285,16 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         this.renderCloud(level, poseStack, tesselator, .4f,   100);
         this.renderCloud(level, poseStack, tesselator, -.3f,  100);
 
-        if (level.random.nextInt(100) == 0 && level.isRaining()) {
+        handleCracks(level, poseStack, tesselator);
+
+        RenderSystem.depthMask(true);
+        RenderSystem.disableBlend();
+        return true;
+    }
+
+    private void handleCracks(ClientLevel level, PoseStack poseStack, Tesselator tesselator) {
+        boolean isPaused = Minecraft.getInstance().isPaused();
+        if (!isPaused && level.random.nextInt(100) == 0 && level.isRaining()) {
             this.createCrack(level);
         }
 
@@ -296,7 +307,8 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
             while (iterator.hasNext()) {
                 ThunderCrack crack = iterator.next();
 
-                crack.lifeTime -= level.random.nextFloat()*0.03f * decayTicks;
+                if (!isPaused)
+                    crack.lifeTime -= level.random.nextFloat()*0.03f * decayTicks;
 
                 if (crack.lifeTime <= 0) {
                     iterator.remove();
@@ -305,12 +317,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
                 }
             }
         }
-
-        RenderSystem.depthMask(true);
-        RenderSystem.disableBlend();
-        return true;
     }
-
 
 
     private void createCrack(ClientLevel level) {
@@ -464,6 +471,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
     /** Iris-only: a live shaderpack overdraws the custom End sky and eats the cracks drawn in
      *  {@link #renderSky}, so they're re-drawn here in the world pass. No-op without a pack. */
     public static void renderCracksWorld(PoseStack poseStack, net.minecraft.client.renderer.MultiBufferSource buffer) {
+        if (BeyondConfig.ENABLE_CUSTOM_SKY.isFalse()) return;
         if (thunderCracks.isEmpty() || !ShaderCompatLib.isShaderPackActive()) return;
         int light = net.minecraft.client.renderer.LightTexture.FULL_BRIGHT;
         int ov = net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY;

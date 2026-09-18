@@ -10,6 +10,9 @@ public class BeyondConfig {
 
     // Override End fog with Beyond's Y-dependent atmospheric fog.
     public static ModConfigSpec.BooleanValue ENABLE_CUSTOM_FOG;
+    // Override End fog with Beyond's sky renderer.
+    public static ModConfigSpec.BooleanValue ENABLE_CUSTOM_SKY;
+    public static ModConfigSpec.BooleanValue ENABLE_MAIN_ISLAND_CLOUDS;
 
     public static ModConfigSpec.BooleanValue MIRROR_OCCLUSION_MODEL_BASED;
 
@@ -98,14 +101,27 @@ public class BeyondConfig {
 
         CLIENT_BUILDER.comment("Visual settings for the End dimension").push("visuals");
         ENABLE_CUSTOM_FOG = CLIENT_BUILDER
-                .comment("Enable Beyond's custom atmospheric End fog.",
+                .comment("Enable custom atmospheric End fog.",
                         "When disabled, vanilla End fog is used (no custom distances or shape overrides).",
                         "Default: true")
                 .translation(TheBeyond.MODID + ".config.enable_custom_fog")
                 .define("enableCustomFog", true);
+
+        ENABLE_CUSTOM_SKY = CLIENT_BUILDER
+                .comment("Enable custom sky renderer.",
+                        "When disabled, vanilla End sky renderer is used.",
+                        "Default: true")
+                .translation(TheBeyond.MODID + ".config.enable_custom_sky")
+                .define("enableCustomSky", true);
+
+        ENABLE_MAIN_ISLAND_CLOUDS = CLIENT_BUILDER
+                .comment("Enable swirling clouds in the main island.",
+                        "Default: true")
+                .translation(TheBeyond.MODID + ".config.enable_swirling_clouds")
+                .define("enableSwirlingClouds", true);
         CLIENT_BUILDER.pop();
 
-        CLIENT_BUILDER.comment("Mirror (pearl_mirror) reflection").push("mirror");
+        CLIENT_BUILDER.comment("Pearl mirror reflection").push("mirror");
         MIRROR_OCCLUSION_MODEL_BASED = CLIENT_BUILDER
                 .comment("Mirror occlusion shape: true = block's real model (fences show gaps); false = cheaper AABB box. Default: true")
                 .translation(TheBeyond.MODID + ".config.mirror_occlusion_model_based")

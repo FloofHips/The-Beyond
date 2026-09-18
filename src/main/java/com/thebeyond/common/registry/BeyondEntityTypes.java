@@ -101,7 +101,7 @@ public class BeyondEntityTypes {
     public static final DeferredHolder<EntityType<?>, EntityType<PearlItemEntity>> PEARL_BEAD =
             ENTITY_TYPES.register("pearl_bead",
                     () -> EntityType.Builder.<PearlItemEntity>of(PearlItemEntity::new, MobCategory.MISC)
-                            .sized(0.5F, 0.5F)
+                            .sized(0.25F, 0.25F)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "pearl_bead").toString()));
 
     public static final DeferredHolder<EntityType<?>, EntityType<BaubleEntity>> BAUBLE =
@@ -110,6 +110,14 @@ public class BeyondEntityTypes {
                             .sized(1, 1)
                             .clientTrackingRange(4)
                             .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "bauble").toString()));
+    public static final DeferredHolder<EntityType<?>, EntityType<SiblingEntity>> SIBLING =
+            ENTITY_TYPES.register("sibling",
+                    () -> EntityType.Builder.<SiblingEntity>of(SiblingEntity::new, MobCategory.CREATURE)
+                            .sized(0.6F, 1.95F)
+                            .eyeHeight(1.74F)
+                            .passengerAttachments(2.0125F)
+                            .ridingOffset(-0.7F)
+                            .build(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "sibling").toString()));
 
     public static final DeferredHolder<EntityType<?>, EntityType<TrinketEntity>> TRINKET =
             ENTITY_TYPES.register("trinket",

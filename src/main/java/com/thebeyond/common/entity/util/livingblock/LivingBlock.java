@@ -24,6 +24,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.network.syncher.SynchedEntityData.Builder;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.*;
@@ -47,6 +48,7 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 import org.joml.Quaternionfc;
 import org.joml.Vector3f;
@@ -3138,13 +3140,29 @@ public class LivingBlock extends Mob {
         }
     }
 
-    private void playFaceLandingSound(final BlockPos pos, final BlockState landedOn, final float contactSpan) {
+    protected void playFaceLandingSound(final BlockPos pos, final BlockState landedOn, final float contactSpan) {
         if (landedOn.liquid()) {
             return;
         }
         float volume = FLOP_VOLUME * (FLOP_MIN_CONTACT + (1.0F - FLOP_MIN_CONTACT) * contactSpan);
         float pitch = FLOP_PITCH + (1.0F - contactSpan) * FLOP_PITCH_SPREAD;
-        this.playSound(BeyondSoundEvents.MEMOR_PLACE.get(), volume, pitch);
+        this.playSound(getContactSound(), volume, pitch * getContactPitchModifier());
+    }
+
+    protected static @NotNull SoundEvent getContactSound() {
+        return BeyondSoundEvents.MEMOR_PLACE.get();
+    }
+
+    protected float getContactPitchModifier() {
+        return 1;
+    }
+
+    @Override
+    public boolean hurt(DamageSource source, float amount) {
+        if (source == this.damageSources().fall()) return false;
+        if (source == this.damageSources().inWall()) return false;
+        if (amount == 1) return super.hurt(source, 0);
+        return super.hurt(source, amount);
     }
 
     private void playClimbFaceSound(final LivingBlockPivot.WallPivot pivot,
@@ -3599,7 +3617,7 @@ public class LivingBlock extends Mob {
                 && this.level().getEntity(this.climbPivotAnchorId) instanceof LivingBlock owner) {
             owner.holdForRider(this.level().getGameTime());
         }
-        LivingBlockCollisionHandler.carryRiders(this);
+        //LivingBlockCollisionHandler.carryRiders(this);
 
         Vec3 pogoScaleDiff = this.pogoScaleTarget.subtract(this.currentPogoScale);
         if (pogoScaleDiff.lengthSqr() > 1.0E-5F && this.pogoScaleTicks > 0) {
@@ -4803,5 +4821,11 @@ public class LivingBlock extends Mob {
 
     public float getRollAngle() {
         return this.rollAngle;
+    }
+
+    @Override
+    public void dropLeash(boolean broadcastPacket, boolean dropLeash) {
+        this.clearMovementTarget();
+        super.dropLeash(broadcastPacket, dropLeash);
     }
 }

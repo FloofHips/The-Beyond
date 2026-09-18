@@ -128,12 +128,6 @@ public class AuroraBorealisRenderer {
                     float flash = (Mth.sin(((chunkPos.z+ yoffset)*10) + time/5f) + 1.0f) * 0.5f;
                     int color = (int) (255 * Math.max(l, flash));
 
-                    // LOD: a tile whose color rounds to 0 is invisible — skip its transform+emit.
-                    if (color <= 0) {
-                        poseStack.popPose();
-                        continue;
-                    }
-
                     ResourceLocation modelLoc = getAuroraModel(x, z, chunkPos, renderDistance);
                     RenderUtils.ResolvedModel rm;
                     if (modelLoc == AURORA_CRUMBLING_MODEL) rm = mCrumbling;
