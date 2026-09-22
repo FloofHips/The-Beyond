@@ -295,7 +295,7 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
             return centerBiome;
 
         int dimMinY = BeyondTerrainState.getDimMinY();
-        if (blockY < dimMinY + 4)
+        if (blockY < dimMinY + 10)
             return bottomBiome;
 
         ColumnCache cache = columnCacheTL.get();

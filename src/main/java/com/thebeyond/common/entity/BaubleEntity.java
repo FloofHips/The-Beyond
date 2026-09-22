@@ -45,6 +45,7 @@ import java.util.List;
 
 public class BaubleEntity extends LivingBlock {
     public boolean seekingFusion = false;
+    public int seekingFusionTicks = 2400;
     protected static final EntityDataAccessor<Byte> DATA_WIDTH = SynchedEntityData.defineId(BaubleEntity.class, EntityDataSerializers.BYTE);
     protected static final EntityDataAccessor<Byte> DATA_HEIGHT = SynchedEntityData.defineId(BaubleEntity.class, EntityDataSerializers.BYTE);
     protected static final EntityDataAccessor<Byte> DATA_DEPTH = SynchedEntityData.defineId(BaubleEntity.class, EntityDataSerializers.BYTE);
@@ -130,7 +131,8 @@ public class BaubleEntity extends LivingBlock {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        baubleHurt();
+        if (source.getEntity()!= null)
+            baubleHurt();
         return super.hurt(source, amount);
     }
 
@@ -158,35 +160,44 @@ public class BaubleEntity extends LivingBlock {
     }
 
     protected void baubleTick() {
-        if (seekingFusion && !level().isClientSide) {
-            AABB detectionBox = this.getBoundingBox().inflate(0.5);
-            List<BaubleEntity> entities = level().getEntitiesOfClass(BaubleEntity.class, detectionBox);
-            if (entities.size() > 5) {
-                if (level() instanceof ServerLevel serverLevel) {
-                    serverLevel.sendParticles(new CloudColorTransitionOptions(
-                            new Vector3f(0.9f, 0.9f, 0.9f),
-                            new Vector3f(1, 1, 1),
-                            2.5f
-                    ), this.getX(), this.getY(), this.getZ(), 10, 0.1, 0.3, 0.1, 0.03);
-                    serverLevel.sendParticles(BeyondParticleTypes.WIND.get(), this.getX(), this.getY()+1, this.getZ(), 10, 0, 1, 0, 0.1);
-                }
-
-                SiblingEntity sibling = new SiblingEntity(BeyondEntityTypes.SIBLING.get(), level());
-                sibling.setPos(this.position());
-                sibling.setBirth(true);
-                level().addFreshEntity(sibling);
-                level().broadcastEntityEvent(sibling, SiblingEntity.BIRTH);
-                for (BaubleEntity bauble : entities) {
-                    bauble.discard();
-                }
+        if (seekingFusion && !level().isClientSide && seekingFusionTicks > 0) {
+            seekingFusionTicks--;
+            if (seekingFusionTicks == 0) {
+                seekingFusionTicks = 2400;
+                seekingFusion = false;
             }
+            attemptFuse();
         }
         if (tickCount % (level().isRaining() ? 200 : 2000) == 0) {
-            Player player = level().getNearestPlayer(this, 32);
+            Player player = level().getNearestPlayer(this, 16);
             if (player == null) return;
             this.setMovementTarget(Target.followingEntity(player, 2));
         }
-        if (tickCount % 2200 == 0 && random.nextBoolean()) this.clearMovementTarget();
+        if (tickCount % 2200 == 0) this.clearMovementTarget();
+    }
+
+    private void attemptFuse() {
+        AABB detectionBox = this.getBoundingBox().inflate(0.5);
+        List<BaubleEntity> entities = level().getEntitiesOfClass(BaubleEntity.class, detectionBox);
+        if (entities.size() > 5) {
+            if (level() instanceof ServerLevel serverLevel) {
+                serverLevel.sendParticles(new CloudColorTransitionOptions(
+                        new Vector3f(0.9f, 0.9f, 0.9f),
+                        new Vector3f(1, 1, 1),
+                        2.5f
+                ), this.getX(), this.getY(), this.getZ(), 10, 0.1, 0.3, 0.1, 0.03);
+                serverLevel.sendParticles(BeyondParticleTypes.WIND.get(), this.getX(), this.getY()+1, this.getZ(), 10, 0, 1, 0, 0.1);
+            }
+
+            SiblingEntity sibling = new SiblingEntity(BeyondEntityTypes.SIBLING.get(), level());
+            sibling.setPos(this.position());
+            sibling.setBirth(true);
+            level().addFreshEntity(sibling);
+            level().broadcastEntityEvent(sibling, SiblingEntity.BIRTH);
+            for (BaubleEntity bauble : entities) {
+                bauble.discard();
+            }
+        }
     }
 
     @Override
@@ -201,51 +212,44 @@ public class BaubleEntity extends LivingBlock {
         Item item = itemstack.getItem();
 
         if (item instanceof DyeItem) {
-            DyeItem dyeitem = (DyeItem)item;
-            DyeColor dyecolor = dyeitem.getDyeColor();
-            int col = dyeitem.getDyeColor().getTextureDiffuseColor();
-
-            float r = ((col >> 16) & 0xFF) / 255f;
-            float g = ((col >> 8) & 0xFF) / 255f;
-            float b = (col & 0xFF) / 255f;
-
-            TrinketEntity trinket = new TrinketEntity(BeyondEntityTypes.TRINKET.get(), level());
-            trinket.entityData.set(DATA_SHAPE_SEED, this.entityData.get(DATA_SHAPE_SEED));
-            trinket.setDepth((byte) this.getDepth());
-            trinket.setWidth((byte) this.getWidth());
-            trinket.setHeight((byte) this.getHeight());
-            trinket.setVariant(TrinketEntity.VARIANTS[random.nextInt(TrinketEntity.VARIANTS.length)]);
-            trinket.setBodyColor(dyecolor.getTextureDiffuseColor());
-            trinket.setDyeColor(dyecolor);
-            trinket.setPos(this.position());
-            trinket.rotation.set(this.rotation);
-            level().addFreshEntity(trinket);
-
-            if (level() instanceof ServerLevel serverLevel) {
-                serverLevel.sendParticles(new SmokeColorTransitionOptions(
-                        new Vector3f(r, g, b),
-                        new Vector3f(r + 0.1f, g + 0.1f, b + 0.1f),
-                        2.2f
-                ), this.getX(), this.getY(), this.getZ(), 3, 0.2, 0.2, 0.2, 0.01);
-
-                serverLevel.sendParticles(ParticleTypes.HEART, this.getX(), this.getY() + 0.5, this.getZ(), 3, 0.1, 0.1, 0.1, 0.03);
-            }
-
-            this.discard();
-
+            tame(item, player);
             return InteractionResult.SUCCESS;
         }
         return super.mobInteract(player, hand);
     }
 
-    public boolean canFuse() {
-        return true;
+    public void tame(Item item, Player player) {
+        DyeItem dyeitem = (DyeItem)item;
+        DyeColor dyecolor = dyeitem.getDyeColor();
+        int col = dyeitem.getDyeColor().getTextureDiffuseColor();
+
+        float r = ((col >> 16) & 0xFF) / 255f;
+        float g = ((col >> 8) & 0xFF) / 255f;
+        float b = (col & 0xFF) / 255f;
+
+        TrinketEntity trinket = new TrinketEntity(BeyondEntityTypes.TRINKET.get(), level());
+        trinket.entityData.set(DATA_SHAPE_SEED, this.entityData.get(DATA_SHAPE_SEED));
+        trinket.setDepth((byte) this.getDepth());
+        trinket.setWidth((byte) this.getWidth());
+        trinket.setHeight((byte) this.getHeight());
+        trinket.setVariant(TrinketEntity.VARIANTS[random.nextInt(TrinketEntity.VARIANTS.length)]);
+        trinket.setBodyColor(dyecolor.getTextureDiffuseColor());
+        trinket.setDyeColor(dyecolor);
+        trinket.setPos(this.position());
+        trinket.rotation.set(this.rotation);
+        trinket.setOwner(player.getUUID());
+        level().addFreshEntity(trinket);
+
+        if (level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(new SmokeColorTransitionOptions(
+                    new Vector3f(r, g, b),
+                    new Vector3f(r + 0.1f, g + 0.1f, b + 0.1f),
+                    2.2f
+            ), this.getX(), this.getY(), this.getZ(), 3, 0.2, 0.2, 0.2, 0.01);
+
+            serverLevel.sendParticles(ParticleTypes.HEART, this.getX(), this.getY() + 0.5, this.getZ(), 3, 0.1, 0.1, 0.1, 0.03);
+        }
+
+        this.discard();
     }
-    public boolean canFuseWith(BaubleEntity other) {
-        return true;
-    }
-    public boolean fuse(BaubleEntity other) {
-        return true;
-    }
-    public void tame() {}
 }

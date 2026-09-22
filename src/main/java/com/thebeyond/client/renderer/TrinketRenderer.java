@@ -11,12 +11,14 @@ import com.thebeyond.common.entity.util.livingblock.TrinketGrowth;
 import com.thebeyond.common.entity.util.livingblock.TrinketGrowth.*;
 import com.thebeyond.common.registry.BeyondRenderTypes;
 import com.thebeyond.util.RenderUtils;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FastColor;
+import net.minecraft.util.Mth;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.phys.AABB;
 import org.joml.Matrix3f;
@@ -92,8 +94,22 @@ public class TrinketRenderer extends LivingBlockRenderer {
             }
         }
 
-        if (entity instanceof TrinketEntity trinket)
-            renderAdditional(trinket,  matrix, normalMatrix, poseStack, buffer, packedLight, color2.getRed(), color2.getGreen(), color2.getBlue(), 1);
+        if (entity instanceof TrinketEntity trinket) {
+            if (trinket.isSelected()) {
+                float sin = 0;
+                sin = Math.clamp(Mth.sin(entity.tickCount / 10f), 0, 1);
+                int blockLight = LightTexture.block(packedLight);
+                int skyLight = LightTexture.sky(packedLight);
+                int fullBlockLight = LightTexture.block(LightTexture.FULL_BRIGHT);
+                int fullSkyLight = LightTexture.sky(LightTexture.FULL_BRIGHT);
+
+                int lerpBlockLight = (int) Mth.lerp(sin, blockLight, fullBlockLight);
+                int lerpSkyLight = (int) Mth.lerp(sin, skyLight, fullSkyLight);
+                int newPackedLight = LightTexture.pack(lerpBlockLight, lerpSkyLight);
+                renderAdditional(trinket, matrix, normalMatrix, poseStack, buffer, newPackedLight, color2.getRed(), Math.max(color2.getGreen(), sin), color2.getBlue(), 1);
+            } else renderAdditional(trinket, matrix, normalMatrix, poseStack, buffer, packedLight, color2.getRed(), color2.getGreen(), color2.getBlue(), 1);
+
+        }
     }
 
     private void renderAdditional(TrinketEntity trinket, Matrix4f matrix, Matrix3f normalMatrix, PoseStack poseStack, MultiBufferSource buffer, int packedLight, float r, float g, float b, float a) {

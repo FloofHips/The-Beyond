@@ -13,6 +13,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -36,6 +37,9 @@ public class BeyondTags {
 
     public static final TagKey<Structure> BONFIRE_LOCATABLE = createStructure("bonfire_locatable");
     public static final TagKey<Structure> NOMAD_PRAYER_SITE = createStructure("nomad_prayer_site");
+
+    public static final TagKey<Biome> IS_FOGGY = createBiome("is_foggy");
+    public static final TagKey<Biome> IS_EXTRA_FOGGY = createBiome("is_extra_foggy");
 
     /** Reverse opt-out: members ignore the deafening FOV-stealth rule (always notice the player). */
     public static final TagKey<EntityType<?>> IMMUNE_TO_DEAFENING = createEntity("immune_to_deafening");
@@ -61,5 +65,9 @@ public class BeyondTags {
 
     private static TagKey<EntityType<?>> createEntity(String id) {
         return TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(MODID, id));
+    }
+
+    private static TagKey<Biome> createBiome(String id) {
+        return TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(MODID, id));
     }
 }

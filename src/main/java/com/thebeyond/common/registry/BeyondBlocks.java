@@ -59,7 +59,7 @@ public class BeyondBlocks {
     );
     public static final DeferredBlock<GellidVoidBlock> GELLID_VOID = registerBlockWithoutItem("gellid_void_block",
             () -> new GellidVoidBlock(BeyondFluids.GELLID_VOID_FLOWING.get(), BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.TERRACOTTA_BLUE)
+                    .mapColor(MapColor.COLOR_PINK)
                     .forceSolidOff()
                     .noCollission()
                     .noOcclusion()
@@ -78,7 +78,7 @@ public class BeyondBlocks {
                     .sound(SoundType.NETHER_WOOD))
     );
     public static final DeferredBlock<Block> ENGRAVED_END_STONE = registerBlock("engraved_end_stone", () -> new Block(BlockBehaviour.Properties.of()
-            .mapColor(MapColor.COLOR_YELLOW)
+            .mapColor(MapColor.SAND)
             .requiresCorrectToolForDrops()
             .strength(3.0F, 9.0F)
             .sound(BeyondSoundTypes.END_STONE))

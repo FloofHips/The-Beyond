@@ -1,11 +1,17 @@
 package com.thebeyond.common.registry;
 
+import com.mojang.serialization.Codec;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.item.components.ComponentCodecs;
 import com.thebeyond.common.item.components.Components;
+import net.minecraft.core.component.DataComponentHolder;
 import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.ExtraCodecs;
+import net.neoforged.neoforge.common.util.DataComponentUtil;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -17,6 +23,13 @@ public class BeyondComponents {
             builder -> builder
                     .persistent(ComponentCodecs.DYNAMIC_COLOR_CODEC)
                     .networkSynchronized(ComponentCodecs.DYNAMIC_COLOR_STREAM_CODEC)
+    );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> OCARINA_MODE = COMPONENTS.registerComponentType(
+            "ocarina_mode",
+            builder -> builder
+                    .persistent(ExtraCodecs.intRange(0, 3))
+                    .networkSynchronized(ByteBufCodecs.VAR_INT)
     );
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Components.SnapshotPixelsComponent>> SNAPSHOT_PIXELS = COMPONENTS.registerComponentType(

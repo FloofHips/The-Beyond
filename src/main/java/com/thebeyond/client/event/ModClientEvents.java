@@ -526,6 +526,7 @@ public class ModClientEvents {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "nomad_eyes"), new NomadsBlessingOverlay());
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "empathy"), new EmpathyOverlay());
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "camera_viewfinder"), new CameraViewfinderLayer());
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "ocarina"), new OcarinaOverlay());
     }
 
     /** Clear the aim when the camera leaves the player's hands, else the viewfinder sticks on. */

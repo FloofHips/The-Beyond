@@ -15,6 +15,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -49,12 +50,15 @@ import java.awt.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
-public class TrinketEntity extends BaubleEntity implements Bucketable {
+public class TrinketEntity extends BaubleEntity implements Bucketable, OwnableEntity {
     private static final EntityDataAccessor<Integer> DATA_DYE_COLOR = SynchedEntityData.defineId(TrinketEntity .class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_BODY_COLOR = SynchedEntityData.defineId(TrinketEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_WAXED = SynchedEntityData.defineId(TrinketEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<String> DATA_VARIANT = SynchedEntityData.defineId(TrinketEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<Boolean> DATA_SELECTED = SynchedEntityData.defineId(TrinketEntity.class, EntityDataSerializers.BOOLEAN);
+    protected static final EntityDataAccessor<Optional<UUID>> OWNER = SynchedEntityData.defineId(TrinketEntity.class, EntityDataSerializers.OPTIONAL_UUID);
 
     public static final String[] VARIANTS = {
             "swirl", "losange", "perforated", "pyramid", "eyes"
@@ -70,6 +74,8 @@ public class TrinketEntity extends BaubleEntity implements Bucketable {
     public void setBodyColor(int color) {this.entityData.set(DATA_BODY_COLOR, color);}
     public Boolean isWaxed() {return this.entityData.get(DATA_WAXED);}
     public void setWaxed(boolean waxed) {this.entityData.set(DATA_WAXED, waxed);}
+    public Boolean isSelected() {return this.entityData.get(DATA_SELECTED);}
+    public void setSelected(boolean selected) {this.entityData.set(DATA_SELECTED, selected);}
     public String getVariant() {return this.entityData.get(DATA_VARIANT);}
     public void setVariant(String variant) {this.entityData.set(DATA_VARIANT, variant);}
     public List<TrinketGrowth.Feature> getFeaturePlan() {return featurePlan;}
@@ -93,8 +99,9 @@ public class TrinketEntity extends BaubleEntity implements Bucketable {
         entityData.define(DATA_DYE_COLOR, DyeColor.WHITE.getId());
         entityData.define(DATA_BODY_COLOR, Color.WHITE.getRGB());
         entityData.define(DATA_WAXED, false);
+        entityData.define(DATA_SELECTED, false);
         entityData.define(DATA_VARIANT, "swirl");
-        //entityData.define(DATA_FROZEN_SIZE, false);
+        entityData.define(OWNER, Optional.empty());
     }
 
     public void addAdditionalSaveData(CompoundTag compound) {
@@ -103,6 +110,10 @@ public class TrinketEntity extends BaubleEntity implements Bucketable {
         compound.putInt("BodyColor", this.getBodyColor().getRGB());
         compound.putBoolean("IsWaxed", this.isWaxed());
         compound.putString("Variant", this.getVariant());
+
+        if (this.getOwnerUUID() != null) {
+            compound.putUUID("Owner", this.getOwnerUUID());
+        }
     }
 
     public void readAdditionalSaveData(CompoundTag compound) {
@@ -111,6 +122,12 @@ public class TrinketEntity extends BaubleEntity implements Bucketable {
         this.setBodyColor(compound.getInt("BodyColor"));
         this.setWaxed(compound.getBoolean("IsWaxed"));
         this.setVariant(compound.getString("Variant"));
+
+        UUID uuid;
+        if (compound.hasUUID("Owner")) {
+            uuid = compound.getUUID("Owner");
+            entityData.set(OWNER, Optional.ofNullable(uuid));
+        }
     }
 
     @Override
@@ -365,5 +382,22 @@ public class TrinketEntity extends BaubleEntity implements Bucketable {
         } else {
             return Optional.empty();
         }
+    }
+
+    @Override
+    public @Nullable UUID getOwnerUUID() {
+        Optional<UUID> uuid1 = entityData.get(OWNER);
+        return uuid1.orElse(null);
+    }
+
+    @Override
+    public @Nullable LivingEntity getOwner() {
+        if (level() instanceof ServerLevel serverLevel)
+            return (LivingEntity) serverLevel.getEntity(getOwnerUUID());
+        return null;
+    }
+
+    public void setOwner(UUID uuid) {
+        entityData.set(OWNER, Optional.ofNullable(uuid));
     }
 }

@@ -41,6 +41,9 @@ public class PearlItem  extends Item implements ProjectileItem {
     }
 
     public ProjectileItem.DispenseConfig createDispenseConfig() {
-        return DispenseConfig.builder().uncertainty(DispenseConfig.DEFAULT.uncertainty() * 0.5F).power(DispenseConfig.DEFAULT.power() * 1.25F).build();
+        return ProjectileItem.DispenseConfig.builder()
+                .uncertainty(DispenseConfig.DEFAULT.uncertainty() * 0.5F)
+                .power(DispenseConfig.DEFAULT.power() * 1.25F)
+                .build();
     }
 }
