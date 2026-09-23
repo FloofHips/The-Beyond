@@ -2,11 +2,10 @@ package com.thebeyond.client.gui;
 
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.renderer.blockentities.RefugeRenderer;
 import com.thebeyond.common.block.blockentities.RefugeBlockEntity;
-import com.thebeyond.common.block.blockentities.RefugeMenu;
+import com.thebeyond.client.menu.RefugeMenu;
 import com.thebeyond.common.network.RefugeSetModePayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -26,7 +25,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.PacketDistributor;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 
 @OnlyIn(Dist.CLIENT)

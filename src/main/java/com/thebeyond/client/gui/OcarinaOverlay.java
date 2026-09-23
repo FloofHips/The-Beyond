@@ -28,12 +28,6 @@ public class OcarinaOverlay implements LayeredDraw.Layer {
     private static final ResourceLocation GUIDE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/ocarina/guide.png");
     private static final ResourceLocation SCATTER = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/ocarina/scatter.png");
 
-    final int MAX_RENDERED = 8;
-    final int SLOT_SIZE = 32;
-    final int LEFT_MARGIN = 10;
-    final int TOP_MARGIN = 10;
-    final int GAP = 4;
-
     @Override
     public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
         var mc = Minecraft.getInstance();

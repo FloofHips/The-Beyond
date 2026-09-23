@@ -22,7 +22,7 @@ import net.minecraft.world.level.block.Block;
 
 import java.util.Optional;
 
-import static com.thebeyond.common.block.blockentities.PrismographSlots.*;
+import static com.thebeyond.client.menu.PrismographSlots.*;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public class PrismographBlockItem extends BlockItem {
@@ -76,10 +76,11 @@ public class PrismographBlockItem extends BlockItem {
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Player player = context.getPlayer();
-        if (player != null && player.isSecondaryUseActive()) {
-            return InteractionResult.PASS; // PASS routes to use() for the handheld photo, skipping placement
-        }
-        return super.useOn(context);
+//        if (player != null && player.isSecondaryUseActive()) {
+//            return InteractionResult.PASS; // PASS routes to use() for the handheld photo, skipping placement
+//        }
+        if (!CameraAim.isAiming() && player.isShiftKeyDown()) return super.useOn(context);
+        else return InteractionResult.PASS;
     }
 
     // Film gate, consume, and capture are server-authoritative in the CameraShootPayload handler.

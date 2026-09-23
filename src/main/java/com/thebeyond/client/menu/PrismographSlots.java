@@ -1,4 +1,4 @@
-package com.thebeyond.common.block.blockentities;
+package com.thebeyond.client.menu;
 
 import com.thebeyond.common.registry.BeyondTags;
 import net.minecraft.world.item.ItemStack;

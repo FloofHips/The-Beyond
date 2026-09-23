@@ -148,6 +148,8 @@ public class CreativeTabEvents {
         categories.get("functional").add(BeyondBlocks.MEMOR_FAUCET.toStack());
         categories.get("functional").add(BeyondBlocks.BONFIRE.toStack());
         categories.get("functional").add(BeyondItems.ECTOPLASM.toStack());
+        categories.get("functional").add(BeyondItems.LIVE_FLAME.toStack());
+        categories.get("functional").add(BeyondItems.LIVID_FLAME.toStack());
         categories.get("functional").add(BeyondBlocks.GUSTER.toStack());
         categories.get("functional").add(BeyondBlocks.AMPHORA.toStack());
         categories.get("functional").add(BeyondBlocks.POLAR_PILLAR.toStack());
@@ -163,6 +165,7 @@ public class CreativeTabEvents {
         categories.get("functional").add(BeyondBlocks.ENADRAKE_FLARE.toStack());
         categories.get("functional").add(BeyondBlocks.ENATIOUS_TOTEM_SEED.toStack());
         categories.get("functional").add(BeyondBlocks.REFUGE.toStack());
+        categories.get("functional").add(BeyondItems.MEMORY_BANK.toStack());
         categories.get("functional").add(BeyondBlocks.GAUSS_VENT.toStack());
         categories.get("functional").add(BeyondBlocks.BELLOW.toStack());
         categories.get("functional").add(BeyondBlocks.SOOT_BLOCK.toStack());
@@ -172,9 +175,9 @@ public class CreativeTabEvents {
         categories.get("functional").add(BeyondItems.PRISMOGRAPH.toStack());
         categories.get("functional").add(BeyondBlocks.UNSTABLE_NACRE.toStack());
         categories.get("functional").add(BeyondBlocks.PEARL_MIRROR.toStack());
+        categories.get("functional").add(BeyondItems.PEARL_BEAD.toStack());
         categories.get("functional").add(BeyondBlocks.PERKA_STALK_MOUTH.toStack());
         categories.get("functional").add(BeyondBlocks.COIL_VERTEBRAE.toStack());
-        categories.get("functional").add(BeyondItems.PEARL_BEAD.toStack());
 
         categories.get("ingredients").add(BeyondItems.FERROPETAL.toStack());
         categories.get("ingredients").add(BeyondItems.FERROJELLY.toStack());
@@ -305,6 +308,8 @@ public class CreativeTabEvents {
         categories.get("the end").add(BeyondItems.LANTERN_SPAWN_EGG.toStack());
         categories.get("the end").add(BeyondItems.LANTERN_SHED.toStack());
         categories.get("the end").add(BeyondItems.ECTOPLASM.toStack());
+        categories.get("the end").add(BeyondItems.LIVE_FLAME.toStack());
+        categories.get("the end").add(BeyondItems.LIVID_FLAME.toStack());
         categories.get("the end").add(BeyondItems.TOTEM_OF_RESPITE.toStack());
         categories.get("the end").add(BeyondItems.ETHER_CLOAK.toStack());
 
@@ -351,6 +356,7 @@ public class CreativeTabEvents {
         categories.get("peer lands").add(BeyondBlocks.OBIROOT.toStack());
         categories.get("peer lands").add(BeyondBlocks.PEEPING_OBIROOT.toStack());
         categories.get("peer lands").add(BeyondBlocks.XYLEM.toStack());
+        categories.get("peer lands").add(BeyondItems.MEMORY_BANK.toStack());
         categories.get("peer lands").add(BeyondItems.ENADRAKE_SPAWN_EGG.toStack());
         categories.get("peer lands").add(BeyondBlocks.OBIROOT_SPROUT.toStack());
         categories.get("peer lands").add(PotionContents.createItemStack(Items.SPLASH_POTION, BeyondPotions.DEAFENING));

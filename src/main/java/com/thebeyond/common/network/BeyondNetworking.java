@@ -6,7 +6,7 @@ import com.thebeyond.client.particle.BellowJetOptions;
 import com.thebeyond.common.block.BellowBlock;
 import com.thebeyond.common.block.blockentities.ProjectorBlockEntity;
 import com.thebeyond.common.block.blockentities.RefugeBlockEntity;
-import com.thebeyond.common.block.blockentities.RefugeMenu;
+import com.thebeyond.client.menu.RefugeMenu;
 import com.thebeyond.common.awareness.HiddenContentFilter;
 import com.thebeyond.common.awareness.PlayerAwareness;
 import com.thebeyond.common.registry.*;
@@ -19,6 +19,7 @@ import com.thebeyond.common.camera.Grades;
 import com.thebeyond.common.camera.SnapshotRequests;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -314,6 +315,9 @@ public class BeyondNetworking {
             ItemStack snapshot = new ItemStack(BeyondItems.SNAPSHOT.get());
             snapshot.set(BeyondComponents.SNAPSHOT_PIXELS.get(),
                     new Components.SnapshotPixelsComponent(w, h, payload.rgb()));
+            if (context.player() != null)
+                snapshot.set(BeyondComponents.SNAPSHOT_DATE.get(),
+                        Component.literal("Day - " + (context.player().level().getDayTime()/24000)));
             snapshot.set(BeyondComponents.SNAPSHOT_GRADE.get(),
                     claim.gradeId() != null ? claim.gradeId() : Grades.SEPIA);
             if (claim.ejectAt() == null) {

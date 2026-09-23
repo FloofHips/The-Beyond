@@ -114,7 +114,8 @@ public class BeyondItems {
     public static final DeferredItem<Item> BRITTLE_HOE = registerItem("brittle_hoe", () -> new HoeItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(HoeItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 0.0F, -3.0F))));
     // Block-click places the camera block; in-air or sneaking shoots it handheld.
     public static final DeferredItem<Item> PRISMOGRAPH = registerItem("prismograph", () -> new PrismographBlockItem(BeyondBlocks.PRISMOGRAPH.get(), new Item.Properties().stacksTo(1)));
-    public static final DeferredItem<Item> SNAPSHOT = registerItem("snapshot", () -> new SnapshotItem(new Item.Properties().stacksTo(16).rarity(BeyondEnums.REMEMBRANCE.getValue())));
+    public static final DeferredItem<Item> SNAPSHOT = registerItem("snapshot", () -> new SnapshotItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> MEMORY_BANK = registerItem("memory_bank", () -> new MemoryBankItem(new Item.Properties().stacksTo(1)));
 
     public static final DeferredItem<Item> PEARL_BEAD = registerItem("pearl_bead", () -> new PearlItem(new Item.Properties()));
     public static final DeferredItem<Item> OCARINA = registerItem("ocarina", () -> new OcarinaItem(new Item.Properties().stacksTo(1)));

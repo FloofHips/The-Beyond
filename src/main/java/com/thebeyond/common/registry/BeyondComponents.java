@@ -8,6 +8,8 @@ import net.minecraft.core.component.DataComponentHolder;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.ExtraCodecs;
@@ -30,6 +32,13 @@ public class BeyondComponents {
             builder -> builder
                     .persistent(ExtraCodecs.intRange(0, 3))
                     .networkSynchronized(ByteBufCodecs.VAR_INT)
+    );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Component>> SNAPSHOT_DATE = COMPONENTS.registerComponentType(
+            "snapshot_date",
+            builder -> builder
+                    .persistent(ComponentSerialization.FLAT_CODEC)
+                    .networkSynchronized(ComponentSerialization.STREAM_CODEC)
     );
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Components.SnapshotPixelsComponent>> SNAPSHOT_PIXELS = COMPONENTS.registerComponentType(

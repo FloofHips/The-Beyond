@@ -1,6 +1,7 @@
-package com.thebeyond.common.block.blockentities;
+package com.thebeyond.client.menu;
 
 import com.thebeyond.common.block.ProjectorAcceptance;
+import com.thebeyond.common.block.blockentities.ProjectorBlockEntity;
 import com.thebeyond.common.registry.BeyondMenus;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;

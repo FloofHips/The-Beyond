@@ -97,7 +97,7 @@ public class TrinketRenderer extends LivingBlockRenderer {
         if (entity instanceof TrinketEntity trinket) {
             if (trinket.isSelected()) {
                 float sin = 0;
-                sin = Math.clamp(Mth.sin(entity.tickCount / 10f), 0, 1);
+                sin = Math.clamp(Mth.sin((entity.tickCount + trinket.getFeaturePlanSeed()/10000f) / 10f), 0, 1);
                 int blockLight = LightTexture.block(packedLight);
                 int skyLight = LightTexture.sky(packedLight);
                 int fullBlockLight = LightTexture.block(LightTexture.FULL_BRIGHT);

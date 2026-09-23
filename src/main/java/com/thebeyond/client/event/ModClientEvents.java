@@ -52,6 +52,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
@@ -157,6 +158,7 @@ public class ModClientEvents {
         event.register(BeyondMenus.REFUGE.get(), RefugeScreen::new);
         event.register(BeyondMenus.PROJECTOR.get(), ProjectorScreen::new);
         event.register(BeyondMenus.PRISMOGRAPH.get(), PrismographBlockScreen::new);
+        event.register(BeyondMenus.MEMORY_BANK.get(), MemoryBankScreen::new);
     }
 
     @SubscribeEvent
@@ -527,6 +529,7 @@ public class ModClientEvents {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "empathy"), new EmpathyOverlay());
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "camera_viewfinder"), new CameraViewfinderLayer());
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "ocarina"), new OcarinaOverlay());
+        event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "snapshot"), new SnapshotScreen());
     }
 
     /** Clear the aim when the camera leaves the player's hands, else the viewfinder sticks on. */
@@ -577,6 +580,7 @@ public class ModClientEvents {
         if (aimingWithCamera()) {
             event.setCanceled(true);
         }
+        if (event.getHand() == InteractionHand.MAIN_HAND && event.getItemStack().has(BeyondComponents.SNAPSHOT_PIXELS)) event.setCanceled(true);
     }
 
     @SubscribeEvent

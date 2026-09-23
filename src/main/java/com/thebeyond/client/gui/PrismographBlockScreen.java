@@ -1,7 +1,7 @@
 package com.thebeyond.client.gui;
 
 import com.thebeyond.common.block.blockentities.PrismographBlockEntity;
-import com.thebeyond.common.block.blockentities.PrismographMenu;
+import com.thebeyond.client.menu.PrismographMenu;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;

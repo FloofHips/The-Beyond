@@ -1,6 +1,7 @@
 package com.thebeyond.client.gui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.thebeyond.TheBeyond;
 import com.thebeyond.client.camera.CameraAim;
 import com.thebeyond.common.item.PrismographBlockItem;
 import net.minecraft.client.DeltaTracker;
@@ -15,7 +16,7 @@ import net.minecraft.world.InteractionHand;
 
 /** Spyglass scope reused as a viewfinder: scope fills the captured square ({@code side = min(screenW, screenH)}), bars black out the rest, so it doubles as an accurate frame. */
 public class CameraViewfinderLayer implements LayeredDraw.Layer {
-    private static final ResourceLocation SPYGLASS_SCOPE = ResourceLocation.withDefaultNamespace("textures/misc/spyglass_scope.png");
+    private static final ResourceLocation OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/prismograph/overlay.png");
 
     private float scopeScale = 0.5F; // grows 0.5 -> 1 while aiming, like the spyglass raise
 
@@ -50,7 +51,7 @@ public class CameraViewfinderLayer implements LayeredDraw.Layer {
         int j1 = l + i;
 
         RenderSystem.enableBlend();
-        guiGraphics.blit(SPYGLASS_SCOPE, k, l, -90, 0.0F, 0.0F, i, i, i, i);
+        guiGraphics.blit(OVERLAY, k, l, -90, 0.0F, 0.0F, i, i, i, i);
         RenderSystem.disableBlend();
         guiGraphics.fill(RenderType.guiOverlay(), 0, j1, guiGraphics.guiWidth(), guiGraphics.guiHeight(), -90, 0xFF000000);
         guiGraphics.fill(RenderType.guiOverlay(), 0, 0, guiGraphics.guiWidth(), l, -90, 0xFF000000);

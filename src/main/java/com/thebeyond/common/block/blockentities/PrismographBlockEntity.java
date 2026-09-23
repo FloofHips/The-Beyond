@@ -1,5 +1,7 @@
 package com.thebeyond.common.block.blockentities;
 
+import com.thebeyond.client.menu.PrismographMenu;
+import com.thebeyond.client.menu.PrismographSlots;
 import com.thebeyond.common.registry.BeyondBlockEntities;
 import com.thebeyond.common.registry.BeyondTags;
 import net.minecraft.Util;

@@ -78,17 +78,17 @@ public class RenderUtils {
                 GlStateManager.SourceFactor.ONE,
                 GlStateManager.DestFactor.ZERO
         );
-//
-//        float a = ((tintColor >> 24) & 0xFF) / 255f;
-//        float r = ((tintColor >> 16) & 0xFF) / 255f;
-//        float g = ((tintColor >> 8) & 0xFF) / 255f;
-//        float b = (tintColor & 0xFF) / 255f;
-//
-//        RenderSystem.setShaderColor(r, g, b, a);
+
+        float a = ((tintColor >> 24) & 0xFF) / 255f;
+        float r = ((tintColor >> 16) & 0xFF) / 255f;
+        float g = ((tintColor >> 8) & 0xFF) / 255f;
+        float b = (tintColor & 0xFF) / 255f;
+
+        RenderSystem.setShaderColor(r, g, b, a);
 
         gui.blit(texture, startx, starty, Uoffset, Voffset, width, height, texwidth, texheight);
 
-        //RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+        RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
         RenderSystem.defaultBlendFunc();
     }
 

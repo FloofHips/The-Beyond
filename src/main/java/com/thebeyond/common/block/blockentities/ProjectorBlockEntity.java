@@ -1,6 +1,7 @@
 package com.thebeyond.common.block.blockentities;
 
 import com.thebeyond.api.compat.BeyondCompatHooks;
+import com.thebeyond.client.menu.ProjectorMenu;
 import com.thebeyond.common.block.ProjectorAcceptance;
 import com.thebeyond.common.block.ProjectorBlock;
 import com.thebeyond.common.data.BeyondDataMapTypes;
