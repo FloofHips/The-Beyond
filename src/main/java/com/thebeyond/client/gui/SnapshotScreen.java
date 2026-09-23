@@ -57,6 +57,11 @@ public class SnapshotScreen implements LayeredDraw.Layer{
         float scale = Math.clamp(1+alpha, 1.5f, 2f);
         pose.scale(scale, scale, scale);
 
+        extracted(guiGraphics, screenWidth, screenHeight, scale, snapshot, mc.font);
+        pose.popPose();
+    }
+
+    private static void extracted(GuiGraphics guiGraphics, int screenWidth, int screenHeight, float scale, ItemStack snapshot, Font font) {
         float startX = screenWidth / (2f * scale);
         float startY = screenHeight / (2f * scale);
 
@@ -65,17 +70,15 @@ public class SnapshotScreen implements LayeredDraw.Layer{
         RenderUtils.renderMultiplicativeQuad(guiGraphics, OVERLAY, (int) (startX - 41 + 9), (int) (startY - 47 + 11), 0, 0, 64, 64, 64,64,-1);
         if (snapshot.has(BeyondComponents.SNAPSHOT_DATE)) {
             Component text = snapshot.get(BeyondComponents.SNAPSHOT_DATE);
-            guiGraphics.drawString(mc.font, text, (int) (startX - 33), (int) (startY + 32), 0x222A31, false);
-            guiGraphics.drawString(mc.font, text, (int) (startX - 33), (int) (startY + 34), 0x486B73, false);
-            guiGraphics.drawString(mc.font, text, (int) (startX - 33), (int) (startY + 33), 0x000000, false);
+            guiGraphics.drawString(font, text, (int) (startX - 33), (int) (startY + 32), 0x222A31, false);
+            guiGraphics.drawString(font, text, (int) (startX - 33), (int) (startY + 34), 0x486B73, false);
+            guiGraphics.drawString(font, text, (int) (startX - 33), (int) (startY + 33), 0x000000, false);
         }
-        pose.popPose();
     }
 
-    public void renderImage(int x, int y, GuiGraphics guiGraphics, ItemStack stack) {
+    public static void renderImage(int x, int y, GuiGraphics guiGraphics, ItemStack stack) {
         Components.SnapshotPixelsComponent px = stack.get(BeyondComponents.SNAPSHOT_PIXELS.get());
         ResourceLocation tex = SnapshotTextures.get(px, Grades.NONE);
-        // DynamicTexture is not an atlas sprite, so blitSprite would fail.
         guiGraphics.blit(tex, x, y, 0F, 0F, SIZE, SIZE, SIZE, SIZE);
     }
 }

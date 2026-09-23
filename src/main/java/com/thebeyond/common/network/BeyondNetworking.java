@@ -2,6 +2,7 @@ package com.thebeyond.common.network;
 
 import com.thebeyond.TheBeyond;
 import com.thebeyond.api.compat.BeyondCompatHooks;
+import com.thebeyond.client.menu.MemoryBankMenu;
 import com.thebeyond.client.particle.BellowJetOptions;
 import com.thebeyond.common.block.BellowBlock;
 import com.thebeyond.common.block.blockentities.ProjectorBlockEntity;
@@ -69,6 +70,12 @@ public class BeyondNetworking {
                 BeyondNetworking::handleSetMode
         );
 
+        registrar.playToServer(
+                MemoryBankChangeBankPagePacket.TYPE,
+                MemoryBankChangeBankPagePacket.CODEC,
+                BeyondNetworking::handleMemoryBankChangePage
+        );
+
         registrar.playToClient(
                 RefugeActivatePayload.TYPE,
                 RefugeActivatePayload.STREAM_CODEC,
@@ -128,6 +135,15 @@ public class BeyondNetworking {
                 GatedStructuresSyncPayload.STREAM_CODEC,
                 BeyondNetworking::handleGatedStructuresClient
         );
+    }
+
+    private static void handleMemoryBankChangePage(MemoryBankChangeBankPagePacket pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (ctx.player().containerMenu instanceof MemoryBankMenu menu
+                    && menu.containerId == pkt.containerId()) {
+                menu.changePage(pkt.delta());
+            }
+        });
     }
 
     private static void handleGaussVentClient(GaussVentParticlePayload payload, IPayloadContext context) {

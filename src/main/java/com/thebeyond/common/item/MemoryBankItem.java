@@ -1,6 +1,7 @@
 package com.thebeyond.common.item;
 
 import com.thebeyond.client.menu.MemoryBankMenu;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
@@ -15,8 +16,11 @@ import net.minecraft.world.inventory.ClickAction;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.Level;
+
+import java.util.List;
 
 public class MemoryBankItem extends Item {
     public static final int CAPACITY = 120;
@@ -44,6 +48,7 @@ public class MemoryBankItem extends Item {
 
     @Override
     public boolean overrideStackedOnOther(ItemStack stack, Slot slot, ClickAction action, Player player) {
+        if (player.containerMenu instanceof MemoryBankMenu menu && menu.stack == stack) return false;
         if (action != ClickAction.SECONDARY) return false;
 
         ItemStack onSlot = slot.getItem();
@@ -63,6 +68,7 @@ public class MemoryBankItem extends Item {
 
     @Override
     public boolean overrideOtherStackedOnMe(ItemStack stack, ItemStack other, Slot slot, ClickAction action, Player player, SlotAccess access) {
+        if (player.containerMenu instanceof MemoryBankMenu menu && menu.stack == stack) return false;
         if (action != ClickAction.SECONDARY) return false;
         if (!slot.allowModification(player)) return false;
         if (other.isEmpty() || !(other.getItem() instanceof SnapshotItem)) return false;
@@ -89,5 +95,11 @@ public class MemoryBankItem extends Item {
             ), buf -> ItemStack.STREAM_CODEC.encode(buf, stack));
         }
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+        super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+        tooltipComponents.add(Component.literal(String.valueOf(slots(stack).stream().count())).withStyle(ChatFormatting.BLUE));
     }
 }
