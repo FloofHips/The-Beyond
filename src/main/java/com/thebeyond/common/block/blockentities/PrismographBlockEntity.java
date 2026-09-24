@@ -31,7 +31,6 @@ public class PrismographBlockEntity extends BlockEntity implements Container, Me
     // Slot layout and film cap live in PrismographSlots (the shared source); re-exposed here for this container's API and slot overrides.
     public static final int SLOTS = PrismographSlots.SLOTS;
     public static final int FILM = PrismographSlots.FILM;
-    public static final int FUEL = PrismographSlots.FUEL;
     public static final int MAX_FILM = PrismographSlots.MAX_FILM;
 
     private static final Component DEFAULT_NAME = Component.translatable("container.the_beyond.camera");
@@ -148,7 +147,6 @@ public class PrismographBlockEntity extends BlockEntity implements Container, Me
     public boolean canPlaceItem(int slot, ItemStack stack) {
         return switch (slot) {
             case FILM -> stack.is(BeyondTags.PRISMOGRAPH_FILM);
-            case FUEL -> stack.is(BeyondTags.PRISMOGRAPH_FUEL); // empty tag accepts nothing yet
             default -> false;
         };
     }

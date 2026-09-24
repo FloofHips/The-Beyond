@@ -193,7 +193,7 @@ public class PrismographBlock extends BaseEntityBlock {
         Vec3 forward = visForward != null ? visForward.normalize() : storedForward;
         Vec3 eye = BeyondCompatHooks.visibleOrCenter(level, pos).add(forward.scale(0.5));
         // Placed cameras stamp the default look; CAMERA_GRADE is a handheld-only concept.
-        long requestId = SnapshotRequests.issue(client, pos, Grades.SEPIA);
+        long requestId = SnapshotRequests.issue(client, pos, Grades.NONE);
         PacketDistributor.sendToPlayer(client,
                 new BlockCameraRenderRequestPayload(requestId, eye, forward));
         level.playSound(null, pos, SoundEvents.UI_BUTTON_CLICK.value(), SoundSource.BLOCKS, 0.7f, 1.2f);

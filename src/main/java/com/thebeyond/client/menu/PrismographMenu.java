@@ -54,14 +54,6 @@ public class PrismographMenu extends AbstractContainerMenu {
             }
         });
 
-        // Fuel tag is empty for now, so this slot stays inert.
-        this.addSlot(new Slot(this.container, PrismographBlockEntity.FUEL, 89, 7) {
-            @Override
-            public boolean mayPlace(ItemStack stack) {
-                return stack.is(BeyondTags.PRISMOGRAPH_FUEL);
-            }
-        });
-
         for (int k = 0; k < 3; ++k) {
             for (int l = 0; l < 9; ++l) {
                 this.addSlot(new Slot(playerInventory, l + k * 9 + 9, 8 + l * 18, 45 + k * 18));
@@ -94,10 +86,6 @@ public class PrismographMenu extends AbstractContainerMenu {
             } else {
                 if (moving.is(BeyondTags.PRISMOGRAPH_FILM)) {
                     if (!this.moveItemStackTo(moving, PrismographBlockEntity.FILM, PrismographBlockEntity.FILM + 1, false)) {
-                        return ItemStack.EMPTY;
-                    }
-                } else if (moving.is(BeyondTags.PRISMOGRAPH_FUEL)) {
-                    if (!this.moveItemStackTo(moving, PrismographBlockEntity.FUEL, PrismographBlockEntity.FUEL + 1, false)) {
                         return ItemStack.EMPTY;
                     }
                 } else {

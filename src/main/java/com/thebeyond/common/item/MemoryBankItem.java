@@ -17,6 +17,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.Level;
 
@@ -87,6 +88,11 @@ public class MemoryBankItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         ItemStack stack = player.getItemInHand(usedHand);
+
+        if (player.isShiftKeyDown()) {
+            stack.set(DataComponents.DYED_COLOR, new DyedItemColor(level.random.nextInt(48665565), true));
+            return InteractionResultHolder.success(stack);
+        }
 
         if (!level.isClientSide) {
             player.openMenu(new SimpleMenuProvider(

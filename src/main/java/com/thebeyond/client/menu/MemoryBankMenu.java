@@ -13,12 +13,14 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.DyedItemColor;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public class MemoryBankMenu extends AbstractContainerMenu {
     public static final int PAGE_SIZE = 24;
 
     public final ItemStack stack;
+    public int color;
     private int page = 0;
     private NonNullList<ItemStack> cache;
     public boolean magnifyMode = false;
@@ -28,6 +30,9 @@ public class MemoryBankMenu extends AbstractContainerMenu {
     public MemoryBankMenu(int id, Inventory inv, ItemStack stack) {
         super(BeyondMenus.MEMORY_BANK.get(), id);
         this.stack = stack;
+
+        color = DyedItemColor.getOrDefault(stack, -10659444);
+
         refreshCache();
 
         for (int i = 0; i < 2; i++) {

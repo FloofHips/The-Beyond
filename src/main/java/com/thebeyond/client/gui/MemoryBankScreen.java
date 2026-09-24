@@ -1,5 +1,6 @@
 package com.thebeyond.client.gui;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.menu.MemoryBankMenu;
 import com.thebeyond.client.renderer.blockentities.SnapshotTextures;
@@ -28,10 +29,11 @@ import org.lwjgl.glfw.GLFW;
 
 public class MemoryBankScreen  extends AbstractContainerScreen<MemoryBankMenu> {
     private static final ResourceLocation BANK = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/memory_bank/screen.png");
+    private static final ResourceLocation BANK_DYED = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/memory_bank/screen_dyed.png");
     private static final ResourceLocation OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/memory_bank/overlay.png");
 
     private static final ResourceLocation GLASS = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/memory_bank/glass.png");
-    private static final ResourceLocation GLASS_OFF = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/memory_bank/glass_off.png");
+    private static final ResourceLocation POD = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/memory_bank/pod.png");
     private static final ResourceLocation GLASS_MOUSE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/memory_bank/glass_mouse.png");
 
     protected int imageWidth = 362;
@@ -82,6 +84,7 @@ public class MemoryBankScreen  extends AbstractContainerScreen<MemoryBankMenu> {
         }
 
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+        super.renderTooltip(guiGraphics, mouseX, mouseY);
     }
 
     @Override
@@ -96,6 +99,18 @@ public class MemoryBankScreen  extends AbstractContainerScreen<MemoryBankMenu> {
         float startY = this.height / 2f;
 
         guiGraphics.blit(BANK, (int) (startX - imageWidth/2)-5, (int) (startY - imageHeight/2), 0, 0, imageWidth+5, imageHeight, imageWidth+5,imageHeight);
+
+        int col = menu.color;
+
+        float r = ((col >> 16) & 0xFF) / 255f;
+        float g = ((col >> 8) & 0xFF) / 255f;
+        float b = (col & 0xFF) / 255f;
+
+        RenderSystem.setShaderColor(r,g,b,1);
+        guiGraphics.blit(BANK_DYED, (int) (startX - imageWidth/2)-5, (int) (startY - imageHeight/2), 0, 0, imageWidth+5, imageHeight, imageWidth+5,imageHeight);
+        guiGraphics.blit(POD, glass.getX(), glass.getY(), 0F, 0F, 38, 42, 38, 42);
+        RenderSystem.setShaderColor(1,1,1,1);
+
         NonNullList<Slot> slots = this.getMenu().slots;
 
         for (Slot slot : slots) {
@@ -111,14 +126,13 @@ public class MemoryBankScreen  extends AbstractContainerScreen<MemoryBankMenu> {
             }
         }
 
-        guiGraphics.blit(getLocation(), glass.getX(), glass.getY(), 0F, 0F, 38, 42, 38, 42);
+        RenderSystem.enableBlend();
         if (getMenu().magnifyMode) {
             guiGraphics.blit(GLASS_MOUSE, mouseX+5, mouseY, 0F, 0F, 8, 8, 8, 8);
+        } else {
+            guiGraphics.blit(GLASS, glass.getX(), glass.getY(), 0F, 0F, 38, 42, 38, 42);
         }
-    }
-
-    private @NotNull ResourceLocation getLocation() {
-        return this.getMenu().magnifyMode ? GLASS_OFF : GLASS;
+        RenderSystem.defaultBlendFunc();
     }
 
     @Override

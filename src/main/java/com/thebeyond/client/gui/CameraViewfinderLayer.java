@@ -29,13 +29,13 @@ public class CameraViewfinderLayer implements LayeredDraw.Layer {
             if (player == null || !holdingCamera(player)) {
                 CameraAim.clear();
             }
-            scopeScale = 0.5F;
+            scopeScale = 2F;
             return;
         }
 
-        // Advance the raise whenever aiming, even in third person, so an F5 toggle never restarts it.
+        // Advance the raise whenever aiming, even in third person, so an F5 toggle never restarts it.//
         // Constants verbatim from Gui#renderSpyglassOverlay.
-        scopeScale = Mth.lerp(0.5F * deltaTracker.getGameTimeDeltaTicks(), scopeScale, 1.125F);
+        scopeScale = Mth.lerp(0.5F * deltaTracker.getGameTimeDeltaTicks(), scopeScale, 1.3F);
 
         // Draw only in first person; third person keeps it ticking but hidden, so switching back resumes mid-raise.
         if (mc.options.hideGui || !mc.options.getCameraType().isFirstPerson()) {

@@ -58,27 +58,10 @@ public class PrismographBlockItem extends BlockItem {
         }
     }
 
-    // Dormant until #thebeyond:camera_fuel is populated and these + the shoot gate are uncommented.
-    // public static int fuelCount(ItemStack camera) {
-    //     return slots(camera).get(FUEL).getCount();
-    // }
-    // public static boolean hasFuel(ItemStack camera) {
-    //     return fuelCount(camera) > 0;
-    // }
-    // private static void consumeFuel(ItemStack camera) {
-    //     NonNullList<ItemStack> s = slots(camera);
-    //     if (!s.get(FUEL).isEmpty()) {
-    //         s.get(FUEL).shrink(1);
-    //         saveSlots(camera, s);
-    //     }
-    // }
-
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Player player = context.getPlayer();
-//        if (player != null && player.isSecondaryUseActive()) {
-//            return InteractionResult.PASS; // PASS routes to use() for the handheld photo, skipping placement
-//        }
+
         if (!CameraAim.isAiming() && player.isShiftKeyDown()) return super.useOn(context);
         else return InteractionResult.PASS;
     }
@@ -122,7 +105,7 @@ public class PrismographBlockItem extends BlockItem {
     @Override
     public Optional<TooltipComponent> getTooltipImage(ItemStack stack) {
         NonNullList<ItemStack> s = slots(stack);
-        return Optional.of(new PrismographTooltip(s.get(FILM), s.get(FUEL)));
+        return Optional.of(new PrismographTooltip(s.get(FILM)));
     }
 
     @Override
@@ -193,13 +176,12 @@ public class PrismographBlockItem extends BlockItem {
     }
 
     private static ItemStack removeOne(NonNullList<ItemStack> s) {
-        for (int i : new int[]{FILM, FUEL}) {
-            if (!s.get(i).isEmpty()) {
-                ItemStack out = s.get(i);
-                s.set(i, ItemStack.EMPTY);
-                return out;
-            }
+        if (!s.get(FILM).isEmpty()) {
+            ItemStack out = s.get(FILM);
+            s.set(FILM, ItemStack.EMPTY);
+            return out;
         }
+
         return ItemStack.EMPTY;
     }
 
