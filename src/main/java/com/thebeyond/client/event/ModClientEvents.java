@@ -612,7 +612,7 @@ public class ModClientEvents {
         }
 
         ResourceLocation tex = SnapshotTextures.getDownsampled(
-                px, Grades.photoGrade(stack), FRAME_PHOTO_SIZE);
+                px, Grades.NONE, FRAME_PHOTO_SIZE);
 
         PoseStack pose = event.getPoseStack();
         pose.pushPose();

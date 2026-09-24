@@ -73,8 +73,18 @@ public class BeyondNetworking {
         registrar.playToServer(
                 MemoryBankChangeBankPagePacket.TYPE,
                 MemoryBankChangeBankPagePacket.CODEC,
-                BeyondNetworking::handleMemoryBankChangePage
+                MemoryBankChangeBankPagePacket::handle
         );
+
+        registrar.playToClient(
+                MemoryBankPagePacket.TYPE,
+                MemoryBankPagePacket.CODEC,
+                MemoryBankPagePacket::handle);
+
+        registrar.playToServer(
+                MemoryBankMagnifyModePacket.TYPE,
+                MemoryBankMagnifyModePacket.CODEC,
+                MemoryBankMagnifyModePacket::handle);
 
         registrar.playToClient(
                 RefugeActivatePayload.TYPE,
@@ -135,15 +145,6 @@ public class BeyondNetworking {
                 GatedStructuresSyncPayload.STREAM_CODEC,
                 BeyondNetworking::handleGatedStructuresClient
         );
-    }
-
-    private static void handleMemoryBankChangePage(MemoryBankChangeBankPagePacket pkt, IPayloadContext ctx) {
-        ctx.enqueueWork(() -> {
-            if (ctx.player().containerMenu instanceof MemoryBankMenu menu
-                    && menu.containerId == pkt.containerId()) {
-                menu.changePage(pkt.delta());
-            }
-        });
     }
 
     private static void handleGaussVentClient(GaussVentParticlePayload payload, IPayloadContext context) {

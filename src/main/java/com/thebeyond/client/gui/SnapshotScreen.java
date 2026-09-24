@@ -51,20 +51,18 @@ public class SnapshotScreen implements LayeredDraw.Layer{
         RenderSystem.setShaderColor(1,1,1, alpha);
         guiGraphics.fillGradient(0, 0, screenWidth, screenHeight, -1072689136, -804253680);
         RenderSystem.setShaderColor(1,1,1, 1);
-
+        float scale = Math.clamp(1+alpha, 1.5f, 2f);
         pose.translate(0, ts,0);
 
-        float scale = Math.clamp(1+alpha, 1.5f, 2f);
-        pose.scale(scale, scale, scale);
-
-        extracted(guiGraphics, screenWidth, screenHeight, scale, snapshot, mc.font);
+        renderSnapshot(guiGraphics, pose, screenWidth, screenHeight, scale, snapshot, mc.font);
         pose.popPose();
     }
 
-    private static void extracted(GuiGraphics guiGraphics, int screenWidth, int screenHeight, float scale, ItemStack snapshot, Font font) {
+    public static void renderSnapshot(GuiGraphics guiGraphics, PoseStack pose, int screenWidth, int screenHeight, float scale, ItemStack snapshot, Font font) {
         float startX = screenWidth / (2f * scale);
         float startY = screenHeight / (2f * scale);
 
+        pose.scale(scale, scale, scale);
         guiGraphics.blit(FRAME, (int) (startX - 41), (int) (startY - 47), 0, 0, 82, 94, 82,94);
         renderImage((int) (startX - 41 + 9), (int) (startY - 47 + 11), guiGraphics, snapshot);
         RenderUtils.renderMultiplicativeQuad(guiGraphics, OVERLAY, (int) (startX - 41 + 9), (int) (startY - 47 + 11), 0, 0, 64, 64, 64,64,-1);

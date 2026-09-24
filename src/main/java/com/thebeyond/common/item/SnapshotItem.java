@@ -21,6 +21,6 @@ public class SnapshotItem extends Item {
         if (px == null || !px.isRenderable()) {
             return Optional.empty();
         }
-        return Optional.of(new SnapshotTooltip(px, Grades.photoGrade(stack)));
+        return Optional.of(new SnapshotTooltip(px, Grades.NONE));
     }
 }

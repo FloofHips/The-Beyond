@@ -51,7 +51,7 @@ public final class SnapshotTextures {
     }
 
     public static ResourceLocation getDownsampled(Components.SnapshotPixelsComponent pixels, ResourceLocation gradeId, int outSize) {
-        return register(new Key(pixels, gradeId, outSize), boxDownsample(pixels, resolve(gradeId), outSize));
+        return register(new Key(pixels, gradeId, outSize), nearestNeighborDownsample(pixels, resolve(gradeId), outSize));
     }
 
     private static ResourceLocation register(Key key, NativeImage image) {
@@ -77,28 +77,19 @@ public final class SnapshotTextures {
         }
         return img;
     }
-
-    private static NativeImage boxDownsample(Components.SnapshotPixelsComponent pixels, Grade grade, int out) {
+    //switched to nearest neighbor downscaling
+    private static NativeImage nearestNeighborDownsample(Components.SnapshotPixelsComponent pixels, Grade grade, int out) {
         int w = pixels.width(), h = pixels.height();
         byte[] rgb = pixels.rgb();
         NativeImage img = new NativeImage(out, out, true);
         for (int oy = 0; oy < out; oy++) {
             for (int ox = 0; ox < out; ox++) {
-                // (k+1)*src/out bounds keep non-power-of-two sizes gapless and non-overlapping
-                int sx0 = ox * w / out, sx1 = Math.max(sx0 + 1, (ox + 1) * w / out);
-                int sy0 = oy * h / out, sy1 = Math.max(sy0 + 1, (oy + 1) * h / out);
-                long r = 0, g = 0, b = 0;
-                int n = 0;
-                for (int sy = sy0; sy < sy1; sy++) {
-                    for (int sx = sx0; sx < sx1; sx++) {
-                        int i = (sy * w + sx) * 3;
-                        r += rgb[i] & 0xFF;
-                        g += rgb[i + 1] & 0xFF;
-                        b += rgb[i + 2] & 0xFF;
-                        n++;
-                    }
-                }
-                img.setPixelRGBA(ox, oy, grade.applyAbgr((int) (r / n), (int) (g / n), (int) (b / n)));
+                int sx = ox * w / out;
+                int sy = oy * h / out;
+                if (sx >= w) sx = w - 1;
+                if (sy >= h) sy = h - 1;
+                int i = (sy * w + sx) * 3;
+                img.setPixelRGBA(ox, oy, grade.applyAbgr(rgb[i] & 0xFF, rgb[i + 1] & 0xFF, rgb[i + 2] & 0xFF));
             }
         }
         return img;

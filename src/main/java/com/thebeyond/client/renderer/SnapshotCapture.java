@@ -11,7 +11,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 /** Center-crops an offscreen capture FBO, downsamples to {@link #OUT} square, quantizes, and uploads it as raw RGB. */
 public final class SnapshotCapture {
     public static final int OUT = 64;            // photo px per side; higher = sharper but heavier NBT. Structural (the upload handler caps width at 256), not a free tweak.
-    private static final int COLOR_STEP = 5;    // posterization quant step: 1 = full color, higher = coarser bands (~10 reads retro).
+    private static final int COLOR_STEP = 4;    // posterization quant step: 1 = full color, higher = coarser bands (~10 reads retro).
 
     private SnapshotCapture() {
     }
@@ -27,26 +27,17 @@ public final class SnapshotCapture {
             byte[] rgb = new byte[OUT * OUT * 3];
             for (int y = 0; y < OUT; y++) {
                 for (int x = 0; x < OUT; x++) {
-                    long r = 0, g = 0, b = 0;
-                    int n = 0;
-                    int sx0 = cx + x * side / OUT, sx1 = cx + (x + 1) * side / OUT;
-                    int sy0 = cy + y * side / OUT, sy1 = cy + (y + 1) * side / OUT;
-                    for (int sy = sy0; sy < sy1; sy++) {
-                        for (int sx = sx0; sx < sx1; sx++) {
-                            int p = full.getPixelRGBA(sx, sy); // ABGR 0xAA_BB_GG_RR
-                            r += p & 0xFF;
-                            g += (p >> 8) & 0xFF;
-                            b += (p >> 16) & 0xFF;
-                            n++;
-                        }
-                    }
-                    if (n == 0) {
-                        n = 1;
-                    }
+                    int sx = cx + (int) (((long) x * side) / OUT);
+                    int sy = cy + (int) (((long) y * side) / OUT);
+
+                    if (sx >= w) sx = w - 1;
+                    if (sy >= h) sy = h - 1;
+
+                    int p = full.getPixelRGBA(sx, sy);
                     int o = (y * OUT + x) * 3;
-                    rgb[o] = (byte) quant((int) (r / n));
-                    rgb[o + 1] = (byte) quant((int) (g / n));
-                    rgb[o + 2] = (byte) quant((int) (b / n));
+                    rgb[o]     = (byte) quant(p & 0xFF);
+                    rgb[o + 1] = (byte) quant((p >> 8) & 0xFF);
+                    rgb[o + 2] = (byte) quant((p >> 16) & 0xFF);
                 }
             }
             PacketDistributor.sendToServer(new SnapshotUploadPayload(requestId, OUT, OUT, rgb));
@@ -61,7 +52,7 @@ public final class SnapshotCapture {
     }
 
     private static int quant(int v) {
-        int q = Math.round(v / (float) COLOR_STEP) * COLOR_STEP;
+        int q = Math.round(v / (float) 15) * 15;
         return q > 255 ? 255 : q;
     }
 }

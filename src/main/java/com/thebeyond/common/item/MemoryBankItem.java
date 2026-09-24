@@ -91,7 +91,7 @@ public class MemoryBankItem extends Item {
         if (!level.isClientSide) {
             player.openMenu(new SimpleMenuProvider(
                     (id, inv, p) -> new MemoryBankMenu(id, inv, stack),
-                    Component.translatable("item.the_beyond.memory_bank")
+                    stack.has(DataComponents.CUSTOM_NAME) ? stack.get(DataComponents.CUSTOM_NAME) : this.getName(stack)
             ), buf -> ItemStack.STREAM_CODEC.encode(buf, stack));
         }
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
