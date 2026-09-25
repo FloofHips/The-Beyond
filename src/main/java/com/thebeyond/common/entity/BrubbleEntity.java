@@ -3,16 +3,19 @@ package com.thebeyond.common.entity;
 import com.thebeyond.client.particle.BellowJetOptions;
 import com.thebeyond.client.particle.CircleColorTransitionOptions;
 import com.thebeyond.client.particle.CloudColorTransitionOptions;
+import com.thebeyond.client.particle.SmokeColorTransitionOptions;
 import com.thebeyond.common.entity.util.SlowRotFlyingMoveControl;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.util.AOEManager;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Difficulty;
@@ -54,7 +57,6 @@ public class BrubbleEntity extends PathfinderMob {
     protected PathNavigation createNavigation(Level level) {
         if (hasRocket()) {
             FlyingPathNavigation flyingpathnavigation = new FlyingPathNavigation(this, level);
-            flyingpathnavigation.setCanFloat(true);
             return flyingpathnavigation;
         } else {
             return new GroundPathNavigation(this, level());
@@ -135,6 +137,8 @@ public class BrubbleEntity extends PathfinderMob {
                 if (isSulking() && level().random.nextBoolean()) {//
                     setSulking(false);
                     setStanding(false);
+                    serverLevel.sendParticles(ParticleTypes.ANGRY_VILLAGER, position().x, position().y+1, position().z, random.nextInt(2,4), 0.1, 1, 0.1, 0.01);
+                    level().playSound(this, this.blockPosition(), SoundEvents.COW_AMBIENT, SoundSource.HOSTILE, 1, 2);
                     this.navigation.stop();
                 }
 
@@ -146,6 +150,11 @@ public class BrubbleEntity extends PathfinderMob {
                                 new Vector3f(1.0f, 1.0f, 1.0f),
                                 0.5f
                         ), position.x+0.5, position.y+0.5, position.z+0.5, 1,0,0,0,1);
+                        serverLevel.sendParticles(new SmokeColorTransitionOptions(
+                                new Vector3f(0.2f, 0.1f, 0.2f),
+                                new Vector3f(0.0f, 0.0f, 0.0f),
+                                2f
+                        ), position.x+0.5, position.y+0.5, position.z+0.5, 10,0,0,0,0.01);
                         this.setDeltaMovement(getDeltaMovement().add(getTarget().position().subtract(position).normalize()));
                     }
 

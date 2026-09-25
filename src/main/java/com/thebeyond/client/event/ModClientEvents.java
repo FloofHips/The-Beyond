@@ -50,6 +50,7 @@ import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.*;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
@@ -105,6 +106,8 @@ public class ModClientEvents {
     public static float effectFog = 1;
     public static float nomadEyes = 0;
     public static float empathy = 0;
+    public static float zoomModifier = 0;
+
     @SubscribeEvent
     public static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {
         event.registerReloadListener((ResourceManagerReloadListener)
@@ -589,15 +592,30 @@ public class ModClientEvents {
     }
 
     @SubscribeEvent
-    public static void onCameraEscape(ScreenEvent.KeyPressed.Pre event) {
+    public static void onCameraEscape(ScreenEvent.Opening event) {
         if (aimingWithCamera()) {
-            int key = event.getKeyCode();
-            if (key == GLFW.GLFW_KEY_ESCAPE || key == GLFW.GLFW_KEY_E) {
-                event.setCanceled(true);
-                CameraAim.clear();
-            }
+            event.setCanceled(true);
+            CameraAim.clear();
         }
     }
+
+    @SubscribeEvent
+    public static void onCameraZoom(InputEvent.MouseScrollingEvent event) {
+        if (aimingWithCamera()) {
+            Minecraft.getInstance().cameraEntity.playSound(SoundEvents.SPYGLASS_USE,1, 2-zoomModifier);
+            zoomModifier = Math.clamp((float) (zoomModifier - event.getScrollDeltaY()*0.2f),0,1.5f);
+            event.setCanceled(true);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onCameraZoom(ComputeFovModifierEvent event) {
+        if (aimingWithCamera()) {
+            event.setNewFovModifier(zoomModifier);
+        }
+    }
+
+
 
     @SubscribeEvent
     public static void onClientLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {

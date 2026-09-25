@@ -152,10 +152,10 @@ public class ModGameEvents {
 
     @SubscribeEvent
     public static void onCriticalHit(CriticalHitEvent event) {
-        Entity entity = event.getTarget();
-        if (entity instanceof BrubbleEntity brubbleEntity && event.isCriticalHit()) {
-            brubbleEntity.disable();
-        }
+//        Entity entity = event.getTarget();
+//        if (entity instanceof BrubbleEntity brubbleEntity && event.isCriticalHit()) {
+//            brubbleEntity.disable();
+//        }
     }
 
     @SubscribeEvent

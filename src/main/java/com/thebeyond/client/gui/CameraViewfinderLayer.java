@@ -3,6 +3,7 @@ package com.thebeyond.client.gui;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.camera.CameraAim;
+import com.thebeyond.client.event.ModClientEvents;
 import com.thebeyond.common.item.PrismographBlockItem;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -57,6 +58,8 @@ public class CameraViewfinderLayer implements LayeredDraw.Layer {
         guiGraphics.fill(RenderType.guiOverlay(), 0, 0, guiGraphics.guiWidth(), l, -90, 0xFF000000);
         guiGraphics.fill(RenderType.guiOverlay(), 0, l, k, j1, -90, 0xFF000000);
         guiGraphics.fill(RenderType.guiOverlay(), i1, l, guiGraphics.guiWidth(), j1, -90, 0xFF000000);
+
+        guiGraphics.drawString(Minecraft.getInstance().font, String.valueOf(ModClientEvents.zoomModifier), 0,0,-1);
     }
 
     private static boolean holdingCamera(LocalPlayer player) {

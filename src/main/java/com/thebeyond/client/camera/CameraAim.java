@@ -1,5 +1,7 @@
 package com.thebeyond.client.camera;
 
+import com.thebeyond.client.event.ModClientEvents;
+
 /** Client-only aim flag; the viewfinder layer also clears it when the camera is dropped so the overlay can't stick on. */
 public final class CameraAim {
     private static boolean aiming;
@@ -17,5 +19,6 @@ public final class CameraAim {
 
     public static void clear() {
         aiming = false;
+        ModClientEvents.zoomModifier = 1;
     }
 }

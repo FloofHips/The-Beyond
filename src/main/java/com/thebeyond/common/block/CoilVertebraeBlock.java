@@ -1,6 +1,7 @@
 package com.thebeyond.common.block;
 
 
+import com.thebeyond.common.registry.BeyondBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -34,7 +35,8 @@ public class CoilVertebraeBlock extends RotatedPillarBlock {
 
     @Override
     public boolean isLadder(BlockState state, LevelReader level, BlockPos pos, LivingEntity entity) {
-        return state.getValue(AXIS)==Y;
+        if (state.getValue(AXIS) == Y) return true;
+        return false;
     }
 
     @Override
@@ -44,16 +46,19 @@ public class CoilVertebraeBlock extends RotatedPillarBlock {
 
     @Override
     protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        if (state.getValue(AXIS)==Y) return Block.box((double)7.0F, (double)0.0F, (double)7.0F, (double)9.0F, (double)16.0F, (double)9.0F);
-        return super.getCollisionShape(state, level, pos, context);
+        return switch (state.getValue(AXIS)) {
+            case Z -> Block.box((double)7.5F, (double)7.5F, (double)0.0F, (double)8.5F, (double)8.5F, (double)16.0F);
+            case Y -> Block.box((double)7.0F, (double)0.0F, (double)7.0F, (double)9.0F, (double)16.0F, (double)9.0F);
+            default -> Block.box((double)0.0F, (double)7.5F, (double)7.5F, (double)16.0F, (double)8.5F, (double)8.5F);
+        };
     }
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return switch (state.getValue(AXIS)) {
-            default -> X_AXIS_AABB;
             case Z -> Z_AXIS_AABB;
             case Y -> Y_AXIS_AABB;
+            default -> X_AXIS_AABB;
         };
     }
 
