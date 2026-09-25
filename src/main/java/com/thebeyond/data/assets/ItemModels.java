@@ -59,6 +59,10 @@ public class ItemModels extends ItemModelProvider {
         items.remove(BeyondItems.SMOKE_FUSE.asItem());
         items.remove(BeyondItems.COILED_STALK.asItem());
 
+        items.remove(BeyondItems.MEMORY_BANK.asItem());
+        items.remove(BeyondBlocks.ORNATE_MIRROR.asItem());
+        items.remove(BeyondBlocks.PEARL_MIRROR.asItem());
+
         handheldItem(BeyondItems.BRITTLE_SWORD.asItem());
         handheldItem(BeyondItems.BRITTLE_SHOVEL.asItem());
         handheldItem(BeyondItems.BRITTLE_AXE.asItem());
@@ -78,6 +82,9 @@ public class ItemModels extends ItemModelProvider {
         itemGeneratedModel(BeyondBlocks.BLEEDING_THORN.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/bleeding_thorn"));
         itemGeneratedModel(BeyondBlocks.BLINDING_THORN.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/blinding_thorn"));
         itemGeneratedModel(BeyondBlocks.PEARL_CHIMES.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/pearl_chimes"));
+        itemGeneratedModel(BeyondBlocks.ORNATE_MIRROR.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/ornate_mirror"));
+        itemGeneratedModel(BeyondBlocks.PEARL_MIRROR.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/pearl_mirror"));
+
         items.removeIf(i -> i instanceof BlockItem item && item.getBlock() instanceof WallBlock);
 
         takeAll(items, i -> i instanceof BlockItem).forEach(item -> blockBasedModel(item, ""));
@@ -85,12 +92,10 @@ public class ItemModels extends ItemModelProvider {
 
         items.forEach(item -> itemGeneratedModel(item, resourceItem(itemName(item))));
 
-        wallInventory(BeyondBlocks.PORTELAIN_WALL.asItem().getDescriptionId().split("\\.")[2], ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/portelain"));
+        wallInventory(BeyondBlocks.PORTELAIN_WALL.asItem().getDescriptionId().split("\\.")[2], ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/portelain_inv"));
         wallInventory(BeyondBlocks.PEARL_WALL.asItem().getDescriptionId().split("\\.")[2], ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/pearl"));
         wallInventory(BeyondBlocks.PEARL_BRICK_WALL.asItem().getDescriptionId().split("\\.")[2], ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/pearl_bricks"));
         wallInventory(BeyondBlocks.COBBLED_PEARL_BRICK_WALL.asItem().getDescriptionId().split("\\.")[2], ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/cobbled_pearl_bricks"));
-
-
     }
     public void spawnEggGeneratedModel(Item item) {
         withExistingParent(itemName(item), "item/template_spawn_egg");

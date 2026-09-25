@@ -23,7 +23,7 @@ import net.neoforged.neoforge.client.NeoForgeRenderTypes;
 import java.awt.*;
 
 public class AbyssalNomadGlowLayer extends RenderLayer<AbyssalNomadEntity, AbyssalNomadModel<AbyssalNomadEntity>> {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/abyssal_nomad_glow.png");
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/abyssal_nomad/abyssal_nomad_glow.png");
     private final AbyssalNomadModel<AbyssalNomadEntity> model;
 
     public AbyssalNomadGlowLayer(RenderLayerParent<AbyssalNomadEntity, AbyssalNomadModel<AbyssalNomadEntity>> renderer, EntityModelSet modelSet) {

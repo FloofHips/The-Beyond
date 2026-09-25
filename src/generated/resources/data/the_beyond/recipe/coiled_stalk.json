@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "the_beyond:stalker_segment"
+    },
+    {
+      "tag": "the_beyond:roots"
+    },
+    {
+      "tag": "the_beyond:roots"
+    },
+    {
+      "tag": "the_beyond:roots"
+    }
+  ],
+  "result": {
+    "count": 2,
+    "id": "the_beyond:coiled_stalk"
+  }
+}

@@ -1,5 +1,6 @@
 package com.thebeyond.common.item;
 
+import com.thebeyond.client.gui.OcarinaOverlay;
 import com.thebeyond.common.entity.TrinketEntity;
 import com.thebeyond.common.entity.util.livingblock.movement.Target;
 import com.thebeyond.common.registry.BeyondComponents;
@@ -69,16 +70,20 @@ public class OcarinaItem extends Item {
 
     private void doUse(Level level, Player player, ItemStack stack) {
         OcarinaMode mode = getMode(stack);
+        if (mode == OcarinaMode.SELECT) {
+            select(level, player);
+            return;
+        }
+        if (linkedTrinkets.isEmpty()) {
+            player.displayClientMessage(Component.translatable("screen.the_beyond.ocarina.no_trinkets"), true);
+            return;
+        }
         if (mode == OcarinaMode.GUIDE) {
             guide(level, player);
             return;
         }
         if (mode == OcarinaMode.FOLLOW) {
             follow(player);
-            return;
-        }
-        if (mode == OcarinaMode.SELECT) {
-            select(level, player);
             return;
         }
         if (mode == OcarinaMode.SCATTER) {
@@ -98,6 +103,7 @@ public class OcarinaItem extends Item {
 
                 if (level.isClientSide) {
                     player.displayClientMessage(next.displayName(), true);
+                    OcarinaOverlay.alpha = 1;
                 }
             }
 
@@ -142,6 +148,8 @@ public class OcarinaItem extends Item {
                 trinket.setSelected(true);
             }
         }
+
+        player.displayClientMessage(Component.translatable("screen.the_beyond.ocarina.trinkets_selected", linkedTrinkets.size()), true);
     }
 
     private void follow(Player player) {
@@ -196,6 +204,6 @@ public class OcarinaItem extends Item {
 
     @Override
     public UseAnim getUseAnimation(ItemStack stack) {
-        return UseAnim.TOOT_HORN;
+        return UseAnim.BOW;
     }
 }

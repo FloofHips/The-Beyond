@@ -1,6 +1,7 @@
 {
   "values": [
     "the_beyond:engraved_end_stone",
+    "the_beyond:bedazzled_end_stone",
     "the_beyond:plate_block",
     "the_beyond:plated_end_stone",
     "the_beyond:polar_pillar",
@@ -11,6 +12,17 @@
     "the_beyond:refuge",
     "the_beyond:enadrake_hut",
     "#the_beyond:portelain_blocks",
+    "#the_beyond:pearl_blocks",
+    "#the_beyond:brittle_metal_blocks",
+    "the_beyond:molten_metal",
+    "the_beyond:projector",
+    "the_beyond:prismograph",
+    "the_beyond:pearl_mirror",
+    "the_beyond:pearl_chimes",
+    "the_beyond:ornate_mirror",
+    "the_beyond:gaussanite",
+    "the_beyond:gauss_vent",
+    "the_beyond:bedazzled_end_stone",
     "the_beyond:amphora"
   ]
 }

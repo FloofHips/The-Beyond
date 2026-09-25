@@ -48,7 +48,7 @@ public class SiblingEntity extends PathfinderMob {
             setYRot(yRotO);
         }
 
-        if (tickCount%10==0 && getTarget()!=null) {
+        if ( getTarget()!=null) {
             LivingEntity target = getTarget();
             if (target instanceof Player player) {
                 if (player.isCrouching() && !isCrouching()) this.setPose(Pose.CROUCHING);

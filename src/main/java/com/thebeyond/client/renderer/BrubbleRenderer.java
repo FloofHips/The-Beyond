@@ -21,27 +21,19 @@ import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
 public class BrubbleRenderer extends MobRenderer<BrubbleEntity, BrubbleModel<BrubbleEntity>> {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/brubble/brubble_ground.png");
-    private static final ResourceLocation TEXTURE_FLY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/brubble/brubble_fly.png");
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/brubble/brubble.png");
 
     public BrubbleRenderer(EntityRendererProvider.Context context) {
         super(context,new BrubbleModel<>(context.bakeLayer(BeyondModelLayers.BRUBBLE)),0.5F);
     }
 
     @Override
-    protected @Nullable RenderType getRenderType(BrubbleEntity livingEntity, boolean bodyVisible, boolean translucent, boolean glowing) {
-        ResourceLocation resourcelocation = this.getTextureLocation(livingEntity);
-        if (translucent) {
-            return RenderType.itemEntityTranslucentCull(resourcelocation);
-        } else if (bodyVisible) {
-            return BeyondRenderTypes.entityCutout(resourcelocation);
-        } else {
-            return glowing ? RenderType.outline(resourcelocation) : null;
-        }
+    protected float getShadowRadius(BrubbleEntity entity) {
+        return entity.hasRocket() ? 0.5f : 0.2f;
     }
 
     @Override
     public ResourceLocation getTextureLocation(BrubbleEntity entity) {
-        return entity.isFloating() ? TEXTURE_FLY : TEXTURE;
+        return TEXTURE;
     }
 }

@@ -371,7 +371,7 @@ public class BeyondBlocks {
 
     // Pearlescent Expanse
     public static final DeferredBlock<Block> BEDAZZLED_END_STONE = registerBlock("bedazzled_end_stone",
-            () -> new Block(BlockBehaviour.Properties.of()
+            () -> new BedazzledEndStone(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.SAND)
                     .strength(2.0F, 2.0F)
                     .sound(BeyondSoundTypes.END_STONE))
@@ -501,7 +501,13 @@ public class BeyondBlocks {
                     .sound(SoundType.AMETHYST)
                     .strength(1.0F, 0.1F)
                     .noOcclusion()));
-public static final DeferredBlock<Block> PEARL_CHIMES = registerBlock("pearl_chimes",
+    public static final DeferredBlock<Block> ORNATE_MIRROR = registerBlock("ornate_mirror",
+            () -> new MirrorBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.TERRACOTTA_WHITE)
+                    .sound(SoundType.AMETHYST)
+                    .strength(1.0F, 0.1F)
+                    .noOcclusion()));
+    public static final DeferredBlock<Block> PEARL_CHIMES = registerBlock("pearl_chimes",
             () -> new PearlChimesBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_LIGHT_GRAY)
                     .sound(SoundType.AMETHYST)

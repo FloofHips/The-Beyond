@@ -1,0 +1,132 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "the_beyond:block/ornate_mirror_on"
+      },
+      "when": {
+        "north": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "the_beyond:block/ornate_mirror_on",
+        "uvlock": true,
+        "y": 90
+      },
+      "when": {
+        "east": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "the_beyond:block/ornate_mirror_on",
+        "uvlock": true,
+        "y": 180
+      },
+      "when": {
+        "south": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "the_beyond:block/ornate_mirror_on",
+        "uvlock": true,
+        "y": 270
+      },
+      "when": {
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "the_beyond:block/ornate_mirror_on",
+        "uvlock": true,
+        "x": 270
+      },
+      "when": {
+        "up": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "the_beyond:block/ornate_mirror_on",
+        "uvlock": true,
+        "x": 90
+      },
+      "when": {
+        "down": "true"
+      }
+    },
+    {
+      "apply": [
+        {
+          "model": "the_beyond:block/ornate_mirror_off"
+        }
+      ],
+      "when": {
+        "north": "false"
+      }
+    },
+    {
+      "apply": [
+        {
+          "model": "the_beyond:block/ornate_mirror_off",
+          "uvlock": true,
+          "y": 90
+        }
+      ],
+      "when": {
+        "east": "false"
+      }
+    },
+    {
+      "apply": [
+        {
+          "model": "the_beyond:block/ornate_mirror_off",
+          "uvlock": true,
+          "y": 180
+        }
+      ],
+      "when": {
+        "south": "false"
+      }
+    },
+    {
+      "apply": [
+        {
+          "model": "the_beyond:block/ornate_mirror_off",
+          "uvlock": true,
+          "y": 270
+        }
+      ],
+      "when": {
+        "west": "false"
+      }
+    },
+    {
+      "apply": [
+        {
+          "model": "the_beyond:block/ornate_mirror_off",
+          "uvlock": true,
+          "x": 270
+        }
+      ],
+      "when": {
+        "up": "false"
+      }
+    },
+    {
+      "apply":
+      {
+        "model": "the_beyond:block/ornate_mirror_off",
+        "uvlock": true,
+        "x": 90
+      }
+    ,
+      "when": {
+        "down": "false"
+      }
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 package com.thebeyond.common.entity;
 
+import com.thebeyond.BeyondConfig;
 import com.thebeyond.api.worldgen.BeyondTerrainState;
 import com.thebeyond.common.block.BonfireBlock;
 import com.thebeyond.common.entity.util.SlowRotFlyingMoveControl;
@@ -426,6 +427,7 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
     }
 
     private void spawnTotem(ServerLevel level, Player player) {
+        if (!BeyondConfig.DROP_TOTEM_OF_RESPITE.get()) return;
         TotemOfRespiteEntity totem = new TotemOfRespiteEntity(BeyondEntityTypes.TOTEM_OF_RESPITE.get(), level);
         totem.setOwner(player);
 

@@ -140,6 +140,7 @@ public class CreativeTabEvents {
         categories.get("building").add(BeyondBlocks.COBBLED_PEARL_BRICK_SLAB.toStack());
         categories.get("building").add(BeyondBlocks.COBBLED_PEARL_BRICK_WALL.toStack());
         categories.get("building").add(BeyondBlocks.PEARL_MIRROR.toStack());
+        categories.get("building").add(BeyondBlocks.ORNATE_MIRROR.toStack());
         categories.get("building").add(BeyondBlocks.PEARL_CHIMES.toStack());
         categories.get("building").add(BeyondBlocks.VILET.toStack());
         categories.get("building").add(BeyondBlocks.VILE_GROWTH.toStack());
@@ -175,6 +176,7 @@ public class CreativeTabEvents {
         categories.get("functional").add(BeyondItems.PRISMOGRAPH.toStack());
         categories.get("functional").add(BeyondBlocks.UNSTABLE_NACRE.toStack());
         categories.get("functional").add(BeyondBlocks.PEARL_MIRROR.toStack());
+        categories.get("functional").add(BeyondBlocks.ORNATE_MIRROR.toStack());
         categories.get("functional").add(BeyondItems.PEARL_BEAD.toStack());
         categories.get("functional").add(BeyondBlocks.PERKA_STALK_MOUTH.toStack());
         categories.get("functional").add(BeyondBlocks.COIL_VERTEBRAE.toStack());
@@ -230,7 +232,7 @@ public class CreativeTabEvents {
         categories.get("mobs").add(BeyondItems.ENATIOUS_TOTEM_SPAWN_EGG.toStack());
         categories.get("mobs").add(BeyondItems.BRUBBLE_SPAWN_EGG.toStack());
         categories.get("mobs").add(BeyondItems.BAUBLE_SPAWN_EGG.toStack());
-        categories.get("mobs").add(BeyondItems.SIBLING_SPAWN_EGG.toStack());
+        categories.get("mobs").add(BeyondItems.TRINKET_SPAWN_EGG.toStack());
         categories.get("mobs").add(BeyondItems.TRINKET_BUCKET.toStack());
 
         for (Collection<ItemStack> c : categories.values()) {
@@ -414,10 +416,11 @@ public class CreativeTabEvents {
         categories.get("lustrous echoes").add(BeyondBlocks.COBBLED_PEARL_BRICK_SLAB.toStack());
         categories.get("lustrous echoes").add(BeyondBlocks.COBBLED_PEARL_BRICK_WALL.toStack());
         categories.get("lustrous echoes").add(BeyondBlocks.PEARL_MIRROR.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.ORNATE_MIRROR.toStack());
         categories.get("lustrous echoes").add(BeyondBlocks.PEARL_CHIMES.toStack());
         categories.get("lustrous echoes").add(BeyondItems.OCARINA.toStack());
         categories.get("lustrous echoes").add(BeyondItems.BAUBLE_SPAWN_EGG.toStack());
-        categories.get("lustrous echoes").add(BeyondItems.SIBLING_SPAWN_EGG.toStack());
+        categories.get("lustrous echoes").add(BeyondItems.TRINKET_SPAWN_EGG.toStack());
         categories.get("lustrous echoes").add(BeyondItems.TRINKET_BUCKET.toStack());
 
         categories.get("chestral hollows").add(BeyondBlocks.VILET.toStack());
@@ -458,7 +461,7 @@ public class CreativeTabEvents {
 
     public static ItemStack createHeadertack(float alpha, Component name) {
         Components.DynamicColorComponent color = new Components.DynamicColorComponent(0, alpha, 0, 0, 0, 0, 0, 0, 0xF000F0);
-        ItemStack stack = (BeyondItems.GRAVISTAR.toStack());
+        ItemStack stack = (BeyondItems.CATEGORY.toStack());
         stack.set(DataComponents.CREATIVE_SLOT_LOCK, Unit.INSTANCE);
         stack.set(DataComponents.CUSTOM_NAME, name);
         stack.set(BeyondComponents.COLOR_COMPONENT, color);
@@ -512,7 +515,7 @@ public class CreativeTabEvents {
 
     @SubscribeEvent
     public static void onRenderToolTip(RenderTooltipEvent.Pre event) {
-        if (event.getItemStack().getItem() == BeyondItems.GRAVISTAR.get()) event.setCanceled(true);
+        if (event.getItemStack().getItem() == BeyondItems.CATEGORY.get()) event.setCanceled(true);
     }
 
     @SubscribeEvent

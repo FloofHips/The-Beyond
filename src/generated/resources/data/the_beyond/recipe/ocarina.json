@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "P": {
+      "item": "the_beyond:pearl"
+    }
+  },
+  "pattern": [
+    "PP ",
+    "P P",
+    "PP "
+  ],
+  "result": {
+    "count": 1,
+    "id": "the_beyond:ocarina"
+  }
+}

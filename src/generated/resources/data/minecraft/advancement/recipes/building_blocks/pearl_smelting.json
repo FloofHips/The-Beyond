@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_cobbled_pearl": {
+      "conditions": {
+        "items": [
+          {
+            "items": "the_beyond:cobbled_pearl"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "minecraft:pearl_smelting"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_cobbled_pearl"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "minecraft:pearl_smelting"
+    ]
+  }
+}

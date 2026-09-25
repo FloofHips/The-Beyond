@@ -11,6 +11,7 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,6 +29,15 @@ public class BeyondItemTags extends ItemTagsProvider {
                 .add(BeyondBlocks.OBIROOT.asItem())
                 .add(BeyondBlocks.PEEPING_OBIROOT.asItem());
 
+        tag(BeyondTags.MIRRORS)
+                .add(BeyondBlocks.ORNATE_MIRROR.asItem())
+                .add(BeyondBlocks.PEARL_MIRROR.asItem());
+
+        tag(BeyondTags.ROOTS)
+                .add(BeyondBlocks.BLINDING_THORN.asItem())
+                .add(BeyondBlocks.BLEEDING_THORN.asItem())
+                .add(BeyondBlocks.OBIROOT_ARM.asItem());
+
         tag(ItemTags.PLANKS)
                 .add(BeyondBlocks.XYLEM.asItem());
 
@@ -37,10 +47,42 @@ public class BeyondItemTags extends ItemTagsProvider {
         tag(ItemTags.LOGS)
                 .addTags(BeyondTags.OBIROOTS);
 
+        tag(Tags.Items.INGOTS)
+                .add(BeyondItems.BRITTLE_METAL_SHEET.get());
+
+        tag(Tags.Items.RODS_WOODEN)
+                .add(BeyondItems.STALKER_SEGMENT.get())
+                .add(BeyondBlocks.BLINDING_THORN.asItem())
+                .add(BeyondBlocks.BLEEDING_THORN.asItem());
+
+        tag(Tags.Items.BUCKETS)
+                .add(BeyondItems.TRINKET_BUCKET.get())
+                .add(BeyondItems.GELLID_VOID_BUCKET.get());
+
         tag(ItemTags.STAIRS)
-                .add(BeyondBlocks.PORTELAIN_STAIRS.asItem());
+                .add(BeyondBlocks.PORTELAIN_STAIRS.asItem())
+                .add(BeyondBlocks.BRITTLE_METAL_STAIRS.asItem())
+                .add(BeyondBlocks.MEMOR_STAIRS.asItem())
+                .add(BeyondBlocks.PEARL_STAIRS.asItem())
+                .add(BeyondBlocks.PEARL_BRICK_STAIRS.asItem())
+                .add(BeyondBlocks.COBBLED_PEARL_BRICK_STAIRS.asItem());
+
         tag(ItemTags.SLABS)
-                .add(BeyondBlocks.PORTELAIN_SLAB.asItem());
+                .add(BeyondBlocks.PORTELAIN_SLAB.asItem())
+                .add(BeyondBlocks.BRITTLE_METAL_SLAB.asItem())
+                .add(BeyondBlocks.PEARL_SLAB.asItem())
+                .add(BeyondBlocks.PEARL_BRICK_SLAB.asItem())
+                .add(BeyondBlocks.COBBLED_PEARL_BRICK_SLAB.asItem());
+
+        tag(ItemTags.DOORS)
+                .add(BeyondBlocks.BRITTLE_METAL_DOOR.asItem())
+                .add(BeyondBlocks.PORTELAIN_DOOR.asItem());
+
+        tag(ItemTags.WALLS)
+                .add(BeyondBlocks.PORTELAIN_WALL.asItem())
+                .add(BeyondBlocks.PEARL_WALL.asItem())
+                .add(BeyondBlocks.PEARL_BRICK_WALL.asItem())
+                .add(BeyondBlocks.COBBLED_PEARL_BRICK_WALL.asItem());
 
         tag(ItemTags.FOOT_ARMOR)
                 .add(BeyondItems.PATHFINDER_BOOTS.get());
@@ -75,6 +117,19 @@ public class BeyondItemTags extends ItemTagsProvider {
                 .add(BeyondItems.ANCHOR_LEGGINGS.get())
                 .add(BeyondItems.ETHER_CLOAK.get());
 
+        tag(ItemTags.SWORDS)
+                .add(BeyondItems.BRITTLE_SWORD.get());
+        tag(ItemTags.AXES)
+                .add(BeyondItems.BRITTLE_AXE.get());
+        tag(ItemTags.PICKAXES)
+                .add(BeyondItems.BRITTLE_PICKAXE.get());
+        tag(ItemTags.HOES)
+                .add(BeyondItems.BRITTLE_HOE.get());
+        tag(ItemTags.SHOVELS)
+                .add(BeyondItems.BRITTLE_SHOVEL.get());
+        tag(ItemTags.SWORD_ENCHANTABLE)
+                .addTag(ItemTags.SWORDS);
+
         tag(BeyondTags.REMEMBRANCES)
                 .add(BeyondItems.REMEMBRANCE_BEADS.get())
                 .add(BeyondItems.REMEMBRANCE_IDOL.get())
@@ -97,6 +152,13 @@ public class BeyondItemTags extends ItemTagsProvider {
                 .add(BeyondItems.ABYSSAL_NOMAD_SPAWN_EGG.get())
                 .add(BeyondBlocks.AURORACITE.asItem())
                 .add(BeyondItems.ECTOPLASM.get());
+
+        tag(BeyondTags.BRITTLE_TOOLS)
+                .add(BeyondItems.BRITTLE_PICKAXE.get())
+                .add(BeyondItems.BRITTLE_HOE.get())
+                .add(BeyondItems.BRITTLE_AXE.get())
+                .add(BeyondItems.BRITTLE_SHOVEL.get())
+                .add(BeyondItems.BRITTLE_SWORD.get());
 
     }
 }

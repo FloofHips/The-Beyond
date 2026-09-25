@@ -1,6 +1,7 @@
 package com.thebeyond.data.assets;
 
 import com.thebeyond.TheBeyond;
+import com.thebeyond.common.registry.BeyondItems;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.PackOutput;
@@ -29,6 +30,7 @@ public class Lang extends LanguageProvider {
 
         takeAll(items, item -> item instanceof BlockItem);
 
+        items.remove(BeyondItems.TRINKET_BUCKET.asItem());
         items.forEach(item -> add(item, getLangName(item.toString())));
 
         Set<Block> blocks = BuiltInRegistries.BLOCK.stream().filter(i -> TheBeyond.MODID.equals(BuiltInRegistries.BLOCK.getKey(i).getNamespace()))
@@ -61,6 +63,7 @@ public class Lang extends LanguageProvider {
         add("item.minecraft.splash_potion.effect.deafening", "Splash Potion of Deafening");
         add("item.minecraft.lingering_potion.effect.deafening", "Lingering Potion of Deafening");
         add("item.minecraft.tipped_arrow.effect.deafening", "Arrow of Deafening");
+        add("item.the_beyond.trinket_bucket", "Bucket of Trinket");
         add("tooltip.the_beyond.deafening_drinkable", "Does nothing when drunk");
 
         Set<EntityType<?>> mobs = BuiltInRegistries.ENTITY_TYPE.stream().filter(i -> TheBeyond.MODID.equals(BuiltInRegistries.ENTITY_TYPE.getKey(i).getNamespace()))
@@ -122,6 +125,23 @@ public class Lang extends LanguageProvider {
         add("screen.the_beyond.projector.rotate", "Rotate");
         add("screen.the_beyond.projector.flip", "Flip");
         add("screen.the_beyond.refuge.block", "Block %s");
+        add("screen.the_beyond.prismograph.first_person", "Switch to first person to use");
+        add("screen.the_beyond.prismograph.no_film", "Out of film");
+        add("screen.the_beyond.memory_bank.next", "Next page");
+        add("screen.the_beyond.memory_bank.previous", "Previous page");
+        add("screen.the_beyond.memory_bank.magnify", "Magnify");
+        add("screen.the_beyond.ocarina.trinkets_selected", "Selected %s Trinkets");
+        add("screen.the_beyond.ocarina.no_trinkets", "No Trinkets selected");
+
+        add("item.the_beyond.ocarina.mode.select", "Select mode");
+        add("item.the_beyond.ocarina.mode.guide", "Guide mode");
+        add("item.the_beyond.ocarina.mode.follow", "Follow mode");
+        add("item.the_beyond.ocarina.mode.scatter", "Scatter mode");
+
+        add("trinket.small", "Small");
+        add("trinket.medium", "Medium");
+        add("trinket.large", "Large");
+        add("trinket.growth_color", "Dyed Color: %s");
 
         add("inventory.the_beyond.category.building", "Building");
         add("inventory.the_beyond.category.functional", "Functional");
@@ -280,6 +300,20 @@ public class Lang extends LanguageProvider {
         add("advancements.the_beyond.full_power_magnet.description", "Use a magnet to pull yourself somewhere 32 blocks away");
 
         //CONFIG
+        add("the_beyond.configuration.visuals", "Visual config");
+        add("the_beyond.configuration.mirror", "Mirror config");
+
+        add("the_beyond.configuration.deafening", "Deafening effect config");
+        add("the_beyond.configuration.aeronautics", "Aeronautics config");
+
+        add("the_beyond.configuration.disengageOnConeExit", "Disengage on cone exit");
+        add("the_beyond.configuration.localCap", "Local cap");
+        add("the_beyond.configuration.globalCap", "Global cap");
+        add("the_beyond.configuration.wardenEnrageAnger", "Warden enrage anger");
+        add("the_beyond.configuration.wardenSmellRadius", "Warden smell radius");
+        add("the_beyond.configuration.voidSeaOffsetAboveFloor", "Void Sea offset above floor");
+        add("the_beyond.configuration.DropTotemOfRespite", "Totem of Respite drops");
+
         add("the_beyond.config.enable_custom_fog", "Custom fog");
         add("the_beyond.config.enable_custom_sky", "Custom sky");
         add("the_beyond.config.enable_swirling_clouds", "Swirling main island clouds");

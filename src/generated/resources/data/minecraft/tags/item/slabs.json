@@ -1,5 +1,9 @@
 {
   "values": [
-    "the_beyond:portelain_slab"
+    "the_beyond:portelain_slab",
+    "the_beyond:brittle_metal_slab",
+    "the_beyond:pearl_slab",
+    "the_beyond:pearl_brick_slab",
+    "the_beyond:cobbled_pearl_brick_slab"
   ]
 }

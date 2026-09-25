@@ -83,9 +83,9 @@ public class BeyondItems {
     public static final DeferredItem<SpawnEggItem> ENDERGLOP_SPAWN_EGG      = ITEMS.register("enderglop_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENDERGLOP.get(),0x7127f8, -297995,new Item.Properties()));
     public static final DeferredItem<SpawnEggItem> ENADRAKE_SPAWN_EGG       = ITEMS.register("enadrake_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENADRAKE.get(),-13213601, -297995,new Item.Properties()));
     public static final DeferredItem<SpawnEggItem> ENATIOUS_TOTEM_SPAWN_EGG = ITEMS.register("enatious_totem_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENATIOUS_TOTEM.get(),-13213601, -2169180,new Item.Properties()));
-    public static final DeferredItem<SpawnEggItem> BRUBBLE_SPAWN_EGG        = ITEMS.register("brubble_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.BRUBBLE.get(),-14808526, -16738616,new Item.Properties()));
-    public static final DeferredItem<SpawnEggItem> BAUBLE_SPAWN_EGG        = ITEMS.register("bauble_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.BAUBLE.get(),-2955531, -1,new Item.Properties()));
-    public static final DeferredItem<SpawnEggItem> SIBLING_SPAWN_EGG        = ITEMS.register("sibling_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.SIBLING.get(),-2955531, -1,new Item.Properties()));
+    public static final DeferredItem<SpawnEggItem> BRUBBLE_SPAWN_EGG        = ITEMS.register("brubble_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.BRUBBLE.get(),-9792612, -11016715,new Item.Properties()));
+    public static final DeferredItem<SpawnEggItem> BAUBLE_SPAWN_EGG        = ITEMS.register("bauble_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.BAUBLE.get(),-530959, -1,new Item.Properties()));
+    public static final DeferredItem<SpawnEggItem> TRINKET_SPAWN_EGG        = ITEMS.register("trinket_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.TRINKET.get(),-2955531, -11091229,new Item.Properties()));
 
     public static final DeferredItem<Item> REMEMBRANCE_BEADS    = registerRemembrance("beads_remembrance");
     public static final DeferredItem<Item> REMEMBRANCE_IDOL     = registerRemembrance("idol_remembrance");
@@ -115,7 +115,7 @@ public class BeyondItems {
     // Block-click places the camera block; in-air or sneaking shoots it handheld.
     public static final DeferredItem<Item> PRISMOGRAPH = registerItem("prismograph", () -> new PrismographBlockItem(BeyondBlocks.PRISMOGRAPH.get(), new Item.Properties().stacksTo(1)));
     public static final DeferredItem<Item> SNAPSHOT = registerItem("snapshot", () -> new SnapshotItem(new Item.Properties().stacksTo(1)));
-    public static final DeferredItem<Item> MEMORY_BANK = registerItem("memory_bank", () -> new MemoryBankItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> MEMORY_BANK = registerItem("memory_bank", () -> new MemoryBankItem(new Item.Properties().stacksTo(1).component(DataComponents.DYED_COLOR, new DyedItemColor(-10659444, false))));
 
     public static final DeferredItem<Item> PEARL_BEAD = registerItem("pearl_bead", () -> new PearlItem(new Item.Properties()));
     public static final DeferredItem<Item> OCARINA = registerItem("ocarina", () -> new OcarinaItem(new Item.Properties().stacksTo(1)));
@@ -123,6 +123,8 @@ public class BeyondItems {
     public static final DeferredItem<Item> STALKER_SEGMENT = registerItem("stalker_segment", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> SMOKE_FUSE = registerItem("smoke_fuse", () -> new SmokeFuseItem(new Item.Properties().component(DataComponents.DYED_COLOR, new DyedItemColor(DyeColor.BLACK.getFireworkColor(), true))));
     public static final DeferredItem<Item> COILED_STALK = registerItem("coiled_stalk", () -> new CoilItem(new Item.Properties()));
+
+    public static final DeferredItem<Item> CATEGORY = registerItem("category", () -> new CoilItem(new Item.Properties()));
 
     @SuppressWarnings("unchecked")
     public static <T extends Item> DeferredItem<T> registerItem(final String name, final Supplier<? extends Item> item) {

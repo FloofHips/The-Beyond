@@ -81,6 +81,7 @@ import java.util.*;
 
 import net.neoforged.fml.ModList;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
+import org.lwjgl.glfw.GLFW;
 
 @SuppressWarnings("unused")
 @EventBusSubscriber(modid = TheBeyond.MODID, value = Dist.CLIENT)
@@ -295,6 +296,10 @@ public class ModClientEvents {
         event.register((stack, tintIndex) -> {
             return tintIndex > 0 ? -1 : DyedItemColor.getOrDefault(stack, DyeColor.BLACK.getFireworkColor());
         }, BeyondItems.SMOKE_FUSE.asItem());
+
+        event.register((stack, tintIndex) -> {
+            return tintIndex > 0 ? -1 : DyedItemColor.getOrDefault(stack, -10659444);
+        }, BeyondItems.MEMORY_BANK.asItem());
     }
 
     @SubscribeEvent
@@ -557,7 +562,7 @@ public class ModClientEvents {
         Player player = Minecraft.getInstance().player;
         if (!Minecraft.getInstance().options.getCameraType().isFirstPerson()) {
             CameraAim.clear();
-            player.displayClientMessage(Component.translatable("prismograph.first_person"), true);
+            player.displayClientMessage(Component.translatable("screen.the_beyond.prismograph.first_person"), true);
             return false;
         };
 
@@ -581,6 +586,17 @@ public class ModClientEvents {
             event.setCanceled(true);
         }
         if (event.getHand() == InteractionHand.MAIN_HAND && event.getItemStack().has(BeyondComponents.SNAPSHOT_PIXELS)) event.setCanceled(true);
+    }
+
+    @SubscribeEvent
+    public static void onCameraEscape(ScreenEvent.KeyPressed.Pre event) {
+        if (aimingWithCamera()) {
+            int key = event.getKeyCode();
+            if (key == GLFW.GLFW_KEY_ESCAPE || key == GLFW.GLFW_KEY_E) {
+                event.setCanceled(true);
+                CameraAim.clear();
+            }
+        }
     }
 
     @SubscribeEvent

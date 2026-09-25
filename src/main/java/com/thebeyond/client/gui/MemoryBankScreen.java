@@ -13,6 +13,7 @@ import com.thebeyond.util.RenderUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
@@ -57,17 +58,17 @@ public class MemoryBankScreen  extends AbstractContainerScreen<MemoryBankMenu> {
 
         Button prevButton = addWidget(Button.builder(Component.literal("<"), b -> {
             PacketDistributor.sendToServer(new MemoryBankChangeBankPagePacket(menu.containerId, -1));
-            }).bounds(x - 25 - 117, y - 15, 20, 18).build());
+            }).tooltip(Tooltip.create(Component.translatable("screen.the_beyond.memory_bank.next"))).bounds(x - 25 - 117, y - 15, 20, 18).build());
 
         Button nextButton = addWidget(Button.builder(Component.literal(">"), b -> {
             PacketDistributor.sendToServer(new MemoryBankChangeBankPagePacket(menu.containerId, 1));
-        }).bounds(x + 5 + 117, y - 15, 20, 18).build());
+        }).tooltip(Tooltip.create(Component.translatable("screen.the_beyond.memory_bank.previous"))).bounds(x + 5 + 117, y - 15, 20, 18).build());
 
         glass = addWidget(Button.builder(Component.empty(), b -> {
             boolean mag = menu.magnifyMode;
             PacketDistributor.sendToServer(new MemoryBankMagnifyModePacket(menu.containerId));
             menu.magnifyMode = !mag;
-        }).bounds(x - 137, -25 + y + imageHeight/2, 38, 42).build());
+        }).tooltip(Tooltip.create(Component.translatable("screen.the_beyond.memory_bank.magnify"))).bounds(x - 137, -25 + y + imageHeight/2, 38, 42).build());
     }
 
     @Override

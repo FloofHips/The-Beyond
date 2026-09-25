@@ -1,0 +1,54 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_pearl_bead": {
+      "conditions": {
+        "items": [
+          {
+            "items": "the_beyond:pearl_bead"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_peeping_obiroot": {
+      "conditions": {
+        "items": [
+          {
+            "items": "the_beyond:peeping_obiroot"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_prismuth": {
+      "conditions": {
+        "items": [
+          {
+            "items": "the_beyond:prismuth"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "the_beyond:prismograph"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_prismuth",
+      "has_pearl_bead",
+      "has_peeping_obiroot"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "the_beyond:prismograph"
+    ]
+  }
+}

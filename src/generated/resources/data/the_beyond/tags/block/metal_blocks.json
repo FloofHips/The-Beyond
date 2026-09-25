@@ -1,6 +1,9 @@
 {
   "values": [
     "the_beyond:plate_block",
+    "the_beyond:molten_metal",
+    "the_beyond:rich_nacre",
+    "the_beyond:rich_raked_nacre",
     "the_beyond:plated_end_stone",
     "the_beyond:polar_pillar",
     "the_beyond:magnolilly",
@@ -15,7 +18,9 @@
     "#c:storage_blocks/copper",
     "#c:storage_blocks/raw_copper",
     "#c:ores/netherite_scrap",
+    "#the_beyond:brittle_metal_blocks",
     "minecraft:netherite_block",
+    "minecraft:bell",
     "minecraft:chiseled_copper",
     "minecraft:cut_copper",
     "minecraft:cut_copper_slab",

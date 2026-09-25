@@ -1,0 +1,43 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_bleeding_thorn": {
+      "conditions": {
+        "items": [
+          {
+            "items": "#the_beyond:roots"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_stalker_segment": {
+      "conditions": {
+        "items": [
+          {
+            "items": "the_beyond:stalker_segment"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "the_beyond:coiled_stalk"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_stalker_segment",
+      "has_bleeding_thorn"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "the_beyond:coiled_stalk"
+    ]
+  }
+}

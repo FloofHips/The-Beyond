@@ -28,6 +28,8 @@ public class OcarinaOverlay implements LayeredDraw.Layer {
     private static final ResourceLocation GUIDE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/ocarina/guide.png");
     private static final ResourceLocation SCATTER = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/ocarina/scatter.png");
 
+    public static float alpha = 0;
+
     @Override
     public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
         var mc = Minecraft.getInstance();
@@ -55,6 +57,15 @@ public class OcarinaOverlay implements LayeredDraw.Layer {
         List<TrinketEntity> list = ocarinaItem.getLinkedTrinkets();
 
         guiGraphics.blit(getTexture(ocarina), screenWidth/2 + 98 , screenHeight - 20, 0, 0, 16, 16, 16,16);
+
+        if (alpha>0) {
+            RenderSystem.enableBlend();
+            RenderSystem.setShaderColor(1,1,1,alpha);
+            guiGraphics.blit(getTexture(ocarina), (screenWidth / 2) - 8, 16 + (screenHeight / 2) - 8, 0, 0, 16, 16, 16, 16);
+            RenderSystem.setShaderColor(1,1,1,1);
+            RenderSystem.defaultBlendFunc();
+            alpha += -0.01f;
+        }
 
         if (list.isEmpty()) return;
         int count = Math.min(list.size(), 5);

@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/wall_inventory",
   "textures": {
-    "wall": "the_beyond:block/portelain"
+    "wall": "the_beyond:block/portelain_inv"
   }
 }

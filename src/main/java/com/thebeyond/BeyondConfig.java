@@ -22,6 +22,8 @@ public class BeyondConfig {
     // How discovery is shared between players.
     public static ModConfigSpec.EnumValue<AwarenessMode> AWARENESS_MODE;
 
+    public static ModConfigSpec.BooleanValue DROP_TOTEM_OF_RESPITE;
+
     public static ModConfigSpec.BooleanValue DEAFENING_DISENGAGE;
     /** Above this many eligible mobs in a burst radius, the burst deafens nobody. */
     public static ModConfigSpec.IntValue DEAFENING_LOCAL_CAP;
@@ -93,6 +95,13 @@ public class BeyondConfig {
                         "AND lowers the void-death line in step (same 64-block buffer), so contraptions and pilots ride",
                         "the lowered sea instead of voiding out. Default: 2")
                 .defineInRange("voidSeaOffsetAboveFloor", 2, -64, 256);
+        COMMON_BUILDER.pop();
+
+        COMMON_BUILDER.comment("Gameplay").push("gameplay");
+        DROP_TOTEM_OF_RESPITE = COMMON_BUILDER
+                .comment("The totem of respite allows you to get your items back after death. Some mods will conflict with this",
+                        "The config stops the totem from being obtained during the Bonfire ritual")
+                .define("DropTotemOfRespite", true);
         COMMON_BUILDER.pop();
 
         COMMON_CONFIG = COMMON_BUILDER.build();

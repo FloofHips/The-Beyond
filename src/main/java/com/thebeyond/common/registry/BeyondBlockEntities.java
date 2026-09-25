@@ -23,7 +23,10 @@ public class BeyondBlockEntities {
             register("refuge", () -> BlockEntityType.Builder.of(RefugeBlockEntity::new, BeyondBlocks.REFUGE.get()).build(null));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MirrorBlockEntity>> MIRROR = BLOCK_ENTITY_TYPES.
-            register("mirror", () -> BlockEntityType.Builder.of(MirrorBlockEntity::new, BeyondBlocks.PEARL_MIRROR.get()).build(null));
+            register("mirror", () -> BlockEntityType.Builder.of(MirrorBlockEntity::new,
+                    BeyondBlocks.PEARL_MIRROR.get(),
+                    BeyondBlocks.ORNATE_MIRROR.get()
+            ).build(null));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ProjectorBlockEntity>> PROJECTOR = BLOCK_ENTITY_TYPES.
             register("projector", () -> BlockEntityType.Builder.of(ProjectorBlockEntity::new, BeyondBlocks.PROJECTOR.get()).build(null));

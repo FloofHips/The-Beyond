@@ -11,20 +11,6 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "functions": [
-            {
-              "block": "the_beyond:pearl_mirror",
-              "function": "minecraft:copy_state",
-              "properties": [
-                "north",
-                "east",
-                "south",
-                "west",
-                "up",
-                "down"
-              ]
-            }
-          ],
           "name": "the_beyond:pearl_mirror"
         }
       ],

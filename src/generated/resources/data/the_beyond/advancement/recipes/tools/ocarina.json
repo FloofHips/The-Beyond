@@ -1,0 +1,43 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_pearl": {
+      "conditions": {
+        "items": [
+          {
+            "items": "the_beyond:pearl"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_pearl_bead": {
+      "conditions": {
+        "items": [
+          {
+            "items": "the_beyond:pearl_bead"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "the_beyond:ocarina"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_pearl",
+      "has_pearl_bead"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "the_beyond:ocarina"
+    ]
+  }
+}

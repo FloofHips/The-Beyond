@@ -67,7 +67,8 @@ public class MirrorBlock extends BaseEntityBlock {
     @Override
     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         super.randomTick(state, level, pos, random);
-        if (random.nextBoolean() && !level.getBlockState(pos.below()).is(BeyondBlocks.GELLID_VOID.get())) return;
+        if (!level.getBlockState(pos.below()).is(BeyondBlocks.GELLID_VOID.get())) return;
+        if (random.nextBoolean()) return;
 
         AABB detectionBox = new AABB(pos).inflate(5);
         List<BaubleEntity> entities = level.getEntitiesOfClass(BaubleEntity.class, detectionBox);

@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "B": {
+      "item": "the_beyond:prismuth"
+    },
+    "O": {
+      "tag": "the_beyond:obiroots"
+    },
+    "P": {
+      "item": "the_beyond:pearl_bead"
+    }
+  },
+  "pattern": [
+    "BBB",
+    "OPO",
+    " O "
+  ],
+  "result": {
+    "count": 1,
+    "id": "the_beyond:prismograph"
+  }
+}

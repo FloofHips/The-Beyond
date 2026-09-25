@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_pearl_bead": {
+      "conditions": {
+        "items": [
+          {
+            "items": "the_beyond:pearl_bead"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "the_beyond:chiseled_memor"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_pearl_bead"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "the_beyond:chiseled_memor"
+    ]
+  }
+}

@@ -27,6 +27,43 @@ public class BeyondBlockTags extends BlockTagsProvider {
                 .add(BeyondBlocks.PEEPING_OBIROOT.get())
                 .add(BeyondBlocks.OBIROOT_ARM.get());
 
+        tag(BeyondTags.BRITTLE_METAL_BLOCKS)
+                .add(BeyondBlocks.BRITTLE_METAL.get())
+                .add(BeyondBlocks.BRITTLE_METAL_BLOCK.get())
+                .add(BeyondBlocks.BRITTLE_METAL_SLAB.get())
+                .add(BeyondBlocks.BRITTLE_METAL_STAIRS.get())
+                .add(BeyondBlocks.BRITTLE_METAL_DOOR.get());
+
+        tag(BeyondTags.PEARL_BLOCKS)
+                .add(BeyondBlocks.PEARL.get())
+                .add(BeyondBlocks.PEARL_SLAB.get())
+                .add(BeyondBlocks.PEARL_STAIRS.get())
+                .add(BeyondBlocks.PEARL_WALL.get())
+                .add(BeyondBlocks.PEARL_BRICKS.get())
+                .add(BeyondBlocks.PEARL_BRICK_SLAB.get())
+                .add(BeyondBlocks.PEARL_BRICK_STAIRS.get())
+                .add(BeyondBlocks.PEARL_BRICK_WALL.get())
+                .add(BeyondBlocks.COBBLED_PEARL.get())
+                .add(BeyondBlocks.COBBLED_PEARL_BRICKS.get())
+                .add(BeyondBlocks.COBBLED_PEARL_BRICK_SLAB.get())
+                .add(BeyondBlocks.COBBLED_PEARL_BRICK_STAIRS.get())
+                .add(BeyondBlocks.COBBLED_PEARL_BRICK_WALL.get());
+
+        tag(BeyondTags.NACRE)
+                .add(BeyondBlocks.NACRE.get())
+                .add(BeyondBlocks.RAKED_NACRE.get())
+                .add(BeyondBlocks.RICH_NACRE.get())
+                .add(BeyondBlocks.RICH_RAKED_NACRE.get())
+                .add(BeyondBlocks.PALE_NACRE.get())
+                .add(BeyondBlocks.PALE_RAKED_NACRE.get())
+                .add(BeyondBlocks.UNSTABLE_NACRE.get());
+
+        tag(BlockTags.WALLS)
+                .add(BeyondBlocks.PEARL_BRICK_WALL.get())
+                .add(BeyondBlocks.PEARL_WALL.get())
+                .add(BeyondBlocks.PORTELAIN_WALL.get())
+                .add(BeyondBlocks.COBBLED_PEARL_BRICK_WALL.get());
+
         tag(BeyondTags.PORTELAIN_BLOCKS)
                 .add(BeyondBlocks.PORTELAIN.get())
                 .add(BeyondBlocks.PORTELAIN_DOOR.get())
@@ -35,6 +72,7 @@ public class BeyondBlockTags extends BlockTagsProvider {
                 .add(BeyondBlocks.PORTELAIN_PILLAR.get())
                 .add(BeyondBlocks.PORTELAIN_SLAB.get())
                 .add(BeyondBlocks.PORTELAIN_STAIRS.get())
+                .add(BeyondBlocks.PORTELAIN_WALL.get())
                 .add(BeyondBlocks.GUSTER.get())
                 .add(BeyondBlocks.AMPHORA.get());
 
@@ -42,10 +80,16 @@ public class BeyondBlockTags extends BlockTagsProvider {
 
         tag(BlockTags.MINEABLE_WITH_AXE)
                 .add(BeyondBlocks.XYLEM.get())
+                .add(BeyondBlocks.PERKA_STALK.get())
+                .add(BeyondBlocks.PERKA_STALK_MOUTH.get())
+                .add(BeyondBlocks.BLEEDING_THORN.get())
+                .add(BeyondBlocks.BLINDING_THORN.get())
+                .add(BeyondBlocks.XYLEM.get())
                 .addTag(BeyondTags.OBIROOT_BLOCKS);
 
         tag(BlockTags.MINEABLE_WITH_PICKAXE)
                 .add(BeyondBlocks.ENGRAVED_END_STONE.get())
+                .add(BeyondBlocks.BEDAZZLED_END_STONE.get())
                 .add(BeyondBlocks.PLATE_BLOCK.get())
                 .add(BeyondBlocks.PLATED_END_STONE.get())
                 .add(BeyondBlocks.POLAR_PILLAR.get())
@@ -56,19 +100,34 @@ public class BeyondBlockTags extends BlockTagsProvider {
                 .add(BeyondBlocks.REFUGE.get())
                 .add(BeyondBlocks.ENADRAKE_HUT.get())
                 .addTag(BeyondTags.PORTELAIN_BLOCKS)
+                .addTag(BeyondTags.PEARL_BLOCKS)
+                .addTag(BeyondTags.BRITTLE_METAL_BLOCKS)
+                .add(BeyondBlocks.MOLTEN_METAL.get())
+                .add(BeyondBlocks.PROJECTOR.get())
+                .add(BeyondBlocks.PRISMOGRAPH.get())
+                .add(BeyondBlocks.PEARL_MIRROR.get())
+                .add(BeyondBlocks.PEARL_CHIMES.get())
+                .add(BeyondBlocks.ORNATE_MIRROR.get())
+                .add(BeyondBlocks.GAUSSANITE.get())
+                .add(BeyondBlocks.GAUSS_VENT.get())
+                .add(BeyondBlocks.BEDAZZLED_END_STONE.get())
                 .add(BeyondBlocks.AMPHORA.get());
 
         tag(BlockTags.MINEABLE_WITH_HOE)
+                .addTag(BeyondTags.NACRE)
+                .add(BeyondBlocks.VILET.get())
                 .add(BeyondBlocks.ZYMOTE.get());
 
         tag(BlockTags.MINEABLE_WITH_SHOVEL)
-                .add(BeyondBlocks.NACRE.get());
+                .add(BeyondBlocks.SOOT_BLOCK.get())
+                .addTag(BeyondTags.NACRE);
 
         tag(BlockTags.SWORD_EFFICIENT)
                 .add(BeyondBlocks.POLAR_ANTENNA.get())
                 .add(BeyondBlocks.AMPHORA.get());
 
         tag(BlockTags.INCORRECT_FOR_WOODEN_TOOL)
+                .addTag(BeyondTags.PEARL_BLOCKS)
                 .add(BeyondBlocks.ENADRAKE_HUT.get())
                 .add(BeyondBlocks.VOID_CRYSTAL.get());
 
@@ -85,6 +144,9 @@ public class BeyondBlockTags extends BlockTagsProvider {
 
         tag(BeyondTags.METAL_BLOCKS)
                 .add(BeyondBlocks.PLATE_BLOCK.get())
+                .add(BeyondBlocks.MOLTEN_METAL.get())
+                .add(BeyondBlocks.RICH_NACRE.get())
+                .add(BeyondBlocks.RICH_RAKED_NACRE.get())
                 .add(BeyondBlocks.PLATED_END_STONE.get())
                 .add(BeyondBlocks.POLAR_PILLAR.get())
                 .add(BeyondBlocks.MAGNOLILLY.get())
@@ -99,7 +161,9 @@ public class BeyondBlockTags extends BlockTagsProvider {
                 .addTag(Tags.Blocks.STORAGE_BLOCKS_COPPER)
                 .addTag(Tags.Blocks.STORAGE_BLOCKS_RAW_COPPER)
                 .addTag(Tags.Blocks.ORES_NETHERITE_SCRAP)
+                .addTag(BeyondTags.BRITTLE_METAL_BLOCKS)
                 .add(Blocks.NETHERITE_BLOCK)
+                .add(Blocks.BELL)
                 .add(Blocks.CHISELED_COPPER)
                 .add(Blocks.CUT_COPPER)
                 .add(Blocks.CUT_COPPER_SLAB)

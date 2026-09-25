@@ -1,6 +1,7 @@
 package com.thebeyond.common.event;
 
 import com.thebeyond.TheBeyond;
+import com.thebeyond.common.entity.BrubbleEntity;
 import com.thebeyond.common.entity.TotemOfRespiteEntity;
 import com.thebeyond.common.item.AnchorLeggingsItem;
 import com.thebeyond.common.awareness.*;
@@ -21,6 +22,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -36,6 +38,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
 import net.neoforged.neoforge.event.entity.living.*;
+import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.level.ExplosionEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
@@ -110,7 +113,8 @@ public class ModGameEvents {
     public static void onPlayerDiscoverNearby(PlayerTickEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer sp)) return;
         if (sp.tickCount % 20 != 0) return;
-        HiddenContentFilter.discoverNearby(sp);
+        //TODO uncomment once we add new stuff!
+        //HiddenContentFilter.discoverNearby(sp);
     }
 
     @SubscribeEvent
@@ -143,6 +147,14 @@ public class ModGameEvents {
                 event.setCanceled(true);
                 return;
             }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onCriticalHit(CriticalHitEvent event) {
+        Entity entity = event.getTarget();
+        if (entity instanceof BrubbleEntity brubbleEntity && event.isCriticalHit()) {
+            brubbleEntity.disable();
         }
     }
 

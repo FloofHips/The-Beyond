@@ -1,0 +1,17 @@
+{
+	"format_version": "1.9.0",
+	"render_type": "minecraft:solid",
+	"textures": {
+		"2": "the_beyond:block/ornate_mirror_off",
+		"particle": "the_beyond:block/ornate_mirror"
+	},
+	"elements": [
+		{
+			"from": [0, 0, 0],
+			"to": [16, 16, 0],
+			"faces": {
+				"north": {"uv": [0, 0, 16, 16], "texture": "#2", "cullface": "north"}
+			}
+		}
+	]
+}

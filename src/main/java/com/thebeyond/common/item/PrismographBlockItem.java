@@ -4,6 +4,7 @@ import com.thebeyond.common.network.CameraShootPayload;
 import com.thebeyond.client.camera.CameraAim;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -58,6 +59,8 @@ public class PrismographBlockItem extends BlockItem {
         }
     }
 
+
+
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Player player = context.getPlayer();
@@ -72,6 +75,7 @@ public class PrismographBlockItem extends BlockItem {
         ItemStack stack = player.getItemInHand(hand);
         if (!hasFilm(stack)) {
             if (level.isClientSide) {
+                player.displayClientMessage(Component.translatable("screen.the_beyond.prismograph.no_film"), true);
                 player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 0.5f, 0.6f);
             }
             return InteractionResultHolder.fail(stack);
