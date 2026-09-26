@@ -14,30 +14,39 @@ public final class StructureIntegrationProfile {
     private final Anchor anchor;
     private final boolean rejectUnfit;
     private final int towerRadius;
+    private final boolean towerRadiusPinned;
     private final int towerStep;
     private final int flushTolerance;
     private final double padRejectFraction;
     private final int floatEnvelope;
     private final boolean carve;
+    private final boolean connectDetached;
+    private final boolean basePedestal;
+    private final boolean selfHollowing;
     private final boolean coverGroundDirt;
 
     private StructureIntegrationProfile(Builder b) {
         this.anchor = b.anchor;
         this.rejectUnfit = b.rejectUnfit;
         this.towerRadius = b.towerRadius;
+        this.towerRadiusPinned = b.towerRadiusPinned;
         this.towerStep = b.towerStep;
         this.flushTolerance = b.flushTolerance;
         this.padRejectFraction = b.padRejectFraction;
         this.floatEnvelope = b.floatEnvelope;
         this.carve = b.carve;
+        this.connectDetached = b.connectDetached;
+        this.basePedestal = b.basePedestal;
+        this.selfHollowing = b.selfHollowing;
         this.coverGroundDirt = b.coverGroundDirt;
     }
 
     public Anchor anchor()            { return anchor; }
     /** Run the placement fitness gate at all (false → the structure is always accepted where vanilla put it). */
     public boolean rejectUnfit()      { return rejectUnfit; }
-    /** SEATED: half-extent (blocks) of the footprint support scan. */
+    /** SEATED: half-extent of the footprint scan when pinned, else the fallback when no pieces can be read. */
     public int towerRadius()          { return towerRadius; }
+    public boolean towerRadiusPinned() { return towerRadiusPinned; }
     /** SEATED: step of the footprint support scan. */
     public int towerStep()            { return towerStep; }
     /** SEATED: a column counts as supported if solid sits within this many blocks below the floor —
@@ -49,6 +58,13 @@ public final class StructureIntegrationProfile {
     public int floatEnvelope()        { return floatEnvelope; }
     /** Build an occupancy mask and feather the islands around the structure's real footprint. */
     public boolean carve()            { return carve; }
+    public boolean connectDetached()  { return connectDetached; }
+
+    /** Lays ground under the start piece's footprint where the island misses it. Towers and bridges keep hanging. */
+    public boolean basePedestal()     { return basePedestal; }
+
+    /** The structure hollows its own interior with authored AIR, so the island-carve veto must let it through. */
+    public boolean selfHollowing()    { return selfHollowing; }
     /** Replace the structure's OWN overworld-ground blocks (dirt family) with end_stone after it places, so
      *  a ruin authored with a dirt floor reads as End stone instead of dirt on Beyond's terrain. */
     public boolean coverGroundDirt()  { return coverGroundDirt; }
@@ -60,11 +76,15 @@ public final class StructureIntegrationProfile {
         private final Anchor anchor;
         private boolean rejectUnfit = true;
         private int towerRadius = 19;
+        private boolean towerRadiusPinned = false;
         private int towerStep = 1;
         private int flushTolerance = 8;
         private double padRejectFraction = 0.50;
         private int floatEnvelope = 126;
         private boolean carve = true;
+        private boolean connectDetached = false;
+        private boolean basePedestal = false;
+        private boolean selfHollowing = false;
         private boolean coverGroundDirt = false;
 
         private Builder(Anchor anchor) {
@@ -73,12 +93,15 @@ public final class StructureIntegrationProfile {
         }
 
         public Builder rejectUnfit(boolean v)      { this.rejectUnfit = v; return this; }
-        public Builder towerRadius(int v)          { this.towerRadius = v; return this; }
+        public Builder towerRadius(int v)          { this.towerRadius = v; this.towerRadiusPinned = true; return this; }
         public Builder towerStep(int v)            { this.towerStep = v; return this; }
         public Builder flushTolerance(int v)       { this.flushTolerance = v; return this; }
         public Builder padRejectFraction(double v) { this.padRejectFraction = v; return this; }
         public Builder floatEnvelope(int v)        { this.floatEnvelope = v; return this; }
         public Builder carve(boolean v)            { this.carve = v; return this; }
+        public Builder connectDetached(boolean v)  { this.connectDetached = v; return this; }
+        public Builder basePedestal(boolean v)     { this.basePedestal = v; return this; }
+        public Builder selfHollowing(boolean v)    { this.selfHollowing = v; return this; }
         public Builder coverGroundDirt(boolean v)  { this.coverGroundDirt = v; return this; }
 
         public StructureIntegrationProfile build() { return new StructureIntegrationProfile(this); }

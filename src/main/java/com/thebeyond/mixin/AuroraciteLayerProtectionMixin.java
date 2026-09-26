@@ -1,5 +1,6 @@
 package com.thebeyond.mixin;
 
+import com.thebeyond.api.worldgen.SanctionedWrite;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.compat.dt.DimensionalTearsCompat;
 import net.minecraft.core.BlockPos;
@@ -40,6 +41,8 @@ public abstract class AuroraciteLayerProtectionMixin {
 
         if (y < minY || y > topY) return;
         if (self.getLevel().dimension() != Level.END) return;
+        // Our structures seat on the floor by design (the fountain anchors at minY+2).
+        if (SanctionedWrite.isSanctioned()) return;
         if (state.is(BeyondBlocks.AURORACITE.get())) return;
         if (oceanLiquid && state.is(dt)) return;
 

@@ -21,7 +21,7 @@ public final class SodiumSecondaryView {
     private static boolean logged;
 
     /** Returns false = "call again": Sodium builds the swapped graph asynchronously over a few frames. */
-    private static boolean renderHostView(DeltaTracker delta) {
+    private static boolean renderHostView(DeltaTracker delta, boolean selfPov) {
         Minecraft mc = Minecraft.getInstance();
         SodiumWorldRenderer swr = SodiumWorldRenderer.instanceNullable();
         if (swr == null) {
@@ -41,7 +41,9 @@ public final class SodiumSecondaryView {
             mc.gameRenderer.renderLevel(delta);
             return true;
         }
-        int dist = Math.max(2, Math.min(8, mc.options.getEffectiveRenderDistance()));
+        // The handheld photo must reach as far as the zoomed viewfinder does, so only block cameras are capped.
+        int live = mc.options.getEffectiveRenderDistance();
+        int dist = selfPov ? live : Math.max(2, Math.min(8, live));
         SodiumRenderContext ctx = new SodiumRenderContext(dist);
         boolean complete = true;
         switchContext(swr, swap, ctx);

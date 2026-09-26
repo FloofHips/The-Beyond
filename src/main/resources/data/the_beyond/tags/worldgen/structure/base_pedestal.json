@@ -1,0 +1,23 @@
+{
+  "values": [
+    { "id": "mes:astral_hideaway", "required": false },
+    { "id": "mes:astral_meteorite", "required": false },
+    { "id": "mes:ender_spire", "required": false },
+    { "id": "mes:enderbloom_grove", "required": false },
+    { "id": "mes:enderkeep_courtyard", "required": false },
+    { "id": "mes:enderskog", "required": false },
+    { "id": "mes:enderwatch_tower", "required": false },
+    { "id": "mes:endscraps", "required": false },
+    { "id": "mes:manuscript_shrine", "required": false },
+    { "id": "mes:monolith", "required": false },
+    { "id": "mes:mystical_archway", "required": false },
+    { "id": "mes:mythic_garden", "required": false },
+    { "id": "mes:ruined_pillar", "required": false },
+    { "id": "legendary_monsters:ancient_tower_remains", "required": false },
+    { "id": "unusualend:ancient_end_tower", "required": false },
+    { "id": "unusualend:end_house", "required": false },
+    { "id": "unusualend:chorus_cane", "required": false },
+    { "id": "unusualend:firefly_nest", "required": false },
+    { "id": "unusualend:small_gloopy_ruins", "required": false }
+  ]
+}

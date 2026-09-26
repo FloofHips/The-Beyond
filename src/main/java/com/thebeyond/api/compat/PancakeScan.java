@@ -35,15 +35,26 @@ public final class PancakeScan {
     private static final int CACHE_LIMIT = 4096;
     private static final int[] NO_SPOT = new int[0];
 
-    private static final ConcurrentMap<Long, int[]> SPOT_CACHE = new ConcurrentHashMap<>();
+    private record SpotKey(long chunk, Object biomes) {
+        @Override public boolean equals(Object o) { return o instanceof SpotKey k && k.chunk == chunk && k.biomes == biomes; }
+        @Override public int hashCode() { return Long.hashCode(chunk) * 31 + System.identityHashCode(biomes); }
+    }
+    private static final ConcurrentMap<SpotKey, int[]> SPOT_CACHE = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<Long, int[]> FIRST_SPOT = new ConcurrentHashMap<>();
 
     private PancakeScan() {}
+
+    public static void clearCache() {
+        SPOT_CACHE.clear();
+        FIRST_SPOT.clear();
+    }
 
     /** {@code structureBiomes} null falls back to {@code #is_end}. Cached. */
     public static int[] pickEndBiomeSpotInChunk(ChunkGenerator gen, int chunkX, int chunkZ,
                                                   LevelHeightAccessor level, RandomState rs,
                                                   HolderSet<Biome> structureBiomes) {
-        long key = makeKey(chunkX, chunkZ);
+        long chunk = makeKey(chunkX, chunkZ);
+        SpotKey key = new SpotKey(chunk, structureBiomes);
         int[] cached = SPOT_CACHE.get(key);
         if (cached != null) return cached.length == 3 ? cached : null;
 
@@ -51,6 +62,7 @@ public final class PancakeScan {
         if (SPOT_CACHE.size() < CACHE_LIMIT) {
             SPOT_CACHE.put(key, result != null ? result : NO_SPOT);
         }
+        if (result != null && FIRST_SPOT.size() < CACHE_LIMIT) FIRST_SPOT.putIfAbsent(chunk, result);
         return result;
     }
 
@@ -77,6 +89,63 @@ public final class PancakeScan {
     public static int[] pickEndBiomeLayerInChunk(ChunkGenerator gen, int chunkX, int chunkZ,
                                                   LevelHeightAccessor level, RandomState rs,
                                                   HolderSet<Biome> structureBiomes, int minHeadroom) {
+        return pickEndBiomeLayerInChunk(gen, chunkX, chunkZ, level, rs, structureBiomes, minHeadroom,
+                FOOTPRINT_SUPPORT_RADIUS, FOOTPRINT_SUPPORT_STRIDE, FOOTPRINT_SUPPORT_FRACTION);
+    }
+
+    public static int[] pickEndBiomeLayerInChunk(ChunkGenerator gen, int chunkX, int chunkZ,
+                                                  LevelHeightAccessor level, RandomState rs,
+                                                  HolderSet<Biome> structureBiomes, int minHeadroom,
+                                                  int radius, int stride, double fraction) {
+        return pickEndBiomeLayerInChunk(gen, chunkX, chunkZ, level, rs, structureBiomes, minHeadroom,
+                radius, stride, fraction, Integer.MAX_VALUE);
+    }
+
+    /** {@code maxSeatY} caps the seat itself: terrain above a tall structure is the carve's problem, not a reason to reject. */
+    public static int[] pickEndBiomeLayerInChunk(ChunkGenerator gen, int chunkX, int chunkZ,
+                                                  LevelHeightAccessor level, RandomState rs,
+                                                  HolderSet<Biome> structureBiomes, int minHeadroom,
+                                                  int radius, int stride, double fraction, int maxSeatY) {
+        return pickEndBiomeLayerInChunk(gen, chunkX, chunkZ, level, rs, structureBiomes, minHeadroom,
+                radius, stride, fraction, maxSeatY, 0);
+    }
+
+    public static int[] pickEndBiomeLayerInChunk(ChunkGenerator gen, int chunkX, int chunkZ,
+                                                  LevelHeightAccessor level, RandomState rs,
+                                                  HolderSet<Biome> structureBiomes, int minHeadroom,
+                                                  int radius, int stride, double fraction, int maxSeatY,
+                                                  int flushTol) {
+        return pickCandidate(layerCandidates(gen, chunkX, chunkZ, level, rs, structureBiomes, minHeadroom,
+                radius, stride, fraction, maxSeatY, flushTol), chunkX, chunkZ);
+    }
+
+    /** Every layer seat of the chunk in weighted-draw order, the first being what {@link #pickEndBiomeLayerInChunk} returns. */
+    public static java.util.List<int[]> orderedEndBiomeLayersInChunk(ChunkGenerator gen, int chunkX, int chunkZ,
+                                                  LevelHeightAccessor level, RandomState rs,
+                                                  HolderSet<Biome> structureBiomes, int minHeadroom) {
+        return orderByWeight(layerCandidates(gen, chunkX, chunkZ, level, rs, structureBiomes, minHeadroom,
+                FOOTPRINT_SUPPORT_RADIUS, FOOTPRINT_SUPPORT_STRIDE, FOOTPRINT_SUPPORT_FRACTION, Integer.MAX_VALUE, 0),
+                chunkX, chunkZ);
+    }
+
+    static java.util.List<int[]> orderByWeight(java.util.List<int[]> cands, int chunkX, int chunkZ) {
+        java.util.List<int[]> left = new java.util.ArrayList<>(cands);
+        java.util.List<int[]> out = new java.util.ArrayList<>(left.size());
+        long seed = ((long) chunkX) * SEED_P1 ^ ((long) chunkZ) * SEED_P2;
+        while (!left.isEmpty()) {
+            int[] w = new int[left.size()];
+            for (int i = 0; i < w.length; i++) w[i] = left.get(i)[3];
+            out.add(left.remove(pickWeightedIndex(w, w.length, seed)));
+            seed = seed * 6364136223846793005L + 1442695040888963407L;
+        }
+        return out;
+    }
+
+    private static java.util.List<int[]> layerCandidates(ChunkGenerator gen, int chunkX, int chunkZ,
+                                                  LevelHeightAccessor level, RandomState rs,
+                                                  HolderSet<Biome> structureBiomes, int minHeadroom,
+                                                  int radius, int stride, double fraction, int maxSeatY,
+                                                  int flushTol) {
         int minY = level.getMinBuildHeight(), maxY = level.getMaxBuildHeight() - 1;
         java.util.List<int[]> cands = new java.util.ArrayList<>();
         for (int[] s : SAMPLES) {
@@ -92,17 +161,26 @@ public final class PancakeScan {
                     boolean matches = structureBiomes != null ? structureBiomes.contains(biome) : biome.is(END_TAG);
                     // Full footprint check (not a single cross probe): guards against a small qualifying pancake
                     // letting a large structure's base overhang into the void.
-                    if (matches && hasFootprintSupport(wx, wz, y,
-                            FOOTPRINT_SUPPORT_RADIUS, FOOTPRINT_SUPPORT_STRIDE, FOOTPRINT_SUPPORT_FRACTION,
-                            BeyondTerrain::isSolidAt)) {
-                        // 4th slot is pick weight; callers only read [0..2].
-                        cands.add(new int[]{wx, y - LAYER_BURY_DEPTH, wz, topOfColumn ? 1 : LOWER_LAYER_WEIGHT});
+                    double cov = matches
+                            ? footprintCoverage(wx, wz, y, radius, stride, BeyondTerrain::isSolidAt, flushTol)
+                            : -1.0;
+                    if (cov >= fraction) {
+                        // One seatY for the cap and the candidate so LAYER_BURY_DEPTH cannot drift. Callers read [0..2].
+                        int seatY = y - LAYER_BURY_DEPTH;
+                        if (seatY <= maxSeatY)
+                            cands.add(new int[]{wx, seatY, wz,
+                                    (topOfColumn ? 1 : LOWER_LAYER_WEIGHT) * coverageWeight(cov)});
+                        // Set regardless of the cap: it marks the terrain's top layer, not the caller's filter.
                         topOfColumn = false;
                     }
                 }
                 airRun = 0;
             }
         }
+        return cands;
+    }
+
+    static int[] pickCandidate(java.util.List<int[]> cands, int chunkX, int chunkZ) {
         if (cands.isEmpty()) return null;
         long seed = ((long) chunkX) * SEED_P1 ^ ((long) chunkZ) * SEED_P2;
         int[] w = new int[cands.size()];
@@ -173,8 +251,12 @@ public final class PancakeScan {
         for (int yi : layerTops) {
             java.util.List<Integer> near = new java.util.ArrayList<>();
             int sampled = 0;
-            for (int dx = -radius; dx <= radius; dx += stride) {
-                for (int dz = -radius; dz <= radius; dz += stride) {
+            // Evenly spaced steps always reach both edges and the centre, which a plain stride can miss.
+            int steps = Math.max(2, (2 * radius) / Math.max(1, stride));
+            for (int i = 0; i <= steps; i++) {
+                int dx = -radius + (2 * radius * i) / steps;
+                for (int j = 0; j <= steps; j++) {
+                    int dz = -radius + (2 * radius * j) / steps;
                     sampled++;
                     int s = BeyondTerrain.findSurfaceTop(x + dx, z + dz, yi - fill, yi + over);
                     if (s != Integer.MIN_VALUE) near.add(s);
@@ -197,8 +279,7 @@ public final class PancakeScan {
     }
 
     public static int[] getCachedSpot(int chunkX, int chunkZ) {
-        int[] cached = SPOT_CACHE.get(makeKey(chunkX, chunkZ));
-        return (cached != null && cached.length == 3) ? cached : null;
+        return FIRST_SPOT.get(makeKey(chunkX, chunkZ));
     }
 
     public static int alignedY(int worldX, int worldZ, int fallback) {
@@ -256,6 +337,16 @@ public final class PancakeScan {
     public static final int FOOTPRINT_SUPPORT_STRIDE = 2;
     public static final double FOOTPRINT_SUPPORT_FRACTION = 0.5;
 
+    public static final int FLUSH_TOLERANCE = 3;
+
+    /** {radius, coverage, flush tolerance}, strict to loose. Late rungs narrow the radius, as low coverage accepts a needle. */
+    public static final double[][] FOOTPRINT_COVERAGE_TIERS = {
+            { FOOTPRINT_SUPPORT_RADIUS, FOOTPRINT_SUPPORT_FRACTION, FLUSH_TOLERANCE },
+            { FOOTPRINT_SUPPORT_RADIUS, 0.30, FLUSH_TOLERANCE },
+            { 6, FOOTPRINT_SUPPORT_FRACTION, FLUSH_TOLERANCE },
+            { 2, FOOTPRINT_SUPPORT_FRACTION, 0 }
+    };
+
     private static int scanForMatchingPancake(ChunkGenerator gen, int x, int z,
                                                 LevelHeightAccessor level, RandomState rs,
                                                 HolderSet<Biome> structureBiomes) {
@@ -304,13 +395,47 @@ public final class PancakeScan {
     public interface SolidProbe { boolean isSolid(int x, int y, int z); }
 
     public static boolean hasFootprintSupport(int cx, int cz, int y, int radius, int stride, double fraction, SolidProbe probe) {
+        return footprintCoverage(cx, cz, y, radius, stride, probe) >= fraction;
+    }
+
+    public static boolean isFlushAt(int x, int z, int y, int tol, SolidProbe probe) {
+        if (!probe.isSolid(x, y, z)) return false;
+        return tol <= 0 || !probe.isSolid(x, y + tol, z);
+    }
+
+    public static double footprintCoverage(int cx, int cz, int y, int radius, int stride, SolidProbe probe) {
+        return footprintCoverage(cx, cz, y, radius, stride, probe, 0);
+    }
+
+    public static double footprintCoverage(int cx, int cz, int y, int radius, int stride, SolidProbe probe, int tol) {
         int sampled = 0, solid = 0;
         for (int dx = -radius; dx <= radius; dx += stride) {
             for (int dz = -radius; dz <= radius; dz += stride) {
                 sampled++;
-                if (probe.isSolid(cx + dx, y, cz + dz)) solid++;
+                if (isFlushAt(cx + dx, cz + dz, y, tol, probe)) solid++;
             }
         }
-        return sampled > 0 && (double) solid / sampled >= fraction;
+        return sampled > 0 ? (double) solid / sampled : -1.0;
+    }
+
+    public static int coverageWeight(double coverage) {
+        if (coverage <= 0.0) return 1;
+        return 1 + (int) Math.round(coverage * COVERAGE_WEIGHT_SPAN);
+    }
+
+    public static final int COVERAGE_WEIGHT_SPAN = 8;
+
+    /** Snaps a chunk-wide seat onto the structure's own column, since the pancake that fits the chunk can be a corner away. */
+    public static int seatOnOwnColumn(ChunkGenerator gen, int x, int z, int scanY, int slack,
+            LevelHeightAccessor height, net.minecraft.world.level.levelgen.RandomState random) {
+        try {
+            NoiseColumn column = gen.getBaseColumn(x, z, height, random);
+            int top = Math.min(scanY + slack, height.getMaxBuildHeight() - 1);
+            int floor = Math.max(scanY - slack, height.getMinBuildHeight() + 1);
+            for (int y = top; y >= floor; y--) {
+                if (!column.getBlock(y).isAir()) return y + 1;
+            }
+        } catch (Throwable ignored) { /* fail-soft: the chunk scan's own Y stands */ }
+        return scanY;
     }
 }

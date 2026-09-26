@@ -178,11 +178,13 @@ public class HashSimplexNoise {
         double d16 = d7 - 1.0 + 0.5;
         double d17 = d8 - 1.0 + 0.5;
         double d18 = d9 - 1.0 + 0.5;
-        // Same reasoning as the 2D variant: hash accepts any int, no masking needed.
-        int i3 = this.p(i + this.p(j + this.p(k))) % 12;
-        int j3 = this.p(i + l + this.p(j + i1 + this.p(k + j1))) % 12;
-        int k3 = this.p(i + k1 + this.p(j + l1 + this.p(k + i2))) % 12;
-        int l3 = this.p(i + 1 + this.p(j + 1 + this.p(k + 1))) % 12;
+        // As in 2D, hash takes any int. Corners reach only k and k+1 and share the first or last corner's middle hash.
+        int pk0 = this.p(k), pk1 = this.p(k + 1);
+        int m00 = this.p(j + pk0), m11 = this.p(j + 1 + pk1);
+        int i3 = this.p(i + m00) % 12;
+        int j3 = this.p(i + l + (i1 == 0 && j1 == 0 ? m00 : this.p(j + i1 + (j1 == 0 ? pk0 : pk1)))) % 12;
+        int k3 = this.p(i + k1 + (l1 == 1 && i2 == 1 ? m11 : this.p(j + l1 + (i2 == 0 ? pk0 : pk1)))) % 12;
+        int l3 = this.p(i + 1 + m11) % 12;
         double d19 = this.getCornerNoise3D(i3, d7, d8, d9, 0.6);
         double d20 = this.getCornerNoise3D(j3, d10, d11, d12, 0.6);
         double d21 = this.getCornerNoise3D(k3, d13, d14, d15, 0.6);

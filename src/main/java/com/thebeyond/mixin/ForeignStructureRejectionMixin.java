@@ -3,11 +3,15 @@ package com.thebeyond.mixin;
 import com.thebeyond.api.worldgen.BeyondForeignStructureProfiles;
 import com.thebeyond.api.worldgen.BeyondTerrainState;
 import com.thebeyond.api.worldgen.StructureIntegrationProfile;
+import com.mojang.datafixers.util.Either;
 import com.thebeyond.common.worldgen.BeyondEndChunkGenerator;
+import com.thebeyond.common.worldgen.BeyondGenDiagnostics;
+import com.thebeyond.common.worldgen.ForeignFit;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.pieces.StructurePiecesBuilder;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -33,8 +37,8 @@ public abstract class ForeignStructureRejectionMixin {
             if (!BeyondTerrainState.isActive()) return;
             if (!(context.chunkGenerator() instanceof BeyondEndChunkGenerator beg)) return;
 
-            ResourceLocation key = context.registryAccess()
-                    .registryOrThrow(Registries.STRUCTURE).getKey((Structure) (Object) this);
+            var registry = context.registryAccess().registryOrThrow(Registries.STRUCTURE);
+            ResourceLocation key = registry.getKey((Structure) (Object) this);
             if (key == null) return;
             String ns = key.getNamespace();
             if ("the_beyond".equals(ns) || "minecraft".equals(ns)) return;  // those own their own placement
@@ -55,15 +59,24 @@ public abstract class ForeignStructureRejectionMixin {
             StructureIntegrationProfile profile =
                     BeyondForeignStructureProfiles.resolve((Structure) (Object) this, key);
             if (profile == null || !profile.rejectUnfit()) return;   // not hosted → leave to vanilla
+            // A pedestal's seat judged it on the floor it moved to, where this test would read the sample's height.
+            boolean pedestal = profile.basePedestal()
+                    || BeyondForeignStructureProfiles.isBasePedestal(key, registry, (Structure) (Object) this);
 
             int minY = context.heightAccessor().getMinBuildHeight();
             int maxY = context.heightAccessor().getMaxBuildHeight() - 1;
             beg.computeNoisesIfNotPresent(context.randomState());
 
+            StructurePiecesBuilder pieces = the_beyond$assemble(result.get(), cir);
+            if (profile.anchor() == StructureIntegrationProfile.Anchor.SEATED && pedestal && pieces != null && !pieces.isEmpty()
+                    && BeyondForeignStructureProfiles.isLayerDistributed(key, context.chunkPos().toLong())
+                    && !ForeignFit.sinks(pieces.build().pieces(), context.structureTemplateManager())) return;
             boolean reject = switch (profile.anchor()) {
-                case SEATED   -> the_beyond$footprintUnfit(pos, minY, profile);
-                case FLOATING -> the_beyond$clipsCeiling(pos, maxY, profile);
+                case SEATED   -> ForeignFit.seatedUnfit(pos.getX(), pos.getZ(), pos.getY(), pieces, minY, profile);
+                case FLOATING -> the_beyond$clipsCeiling(key, result.get(), pieces, maxY, profile);
             };
+            BeyondGenDiagnostics.countDecision(key.toString(), "R", (reject ? "REJECT_" : "ACCEPT_") + profile.anchor(),
+                    context.chunkPos().toLong());
             // One-shot logs so an in-game run confirms the mixin is deciding, without per-call spam.
             if (reject) {
                 if (!com.thebeyond.common.worldgen.BeyondGenDiagnostics.loggedReject) {
@@ -87,31 +100,33 @@ public abstract class ForeignStructureRejectionMixin {
         }
     }
 
-    /** SEATED: unfit if too much of the footprint has no solid ground within tolerance below the floor. */
-    private static boolean the_beyond$footprintUnfit(BlockPos pos, int minY, StructureIntegrationProfile profile) {
-        int floor = pos.getY();
-        int radius = profile.towerRadius(), step = profile.towerStep();
-        BeyondEndChunkGenerator.ColumnScratch scr = BeyondEndChunkGenerator.getColumnScratch();
-        int pad = 0, total = 0;
-        int lo = Math.max(minY, floor - profile.flushTolerance());
-        for (int ox = -radius; ox <= radius; ox += step) {
-            for (int oz = -radius; oz <= radius; oz += step) {
-                total++;
-                int wx = pos.getX() + ox, wz = pos.getZ() + oz;
-                float dist = (float) Math.sqrt((double) wx * wx + (double) wz * wz);
-                BeyondEndChunkGenerator.initColumnScratch(wx, wz, dist, scr);
-                boolean flush = false;
-                for (int y = floor - 1; y >= lo; y--) {
-                    if (BeyondEndChunkGenerator.isSolidTerrainScratch(y, scr)) { flush = true; break; }
-                }
-                if (!flush) pad++;
+    /** Built once and handed on, so the pieces tested are the pieces placed. */
+    @org.jetbrains.annotations.Nullable
+    private static StructurePiecesBuilder the_beyond$assemble(Structure.GenerationStub stub,
+            CallbackInfoReturnable<Optional<Structure.GenerationStub>> cir) {
+        try {
+            StructurePiecesBuilder pieces = stub.getPiecesBuilder();
+            cir.setReturnValue(Optional.of(new Structure.GenerationStub(stub.position(), Either.right(pieces))));
+            return pieces;
+        } catch (Throwable t) {
+            if (BeyondGenDiagnostics.loggedMaskKeys.add("foreign-assemble-fail")) {
+                com.thebeyond.TheBeyond.LOGGER.warn("[Beyond] foreign fit test fell back to the profile's sizes: {}", t.toString());
             }
+            return null;
         }
-        return total > 0 && (double) pad / total > profile.padRejectFraction();
     }
 
-    /** FLOATING: rejected only if the body envelope would clip the build ceiling; intrusions are cleared elsewhere. */
-    private static boolean the_beyond$clipsCeiling(BlockPos pos, int maxY, StructureIntegrationProfile profile) {
-        return pos.getY() + profile.floatEnvelope() > maxY;
+    private static boolean the_beyond$clipsCeiling(ResourceLocation key, Structure.GenerationStub stub,
+            @org.jetbrains.annotations.Nullable StructurePiecesBuilder pieces, int maxY, StructureIntegrationProfile profile) {
+        boolean envelope = pieces == null || pieces.isEmpty() || ForeignFit.featureOnly(pieces);
+        // A feature grows from its piece, and the stub may have been moved to the ground for the biome test.
+        int from = pieces == null || pieces.isEmpty() ? stub.position().getY() : pieces.getBoundingBox().minY();
+        int top = envelope ? from + profile.floatEnvelope() : pieces.getBoundingBox().maxY();
+        if (BeyondGenDiagnostics.loggedAutoProfile.add("float-ceiling:" + key)) {
+            com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] floater {} start y={} top y={} ({}) ceiling={} -> {}",
+                    key, stub.position().getY(), top, envelope ? "envelope" : "pieces", maxY,
+                    top > maxY ? "REJECT (clips ceiling)" : "fits");
+        }
+        return top > maxY;
     }
 }

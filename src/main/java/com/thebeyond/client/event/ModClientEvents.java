@@ -106,7 +106,7 @@ public class ModClientEvents {
     public static float effectFog = 1;
     public static float nomadEyes = 0;
     public static float empathy = 0;
-    public static float zoomModifier = 0;
+    public static float zoomModifier = 1;
 
     @SubscribeEvent
     public static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {
@@ -397,8 +397,6 @@ public class ModClientEvents {
         int seconds = (lingering
                 ? com.thebeyond.common.event.BeyondDeafeningPotionEvents.LINGER_DURATION
                 : com.thebeyond.common.event.BeyondDeafeningPotionEvents.SPLASH_DURATION) / 20;
-        // Color by the effect's own category (HARMFUL -> red), matching how vanilla renders potion effects —
-        // deafened is a debuff, so it must read red, not the blue of a beneficial effect.
         net.minecraft.ChatFormatting color = BeyondEffects.DEAFENED.value().getCategory().getTooltipFormatting();
         Component effectLine = Component.translatable("effect.the_beyond.deafened")
                 .append(Component.literal(String.format(" (%d:%02d)", seconds / 60, seconds % 60)))
@@ -599,6 +597,20 @@ public class ModClientEvents {
         }
     }
 
+    /** While aiming, clicks never reach blocks or entities: the left one does nothing and the right one only shoots. */
+    @SubscribeEvent
+    public static void onCameraClick(InputEvent.InteractionKeyMappingTriggered event) {
+        if (!aimingWithCamera()) return;
+        event.setCanceled(true);
+        event.setSwingHand(false);
+        if (event.isUseItem()) {
+            Minecraft mc = Minecraft.getInstance();
+            InteractionHand hand = mc.player.getMainHandItem().getItem() instanceof PrismographBlockItem
+                    ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
+            mc.gameMode.useItem(mc.player, hand);
+        }
+    }
+
     @SubscribeEvent
     public static void onCameraZoom(InputEvent.MouseScrollingEvent event) {
         if (aimingWithCamera()) {
@@ -612,6 +624,21 @@ public class ModClientEvents {
     public static void onCameraZoom(ComputeFovModifierEvent event) {
         if (aimingWithCamera()) {
             event.setNewFovModifier(zoomModifier);
+        }
+    }
+
+    /** LOWEST so the recorded and the forced FOV are the final ones, after every other mod's change. */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onCameraFov(ViewportEvent.ComputeFov event) {
+        if (!event.usedConfiguredFov()) return;
+        if (BlockCameraCapture.isCapturingSelf()) {
+            CameraAim.View shot = CameraAim.shot();
+            if (shot != null) event.setFOV(shot.fov());
+        } else if (!BlockCameraCapture.isCapturing() && aimingWithCamera()) {
+            // Entity rotation, not the camera's, so other mods' angle tweaks are not applied twice in the photo.
+            Entity eye = event.getCamera().getEntity();
+            float pt = (float) event.getPartialTick();
+            CameraAim.recordView(event.getFOV(), eye.getViewYRot(pt), eye.getViewXRot(pt));
         }
     }
 

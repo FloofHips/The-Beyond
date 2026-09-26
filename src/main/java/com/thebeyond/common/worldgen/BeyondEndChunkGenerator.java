@@ -271,6 +271,17 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         the_beyond$templateManager = structureTemplateManager;
         super.createStructures(registryAccess, structureState, structureManager, chunk, structureTemplateManager);
 
+        if (BeyondTerrainState.isActive()) {
+            var startReg = registryAccess.registryOrThrow(Registries.STRUCTURE);
+            for (var e : chunk.getAllStarts().entrySet()) {
+                if (e.getValue() != null && e.getValue().isValid()) {
+                    BeyondForeignStructureProfiles.markSessionStart(startReg.getKey(e.getKey()), e.getValue().getChunkPos().toLong());
+                }
+            }
+            BeyondStructureArbiter.arbitrate(chunk, structureManager,
+                    registryAccess.registryOrThrow(Registries.STRUCTURE), the_beyond$carver.the_beyond$knownStarts());
+        }
+
         // Vanilla only references starts within ±8 chunks; seed the mask here so a wide carve structure's far arm doesn't cut straight.
         if (BeyondTerrainState.isActive()) {
             try {
@@ -281,12 +292,21 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                     ResourceLocation key = structReg.getKey(start.getStructure());
                     StructureIntegrationProfile profile = BeyondForeignStructureProfiles.resolve(start.getStructure(), key);
                     if (profile == null || !profile.carve()) continue;      // only carve structures need far reach
-                    boolean layerDistributed = BeyondForeignStructureProfiles.isLayerDistributed(key, start.getChunkPos().toLong());
+                    boolean layerDistributed = AutoHostWarmUp.layerDistributed(key, start, getBiomeSource().possibleBiomes());
+                    boolean floater = profile.anchor() == StructureIntegrationProfile.Anchor.FLOATING
+                            || BeyondForeignStructureProfiles.isAutoFloatCarved(key);
                     boolean distributed = layerDistributed
                             || BeyondForeignStructureProfiles.isAutoSeatedProjected(key);
-                    boolean seated = distributed || profile.anchor() == StructureIntegrationProfile.Anchor.SEATED;
-                    CarveMask m = the_beyond$carver.the_beyond$buildMask(start, seated, distributed, layerDistributed, profile.flushTolerance());
+                    boolean seated = !floater
+                            && (distributed || profile.anchor() == StructureIntegrationProfile.Anchor.SEATED);
+                    // Built exactly as the carve builds it: the cache keeps the first mask, so a corridor left out here never comes back.
+                    CarveMask m = the_beyond$carver.the_beyond$buildMask(start, seated, distributed, layerDistributed,
+                            profile.flushTolerance(), profile.connectDetached());
                     m.carveOnly = BeyondForeignStructureProfiles.isEmbedded(key);
+                    m.hugTerrain = BeyondForeignStructureProfiles.isHugTerrain(key);
+                    m.basePedestal = BeyondStructureCarver.the_beyond$pedestal(profile, key, structReg, start);
+                    m.floating = floater;
+                    m.structureKey = key;
                     the_beyond$carver.the_beyond$maskCache.put(start, m);
                     if (distributed
                             && BeyondGenDiagnostics.loggedFootingSuppressed.add(System.identityHashCode(start))
@@ -664,6 +684,10 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         if (ef <= 0.0) return AIR_SENTINEL;
         double cyc = cyclicDensity(shiftedY, cycleHeight);
         if (ef * cyc * MAX_NOISE + beardCap <= threshold) return AIR_SENTINEL;
+        return noiseDensity(shiftedY, s, ef, cyc);
+    }
+
+    private static double noiseDensity(int shiftedY, ColumnScratch s, double ef, double cyc) {
         double nv = computeNormalizedNoise(shiftedY, s.hScales, s.vScales, s.wrappedXs, s.wrappedZs,
                 useBandBlend ? s.bbLoIdx : null, useBandBlend ? s.bbT : null);
         return ef * (nv * cyc);
@@ -731,6 +755,10 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     }
 
     public static boolean isSolidTerrainScratch(int globalY, ColumnScratch s) {
+        // The air-gap skip's bound: where even the noise's peak cannot reach the threshold, the noise is not sampled.
+        int shiftedY = globalY + TERRAIN_Y_OFFSET;
+        double ef = edgeGradientFactor(shiftedY, s.dimMinY, s.dimMaxY);
+        if (ef <= 0.0 || ef * cyclicDensity(shiftedY, s.cycleHeight) * MAX_NOISE * s.islandEnvelope <= s.threshold) return false;
         return getTerrainDensityScratch(globalY, s) > s.threshold;
     }
 
@@ -744,6 +772,20 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         return density > threshold;
     }
 
+    private static final ThreadLocal<Boolean> BUILDING_BEARD = ThreadLocal.withInitial(() -> Boolean.FALSE);
+
+    public static boolean buildingBeard() {
+        return BUILDING_BEARD.get();
+    }
+
+    static boolean the_beyond$onlySubtractive(List<CarveMask> masks) {
+        for (int mi = 0; mi < masks.size(); mi++) {
+            CarveMask cm = masks.get(mi);
+            if (!cm.carveOnly || cm.basePedestal) return false;
+        }
+        return true;
+    }
+
     @Override
     public CompletableFuture<ChunkAccess> fillFromNoise(Blender blender, RandomState randomState, StructureManager structureManager, ChunkAccess chunk) {
         computeNoisesIfNotPresent(randomState);
@@ -753,27 +795,24 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             int startX = chunkPos.getMinBlockX();
             int startZ = chunkPos.getMinBlockZ();
 
-            List<StructureStart> validStarts = null;
-            for (StructureStart start : chunk.getAllStarts().values()) {
-                if (start.isValid()) {
-                    if (validStarts == null) validStarts = new ArrayList<>(4);
-                    validStarts.add(start);
-                }
+            Beardifier beard;
+            BUILDING_BEARD.set(Boolean.TRUE);
+            try {
+                beard = Beardifier.forStructuresInChunk(structureManager, chunkPos);
+            } finally {
+                BUILDING_BEARD.set(Boolean.FALSE);
             }
-            if (validStarts == null) validStarts = Collections.emptyList();
-
-            Beardifier beard = Beardifier.forStructuresInChunk(structureManager, chunkPos);
             List<CarveMask> carveMasks = the_beyond$collectCarveMasks(structureManager, chunkPos);
 
-            // Air-gap skip is only safe where nothing can lift a gap cell to solid (Beardifier lift or a carve
-            // mask); either present here -> never skip (beardCap=+INF), so density stays bit-exact.
+            // A Beardifier lift or carve mask can make a gap cell solid, so each cell bounds the noise by its own lifts.
             double chunkBeardCap = Double.POSITIVE_INFINITY;
-            if (carveMasks.isEmpty()
+            if (the_beyond$onlySubtractive(carveMasks)
                     && !structureManager.startsForStructure(chunkPos,
                             p -> p.terrainAdaptation() != TerrainAdjustment.NONE).iterator().hasNext()) {
                 chunkBeardCap = 0.0;
             }
 
+            long t0 = carveMasks.isEmpty() ? 0L : System.nanoTime();
             for (int x = 0; x < 16; x++) {
                 for (int z = 0; z < 16; z++) {
                     int globalX = startX + x;
@@ -786,10 +825,11 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                     }
 
                     else if (distanceFromOrigin >= 650) {
-                      generateEndTerrain(chunk, globalX, globalZ, distanceFromOrigin, validStarts, beard, carveMasks, chunkBeardCap);
+                      generateEndTerrain(chunk, globalX, globalZ, distanceFromOrigin, beard, carveMasks, chunkBeardCap);
                     }
                 }
             }
+            if (!carveMasks.isEmpty()) BeyondGenDiagnostics.carveChunkDone(System.nanoTime() - t0);
 
             return chunk;
         });
@@ -824,7 +864,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
     }
 
-    private void generateEndTerrain(ChunkAccess chunk, int globalX, int globalZ, float distanceFromOrigin, List<StructureStart> validStarts, Beardifier beard, List<CarveMask> carveMasks, double beardCap) {
+    private void generateEndTerrain(ChunkAccess chunk, int globalX, int globalZ, float distanceFromOrigin, Beardifier beard, List<CarveMask> carveMasks, double beardCap) {
         ColumnScratch s = SCRATCH.get();
         initColumnScratch(globalX, globalZ, distanceFromOrigin, s);
         double cycleHeight = s.cycleHeight;
@@ -840,10 +880,14 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         final BeardCtx bc = new BeardCtx();
         bc.x = globalX;
         bc.z = globalZ;
+        long tb = carveMasks.isEmpty() ? 0L : System.nanoTime();
         final BeyondStructureCarver.ColumnCarveState carve =
                 BeyondStructureCarver.beginColumn(carveMasks, globalX, globalZ, s);
-        // Embedded (crashed ships): suppress the vanilla beard_thin lift over the ship bbox (+margin) so the island
-        // buries the sunk hull instead of a platform lifting it.
+        if (!carveMasks.isEmpty()) BeyondGenDiagnostics.BEGIN_NANOS.add(System.nanoTime() - tb);
+        BeyondStructureCarver.the_beyond$logCeilApron();
+        BeyondStructureCarver.the_beyond$logCarveBranches();
+        BeyondStructureCarver.the_beyond$logRim();
+        // Embedded (crashed ships): no beard_thin lift over the hull, so the island buries it instead of raising a platform.
         boolean suppressBeard = false;
         for (int mi = 0; mi < carveMasks.size(); mi++) {
             CarveMask m = carveMasks.get(mi);
@@ -853,33 +897,58 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         // loopStart/loopEnd skip the 32-block edgeGradient zero bands at top/bottom, where density is forced 0.
         final int loopStart = dimMinY + 33;
         final int loopEnd = dimMaxY - 32;
+        // Beard lift clamped non-negative: its gouging half is dropped, since the carve below handles clearing.
+        final boolean noBeard = suppressBeard;
+        final java.util.function.IntToDoubleFunction beardAt =
+                yy -> { if (noBeard) return 0.0; bc.y = yy; return Math.max(0.0, beard.compute(bc)); };
         for (int y = loopStart; y < loopEnd; y++) {
-            if (carve != null && carve.foundationOrLipFillAt(y)) {
+            if (the_beyond$placesStoneAt(y, s, cycleHeight, baseThreshold, beardCap, beardAt, carve))
                 chunk.setBlockState(mutable.set(globalX, y, globalZ), Blocks.END_STONE.defaultBlockState(), false);
-                continue;
-            }
-            double density = terrainDensityOrSkip(y, s, cycleHeight, baseThreshold, beardCap);
-            if (density == AIR_SENTINEL) continue;
+        }
+    }
 
-            // Beard lift clamped non-negative: its gouging half is dropped, since the carve below handles clearing.
-            bc.y = y;
-            double beardDelta = suppressBeard ? 0.0 : Math.max(0.0, beard.compute(bc));
-            double baseBeardDelta = carve != null ? carve.baseBeardDeltaAt(y) : 0.0;
-            double finalDensity = density + beardDelta + baseBeardDelta;
+    static boolean the_beyond$placesStoneAt(int y, ColumnScratch s, double cycleHeight, double baseThreshold,
+            double beardCap, java.util.function.IntToDoubleFunction beardAt,
+            BeyondStructureCarver.ColumnCarveState carve) {
+        boolean placed = the_beyond$placesStoneCore(y, s, cycleHeight, baseThreshold, beardCap, beardAt, carve);
+        if (placed && carve != null) carve.notePlaced(y);
+        return placed;
+    }
 
-            if (finalDensity > baseThreshold) {
-                if (carve != null && carve.inCarveBand(y)) {
-                    double penalty = carve.carvePenaltyAt(y, s);
-                    if (penalty == Double.POSITIVE_INFINITY) continue;
-                    // Skirt never cuts a cell any beard fills, or it would carve holes into a beard-lifted ground connection.
-                    if (penalty > 0.0 && baseBeardDelta <= 0.0 && beardDelta <= 0.0) {
-                        finalDensity -= penalty;
-                        if (finalDensity <= baseThreshold) continue;
-                    }
-                }
-                chunk.setBlockState(mutable.set(globalX, y, globalZ), Blocks.END_STONE.defaultBlockState(), false);
+    private static boolean the_beyond$placesStoneCore(int y, ColumnScratch s, double cycleHeight, double baseThreshold,
+            double beardCap, java.util.function.IntToDoubleFunction beardAt,
+            BeyondStructureCarver.ColumnCarveState carve) {
+        if (carve != null && carve.foundationOrLipFillAt(y)) return true;
+        double density, beardDelta, baseBeardDelta;
+        if (beardCap == Double.POSITIVE_INFINITY) {
+            int shiftedY = y + TERRAIN_Y_OFFSET;
+            double ef = edgeGradientFactor(shiftedY, s.dimMinY, s.dimMaxY);
+            if (ef <= 0.0) return false;
+            beardDelta = beardAt.applyAsDouble(y);
+            baseBeardDelta = carve != null ? carve.baseBeardDeltaAt(y) : 0.0;
+            double cyc = cyclicDensity(shiftedY, cycleHeight);
+            // Summed in the order of the density below, so rounding cannot pass a cell this bound skips.
+            if (ef * cyc * MAX_NOISE + beardDelta + baseBeardDelta <= baseThreshold) return false;
+            density = noiseDensity(shiftedY, s, ef, cyc);
+        } else {
+            density = terrainDensityOrSkip(y, s, cycleHeight, baseThreshold, beardCap);
+            if (density == AIR_SENTINEL) return false;
+            beardDelta = beardAt.applyAsDouble(y);
+            baseBeardDelta = carve != null ? carve.baseBeardDeltaAt(y) : 0.0;
+        }
+        double finalDensity = density + beardDelta + baseBeardDelta;
+        if (finalDensity <= baseThreshold) return false;
+
+        if (carve != null && carve.inCarveBand(y) && !carve.pedestalBandAt(y)) {
+            double penalty = carve.carvePenaltyAt(y, s);
+            if (penalty == Double.POSITIVE_INFINITY) return false;
+            // Skirt never cuts a cell any beard fills, or it would carve holes into a beard-lifted ground connection.
+            if (penalty > 0.0 && baseBeardDelta <= 0.0 && beardDelta <= 0.0) {
+                finalDensity -= penalty;
+                return finalDensity > baseThreshold;
             }
         }
+        return true;
     }
 
     // Re-exported from BeyondStructureCarver: aliases keep BeyondEndChunkGenerator.<CONST> resolving for the headless gates and FeatureGuardMixin.
@@ -918,13 +987,21 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         // mask = per-bit source (TRUE-3D lookup); d3 = precomputed warped distance. mask[k]==null ⇒ no 3D field.
         CarveMask[] mask = new CarveMask[512];
         int[] d3 = new int[512];
-        // baseNat = per-bit connected-island top below colLo (base beard's no-float anchor), MIN if none.
-        // baseFloor = the bit's start-piece floor (baseBox.minY()), the ceiling the cover is capped to.
+        // baseNat: connected-island top below colLo per bit (MIN if none). baseFloor: the floor its piece stands on.
         int[] baseNat = new int[512], baseFloor = new int[512];
-        // colX/colZ = bit's own world column; buriedAbove = natural island solid sits directly on its roof
-        // (hi[k]+1) — drives the FACE A island-cap KEEP. Distributed bits only.
-        short[] colX = new short[512], colZ = new short[512];
+        // d2 = squared Euclidean distance to the bit. dxz is Chebyshev and dilates a square into a square.
+        int[] d2 = new int[512];
+        // buriedAbove: natural island sits right on the bit's roof (hi[k]+1), which drives the island-cap keep.
+        int[] colX = new int[512], colZ = new int[512];
         boolean[] buriedAbove = new boolean[512];
+        // corr = column invented by the detached-part connector, not owned by any piece.
+        boolean[] corr = new boolean[512];
+        // fly: a bit held off the ground, cleared by the same finite falloff as its surroundings (no binary wall).
+        boolean[] fly = new boolean[512];
+        // hug = bit of a hull the island closes on: no skirt, no collar, no ceiling apron.
+        boolean[] hug = new boolean[512];
+        // capTop = top of the ground laid over a buried room's roof, MIN_VALUE where the roof stays open.
+        int[] capTop = new int[512];
         void ensure(int cap) {
             if (cap <= dxz.length) return;
             int c = Math.max(cap, dxz.length * 2);
@@ -933,8 +1010,13 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             dist = java.util.Arrays.copyOf(dist, c); base = java.util.Arrays.copyOf(base, c);
             mask = java.util.Arrays.copyOf(mask, c); d3 = java.util.Arrays.copyOf(d3, c);
             baseNat = java.util.Arrays.copyOf(baseNat, c); baseFloor = java.util.Arrays.copyOf(baseFloor, c);
+            d2 = java.util.Arrays.copyOf(d2, c);
             colX = java.util.Arrays.copyOf(colX, c); colZ = java.util.Arrays.copyOf(colZ, c);
             buriedAbove = java.util.Arrays.copyOf(buriedAbove, c);
+            corr = java.util.Arrays.copyOf(corr, c);
+            fly = java.util.Arrays.copyOf(fly, c);
+            hug = java.util.Arrays.copyOf(hug, c);
+            capTop = java.util.Arrays.copyOf(capTop, c);
         }
     }
     static final ThreadLocal<CarveBits> CARVE_BITS = ThreadLocal.withInitial(CarveBits::new);
@@ -964,6 +1046,73 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         final BoundingBox baseBox;
         // Embedded (crashed ships): carve-only — interior cleared, no foundation/base-beard platform.
         boolean carveOnly;
+        boolean hugTerrain;
+        boolean basePedestal;
+        @org.jetbrains.annotations.Nullable ResourceLocation structureKey;
+        volatile boolean planKeptOutLogged;
+        boolean floating;
+        int pedLoY = Integer.MAX_VALUE;
+        int[] boxTop;
+        int[] boxBot;
+        boolean hasBoxAt(int x, int z) {
+            if (boxTop == null) return false;
+            int i = x - oX, j = z - oZ;
+            if (i < 0 || i >= w || j < 0 || j >= d) return false;
+            return boxTop[i + j * w] != Integer.MIN_VALUE;
+        }
+        /** Per column, 1 + the floor's height above gLo when its piece does not stand on the start piece's floor, else 0. */
+        short[] floorOff;
+        int floorFor(int x, int z, boolean base) {
+            int seat = baseBox.minY();
+            if (base || hugTerrain || floorOff == null) return seat;
+            int i = x - oX, j = z - oZ;
+            if (i < 0 || i >= w || j < 0 || j >= d) return seat;
+            int f = floorOff[i + j * w];
+            return f == 0 ? seat : gLo + f - 1;
+        }
+        boolean hasOwnFloor(int x, int z) {
+            if (hugTerrain || floorOff == null) return false;
+            int i = x - oX, j = z - oZ;
+            return i >= 0 && i < w && j >= 0 && j < d && floorOff[i + j * w] != 0;
+        }
+        int[] roomRoof;
+        int roomRoofAt(int x, int z) {
+            if (roomRoof == null) return Integer.MIN_VALUE;
+            int i = x - oX, j = z - oZ;
+            return i >= 0 && i < w && j >= 0 && j < d ? roomRoof[i + j * w] : Integer.MIN_VALUE;
+        }
+        /** The piece boxes the lift keeps out of: a buried piece's box is left out, its margin being ground. */
+        int[] liftBoxTop, liftBoxBot;
+        boolean insideLiftBoxAt(int x, int y, int z) {
+            if (liftBoxTop == null) return insideBoxAt(x, y, z);
+            int i = x - oX, j = z - oZ;
+            if (i < 0 || i >= w || j < 0 || j >= d) return false;
+            int c = i + j * w;
+            return liftBoxTop[c] != Integer.MIN_VALUE && y >= liftBoxBot[c] && y <= liftBoxTop[c];
+        }
+        it.unimi.dsi.fastutil.longs.LongOpenHashSet buriedInterior;
+        boolean inBuriedInterior(int x, int y, int z) {
+            return buriedInterior != null && buriedInterior.contains(net.minecraft.core.BlockPos.asLong(x, y, z));
+        }
+        /** Every piece's own box. The per-column spans merge boxes stacked on different islands into one pillar. */
+        BoundingBox[] pieceBoxes;
+        boolean insideBoxAt(int x, int y, int z) {
+            if (boxTop == null) return false;
+            int i = x - oX, j = z - oZ;
+            if (i < 0 || i >= w || j < 0 || j >= d) return false;
+            int c = i + j * w;
+            return boxTop[c] != Integer.MIN_VALUE && y >= boxBot[c] && y <= boxTop[c];
+        }
+
+        boolean pieceUnderStart(int x, int z) {
+            if (boxBot == null || baseBox == null) return true;
+            int i = x - oX, j = z - oZ;
+            if (i < 0 || i >= w || j < 0 || j >= d) return false;
+            int c = i + j * w;
+            return boxTop[c] != Integer.MIN_VALUE && boxBot[c] < baseBox.minY();
+        }
+        // Columns the connector invented, clearing their span but never the walkway just below. Null when none.
+        long[] corridorOcc;
         CarveMask(int oX, int oZ, int w, int d, long[] occ, short[] colLoOff, short[] colHiOff,
                   long[] filledOcc, int gLo, int gHi, boolean seated, boolean distributed, boolean layerDistributed, int foundationDepth, int filledHoles,
                   byte[] dt3, int dt3OX, int dt3OZ, int dt3W, int dt3D, int dt3YLo, int dt3Layers, BoundingBox baseBox) {
@@ -991,8 +1140,74 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             return dt3[(L * dt3D + j) * dt3W + i] & 0xFF;
         }
         boolean isFilled(int bit) { return filledOcc != null && (filledOcc[bit >> 6] & (1L << (bit & 63))) != 0; }
+        boolean isCorridor(int bit) { return corridorOcc != null && (corridorOcc[bit >> 6] & (1L << (bit & 63))) != 0; }
         int colLo(int bit) { return gLo + (colLoOff[bit] & 0xFFFF); }
         int colHi(int bit) { return gLo + (colHiOff[bit] & 0xFFFF); }
+
+        long[] groundFoot;
+        long[] groundRaised;
+        int groundFloorY = Integer.MIN_VALUE;
+        private volatile CityGroundPlan groundPlan;
+        private volatile boolean groundPlanDone;
+
+        int soleAt(int x, int z) {
+            if (groundFoot == null) return Integer.MIN_VALUE;
+            int i = x - oX, j = z - oZ;
+            if (i < 0 || i >= w || j < 0 || j >= d) return Integer.MIN_VALUE;
+            int bit = i + j * w;
+            if ((groundFoot[bit >> 6] & (1L << (bit & 63))) == 0) return Integer.MIN_VALUE;
+            boolean up = groundRaised != null && (groundRaised[bit >> 6] & (1L << (bit & 63))) != 0;
+            return groundFloor() + (up ? 1 : 0);
+        }
+
+        int groundFloor() {
+            return groundFoot != null && groundFloorY != Integer.MIN_VALUE ? groundFloorY : baseBox.minY();
+        }
+
+        @org.jetbrains.annotations.Nullable
+        CityGroundPlan groundPlan() {
+            if (!basePedestal || baseBox == null || floating) return null;
+            if (groundPlanDone) return groundPlan;
+            synchronized (this) {
+                if (!groundPlanDone && groundFoot == null) {
+                    groundPlanDone = true;
+                    BeyondStructureCarver.the_beyond$logNoGroundFoot(this);
+                }
+                if (!groundPlanDone) {
+                    ColumnScratch probe = new ColumnScratch();
+                    int[] col = { Integer.MIN_VALUE, Integer.MIN_VALUE };
+                    CityGroundPlan p = CityGroundPlan.compute(baseBox, groundFloor(),
+                            this::soleAt,
+                            (x, y, z) -> {
+                                if (col[0] != x || col[1] != z) {
+                                    initColumnScratch(x, z, (float) Math.sqrt((double) x * x + (double) z * z), probe);
+                                    col[0] = x; col[1] = z;
+                                }
+                                return isSolidTerrainScratch(y, probe);
+                            },
+                            BeyondStructureCarver::the_beyond$padLobe);
+                    groundPlan = p;
+                    groundPlanDone = true;
+                    BeyondStructureCarver.the_beyond$logGroundPlan(this, p);
+                }
+            }
+            return groundPlan;
+        }
+
+        /** 0 unknown, 1 open, 2 island rock right over the bit's top. Races only ever write the same value. */
+        private byte[] rockOverTopMemo;
+
+        boolean rockOverTop(int x, int z, ColumnScratch probe) {
+            int bit = (x - oX) + (z - oZ) * w;
+            byte[] memo = rockOverTopMemo;
+            if (memo == null) rockOverTopMemo = memo = new byte[w * d];
+            byte v = memo[bit];
+            if (v != 0) return v == 2;
+            initColumnScratch(x, z, (float) Math.sqrt((double) x * x + (double) z * z), probe);
+            boolean solid = isSolidTerrainScratch(colHi(bit) + 1, probe);
+            memo[bit] = (byte) (solid ? 2 : 1);
+            return solid;
+        }
         // 16-bit offset covers the full build height: a tower stacked >255 above gLo won't clamp and go un-carved.
         static void encodeColumnSpans(long[] occ, int[] cLo, int[] cHi, int gLo, short[] colLoOff, short[] colHiOff, int n) {
             for (int bit = 0; bit < n; bit++) {
@@ -1010,8 +1225,8 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                                IntArrayList blockI, IntArrayList blockJ, IntArrayList blockY,
                                long[] occ, int[] cLo, int[] cHi, boolean[] hasBlock) {
             if (dt3W <= 0 || dt3D <= 0 || dt3Layers <= 0 || gHi < gLo) return null;
-            int[] occ3 = new int[dt3W * dt3D * dt3Layers];
-            java.util.Arrays.fill(occ3, DT3_CAP);
+            byte[] occ3 = new byte[dt3W * dt3D * dt3Layers];
+            java.util.Arrays.fill(occ3, (byte) DT3_CAP);
             boolean seeded = false;
             if (blockI != null) {
                 for (int k = 0, m = blockI.size(); k < m; k++) {
@@ -1038,9 +1253,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             }
             if (!seeded) return null;
             chebyshevDT3(occ3, dt3W, dt3D, dt3Layers, DT3_CAP);
-            byte[] dt3 = new byte[occ3.length];
-            for (int k = 0; k < occ3.length; k++) dt3[k] = (byte) occ3[k];
-            return dt3;
+            return occ3;
         }
         // An occupied column whose solid span doesn't reach y is transparent at y (flood passes through).
         private static boolean wallAtY(long[] occ, int[] cLo, int[] cHi, int bit, int y) {
@@ -1048,7 +1261,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             return cLo[bit] <= y && y <= cHi[bit];
         }
         // borderSource=true treats out-of-grid as a distance-0 source, so the erosion step never seals the exterior.
-        private static void chebyshevDT(int[] dist, int w, int d, int cap, boolean borderSource) {
+        static void chebyshevDT(int[] dist, int w, int d, int cap, boolean borderSource) {
             for (int z = 0; z < d; z++) {
                 for (int x = 0; x < w; x++) {
                     int c = x + z * w, best = dist[c];
@@ -1076,12 +1289,12 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             }
         }
         // 2-pass 3x3x3-stencil DT. No border source — the field must read DT3_CAP outside the seeded blocks, not 0.
-        static void chebyshevDT3(int[] dist, int w, int d, int layers, int cap) {
+        static void chebyshevDT3(byte[] dist, int w, int d, int layers, int cap) {
             // forward: L,z,x ascending — the 13 neighbors with (dL<0) || (dL==0 && dz<0) || (dL==0 && dz==0 && dx<0).
             for (int L = 0; L < layers; L++) {
                 for (int z = 0; z < d; z++) {
                     for (int x = 0; x < w; x++) {
-                        int c = (L * d + z) * w + x, best = dist[c];
+                        int c = (L * d + z) * w + x, best = dist[c] & 0xFF;
                         if (best == 0) continue;
                         for (int dL = -1; dL <= 0; dL++) {
                             int lz = L + dL; if (lz < 0) continue;
@@ -1091,13 +1304,13 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                                 int dxMax = (dL == 0 && dz == 0) ? -1 : 1;   // dL==0,dz==0 → only dx=-1 (the in-row predecessor)
                                 for (int dx = -1; dx <= dxMax; dx++) {
                                     int xx = x + dx; if (xx < 0 || xx >= w) continue;
-                                    int v = dist[(lz * d + zz) * w + xx] + 1;
+                                    int v = (dist[(lz * d + zz) * w + xx] & 0xFF) + 1;
                                     if (v < best) best = v;
                                 }
                             }
                         }
                         if (best > cap) best = cap;
-                        dist[c] = best;
+                        dist[c] = (byte) best;
                     }
                 }
             }
@@ -1105,7 +1318,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             for (int L = layers - 1; L >= 0; L--) {
                 for (int z = d - 1; z >= 0; z--) {
                     for (int x = w - 1; x >= 0; x--) {
-                        int c = (L * d + z) * w + x, best = dist[c];
+                        int c = (L * d + z) * w + x, best = dist[c] & 0xFF;
                         if (best == 0) continue;
                         for (int dL = 0; dL <= 1; dL++) {
                             int lz = L + dL; if (lz >= layers) continue;
@@ -1115,19 +1328,18 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                                 int dxMin = (dL == 0 && dz == 0) ? 1 : -1;   // dL==0,dz==0 → only dx=+1 (the in-row successor)
                                 for (int dx = dxMin; dx <= 1; dx++) {
                                     int xx = x + dx; if (xx < 0 || xx >= w) continue;
-                                    int v = dist[(lz * d + zz) * w + xx] + 1;
+                                    int v = (dist[(lz * d + zz) * w + xx] & 0xFF) + 1;
                                     if (v < best) best = v;
                                 }
                             }
                         }
                         if (best > cap) best = cap;
-                        dist[c] = best;
+                        dist[c] = (byte) best;
                     }
                 }
             }
         }
-        /** Clears a hosted structure's interior void so islands can't form inside it; open bays wider than closeR
-         *  stay terrain. Per-Y: morphologically closes the walls, floods from the border, fills what's unreached. */
+        /** Clears enclosed interior void per Y so islands can't form inside, bays wider than closeR stay terrain. */
         static int fillEnclosed(long[] occ, long[] filledOcc, int w, int d, int[] cLo, int[] cHi, int gLo, int gHi, int closeR) {
             if (w <= 2 || d <= 2 || gHi < gLo) return 0;
             int n = w * d;
@@ -1238,7 +1450,12 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         // break and lateral prune fire early. dXZ = r exactly; result is order-independent (min).
         int collectOccupiedBits(int x, int z, int reach,
                                 int[] oDxz, int[] oLo, int[] oHi, int[] oGLo, boolean[] oSeat, boolean[] oFilled, boolean[] oDist,
-                                boolean[] oBase, CarveMask[] oMask, short[] oColX, short[] oColZ, int n) {
+                                boolean[] oBase, CarveMask[] oMask, int[] oColX, int[] oColZ, int[] oD2, int n) {
+            return collectOccupiedBits(x, z, reach, oDxz, oLo, oHi, oGLo, oSeat, oFilled, oDist, oBase, oMask, oColX, oColZ, oD2, null, n);
+        }
+        int collectOccupiedBits(int x, int z, int reach,
+                                int[] oDxz, int[] oLo, int[] oHi, int[] oGLo, boolean[] oSeat, boolean[] oFilled, boolean[] oDist,
+                                boolean[] oBase, CarveMask[] oMask, int[] oColX, int[] oColZ, int[] oD2, boolean[] oCorr, int n) {
             if (x < oX - reach || x > oX + w - 1 + reach || z < oZ - reach || z > oZ + d - 1 + reach) return n;
             for (int r = 0; r <= reach; r++) {
                 for (int dz = -r; dz <= r; dz++) {
@@ -1250,17 +1467,69 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                         int bit = xx + zz * w;
                         if ((occ[bit >> 6] & (1L << (bit & 63))) == 0) continue;
                         oDxz[n] = r;
+                        oD2[n] = dx * dx + dz * dz;
                         oLo[n] = colLo(bit); oHi[n] = colHi(bit); oGLo[n] = gLo; oSeat[n] = seated; oFilled[n] = isFilled(bit); oDist[n] = distributed;
                         // distributed-gated so FLOATING/pure-SEATED stay base=false.
                         oBase[n] = distributed && inBaseFootprint(x + dx, z + dz);
                         oMask[n] = this;   // null dt3 ⇒ dt3At returns DT3_CAP+1
-                        oColX[n] = (short) (x + dx); oColZ[n] = (short) (z + dz);
+                        oColX[n] = x + dx; oColZ[n] = z + dz;
+                        if (oCorr != null) oCorr[n] = isCorridor(bit);
                         n++;
                     }
                 }
             }
             return n;
         }
+        public static CarveMask fromBlocks(int[][] entries, int[][] solid, BoundingBox baseBox,
+                                           boolean seated, int closeR, boolean distributed, boolean layerDistributed) {
+            int oX = Integer.MAX_VALUE, oZ = Integer.MAX_VALUE, mX = Integer.MIN_VALUE, mZ = Integer.MIN_VALUE;
+            int gLo = Integer.MAX_VALUE, gHi = Integer.MIN_VALUE;
+            for (int[] e : entries) {
+                oX = Math.min(oX, e[0]); oZ = Math.min(oZ, e[2]);
+                mX = Math.max(mX, e[0]); mZ = Math.max(mZ, e[2]);
+                gLo = Math.min(gLo, e[1]); gHi = Math.max(gHi, e[1]);
+            }
+            final int envPad = BeyondStructureCarver.ENVELOPE_PAD;
+            int w = mX - oX + 1 + 2 * envPad, d = mZ - oZ + 1 + 2 * envPad;
+            oX -= envPad; oZ -= envPad;
+            long[] occ = new long[((w * d) + 63) >> 6];
+            int[] cLo = new int[w * d], cHi = new int[w * d];
+            java.util.Arrays.fill(cLo, Integer.MAX_VALUE);
+            java.util.Arrays.fill(cHi, Integer.MIN_VALUE);
+            for (int[] e : entries) {
+                int bit = (e[0] - oX) + (e[2] - oZ) * w;
+                occ[bit >> 6] |= (1L << (bit & 63));
+                if (e[1] < cLo[bit]) cLo[bit] = e[1];
+                if (e[1] > cHi[bit]) cHi[bit] = e[1];
+            }
+            IntArrayList bI = null, bJ = null, bY = null;
+            boolean[] hasBlock = null;
+            if (distributed) {
+                bI = new IntArrayList(); bJ = new IntArrayList(); bY = new IntArrayList();
+                hasBlock = new boolean[w * d];
+                for (int[] q : solid) {
+                    int i = q[0] - oX, j = q[2] - oZ;
+                    if (i < 0 || i >= w || j < 0 || j >= d) continue;
+                    hasBlock[i + j * w] = true;
+                    bI.add(i); bJ.add(j); bY.add(q[1]);
+                }
+            }
+            long[] filledOcc = new long[((w * d) + 63) >> 6];
+            int filled = fillEnclosed(occ, filledOcc, w, d, cLo, cHi, gLo, gHi, closeR);
+            short[] colLoOff = new short[w * d], colHiOff = new short[w * d];
+            encodeColumnSpans(occ, cLo, cHi, gLo, colLoOff, colHiOff, w * d);
+            byte[] dt3 = null; int dt3OX = 0, dt3OZ = 0, dt3W = 0, dt3D = 0, dt3YLo = 0, dt3Layers = 0;
+            if (distributed) {
+                dt3OX = oX - DT3_CAP; dt3OZ = oZ - DT3_CAP; dt3W = w + 2 * DT3_CAP; dt3D = d + 2 * DT3_CAP;
+                dt3YLo = gLo - DT3_CAP; dt3Layers = (gHi - gLo) + 1 + 2 * DT3_CAP;
+                dt3 = buildDt3(w, d, gLo, gHi, dt3W, dt3D, dt3YLo, dt3Layers, bI, bJ, bY, occ, cLo, cHi, hasBlock);
+                if (dt3 == null) { dt3OX = 0; dt3OZ = 0; dt3W = 0; dt3D = 0; dt3YLo = 0; dt3Layers = 0; }
+            }
+            return new CarveMask(oX, oZ, w, d, occ, colLoOff, colHiOff, filledOcc, gLo, gHi, seated, distributed,
+                    layerDistributed, FOUNDATION_DEPTH, filled, dt3, dt3OX, dt3OZ, dt3W, dt3D, dt3YLo, dt3Layers,
+                    baseBox);
+        }
+
         public static CarveMask fromBoxes(List<BoundingBox> boxes, boolean seated) {
             return fromBoxes(boxes, seated, 0);
         }
@@ -1271,6 +1540,10 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             return fromBoxes(boxes, seated, closeR, distributed, distributed);
         }
         public static CarveMask fromBoxes(List<BoundingBox> boxes, boolean seated, int closeR, boolean distributed, boolean layerDistributed) {
+            return fromBoxes(boxes, seated, closeR, distributed, layerDistributed, false);
+        }
+        /** {@code connectDetached} runs the real connector in buildMask's order, so its columns reach colLo/colHi and dt3. */
+        public static CarveMask fromBoxes(List<BoundingBox> boxes, boolean seated, int closeR, boolean distributed, boolean layerDistributed, boolean connectDetached) {
             int oX = Integer.MAX_VALUE, oZ = Integer.MAX_VALUE, mX = Integer.MIN_VALUE, mZ = Integer.MIN_VALUE;
             int gLo = Integer.MAX_VALUE, gHi = Integer.MIN_VALUE;
             for (BoundingBox b : boxes) {
@@ -1278,7 +1551,9 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                 mX = Math.max(mX, b.maxX()); mZ = Math.max(mZ, b.maxZ());
                 gLo = Math.min(gLo, b.minY()); gHi = Math.max(gHi, b.maxY());
             }
-            int w = mX - oX + 1, d = mZ - oZ + 1;
+            final int envPad = BeyondStructureCarver.ENVELOPE_PAD;
+            int w = mX - oX + 1 + 2 * envPad, d = mZ - oZ + 1 + 2 * envPad;
+            oX -= envPad; oZ -= envPad;
             long[] occ = new long[((w * d) + 63) >> 6];
             int[] cLo = new int[w * d], cHi = new int[w * d];
             java.util.Arrays.fill(cLo, Integer.MAX_VALUE);
@@ -1293,8 +1568,14 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                     }
                 }
             }
-            // Rasterize as real-block seeds so the gate exercises the REAL 3D distance path (a lateral inter-box
-            // air gap stays far in 3D, not bridged by a column envelope).
+            long[] corrOcc = null;
+            if (connectDetached) {
+                int[] gy = { gLo, gHi };
+                corrOcc = new long[((w * d) + 63) >> 6];
+                BeyondStructureCarver.the_beyond$connectDetached(boxes, occ, cLo, cHi, w, d, gy, oX, oZ, corrOcc);
+                gLo = gy[0]; gHi = gy[1];
+            }
+            // Real-block seeds, so a lateral air gap between boxes stays far in true 3D instead of bridged by a column.
             IntArrayList bI = null, bJ = null, bY = null; boolean[] hasBlock = null;
             if (distributed) {
                 bI = new IntArrayList(); bJ = new IntArrayList(); bY = new IntArrayList();
@@ -1320,8 +1601,10 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                 dt3 = buildDt3(w, d, gLo, gHi, dt3W, dt3D, dt3YLo, dt3Layers, bI, bJ, bY, occ, cLo, cHi, hasBlock);
                 if (dt3 == null) { dt3OX = 0; dt3OZ = 0; dt3W = 0; dt3D = 0; dt3YLo = 0; dt3Layers = 0; }
             }
-            return new CarveMask(oX, oZ, w, d, occ, colLoOff, colHiOff, filledOcc, gLo, gHi, seated, distributed, layerDistributed, FOUNDATION_DEPTH, filled,
+            CarveMask built = new CarveMask(oX, oZ, w, d, occ, colLoOff, colHiOff, filledOcc, gLo, gHi, seated, distributed, layerDistributed, FOUNDATION_DEPTH, filled,
                     dt3, dt3OX, dt3OZ, dt3W, dt3D, dt3YLo, dt3Layers, boxes.isEmpty() ? null : boxes.get(0));
+            built.corridorOcc = corrOcc;
+            return built;
         }
     }
 
@@ -1330,6 +1613,19 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
     public List<CarveMask> the_beyond$collectCarveMasks(StructureManager sm, ChunkPos cp) {
         return the_beyond$carver.the_beyond$collectCarveMasks(sm, cp);
+    }
+
+    public java.util.Collection<net.minecraft.world.level.levelgen.structure.StructureStart> the_beyond$knownStarts() {
+        return the_beyond$carver.the_beyond$knownStarts();
+    }
+
+    public BeyondStructureCarver.TerrainSnapshot the_beyond$snapshotCarveTerrain(ChunkAccess chunk, List<CarveMask> masks) {
+        return the_beyond$carver.the_beyond$snapshotCarveTerrain(chunk, masks);
+    }
+
+    public int the_beyond$dropCarveDebris(WorldGenLevel level, ChunkAccess chunk, List<CarveMask> masks,
+            BeyondStructureCarver.TerrainSnapshot snap) {
+        return the_beyond$carver.the_beyond$dropCarveDebris(level, chunk, masks, snap);
     }
     public void the_beyond$placeUnreferencedCarveStructures(net.minecraft.world.level.WorldGenLevel level,
             StructureManager sm, ChunkAccess chunk) {
@@ -1349,8 +1645,14 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     }
 
     public static final int STRUCT_FEATURE_MARGIN_DOWN = 6, STRUCT_FEATURE_MARGIN_UP = 2, STRUCT_FEATURE_MARGIN_LAT = 4;
-    /** True if (x,y,z) is inside ANY carve structure's bbox (+margin) — bars the gellid-void pool. Uses the bbox, not
-     *  occupancy: the pool sits in the open interior, which an occupancy test would miss. */
+    public static boolean the_beyond$insideAnyPieceBox(List<CarveMask> masks, int x, int y, int z) {
+        for (int i = 0, n = masks.size(); i < n; i++) {
+            if (masks.get(i).insideBoxAt(x, y, z)) return true;
+        }
+        return false;
+    }
+
+    /** Uses the bbox, not occupancy: the gellid-void pool sits in the open interior an occupancy test would miss. */
     public static boolean the_beyond$insideAnyStructureFootprint(List<CarveMask> masks, int x, int y, int z) {
         for (int i = 0, n = masks.size(); i < n; i++) {
             CarveMask m = masks.get(i);
@@ -1598,6 +1900,87 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         computeNoisesIfNotPresent(random);
         BeyondTerrainStateInternal.setDimBounds(level.getMinBuildHeight(), level.getMaxBuildHeight());
         super.buildSurface(level, structureManager, random, chunk);
+        try { the_beyond$skinStructureCover(structureManager, chunk); }
+        catch (Throwable t) {
+            if (BeyondGenDiagnostics.loggedMaskKeys.add("cover-skin-fail")) {
+                com.thebeyond.TheBeyond.LOGGER.warn("[Beyond] cover re-skin skipped: {}", t.toString());
+            }
+        }
+    }
+
+
+    private static final int COVER_SKIN_DEPTH = 2;
+    private static final int COVER_SKIN_LOOK = 12;
+    private static final int COVER_SKIN_MARGIN = BeyondStructureCarver.ENVELOPE_LAT;
+
+    private static int the_beyond$coverTop(ChunkAccess chunk, BlockPos.MutableBlockPos m, int x, int z, int top, int bottom) {
+        for (int y = top; y > bottom; y--) {
+            if (!chunk.getBlockState(m.set(x, y, z)).isAir()) return y;
+        }
+        return Integer.MIN_VALUE;
+    }
+
+    private static BlockState[] the_beyond$neighbourSkin(ChunkAccess chunk, BlockPos.MutableBlockPos m,
+            int lx, int lz, ChunkPos cp, int top, int bottom) {
+        for (int r = 1; r <= COVER_SKIN_LOOK; r++) {
+            for (int dz = -r; dz <= r; dz++) {
+                for (int dx = -r; dx <= r; dx++) {
+                    if (Math.max(Math.abs(dx), Math.abs(dz)) != r) continue;
+                    int nx = lx + dx, nz = lz + dz;
+                    if (nx < 0 || nx > 15 || nz < 0 || nz > 15) continue;
+                    int wx = cp.getMinBlockX() + nx, wz = cp.getMinBlockZ() + nz;
+                    int ny = the_beyond$coverTop(chunk, m, wx, wz, top, bottom);
+                    if (ny == Integer.MIN_VALUE) continue;
+                    BlockState st = chunk.getBlockState(m.set(wx, ny, wz));
+                    if (st.is(Blocks.END_STONE) || st.isAir()) continue;
+                    if (!st.isSolidRender(chunk, m)) continue;
+                    BlockState[] col = new BlockState[COVER_SKIN_DEPTH];
+                    for (int k = 0; k < COVER_SKIN_DEPTH; k++) {
+                        int sy = ny - k;
+                        col[k] = sy > bottom ? chunk.getBlockState(m.set(wx, sy, wz)) : null;
+                    }
+                    return col;
+                }
+            }
+        }
+        return null;
+    }
+
+    /** Re-skins a beard lift near a structure with a neighbour's surface, since the default block reads as a pale slab. */
+    private void the_beyond$skinStructureCover(StructureManager structureManager, ChunkAccess chunk) {
+        if (!BeyondTerrainState.isActive()) return;
+        ChunkPos cp = chunk.getPos();
+        List<CarveMask> masks = the_beyond$collectCarveMasks(structureManager, cp);
+        if (masks.isEmpty()) return;
+        BlockState def = Blocks.END_STONE.defaultBlockState();
+        BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
+        int top = chunk.getMaxBuildHeight() - 1, bottom = chunk.getMinBuildHeight();
+        for (int lx = 0; lx < 16; lx++) {
+            for (int lz = 0; lz < 16; lz++) {
+                int x = cp.getMinBlockX() + lx, z = cp.getMinBlockZ() + lz;
+                boolean near = false;
+                for (int i = 0; i < masks.size() && !near; i++) {
+                    CarveMask mk = masks.get(i);
+                    for (int dz = -COVER_SKIN_MARGIN; dz <= COVER_SKIN_MARGIN && !near; dz++) {
+                        for (int dx = -COVER_SKIN_MARGIN; dx <= COVER_SKIN_MARGIN && !near; dx++) {
+                            near = mk.hasBoxAt(x + dx, z + dz);
+                        }
+                    }
+                }
+                if (!near) continue;
+                int y = the_beyond$coverTop(chunk, m, x, z, top, bottom);
+                if (y == Integer.MIN_VALUE || !chunk.getBlockState(m.set(x, y, z)).is(Blocks.END_STONE)) continue;
+                BlockState[] skin = the_beyond$neighbourSkin(chunk, m, lx, lz, cp, top, bottom);
+                if (skin == null) continue;
+                // Course for course: repeating the top block at every depth would double the biome's surface.
+                for (int i = 0; i < COVER_SKIN_DEPTH; i++) {
+                    BlockState st = skin[i];
+                    if (st == null || st.isAir()) break;
+                    if (!chunk.getBlockState(m.set(x, y - i, z)).is(Blocks.END_STONE)) break;
+                    chunk.setBlockState(m.set(x, y - i, z), st, false);
+                }
+            }
+        }
     }
 
     @Override
@@ -1605,8 +1988,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         BeyondTerrainStateInternal.setDimBounds(level.getMinBuildHeight(), level.getMaxBuildHeight());
         super.applyBiomeDecoration(level, chunk, structureManager);
 
-        // Clear column (0,0) above the central dome so its heightmap re-primes onto Beyond's END_STONE, or the
-        // exit portal spawns at the foreign-pushed column top.
+        // Clear column (0,0) so its heightmap re-primes on Beyond's stone, or the exit portal spawns on a foreign top.
         if (BeyondTerrainState.isActive()) {
             ChunkPos cp = chunk.getPos();
             if (cp.x == 0 && cp.z == 0) {
@@ -1624,32 +2006,4 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         }
     }
 
-    private double calculateStructureAdaptation(List<StructureStart> validStarts, int x, int y, int z) {
-        if (validStarts.isEmpty()) return 0.0;
-
-        double adaptation = 0.0;
-        for (int i = 0, n = validStarts.size(); i < n; i++) {
-            adaptation += calculateStructureInfluence(validStarts.get(i), x, y, z);
-        }
-        return adaptation;
-    }
-
-    private double calculateStructureInfluence(StructureStart start, int x, int y, int z) {
-        BoundingBox bounds = start.getBoundingBox();
-
-        int dx = Math.max(Math.max(bounds.minX() - x, x - bounds.maxX()), 0);
-        int dy = Math.max(Math.max(bounds.minY() - y, y - bounds.maxY()), 0);
-        int dz = Math.max(Math.max(bounds.minZ() - z, z - bounds.maxZ()), 0);
-
-        int distance = dx + dy + dz;
-
-        int influenceRadius = Math.max(bounds.getXSpan(), bounds.getZSpan()) * 2;
-
-        if (distance < influenceRadius) {
-            double normalized = 1.0 - ((double)distance / influenceRadius);
-            return normalized * normalized * 0.3;
-        }
-
-        return 0.0;
-    }
 }

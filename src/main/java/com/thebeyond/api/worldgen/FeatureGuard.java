@@ -16,7 +16,10 @@ public final class FeatureGuard {
     private static final ThreadLocal<ProtectedVolume> VOLUME = new ThreadLocal<>();
     /** A carve structure's solid footprint — bars the gellid-void pool from intruding into it. */
     private static final ThreadLocal<ProtectedVolume> STRUCTURE_VOLUME = new ThreadLocal<>();
+    private static final ThreadLocal<ProtectedVolume> PIECE_VOLUME = new ThreadLocal<>();
     private static final ThreadLocal<int[]> DEPTH = ThreadLocal.withInitial(() -> new int[1]);
+    /** depth, decision (0 undecided, 1 allowed, 2 blocked). */
+    private static final ThreadLocal<int[]> FEATURE = ThreadLocal.withInitial(() -> new int[2]);
 
     private FeatureGuard() {}
 
@@ -25,20 +28,39 @@ public final class FeatureGuard {
 
     public static void setStructureVolume(ProtectedVolume volume) { STRUCTURE_VOLUME.set(volume); }
 
-    /** Disarm both volumes (call in a finally after the chunk decoration). */
-    public static void clearVolume() { VOLUME.remove(); STRUCTURE_VOLUME.remove(); }
+    public static void setPieceVolume(ProtectedVolume volume) { PIECE_VOLUME.set(volume); }
+
+    public static void clearVolume() { VOLUME.remove(); STRUCTURE_VOLUME.remove(); PIECE_VOLUME.remove(); }
+
+    public static boolean insidePieceVolume(int x, int y, int z) {
+        if (DEPTH.get()[0] > 0) return false;
+        ProtectedVolume v = PIECE_VOLUME.get();
+        return v != null && v.contains(x, y, z);
+    }
 
     /** Begin a structure's own placement scope (its writes are allowed inside the protected volume). */
     public static void enterStructure() { DEPTH.get()[0]++; }
 
     public static void exitStructure() { int[] d = DEPTH.get(); if (d[0] > 0) d[0]--; }
 
-    /** {@code true} if a FEATURE write at (x,y,z) should be vetoed — not inside a structure's own
-     *  placement and the position lies in the protected volume. */
+    public static void enterFeature() {
+        int[] f = FEATURE.get();
+        if (f[0]++ == 0) f[1] = 0;
+    }
+
+    public static void exitFeature() {
+        int[] f = FEATURE.get();
+        if (f[0] > 0 && --f[0] == 0) f[1] = 0;
+    }
+
+    /** Decided once per feature on its first block, so no feature is placed by halves. */
     public static boolean blocksFeatureAt(int x, int y, int z) {
         if (DEPTH.get()[0] > 0) return false;          // a structure is building itself → allow
         ProtectedVolume v = VOLUME.get();
-        return v != null && v.contains(x, y, z);
+        int[] f = FEATURE.get();
+        if (f[0] == 0) return v != null && v.contains(x, y, z);
+        if (f[1] == 0) f[1] = (v != null && v.contains(x, y, z)) ? 2 : 1;
+        return f[1] == 2;
     }
 
     /** {@code true} if (x,y,z) is inside a carve structure's footprint (gellid-void barred here); a structure's own

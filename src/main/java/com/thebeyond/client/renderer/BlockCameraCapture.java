@@ -4,6 +4,7 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.thebeyond.TheBeyond;
+import com.thebeyond.client.camera.CameraAim;
 import com.thebeyond.client.compat.ShaderCompatLib;
 import com.thebeyond.mixin.client.CameraAccessor;
 import com.thebeyond.mixin.client.MinecraftMainTargetAccessor;
@@ -11,6 +12,7 @@ import org.lwjgl.opengl.GL11;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -47,7 +49,7 @@ public final class BlockCameraCapture {
 
     @FunctionalInterface
     public interface SecondaryViewRenderHook {
-        boolean render(net.minecraft.client.DeltaTracker delta);
+        boolean render(net.minecraft.client.DeltaTracker delta, boolean selfPov);
     }
 
     private BlockCameraCapture() {
@@ -72,6 +74,10 @@ public final class BlockCameraCapture {
     /** Other render code must bail while true, to avoid nesting renderLevel. */
     public static boolean isCapturing() {
         return capturing;
+    }
+
+    public static boolean isCapturingSelf() {
+        return capturing && current != null && current.selfPov;
     }
 
     /** Call from RenderFrameEvent.Pre, outside {@code renderLevel}. One capture per frame. */
@@ -131,6 +137,12 @@ public final class BlockCameraCapture {
 
         RenderTarget realMain = mc.getMainRenderTarget();
         Marker throwaway = null;
+        LocalPlayer aimer = req.selfPov ? mc.player : null;
+        CameraAim.View shot = aimer != null ? CameraAim.shot() : null;
+        float savedYRot = aimer != null ? aimer.getYRot() : 0f;
+        float savedYRotO = aimer != null ? aimer.yRotO : 0f;
+        float savedXRot = aimer != null ? aimer.getXRot() : 0f;
+        float savedXRotO = aimer != null ? aimer.xRotO : 0f;
         capturing = true;
         try {
             // Both paths force first person and hide the hand/outline so neither leaks into the photo.
@@ -155,6 +167,13 @@ public final class BlockCameraCapture {
                 camAcc.the_beyond$setEyeHeightOld(0.0f);
             }
             // Handheld (selfPov): keep the player as camera — first person hides the model and uses their eyes/look.
+            if (shot != null) {
+                // Look where the viewfinder was at the click, not where the mouse went during the server round trip.
+                aimer.setYRot(shot.yaw());
+                aimer.yRotO = shot.yaw();
+                aimer.setXRot(shot.pitch());
+                aimer.xRotO = shot.pitch();
+            }
 
             ((MinecraftMainTargetAccessor) mc).the_beyond$setMainRenderTarget(target);
             target.setClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -165,7 +184,7 @@ public final class BlockCameraCapture {
             SecondaryViewRenderHook hook = secondaryViewHook;
             boolean complete;
             if (hook != null) {
-                complete = hook.render(delta);
+                complete = hook.render(delta, req.selfPov);
             } else {
                 mc.gameRenderer.renderLevel(delta);
                 complete = true;
@@ -186,6 +205,12 @@ public final class BlockCameraCapture {
             gr.setRenderHand(true);
             gr.setRenderBlockOutline(true);
             mc.cameraEntity = savedCamEntity;
+            if (aimer != null) {
+                aimer.setYRot(savedYRot);
+                aimer.yRotO = savedYRotO;
+                aimer.setXRot(savedXRot);
+                aimer.xRotO = savedXRotO;
+            }
             mc.options.setCameraType(savedCamType);
             RenderSystem.viewport(0, 0, mc.getWindow().getWidth(), mc.getWindow().getHeight());
             realMain.bindWrite(true);

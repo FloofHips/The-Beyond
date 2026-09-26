@@ -2,13 +2,11 @@ package com.thebeyond.mixin;
 
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.registry.BeyondBlocks;
-import com.thebeyond.common.worldgen.features.AuroraciteLayerDTFeature;
 import com.thebeyond.common.worldgen.features.AuroraciteLayerFeature;
 import com.thebeyond.compat.dt.DimensionalTearsCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.WorldGenLevel;
@@ -37,7 +35,6 @@ public abstract class AuroraciteLayerFillMixin {
 
     private static volatile Boolean dtLoaded;
     private static volatile BlockState cachedDTFluid;
-    private static volatile SimplexNoise fallbackNoise;
 
     private static final AtomicBoolean LOGGED_FIRST_FIRE = new AtomicBoolean(false);
 
@@ -51,8 +48,7 @@ public abstract class AuroraciteLayerFillMixin {
 
         if (level.getLevel().dimension() != Level.END) return;
 
-        SimplexNoise noise = resolveNoise(level);
-        if (noise == null) return; // defensive: resolveNoise always returns non-null
+        SimplexNoise noise = AuroraciteLayerFeature.noiseFor(level.getSeed());
 
         final int minY = level.getMinBuildHeight();
         final int chunkX = chunk.getPos().getMinBlockX();
@@ -65,11 +61,8 @@ public abstract class AuroraciteLayerFillMixin {
 
         if (LOGGED_FIRST_FIRE.compareAndSet(false, true)) {
             TheBeyond.LOGGER.info(
-                    "[AuroraciteLayerFillMixin] first fire: minY={}, dtLoaded={}, dtFluidAir={}, noiseSource={}",
-                    minY, hasDT, dtFluid.isAir(),
-                    (AuroraciteLayerDTFeature.getNoiseInstance() != null ? "DT-feature"
-                            : AuroraciteLayerFeature.getNoiseInstance() != null ? "regular-feature"
-                            : "fallback"));
+                    "[AuroraciteLayerFillMixin] first fire: minY={}, dtLoaded={}, dtFluidAir={}",
+                    minY, hasDT, dtFluid.isAir());
         }
 
         final BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
@@ -114,24 +107,6 @@ public abstract class AuroraciteLayerFillMixin {
     private static void the_beyond$stripVegetation(ChunkAccess chunk, BlockPos pos) {
         if (!chunk.getBlockState(pos).isAir()) {
             chunk.setBlockState(pos, Blocks.AIR.defaultBlockState(), false);
-        }
-    }
-
-    /** Prefers either feature's live noise for cross-biome continuity; falls back to a JVM-cached, world-seeded noise. */
-    private static SimplexNoise resolveNoise(WorldGenLevel level) {
-        SimplexNoise n = AuroraciteLayerDTFeature.getNoiseInstance();
-        if (n != null) return n;
-        n = AuroraciteLayerFeature.getNoiseInstance();
-        if (n != null) return n;
-
-        SimplexNoise cached = fallbackNoise;
-        if (cached != null) return cached;
-        synchronized (AuroraciteLayerFillMixin.class) {
-            if (fallbackNoise == null) {
-                long seed = level.getLevel().getSeed();
-                fallbackNoise = new SimplexNoise(RandomSource.create(seed));
-            }
-            return fallbackNoise;
         }
     }
 

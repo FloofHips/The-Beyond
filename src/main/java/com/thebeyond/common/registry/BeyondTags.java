@@ -28,6 +28,8 @@ public class BeyondTags {
     public static final TagKey<Block> PORTELAIN_BLOCKS = createBlock("portelain_blocks");
     public static final TagKey<Block> OBIROOT_BLOCKS = createBlock("obiroot_blocks");
     public static final TagKey<Block> METAL_BLOCKS = createBlock("metal_blocks");
+    /** Rock the End's islands are made of. A structure piece built only from it is ground the host can replace. */
+    public static final TagKey<Block> FOUNDATION_ROCK = createBlock("foundation_rock");
     public static final TagKey<Block> BRITTLE_METAL_BLOCKS = createBlock("brittle_metal_blocks");
     public static final TagKey<Block> PEARL_BLOCKS = createBlock("pearl_blocks");
     public static final TagKey<Block> NACRE = createBlock("nacre");
@@ -42,6 +44,8 @@ public class BeyondTags {
 
     public static final TagKey<Structure> BONFIRE_LOCATABLE = createStructure("bonfire_locatable");
     public static final TagKey<Structure> NOMAD_PRAYER_SITE = createStructure("nomad_prayer_site");
+    public static final TagKey<Structure> BASE_PEDESTAL = createStructure("base_pedestal");
+    public static final TagKey<Structure> KNEE = createStructure("knee");
 
     public static final TagKey<Biome> IS_FOGGY = createBiome("is_foggy");
     public static final TagKey<Biome> IS_EXTRA_FOGGY = createBiome("is_extra_foggy");

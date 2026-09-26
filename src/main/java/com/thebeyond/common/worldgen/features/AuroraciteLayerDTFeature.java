@@ -7,7 +7,6 @@ import com.thebeyond.compat.dt.DimensionalTearsCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -25,7 +24,6 @@ public class AuroraciteLayerDTFeature extends Feature<NoneFeatureConfiguration> 
 
     private static final ResourceLocation DT_FLUID_ID = ResourceLocation.parse("dimensional_tears:dimensional_tears");
 
-    private static volatile SimplexNoise noise;
     private static volatile BlockState cachedDTFluid;
 
     // Diagnostic: logs the first minY seen per world load to record which dim_type won.
@@ -35,24 +33,7 @@ public class AuroraciteLayerDTFeature extends Feature<NoneFeatureConfiguration> 
         super(codec);
     }
 
-    private static SimplexNoise getNoise(RandomSource random) {
-        if (noise == null) {
-            synchronized (AuroraciteLayerDTFeature.class) {
-                if (noise == null) {
-                    noise = new SimplexNoise(random);
-                }
-            }
-        }
-        return noise;
-    }
-
-    /** Returns the noise instance, or {@code null} if not yet initialized. */
-    public static SimplexNoise getNoiseInstance() {
-        return noise;
-    }
-
-    public static void resetNoise() {
-        noise = null;
+    public static void reset() {
         cachedDTFluid = null;
         loggedMinY = Integer.MIN_VALUE;
     }
@@ -87,8 +68,7 @@ public class AuroraciteLayerDTFeature extends Feature<NoneFeatureConfiguration> 
     public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
         WorldGenLevel level = context.level();
         BlockPos origin = context.origin();
-        RandomSource random = context.random();
-        SimplexNoise simplex = getNoise(random);
+        SimplexNoise simplex = AuroraciteLayerFeature.noiseFor(level.getSeed());
         BlockState dtFluid = getDTFluidState();
         boolean placeLiquid = !dtFluid.isAir() && DimensionalTearsCompat.oceanEnabled();
 

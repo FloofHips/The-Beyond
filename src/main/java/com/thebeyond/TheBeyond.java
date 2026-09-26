@@ -70,7 +70,9 @@ public class TheBeyond {
         modContainer.registerConfig(ModConfig.Type.COMMON, BeyondConfig.COMMON_CONFIG);
         modContainer.registerConfig(ModConfig.Type.CLIENT, BeyondConfig.CLIENT_CONFIG);
 
-        modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+        if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
+            modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+        }
     }
 
     private void addBuiltinPacks(AddPackFindersEvent event) {
@@ -122,7 +124,24 @@ public class TheBeyond {
         }
     }
 
+    /** End City clears rock with template air the terrain veto blocks, so its volume is carved instead. */
+    private static void hostVanillaEndStructures() {
+        net.minecraft.resources.ResourceLocation endCity =
+                net.minecraft.resources.ResourceLocation.withDefaultNamespace("end_city");
+        com.thebeyond.api.worldgen.BeyondForeignStructureProfiles.register(endCity,
+                com.thebeyond.api.worldgen.StructureIntegrationProfile
+                        .builder(com.thebeyond.api.worldgen.StructureIntegrationProfile.Anchor.SEATED)
+                        .rejectUnfit(false)
+                        .carve(true)
+                        .connectDetached(true)
+                        .basePedestal(true)
+                        .build());
+        com.thebeyond.api.worldgen.BeyondForeignStructureProfiles.markEmbedded(endCity);
+        com.thebeyond.api.worldgen.BeyondForeignStructureProfiles.markAutoSeatedProjected(endCity);
+    }
+
     private void commonSetup(final FMLCommonSetupEvent event) {
+        hostVanillaEndStructures();
         if (ModList.get().isLoaded("create")) {
             com.thebeyond.compat.create.BeyondCreateCompat.register();
         }

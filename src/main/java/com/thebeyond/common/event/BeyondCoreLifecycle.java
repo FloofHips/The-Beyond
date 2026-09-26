@@ -40,8 +40,15 @@ public final class BeyondCoreLifecycle {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void fireAboutToStart(ServerAboutToStartEvent event) {
-        NeoForge.EVENT_BUS.post(new BeyondServerLifecycleEvent.AboutToStart(
-                event.getServer(), BeyondTerrainState.isActive()));
+        // Addons host their own structure types in this event, so what they mark here is warm-up too.
+        com.thebeyond.api.worldgen.BeyondForeignStructureProfiles.warming(true);
+        try {
+            NeoForge.EVENT_BUS.post(new BeyondServerLifecycleEvent.AboutToStart(
+                    event.getServer(), BeyondTerrainState.isActive()));
+            com.thebeyond.common.worldgen.AutoHostWarmUp.run(event.getServer());
+        } finally {
+            com.thebeyond.api.worldgen.BeyondForeignStructureProfiles.warming(false);
+        }
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
@@ -58,8 +65,12 @@ public final class BeyondCoreLifecycle {
         BeyondEndChunkGenerator.resetNoises();
         com.thebeyond.common.worldgen.BeyondGenDiagnostics.reset();   // re-arm one-shot gen logs for next world
         com.thebeyond.api.worldgen.BeyondForeignStructureProfiles.clearLayerDistributed();   // drop per-placement distributed decisions (no cross-world leak)
+        com.thebeyond.common.worldgen.AutoHostWarmUp.reset();
+        com.thebeyond.common.worldgen.BeyondStructureArbiter.reset();
+        com.thebeyond.api.compat.PancakeScan.clearCache();
+        com.thebeyond.common.worldgen.StructureShape.reset();
         AuroraciteLayerFeature.resetNoise();
-        AuroraciteLayerDTFeature.resetNoise();
+        AuroraciteLayerDTFeature.reset();
         AnchorLeggingsItem.clearCreativeTracking();
     }
 }

@@ -9,12 +9,14 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 public class BleedingThornsFeature extends ThornsFeature {
     public BleedingThornsFeature(Codec<NoneFeatureConfiguration> codec) {
         super(codec);
     }
 
-    public boolean placeThorns(BlockPos pos, WorldGenLevel level, RandomSource randomsource) {
+    public boolean placeThorns(BlockPos pos, WorldGenLevel level, RandomSource randomsource, List<BlockPos> thornsPos) {
 
         int radiusX = randomsource.nextInt(2, 6);
         int radiusY = randomsource.nextInt(1, 4);
@@ -30,13 +32,13 @@ public class BleedingThornsFeature extends ThornsFeature {
                 for (int y = -radiusY; y <= radiusY; y++) {
                     BlockPos offset = pos.offset(x, y, z);
                     if (randomsource.nextFloat() > 0.3f && ((x * x * ry * rz) + (y * y * rx * rz) + (z * z * rx * ry) <= total) && (level.getBlockState(offset.below()).isSolid() || level.getBlockState(offset.below()).is(getBlockState().getBlock()))) {
-                        placeThorn(level, offset);
+                        placeThorn(level, offset, thornsPos);
                     }
                 }
             }
         }
 
-        cleanUpBlockstates(level);
+        cleanUpBlockstates(level, thornsPos);
         return true;
     }
 

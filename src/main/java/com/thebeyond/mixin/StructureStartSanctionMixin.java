@@ -8,11 +8,13 @@ import com.thebeyond.api.worldgen.ForeignStructureWrite;
 import com.thebeyond.api.worldgen.SanctionedWrite;
 import com.thebeyond.api.worldgen.StructureIntegrationProfile;
 import com.thebeyond.common.worldgen.BeyondEndChunkGenerator;
+import com.thebeyond.common.worldgen.BeyondGenDiagnostics;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Blocks;
@@ -34,21 +36,20 @@ public abstract class StructureStartSanctionMixin {
             Operation<Void> original) {
         // Gate on the chunkgen instance, not a session flag, so this never fires in another mod's End.
         boolean beyondGen = chunkGenerator instanceof BeyondEndChunkGenerator;
-        boolean own = false;
-        if (beyondGen) {
+        // Sanctioned across the whole End: the auroracite floor protection also runs in fallback Ends.
+        ResourceLocation key = null;
+        if (beyondGen || level.getLevel().dimension() == Level.END) {
             try {
-                StructureStart self = (StructureStart) (Object) this;
-                ResourceLocation key = level.registryAccess()
+                key = level.registryAccess()
                         .registryOrThrow(Registries.STRUCTURE)
-                        .getKey(self.getStructure());
-                own = key != null && "the_beyond".equals(key.getNamespace());
+                        .getKey(((StructureStart) (Object) this).getStructure());
             } catch (Throwable ignored) {
-                own = false;
+                key = null;
             }
         }
-        // A pancake-seated landmark anchored to a pre-carve pancake that a foreign carve-profiled structure
-        // later empties would float glued inside that cavity — skip placeInChunk entirely to avoid it.
-        if (own && the_beyond$isPancakeSeatedLandmark(level, (StructureStart) (Object) this)
+        boolean own = key != null && "the_beyond".equals(key.getNamespace());
+        // A seated landmark whose pancake a foreign carve later empties would float in the cavity, so it is skipped.
+        if (beyondGen && own && the_beyond$isPancakeSeatedLandmark(key)
                 && ((BeyondEndChunkGenerator) chunkGenerator)
                         .the_beyond$landmarkInForeignCavity(structureManager, (StructureStart) (Object) this, chunkPos)) {
             return;   // draws nothing this chunk
@@ -58,25 +59,55 @@ public abstract class StructureStartSanctionMixin {
         // this structure build inside its own bbox.
         if (beyondGen) FeatureGuard.enterStructure();
         boolean foreign = beyondGen && !own;
-        if (foreign) ForeignStructureWrite.enter();
+        ForeignStructureWrite.Scope displaced = null;
+        if (foreign) {
+            ForeignStructureWrite.enter();
+            displaced = ForeignStructureWrite.openScope(key != null ? key.toString() : "<unknown>");
+        }
         try {
             original.call(level, structureManager, chunkGenerator, random, boundingBox, chunkPos);
             // Inside the scope: outside it the feature guard vetoes the swap on every column the carve cleared.
-            if (foreign) the_beyond$coverGroundDirt(level, boundingBox);
+            if (foreign) the_beyond$coverGroundDirt(level, boundingBox, key);
         } finally {
-            if (foreign) ForeignStructureWrite.exit();
+            if (foreign) {
+                the_beyond$logCarveLedger();
+                ForeignStructureWrite.closeScope(displaced);
+                ForeignStructureWrite.exit();
+            }
             if (beyondGen) FeatureGuard.exitStructure();
             if (own) SanctionedWrite.exit();
         }
     }
 
-    private void the_beyond$coverGroundDirt(WorldGenLevel level, BoundingBox writeBox) {
+    /** Keyed per counter, so a first slice touching only terrain cannot hide whether the self-overwrite path fired. */
+    private static void the_beyond$logCarveLedger() {
+        ForeignStructureWrite.Scope scope = ForeignStructureWrite.currentScope();
+        if (scope == null) return;
+        if (scope.selfOverwrite > 0
+                && BeyondGenDiagnostics.loggedCarveLedger.add(scope.structureId + ":self")) {
+            com.thebeyond.TheBeyond.LOGGER.info(
+                    "[IslandCarveProtection] {}: self-overwrite allowed {} (first slice)",
+                    scope.structureId, scope.selfOverwrite);
+        }
+        if (scope.featureVeto > 0
+                && BeyondGenDiagnostics.loggedCarveLedger.add(scope.structureId + ":feature")) {
+            com.thebeyond.TheBeyond.LOGGER.info(
+                    "[FeatureGuard] {}: {} of its OWN solid blocks refused while it was placing itself"
+                    + " (first slice); a nonzero count here is the structure losing its own geometry",
+                    scope.structureId, scope.featureVeto);
+        }
+        if (scope.terrainVeto > 0
+                && BeyondGenDiagnostics.loggedCarveLedger.add(scope.structureId + ":veto")) {
+            com.thebeyond.TheBeyond.LOGGER.info(
+                    "[IslandCarveProtection] {}: terrain veto {} (first slice)",
+                    scope.structureId, scope.terrainVeto);
+        }
+    }
+
+    private void the_beyond$coverGroundDirt(WorldGenLevel level, BoundingBox writeBox, ResourceLocation key) {
         StructureStart self = (StructureStart) (Object) this;
-        ResourceLocation key;
         StructureIntegrationProfile profile;
         try {
-            key = level.registryAccess()
-                    .registryOrThrow(Registries.STRUCTURE).getKey(self.getStructure());
             profile = BeyondForeignStructureProfiles.resolve(self.getStructure(), key);
         } catch (Throwable ignored) {
             return;
@@ -104,7 +135,7 @@ public abstract class StructureStartSanctionMixin {
             }
         }
         if (key != null && swapped > 0
-                && com.thebeyond.common.worldgen.BeyondGenDiagnostics.loggedDirtCover.add(key.toString())) {
+                && BeyondGenDiagnostics.loggedDirtCover.add(key.toString())) {
             com.thebeyond.TheBeyond.LOGGER.info(
                     "[Beyond] dirt-cover {} swapped {} ground block(s) -> end_stone (first chunk slice)", key, swapped);
         }
@@ -112,16 +143,10 @@ public abstract class StructureStartSanctionMixin {
 
     /** True for landmarks rerouted onto a far-field pancake top (aberrant_remains / arch / bonfire).
      *  Central structures anchor to the floor/void instead, so they're excluded. */
-    private static boolean the_beyond$isPancakeSeatedLandmark(WorldGenLevel level, StructureStart self) {
-        try {
-            ResourceLocation key = level.registryAccess()
-                    .registryOrThrow(Registries.STRUCTURE).getKey(self.getStructure());
-            if (key == null) return false;
-            String p = key.getPath();
-            return "aberrant_remains".equals(p) || "arch".equals(p) || "bonfire".equals(p);
-        } catch (Throwable ignored) {
-            return false;
-        }
+    private static boolean the_beyond$isPancakeSeatedLandmark(ResourceLocation key) {
+        if (key == null) return false;
+        String p = key.getPath();
+        return "aberrant_remains".equals(p) || "arch".equals(p) || "bonfire".equals(p);
     }
 
     private static boolean the_beyond$isOverworldGround(BlockState s) {

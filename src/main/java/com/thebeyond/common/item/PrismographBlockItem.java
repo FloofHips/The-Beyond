@@ -84,7 +84,7 @@ public class PrismographBlockItem extends BlockItem {
             if (!CameraAim.isAiming()) {
                 CameraAim.set(true);
             } else {
-                CameraAim.clear();
+                CameraAim.shoot();
                 PacketDistributor.sendToServer(new CameraShootPayload(hand));
             }
         }

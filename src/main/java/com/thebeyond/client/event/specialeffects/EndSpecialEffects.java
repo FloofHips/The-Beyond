@@ -45,6 +45,13 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
     private static final int SKY_GRADIENT_LAYERS = 16;
     private static final float SKY_RADIUS = 100.0F;
 
+    /** Small enough that every crack corner stays inside the far plane, even at the lowest render distance. */
+    static final float CRACK_RADIUS = 50.0F;
+    static final float CRACK_SIZE_MIN = 1.0F;
+    static final float CRACK_SIZE_MAX = 8.0F;
+    static final float CRACK_SIZE_FLASH = 2.0F;
+    static final int MIN_RENDER_DISTANCE = 2;
+
     // Custom sky colors (RGBA)
     private static final Vector4f HORIZON_COLOR = new Vector4f(0.8f, 0.3f, 0.8f, 1.0f); // Blue-ish
     private static final Vector4f BLACK_COLOR = new Vector4f(0.1f, 0.0f, 0.2f, 1.0f); // Black
@@ -129,18 +136,11 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
             );
         }
 
-        // Embeddium/Sodium compat: out-of-range float channels wrap modulo-style
-        // instead of clamping like vanilla (e.g. -0.3 -> 0.7, 1.3 -> 0.3), which
-        // tints the fog green. Clamp explicitly before returning so Embeddium/Sodium
-        // never sees a value outside [0, 1]. Only applied when a modded renderer is
-        // present — vanilla handles out-of-range channels gracefully.
-        if (ShaderCompatLib.isModdedRendererLoaded()) {
-            return new Vec3(
-                    Mth.clamp(result.x, 0.0, 1.0),
-                    Mth.clamp(result.y, 0.0, 1.0),
-                    Mth.clamp(result.z, 0.0, 1.0));
-        }
-        return result;
+        // Always clamped: rain and thunder push the End green negative and setColor would wrap it into a vivid green sky.
+        return new Vec3(
+                Mth.clamp(result.x, 0.0, 1.0),
+                Mth.clamp(result.y, 0.0, 1.0),
+                Mth.clamp(result.z, 0.0, 1.0));
     }
 
     @Nullable
@@ -208,16 +208,11 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         );
 
 
-        // Embeddium/Sodium compat: out-of-range float channels wrap modulo-style
-        // instead of clamping like vanilla (e.g. -0.3 -> 0.7, 1.3 -> 0.3), which
-        // tints the lightmap green. Clamp explicitly so Embeddium/Sodium never sees
-        // a value outside [0, 1]. Only applied when a modded renderer is present.
-        if (ShaderCompatLib.isModdedRendererLoaded()) {
-            colors.set(
-                    Mth.clamp(colors.x(), 0.0f, 1.0f),
-                    Mth.clamp(colors.y(), 0.0f, 1.0f),
-                    Mth.clamp(colors.z(), 0.0f, 1.0f));
-        }
+        // Always clamped like the fog: thunder adds skyLight unclamped and the packing wraps instead of clamping.
+        colors.set(
+                Mth.clamp(colors.x(), 0.0f, 1.0f),
+                Mth.clamp(colors.y(), 0.0f, 1.0f),
+                Mth.clamp(colors.z(), 0.0f, 1.0f));
     }
 
     public Vec3 getBiomeColor(ClientLevel level) {
@@ -321,24 +316,35 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
 
 
     private void createCrack(ClientLevel level) {
-        double theta = 2 * Math.PI * level.random.nextDouble();
-        double phi = Math.acos(2 * level.random.nextDouble() - 1);
-        double radius = 500;  // Far enough to appear in sky
-
-        double x = radius * Math.sin(phi) * Math.cos(theta);
-        double y = radius * Math.sin(phi) * Math.sin(theta);
-        double z = radius * Math.cos(phi);
-
-        Vec3 position = new Vec3(x, y + 500, z);
-
-        int size = 10 + level.random.nextInt(70);
-
-        thunderCracks.add(new ThunderCrack(position, level.random.nextFloat(), size));
-
+        Vec3 position = the_beyond$crackPosition(level.random.nextDouble(), level.random.nextDouble());
+        float size = the_beyond$crackSize(level.random.nextFloat());
+        // Full life on creation: seeding from the noise faded about one crack in six before it was ever seen.
+        thunderCracks.add(new ThunderCrack(position, 1.0f, size));
         playThunderSound(level, size, 0.05f, 0.02f);
     }
 
-    private static void playThunderSound(ClientLevel level, int size, float loudVolume, float lowVolume) {
+    static Vec3 the_beyond$crackPosition(double uTheta, double uPhi) {
+        double theta = 2 * Math.PI * uTheta;
+        double phi = Math.acos(2 * uPhi - 1);
+        double x = CRACK_RADIUS * Math.sin(phi) * Math.cos(theta);
+        double y = CRACK_RADIUS * Math.sin(phi) * Math.sin(theta);
+        double z = CRACK_RADIUS * Math.cos(phi);
+        return new Vec3(x, y + CRACK_RADIUS, z);
+    }
+
+    static float the_beyond$crackSize(float u) {
+        return CRACK_SIZE_MIN + u * (CRACK_SIZE_MAX - CRACK_SIZE_MIN);
+    }
+
+    static double the_beyond$maxCrackCornerDistance() {
+        return 2.0 * CRACK_RADIUS + Math.sqrt(2.0) * CRACK_SIZE_MAX;
+    }
+
+    static double the_beyond$depthFar(int renderDistanceChunks) {
+        return renderDistanceChunks * 16.0 * 4.0;
+    }
+
+    private static void playThunderSound(ClientLevel level, float size, float loudVolume, float lowVolume) {
         if (Minecraft.getInstance().isPaused()) return;
 
         Entity cameraEntity = Minecraft.getInstance().cameraEntity;
@@ -347,7 +353,8 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         BlockPos blockPos = cameraEntity.blockPosition();
         if (blockPos == null) return;
 
-        level.playLocalSound(cameraEntity, BeyondSoundEvents.VOID_BURST.get(), SoundSource.WEATHER, cameraEntity.level().canSeeSky(blockPos) ? loudVolume : lowVolume, (80 - size)/ 80f);
+        level.playLocalSound(cameraEntity, BeyondSoundEvents.VOID_BURST.get(), SoundSource.WEATHER, cameraEntity.level().canSeeSky(blockPos) ? loudVolume : lowVolume,
+                (CRACK_SIZE_MAX - size) / CRACK_SIZE_MAX);
     }
 
     private void drawTopSkyGradient(PoseStack poseStack, Tesselator tesselator, ClientLevel level) {
@@ -503,24 +510,16 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         if (level.random.nextInt(500) == 0 && crack.lifeTime < 0.6f) {
             playThunderSound(level, crack.size, 0.1f, 0.05f);
             crack.lifeTime = 1;
-            crack.size += 20;
+            // Capped: uncapped growth walked the quad's corners back out through the far plane.
+            crack.size = Math.min(CRACK_SIZE_MAX, crack.size + CRACK_SIZE_FLASH);
         }
 
         poseStack.pushPose();
         RenderSystem.setShaderColor(1, 1, 1, Math.min(crack.lifeTime, 0.8f));
         //RenderSystem.setShaderColor(1, 1, 1, 0.5f);
 
-        Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
-        Vec3 cameraPos = camera.getPosition();
-
-        Vec3 direction = new Vec3(cameraPos.x - crack.position.x, cameraPos.y - crack.position.y, cameraPos.z - crack.position.z).normalize();
-
-        double yaw = Math.toDegrees(Math.atan2(-direction.x, direction.z));
-
-        double pitch = Math.toDegrees(Math.asin(direction.y));
-
-        poseStack.mulPose(Axis.YP.rotationDegrees((float) 90));
-        poseStack.mulPose(Axis.ZP.rotationDegrees((float) 0));
+        // crack.position is already camera-relative in sky space, so the billboard is built from it alone.
+        poseStack.mulPose(Axis.YP.rotationDegrees(90.0f));
 
         Matrix4f matrix4f3 = poseStack.last().pose();
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
@@ -547,12 +546,12 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
     public static class ThunderCrack {
         public Vec3 position = Vec3.ZERO;
         public float lifeTime = 0;
-        public int size = 0;
+        public float size = 0;
 
-        ThunderCrack(Vec3 position, float lifeTime, int size) {
+        ThunderCrack(Vec3 position, float lifeTime, float size) {
             this.position = position;
             this.lifeTime = lifeTime;
             this.size = size;
         }
     }
-}
+}

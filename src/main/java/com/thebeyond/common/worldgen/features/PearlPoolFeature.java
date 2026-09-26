@@ -26,9 +26,6 @@ public class PearlPoolFeature extends Feature<NoneFeatureConfiguration> {
         super(codec);
     }
 
-    Map<BlockPos, Integer> pearlPos = new HashMap<>();
-    BlockPos holePos;
-
     @Override
     public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
         WorldGenLevel level = context.level();
@@ -70,24 +67,25 @@ public class PearlPoolFeature extends Feature<NoneFeatureConfiguration> {
     }
 
     private boolean createPool(WorldGenLevel level, RandomSource source, int radius, int test, BlockPos start) {
+        // Local to the pool, since one Feature instance serves every placement and, with parallel chunk generation, several threads.
+        Map<BlockPos, Integer> pearlPos = new HashMap<>();
         if (radius == 1) {
             for (int x = -1; x <= 0; x++) {
                 for (int z = -1; z <= 0; z++) {
-                    test = PlaceColumn(level, source, start, x, z, test);
+                    test = PlaceColumn(level, source, start, x, z, test, pearlPos);
                 }
             }
         } else {
             for (int x = -radius; x <= radius; x++) {
                 for (int z = -radius; z <= radius; z++) {
                     if ((x * x + z * z) <= radius) {
-                        test = PlaceColumn(level, source, start, x, z, test);
+                        test = PlaceColumn(level, source, start, x, z, test, pearlPos);
                     }
                 }
             }
         }
 
-        placePearlRim(level, source);
-        pearlPos.clear();
+        placePearlRim(level, source, pearlPos);
 
         if (radius < 2) return true;
 
@@ -129,7 +127,7 @@ public class PearlPoolFeature extends Feature<NoneFeatureConfiguration> {
         }
     }
 
-    private int PlaceColumn(WorldGenLevel level, RandomSource source, BlockPos start, int x, int z, int test) {
+    private int PlaceColumn(WorldGenLevel level, RandomSource source, BlockPos start, int x, int z, int test, Map<BlockPos, Integer> pearlPos) {
         this.setBlock(level, start.offset(x, 3, z), Blocks.AIR.defaultBlockState());
         this.setBlock(level, start.offset(x, 2, z), Blocks.AIR.defaultBlockState());
         this.setBlock(level, start.offset(x, 1, z), Blocks.AIR.defaultBlockState());
@@ -148,7 +146,7 @@ public class PearlPoolFeature extends Feature<NoneFeatureConfiguration> {
         return test;
     }
 
-    private void placePearlRim(WorldGenLevel level, RandomSource random) {
+    private void placePearlRim(WorldGenLevel level, RandomSource random, Map<BlockPos, Integer> pearlPos) {
         Map<BlockPos, Integer> currentPearlPos = new HashMap<>(pearlPos);
 
         for (BlockPos pos : currentPearlPos.keySet()) {
