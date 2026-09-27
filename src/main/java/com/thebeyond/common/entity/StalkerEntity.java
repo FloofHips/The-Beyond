@@ -17,7 +17,9 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
+import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -26,9 +28,11 @@ import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -178,7 +182,7 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
             boolean b = (this.tickCount % 3) == 0;
 
             if (yetToBud && b) {
-                Vec3 delta = getTargetDelta();
+                Vec3 delta = getLivingDelta();//getTargetDelta();
                 Direction d = getTargetDirection(delta);
 
                 if (d == null) {
@@ -195,7 +199,7 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
                 BlockPos pos = this.blockPosition();
                 if (isSpaceOccupied(pos, d)) {
                     spawnChild(pos, d);
-                    if (random.nextInt(10)==0) spawnChild(pos, getTargetDirection(delta));
+                    if (random.nextInt(10)==0) spawnChild(pos, d);
                 } else {
                     level().playSound(null, pos.getX(), pos.getY(), pos.getZ(), SoundEvents.ITEM_BREAK, SoundSource.HOSTILE);
                 }
@@ -293,6 +297,26 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
             return target.position().subtract(this.position());
         }
         return this.originalTarget.subtract(this.position());
+    }
+
+    private Vec3 getLivingDelta() {
+
+        LivingEntity target = level().getNearestPlayer(this, 8);
+
+        if (target == null) {
+            target = level().getNearestEntity(
+                    LivingEntity.class,
+                    TargetingConditions.forCombat().range(32.0).selector(entity -> !(((LivingEntity)entity) instanceof StalkerEntity)),
+                    null,
+                    this.getX(),
+                    this.getY(),
+                    this.getZ(),
+                    this.getBoundingBox().inflate(10.0, 10.0, 10.0)
+            );
+        }
+
+        if (target == null) return null;
+        return target.position().subtract(this.position());
     }
 
     private Direction getTargetDirection(Vec3 delta) {

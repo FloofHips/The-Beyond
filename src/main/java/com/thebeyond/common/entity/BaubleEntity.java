@@ -38,6 +38,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.common.Tags;
+import net.neoforged.neoforge.fluids.FluidType;
 import org.joml.Vector3f;
 
 import java.awt.*;
@@ -131,7 +132,7 @@ public class BaubleEntity extends LivingBlock {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        if (source.getEntity()!= null)
+        if (source.getEntity()!= null && source.getEntity() instanceof Player)
             baubleHurt();
         return super.hurt(source, amount);
     }
@@ -150,7 +151,7 @@ public class BaubleEntity extends LivingBlock {
 
     @Override
     protected float getContactPitchModifier() {
-        return getDepth()*getHeight()*getWidth()/(3*8f);
+        return 2 - ((getDepth() + getHeight() + getWidth()) / 3f) / 8f;
     }
 
     @Override
@@ -179,6 +180,8 @@ public class BaubleEntity extends LivingBlock {
     private void attemptFuse() {
         AABB detectionBox = this.getBoundingBox().inflate(0.5);
         List<BaubleEntity> entities = level().getEntitiesOfClass(BaubleEntity.class, detectionBox);
+        entities.removeIf(e -> e.getType().equals(BeyondEntityTypes.TRINKET.get()));
+
         if (entities.size() > 5) {
             if (level() instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(new CloudColorTransitionOptions(
@@ -216,6 +219,11 @@ public class BaubleEntity extends LivingBlock {
             return InteractionResult.SUCCESS;
         }
         return super.mobInteract(player, hand);
+    }
+
+    @Override
+    public boolean canDrownInFluidType(FluidType type) {
+        return false;
     }
 
     public void tame(Item item, Player player) {

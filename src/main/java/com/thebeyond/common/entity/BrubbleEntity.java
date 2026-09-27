@@ -5,9 +5,11 @@ import com.thebeyond.client.particle.CircleColorTransitionOptions;
 import com.thebeyond.client.particle.CloudColorTransitionOptions;
 import com.thebeyond.client.particle.SmokeColorTransitionOptions;
 import com.thebeyond.common.entity.util.SlowRotFlyingMoveControl;
+import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.util.AOEManager;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -23,6 +25,8 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.control.LookControl;
+import net.minecraft.world.entity.ai.control.MoveControl;
 import net.minecraft.world.entity.ai.control.SmoothSwimmingLookControl;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
@@ -51,8 +55,13 @@ public class BrubbleEntity extends PathfinderMob {
     private int sitCooldown = 0;
     public BrubbleEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
-        this.moveControl = new SlowRotFlyingMoveControl(this, 10, false);
-        this.lookControl = new SmoothSwimmingLookControl(this, 10);
+        if (hasRocket()) {
+            this.moveControl = new SlowRotFlyingMoveControl(this, 10, false);
+            this.lookControl = new SmoothSwimmingLookControl(this, 10);
+        } else {
+            this.moveControl = new MoveControl(this);
+            this.lookControl = new LookControl(this);
+        }
     }
     protected PathNavigation createNavigation(Level level) {
         if (hasRocket()) {
@@ -238,6 +247,11 @@ public class BrubbleEntity extends PathfinderMob {
         setStanding(true);
         setSulking(true);
         this.resetFallDistance();
+        this.playSound(SoundEvents.BASALT_BREAK, 1.0F, ((level().random.nextFloat() - level().random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
+        if (level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.GAUSSANITE.get().defaultBlockState()), this.getX(), this.getY(0.6666666666666666), this.getZ(), 15, (double) (this.getBbWidth() / 4.0F), (double) (this.getBbHeight() / 4.0F), (double) (this.getBbWidth() / 4.0F), 0.05);
+            serverLevel.sendParticles(ParticleTypes.POOF, this.getX(), this.getY(0.6666666666666666), this.getZ(), 5, (double) (this.getBbWidth() / 4.0F), (double) (this.getBbHeight() / 4.0F), (double) (this.getBbWidth() / 4.0F), 0.05);
+        }
         this.setDeltaMovement(getDeltaMovement().add(0,0.1,0));
         setNoGravity(false);
         this.navigation = new GroundPathNavigation(this, level());

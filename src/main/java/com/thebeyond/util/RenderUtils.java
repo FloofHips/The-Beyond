@@ -6,6 +6,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.thebeyond.client.event.ModClientEvents;
 import com.mojang.blaze3d.vertex.*;
+import com.thebeyond.common.registry.BeyondParticleTypes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.model.geom.ModelLayerLocation;
@@ -15,9 +16,13 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.*;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
@@ -44,6 +49,51 @@ public class RenderUtils {
             renderer.renderModelLists(pass, ItemStack.EMPTY, packedLight, overlayCoord, poseStack, consumer);
             consumer.setColor(1, 1, 1, 1);
         }
+    }
+
+    public static float[] rotationsFor(Direction direction) {
+        return switch (direction) {
+            case DOWN  -> new float[]{-90F, 0F, 0F};
+            case NORTH -> new float[]{0F, 0F, 0F};
+            case SOUTH -> new float[]{0F, 180F, 0F};
+            case WEST  -> new float[]{0F, -90F, 0F};
+            case EAST  -> new float[]{0F, 90F, 0F};
+            default    -> new float[]{90F, 0F, 0F};
+        };
+    }
+
+    public static void spawnBlockFaceParticle(Level level, RandomSource random, Direction direction, BlockPos checkPos) {
+        float[] rot = RenderUtils.rotationsFor(direction);
+        double x = checkPos.getX() + 0.5 - direction.getStepX() * 0.52;
+        double y = checkPos.getY() + 0.5 - direction.getStepY() * 0.52;
+        double z = checkPos.getZ() + 0.5 - direction.getStepZ() * 0.52;
+
+        if (direction.getAxis() == Direction.Axis.Y)
+            level.addParticle(BeyondParticleTypes.SHIMMER.get(),
+                    x + (0.5 - random.nextFloat()), y, z + (0.5 - random.nextFloat()),
+                    rot[0], rot[1], rot[2]);
+        if (direction.getAxis() == Direction.Axis.X)
+            level.addParticle(BeyondParticleTypes.SHIMMER.get(),
+                    x, y + (0.5 - random.nextFloat()), z + (0.5 - random.nextFloat()),
+                    rot[0], rot[1], rot[2]);
+        if (direction.getAxis() == Direction.Axis.Z)
+            level.addParticle(BeyondParticleTypes.SHIMMER.get(),
+                    x + (0.5 - random.nextFloat()), y + (0.5 - random.nextFloat()), z,
+                    rot[0], rot[1], rot[2]);
+    }
+
+    public static void spawnBlockFaceParticle(Level level, Direction direction, BlockPos checkPos) {
+        float[] rot = RenderUtils.rotationsFor(direction);
+        double x = checkPos.getX() + 0.5 - direction.getStepX() * 0.52;
+        double y = checkPos.getY() + 0.5 - direction.getStepY() * 0.52;
+        double z = checkPos.getZ() + 0.5 - direction.getStepZ() * 0.52;
+
+        if (direction.getAxis() == Direction.Axis.Y)
+            level.addParticle(BeyondParticleTypes.BLOCK_POINT.get(), x, y, z, rot[0], rot[1], rot[2]);
+        if (direction.getAxis() == Direction.Axis.X)
+            level.addParticle(BeyondParticleTypes.BLOCK_POINT.get(), x, y, z, rot[0], rot[1], rot[2]);
+        if (direction.getAxis() == Direction.Axis.Z)
+            level.addParticle(BeyondParticleTypes.BLOCK_POINT.get(), x, y, z, rot[0], rot[1], rot[2]);
     }
 
     public static int lerpColor(float factor, int color1, int color2) {

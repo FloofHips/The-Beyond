@@ -84,7 +84,7 @@ public class BeyondItems {
     public static final DeferredItem<SpawnEggItem> ENADRAKE_SPAWN_EGG       = ITEMS.register("enadrake_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENADRAKE.get(),-13213601, -297995,new Item.Properties()));
     public static final DeferredItem<SpawnEggItem> ENATIOUS_TOTEM_SPAWN_EGG = ITEMS.register("enatious_totem_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENATIOUS_TOTEM.get(),-13213601, -2169180,new Item.Properties()));
     public static final DeferredItem<SpawnEggItem> BRUBBLE_SPAWN_EGG        = ITEMS.register("brubble_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.BRUBBLE.get(),-9792612, -11016715,new Item.Properties()));
-    public static final DeferredItem<SpawnEggItem> BAUBLE_SPAWN_EGG        = ITEMS.register("bauble_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.BAUBLE.get(),-530959, -1,new Item.Properties()));
+    public static final DeferredItem<SpawnEggItem> BAUBLE_SPAWN_EGG         = ITEMS.register("bauble_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.BAUBLE.get(),-530959, -1,new Item.Properties()));
     public static final DeferredItem<SpawnEggItem> TRINKET_SPAWN_EGG        = ITEMS.register("trinket_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.TRINKET.get(),-2955531, -11091229,new Item.Properties()));
 
     public static final DeferredItem<Item> REMEMBRANCE_BEADS    = registerRemembrance("beads_remembrance");
@@ -107,11 +107,11 @@ public class BeyondItems {
     public static final DeferredItem<Item> BRITTLE_METAL_SHEET = registerItem("brittle_metal_sheet", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> PRISMUTH = registerItem("prismuth", () -> new Item(new Item.Properties()));
 
-    public static final DeferredItem<Item> BRITTLE_SWORD = registerItem("brittle_sword", () -> new SwordItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(SwordItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 3, -2.4F))));
-    public static final DeferredItem<Item> BRITTLE_SHOVEL = registerItem("brittle_shovel", () -> new ShovelItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(ShovelItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 1.5F, -3.0F))));
-    public static final DeferredItem<Item> BRITTLE_PICKAXE = registerItem("brittle_pickaxe", () -> new PickaxeItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(PickaxeItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 1.0F, -2.8F))));
-    public static final DeferredItem<Item> BRITTLE_AXE = registerItem("brittle_axe", () -> new AxeItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(AxeItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 6.0F, -3.0F))));
-    public static final DeferredItem<Item> BRITTLE_HOE = registerItem("brittle_hoe", () -> new HoeItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(HoeItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 0.0F, -3.0F))));
+    public static final DeferredItem<Item> BRITTLE_SWORD = registerItem("brittle_sword", () -> new SwordItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(SwordItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 3, -2.0F))));
+    public static final DeferredItem<Item> BRITTLE_SHOVEL = registerItem("brittle_shovel", () -> new ShovelItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(ShovelItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 1.5F, -2.5F))));
+    public static final DeferredItem<Item> BRITTLE_PICKAXE = registerItem("brittle_pickaxe", () -> new PickaxeItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(PickaxeItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 1.0F, -2.1F))));
+    public static final DeferredItem<Item> BRITTLE_AXE = registerItem("brittle_axe", () -> new AxeItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(AxeItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 6.0F, -2.5F))));
+    public static final DeferredItem<Item> BRITTLE_HOE = registerItem("brittle_hoe", () -> new HoeItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(HoeItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 0.0F, -2.2F))));
     // Block-click places the camera block; in-air or sneaking shoots it handheld.
     public static final DeferredItem<Item> PRISMOGRAPH = registerItem("prismograph", () -> new PrismographBlockItem(BeyondBlocks.PRISMOGRAPH.get(), new Item.Properties().stacksTo(1)));
     public static final DeferredItem<Item> SNAPSHOT = registerItem("snapshot", () -> new SnapshotItem(new Item.Properties().stacksTo(1)));

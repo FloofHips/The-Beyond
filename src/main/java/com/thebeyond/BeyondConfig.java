@@ -8,8 +8,10 @@ public class BeyondConfig {
     public static ModConfigSpec COMMON_CONFIG;
     public static ModConfigSpec CLIENT_CONFIG;
 
-    // Override End fog with Beyond's Y-dependent atmospheric fog.
+    // Override End fog with Beyond's custom atmospheric fog.
     public static ModConfigSpec.BooleanValue ENABLE_CUSTOM_FOG;
+    // Tweak the lightmap depending on the Beyond's weather system.
+    public static ModConfigSpec.BooleanValue CLAMP_WEATHER_LIGHT_MAP;
     // Override End fog with Beyond's sky renderer.
     public static ModConfigSpec.BooleanValue ENABLE_CUSTOM_SKY;
     public static ModConfigSpec.BooleanValue ENABLE_MAIN_ISLAND_CLOUDS;
@@ -122,6 +124,14 @@ public class BeyondConfig {
                         "Default: true")
                 .translation(TheBeyond.MODID + ".config.enable_custom_sky")
                 .define("enableCustomSky", true);
+
+        CLAMP_WEATHER_LIGHT_MAP = CLIENT_BUILDER
+                .comment("Clamp light map values.",
+                        "When enabled, the light map is clamped. Useful if you use mods that change the lightmap as well.",
+                        "When the Beyond is paired with other mods, there is a chance of the lightmap overspilling into green instead of purple.",
+                        "Default: false")
+                .translation(TheBeyond.MODID + ".config.clamp_lightmap")
+                .define("clampLightMap", false);
 
         ENABLE_MAIN_ISLAND_CLOUDS = CLIENT_BUILDER
                 .comment("Enable swirling clouds in the main island.",

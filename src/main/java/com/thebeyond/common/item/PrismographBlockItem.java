@@ -16,6 +16,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
@@ -59,7 +60,10 @@ public class PrismographBlockItem extends BlockItem {
         }
     }
 
-
+    @Override
+    public UseAnim getUseAnimation(ItemStack stack) {
+        return UseAnim.SPYGLASS;
+    }
 
     @Override
     public InteractionResult useOn(UseOnContext context) {

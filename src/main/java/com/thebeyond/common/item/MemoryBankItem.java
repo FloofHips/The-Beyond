@@ -89,11 +89,6 @@ public class MemoryBankItem extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         ItemStack stack = player.getItemInHand(usedHand);
 
-        if (player.isShiftKeyDown()) {
-            stack.set(DataComponents.DYED_COLOR, new DyedItemColor(level.random.nextInt(48665565), true));
-            return InteractionResultHolder.success(stack);
-        }
-
         if (!level.isClientSide) {
             player.openMenu(new SimpleMenuProvider(
                     (id, inv, p) -> new MemoryBankMenu(id, inv, stack),

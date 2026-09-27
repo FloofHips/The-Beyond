@@ -17,7 +17,7 @@ import net.minecraft.world.phys.Vec3;
 
 public class CoilEntity extends ThrowableItemProjectile {
 
-    int counter = 0;
+    int counter = 1;
     boolean startBuilding = false;
     Direction direction = Direction.UP;
     BlockPos pos = null;
@@ -25,8 +25,8 @@ public class CoilEntity extends ThrowableItemProjectile {
     public CoilEntity(EntityType<? extends ThrowableItemProjectile> entityType, Level level, Direction dir, BlockPos pos) {
         super(entityType, level);
         this.direction = dir;
-        this.counter = 0;
-        this.pos = pos;
+        this.counter = 1;
+        //this.pos = pos;
     }
     public CoilEntity(EntityType<? extends ThrowableItemProjectile> entityType, Level level) {
         super(entityType, level);
@@ -34,17 +34,20 @@ public class CoilEntity extends ThrowableItemProjectile {
 
     @Override
     protected void onHitBlock(BlockHitResult result) {
-        if (pos == null) pos = result.getBlockPos();
+        if (!startBuilding) pos = result.getBlockPos();
         startBuilding = true;
     }
 
     @Override
     public void tick() {
-        if (counter >= 32 || counter == -1) this.discard();
-        if (this.tickCount > 200) this.discard();
-        if (this.tickCount%3==0 && startBuilding && counter < 32) {
-            placeVerterbrae();
-            setDeltaMovement(Vec3.ZERO);
+
+        if (!level().isClientSide) {
+            if (counter >= 32 || counter == -1) this.discard();
+            if (this.tickCount > 200) this.discard();
+            if (this.tickCount % 3 == 0 && startBuilding && counter < 32) {
+                placeVerterbrae();
+                setDeltaMovement(Vec3.ZERO);
+            }
         }
         super.tick();
     }
@@ -57,8 +60,8 @@ public class CoilEntity extends ThrowableItemProjectile {
             level().setBlock(offset, BeyondBlocks.COIL_VERTEBRAE.get().defaultBlockState().setValue(RotatedPillarBlock.AXIS, direction.getAxis()),3);
             counter++;
         } else {
-            startBuilding = false;
-            counter = -1;
+          startBuilding = false;
+          counter = -1;
         }
     }
 

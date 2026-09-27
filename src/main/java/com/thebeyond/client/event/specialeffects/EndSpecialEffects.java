@@ -136,11 +136,14 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
             );
         }
 
-        // Always clamped: rain and thunder push the End green negative and setColor would wrap it into a vivid green sky.
-        return new Vec3(
+        // rain and thunder push the End green negative and setColor would wrap it into a vivid green sky, clamped for shaders and config.
+        if (ShaderCompatLib.isModdedRendererLoaded() || BeyondConfig.CLAMP_WEATHER_LIGHT_MAP.get())
+            return new Vec3(
                 Mth.clamp(result.x, 0.0, 1.0),
                 Mth.clamp(result.y, 0.0, 1.0),
                 Mth.clamp(result.z, 0.0, 1.0));
+
+        return new Vec3(result.x, result.y, result.z);
     }
 
     @Nullable
@@ -209,10 +212,12 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
 
 
         // Always clamped like the fog: thunder adds skyLight unclamped and the packing wraps instead of clamping.
-        colors.set(
-                Mth.clamp(colors.x(), 0.0f, 1.0f),
-                Mth.clamp(colors.y(), 0.0f, 1.0f),
-                Mth.clamp(colors.z(), 0.0f, 1.0f));
+        if (ShaderCompatLib.isModdedRendererLoaded() || BeyondConfig.CLAMP_WEATHER_LIGHT_MAP.get()) {
+            colors.set(
+                    Mth.clamp(colors.x(), 0.0f, 1.0f),
+                    Mth.clamp(colors.y(), 0.0f, 1.0f),
+                    Mth.clamp(colors.z(), 0.0f, 1.0f));
+        }
     }
 
     public Vec3 getBiomeColor(ClientLevel level) {
@@ -554,4 +559,4 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
             this.size = size;
         }
     }
-}
+}

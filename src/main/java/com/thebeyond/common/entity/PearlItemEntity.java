@@ -1,9 +1,12 @@
 package com.thebeyond.common.entity;
 
+import com.thebeyond.common.registry.BeyondEntityTypes;
+import com.thebeyond.common.registry.BeyondFluids;
 import com.thebeyond.common.registry.BeyondItems;
 import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
@@ -36,17 +39,12 @@ public class PearlItemEntity extends ThrowableItemProjectile {
         noPhysics = false;
     }
 
-    public PearlItemEntity(EntityType<? extends ThrowableItemProjectile> entityType, double x, double y, double z, Level level) {
-        super(entityType, x, y, z, level);
-    }
-
     @Override
     protected void onHit(HitResult result) {
         HitResult.Type type = result.getType();
 
         if (!this.level().isClientSide) {
             Vec3 motion = this.getDeltaMovement();
-//
             if (type == HitResult.Type.ENTITY) {
                 EntityHitResult entityHit = (EntityHitResult) result;
                 if (motion.length() > 0.1) {
@@ -94,6 +92,20 @@ public class PearlItemEntity extends ThrowableItemProjectile {
         this.zo = this.getZ();
         Vec3 vec3 = this.getDeltaMovement();
         FluidType fluidType = this.getMaxHeightFluidType();
+
+        if (tickCount%20 == 0 && level().random.nextInt(5) < 1) {
+            if (fluidType == BeyondFluids.GELLID_VOID_TYPE.get()) {
+                BaubleEntity bauble = new BaubleEntity(BeyondEntityTypes.BAUBLE.get(), level());
+                int mul = level().random.nextInt(3) + 1;
+                bauble.setDepth((byte) (2 * mul));
+                bauble.setWidth((byte) (2 * mul));
+                bauble.setHeight((byte) (2 * mul));
+                bauble.setPos(this.position());
+                bauble.setDeltaMovement(new Vec3(0.1f - random.nextFloat()*0.2, random.nextFloat()*0.2f, 0.1f - random.nextFloat()*0.2));
+                level().addFreshEntity(bauble);
+                this.discard();
+            }
+        }
 
         if (!fluidType.isAir() && !fluidType.isVanilla() && this.getFluidTypeHeight(fluidType) > (double)0.1F) {
             this.setUnderliquidMovement(0.99F);
@@ -181,6 +193,7 @@ public class PearlItemEntity extends ThrowableItemProjectile {
         if (tickCount < 20) return super.interact(player, hand);
         ItemStack pearl = this.getItem();
         player.addItem(pearl);
+        player.playSound(SoundEvents.ITEM_PICKUP, 0.2F, ((level().random.nextFloat() - level().random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
         this.discard();
         return InteractionResult.SUCCESS;
     }

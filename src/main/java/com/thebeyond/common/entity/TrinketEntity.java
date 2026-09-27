@@ -3,11 +3,14 @@ package com.thebeyond.common.entity;
 import com.thebeyond.common.entity.util.livingblock.LivingBlock;
 import com.thebeyond.common.entity.util.livingblock.LivingBlockOrientation;
 import com.thebeyond.common.entity.util.livingblock.TrinketGrowth;
+import com.thebeyond.common.item.OcarinaItem;
 import com.thebeyond.common.registry.BeyondItems;
+import com.thebeyond.common.registry.BeyondParticleTypes;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.FloatTag;
 import net.minecraft.nbt.ListTag;
@@ -20,6 +23,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.util.FastColor;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -44,6 +48,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.neoforged.neoforge.common.Tags;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
@@ -59,7 +64,7 @@ public class TrinketEntity extends BaubleEntity implements Bucketable, OwnableEn
     private static final EntityDataAccessor<String> DATA_VARIANT = SynchedEntityData.defineId(TrinketEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> DATA_SELECTED = SynchedEntityData.defineId(TrinketEntity.class, EntityDataSerializers.BOOLEAN);
     protected static final EntityDataAccessor<Optional<UUID>> OWNER = SynchedEntityData.defineId(TrinketEntity.class, EntityDataSerializers.OPTIONAL_UUID);
-
+    private long lastTouched = Long.MIN_VALUE;
     public static final String[] VARIANTS = {
             "swirl", "losange", "perforated", "pyramid", "eyes"
     };
@@ -75,7 +80,10 @@ public class TrinketEntity extends BaubleEntity implements Bucketable, OwnableEn
     public Boolean isWaxed() {return this.entityData.get(DATA_WAXED);}
     public void setWaxed(boolean waxed) {this.entityData.set(DATA_WAXED, waxed);}
     public Boolean isSelected() {return this.entityData.get(DATA_SELECTED);}
-    public void setSelected(boolean selected) {this.entityData.set(DATA_SELECTED, selected);}
+    public void setSelected(boolean selected) {
+        level().addParticle(BeyondParticleTypes.EXCLAMATION.get(), this.getX(),  0.2f + this.getY() + getHeight()/16f, this.getZ(), 0, 0.1, 0);
+        this.entityData.set(DATA_SELECTED, selected);
+    }
     public String getVariant() {return this.entityData.get(DATA_VARIANT);}
     public void setVariant(String variant) {this.entityData.set(DATA_VARIANT, variant);}
     public List<TrinketGrowth.Feature> getFeaturePlan() {return featurePlan;}
@@ -90,6 +98,10 @@ public class TrinketEntity extends BaubleEntity implements Bucketable, OwnableEn
         setVariant(Arrays.stream(VARIANTS).toList().get(level.getRandom().nextInt(VARIANTS.length)));
         setBodyColor(-1);
         setDyeColor(DyeColor.WHITE);
+        setWidth((byte) level.getRandom().nextInt(1,16));
+        setHeight((byte) level.getRandom().nextInt(1,16));
+        setDepth((byte) level.getRandom().nextInt(1,16));
+
         return super.finalizeSpawn(level, difficulty, reason, spawnData);
     }
 
@@ -132,7 +144,7 @@ public class TrinketEntity extends BaubleEntity implements Bucketable, OwnableEn
 
     @Override
     public void tick() {
-        if (!isWaxed() && tickCount%250 == 0) {
+        if (!isWaxed() && tickCount%120 == 0) {
             BlockPos touched = null;
             if (this.onGround()) {
                 touched = getOnPos();
@@ -142,11 +154,13 @@ public class TrinketEntity extends BaubleEntity implements Bucketable, OwnableEn
                         .relative(facing);
             }
             if (touched != null) {
+                long touchedLong = touched.asLong();
                 BlockState b = this.level().getBlockState(touched);
-                if (!b.isAir()) {
+                if (!b.isAir() && touchedLong != lastTouched) {
                     int col = b.getMapColor(this.level(), touched).col;
-                    setBodyColor(FastColor.ARGB32.lerp(0.1f, getBodyColor().getRGB(), col));
+                    setBodyColor(FastColor.ARGB32.lerp(0.05f, getBodyColor().getRGB(), col));
                     grow();
+                    lastTouched = touchedLong;
                 }
             }
         }
@@ -184,13 +198,51 @@ public class TrinketEntity extends BaubleEntity implements Bucketable, OwnableEn
         ItemStack itemstack = player.getItemInHand(hand);
         Item item = itemstack.getItem();
 
+        if (itemstack.is(Items.HONEYCOMB)) {
+            if (!isWaxed()) {
+                setWaxed(true);
+                playSound(SoundEvents.HONEYCOMB_WAX_ON);
+                if (level() instanceof ServerLevel serverLevel) {
+                    serverLevel.sendParticles(ParticleTypes.WAX_ON, this.getX(), this.getY(), this.getZ(), getDepth() + getWidth(), getDepth()/16f, getHeight()/16f, getWidth()/16f, 0.01);
+                }
+                itemstack.consume(1, player);
+                return InteractionResult.SUCCESS;
+            }
+            return super.mobInteract(player, hand);
+        }
+
+        if (itemstack.is(ItemTags.AXES)) {
+            if (isWaxed()) {
+                setWaxed(false);
+                playSound(SoundEvents.AXE_WAX_OFF);
+                if (level() instanceof ServerLevel serverLevel) {
+                    serverLevel.sendParticles(ParticleTypes.WAX_OFF, this.getX(), this.getY(), this.getZ(), getDepth() + getWidth(), getDepth()/16f, getHeight()/16f, getWidth()/16f, 0.01);
+                }
+                itemstack.hurtAndBreak(1, player, getSlotForHand(hand));
+                return InteractionResult.SUCCESS;
+            }
+            return super.mobInteract(player, hand);
+        }
+
         if (item instanceof DyeItem) {
             DyeItem dyeitem = (DyeItem)item;
             DyeColor dyecolor = dyeitem.getDyeColor();
+            if (getOwner() == null) setOwner(player.getUUID());
             if (dyecolor != this.getDyeColor()) {
                 this.setDyeColor(dyecolor);
                 itemstack.consume(1, player);
                 return InteractionResult.SUCCESS;
+            }
+            return super.mobInteract(player, hand);
+        }
+
+        if (item instanceof OcarinaItem ocarina) {
+            if (getOwnerUUID() != null && getOwnerUUID().equals(player.getUUID()) && !isSelected()) {
+                if (!level().isClientSide) {
+                    ocarina.getLinkedTrinkets().add(this);
+                    setSelected(true);
+                }
+                return InteractionResult.sidedSuccess(level().isClientSide);
             }
             return super.mobInteract(player, hand);
         }
@@ -317,6 +369,9 @@ public class TrinketEntity extends BaubleEntity implements Bucketable, OwnableEn
             stored.add(FloatTag.valueOf(this.rotation.w()));
             compound.put("rotation", stored);
 
+            if (this.getOwnerUUID() != null) {
+                compound.putUUID("Owner", this.getOwnerUUID());
+            }
         });
     }
 
@@ -352,6 +407,12 @@ public class TrinketEntity extends BaubleEntity implements Bucketable, OwnableEn
         if (input.contains("Height")) this.setHeight(input.getByte("Height"));
         if (input.contains("Width")) this.setWidth(input.getByte("Width"));
         if (input.contains("Depth")) this.setDepth(input.getByte("Depth"));
+
+        UUID uuid;
+        if (input.hasUUID("Owner")) {
+            uuid = input.getUUID("Owner");
+            entityData.set(OWNER, Optional.ofNullable(uuid));
+        }
     }
 
     @Override

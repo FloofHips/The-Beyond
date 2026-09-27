@@ -4,10 +4,14 @@ import com.thebeyond.client.gui.OcarinaOverlay;
 import com.thebeyond.common.entity.TrinketEntity;
 import com.thebeyond.common.entity.util.livingblock.movement.Target;
 import com.thebeyond.common.registry.BeyondComponents;
+import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.util.OcarinaMode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -15,6 +19,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -42,10 +47,6 @@ public class OcarinaItem extends Item {
         return linkedTrinkets;
     }
 
-    public void clearLinkedTrinkets() {
-        linkedTrinkets.clear();
-    }
-
     public OcarinaItem(Properties properties) {
         super(properties);
     }
@@ -53,9 +54,6 @@ public class OcarinaItem extends Item {
     @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
         if (!stack.has(BeyondComponents.OCARINA_MODE)) stack.set(BeyondComponents.OCARINA_MODE, OcarinaMode.toInt(OcarinaMode.SELECT));
-        if (isSelected && entity.tickCount%20==0 && !linkedTrinkets.isEmpty()) {
-            linkedTrinkets.removeIf(entity1 -> !entity1.isAlive());
-        }
         super.inventoryTick(stack, level, entity, slotId, isSelected);
     }
 
@@ -69,6 +67,14 @@ public class OcarinaItem extends Item {
     }
 
     private void doUse(Level level, Player player, ItemStack stack) {
+        if (player.isShiftKeyDown()) {
+            if (!linkedTrinkets.isEmpty()) {
+                player.displayClientMessage(Component.translatable("screen.the_beyond.ocarina.trinkets_deselected", linkedTrinkets.size()), true);
+                deselectAll();
+            }
+            return;
+        }
+
         OcarinaMode mode = getMode(stack);
         if (mode == OcarinaMode.SELECT) {
             select(level, player);
@@ -90,6 +96,16 @@ public class OcarinaItem extends Item {
             scatter(level, player);
             return;
         }
+    }
+
+    private void deselectAll() {
+        List<TrinketEntity> snapshot = new ArrayList<>(linkedTrinkets);
+        for (TrinketEntity trinket : snapshot) {
+            if (!trinket.isAlive()) continue;
+            trinket.setSelected(false);
+            trinket.clearMovementTarget();
+        }
+        linkedTrinkets.clear();
     }
 
     @Override
@@ -136,14 +152,15 @@ public class OcarinaItem extends Item {
         List<TrinketEntity> nearby = level.getEntitiesOfClass(TrinketEntity.class, detectionBox);
 
         if (!linkedTrinkets.isEmpty()) {
-            for (TrinketEntity trinket : linkedTrinkets) {
-                if (!trinket.isAlive()) continue;
-                trinket.setSelected(false);
-            }
+            deselectAll();
         }
-        linkedTrinkets.clear();
+
         for (TrinketEntity trinket : nearby) {
             if (isOwnedBy(trinket, player)) {
+                linkedTrinkets.add(trinket);
+                trinket.setSelected(true);
+            } else if (trinket.getOwnerUUID() == null) {
+                trinket.setOwner(player.getUUID());
                 linkedTrinkets.add(trinket);
                 trinket.setSelected(true);
             }
@@ -153,7 +170,8 @@ public class OcarinaItem extends Item {
     }
 
     private void follow(Player player) {
-        for (TrinketEntity trinket : linkedTrinkets) {
+        List<TrinketEntity> snapshot = new ArrayList<>(linkedTrinkets);
+        for (TrinketEntity trinket : snapshot) {
             trinket.setMovementTarget(Target.followingEntity(player, 3));
         }
     }
@@ -161,7 +179,7 @@ public class OcarinaItem extends Item {
     private void guide(Level level, Player player) {
         Vec3 eyePos = player.getEyePosition();
         Vec3 endPos = eyePos.add(player.getLookAngle().scale(64));
-
+        Vec3 forClient = null;
         if (!level.isClientSide) {
             ClipContext clipContext = new ClipContext(
                     eyePos,
@@ -176,16 +194,53 @@ public class OcarinaItem extends Item {
             if (hit.getType() != HitResult.Type.MISS) {
                 BlockPos pos = hit.getBlockPos();
                 Vec3 centre = pos.getCenter();
+                forClient = centre;
 
-                for (TrinketEntity trinket : linkedTrinkets) {
+                List<TrinketEntity> snapshot = new ArrayList<>(linkedTrinkets);
+                for (TrinketEntity trinket : snapshot) {
                     trinket.setMovementTarget(Target.near(centre, CALL_RADIUS));
                 }
+            }
+            if (forClient!=null) {
+                if (level instanceof ServerLevel serverLevel)
+                    serverLevel.sendParticles((ServerPlayer) player, BeyondParticleTypes.ARROW.get(), true, forClient.x, forClient.y+1, forClient.z, 1, 0,0,0,  0);
             }
         }
     }
 
     private void scatter(Level level, Player player) {
+        //replace with random raycast
+        if (!linkedTrinkets.isEmpty()) {
+            List<TrinketEntity> snapshot = new ArrayList<>(linkedTrinkets);
+            for (TrinketEntity trinket : snapshot) {
+                BlockPos pos = findScatterPos(level, player.getOnPos(), 8);
+                if (pos == null) {
+                    trinket.clearMovementTarget();
+                    continue;
+                }
+                Vec3 centre = pos.getCenter();
+                trinket.setMovementTarget(Target.near(centre, CALL_RADIUS));
+            }
+        }
+        deselectAll();
+    }
 
+    private BlockPos findScatterPos(Level level, BlockPos origin, int radius) {
+        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
+
+        Iterable<BlockPos> pos = BlockPos.randomBetweenClosed(level.random,10,origin.getX()-radius, origin.getY()-radius/2, origin.getZ()-radius, origin.getX()+radius, origin.getY()+radius, origin.getZ()+radius);
+            for (BlockPos position : pos) {
+                if (position == null) continue;
+
+                mutable.set(position);
+                if (!level.isLoaded(mutable)) continue;
+                if (!level.getBlockState(mutable).isAir()) continue;
+                if (!level.getBlockState(mutable.below()).isSolid()) continue;
+
+            return mutable.immutable();
+        }
+
+        return null;
     }
 
     private boolean isOwnedBy(TrinketEntity trinket, Player player) {

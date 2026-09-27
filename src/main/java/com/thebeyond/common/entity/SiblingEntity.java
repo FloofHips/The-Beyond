@@ -56,6 +56,10 @@ public class SiblingEntity extends PathfinderMob {
             }
         }
         if (getBirth() && tickCount == 50) setBirth(false);
+        if (tickCount % (2000+level().random.nextInt(2000)) == 0) {
+            split();
+            discard();
+        }
     }
 
     public void registerGoals() {
@@ -100,6 +104,12 @@ public class SiblingEntity extends PathfinderMob {
 
     @Override
     public void die(DamageSource damageSource) {
+        split();
+
+        super.die(damageSource);
+    }
+
+    private void split() {
         byte[][] SILHOUETTES = {
                 {8, 12, 4},
 
@@ -119,8 +129,6 @@ public class SiblingEntity extends PathfinderMob {
             bauble.setDeltaMovement(new Vec3(0.1f - random.nextFloat()*0.2, random.nextFloat()*0.2f, 0.1f - random.nextFloat()*0.2));
             level().addFreshEntity(bauble);
         }
-
-        super.die(damageSource);
     }
 
     public boolean doHurtTarget(Entity entity) {

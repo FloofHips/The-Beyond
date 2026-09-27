@@ -50,6 +50,7 @@
     "ChunkBlockWatchMixin"
   ],
   "client": [
+    "ItemFrameRendererMixin",
     "client.BossHealthOverlayAccessor",
     "client.LevelRendererWeatherSuppressMixin"
   ],

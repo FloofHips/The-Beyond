@@ -29,7 +29,7 @@ public class BeyondEffects {
             AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
     public static final DeferredHolder<MobEffect, MobEffect> NOMADS_BLESSING = MOB_EFFECTS.register("nomads_blessing", () -> new NomadsBlessingEffect(
             MobEffectCategory.BENEFICIAL,
-            0x26ce55));
+            -12160095));
     public static final DeferredHolder<MobEffect, MobEffect> EMPATHY = MOB_EFFECTS.register("empathy", () -> new GenericEffect(
             MobEffectCategory.NEUTRAL,
             -1));

@@ -1,6 +1,5 @@
 package com.thebeyond.data;
 
-import com.thebeyond.common.block.MirrorBlock;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondItems;
 import net.minecraft.core.HolderLookup;
@@ -8,11 +7,8 @@ import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
-import net.minecraft.world.level.storage.loot.entries.AlternativesEntry;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
-import net.minecraft.world.level.storage.loot.functions.CopyBlockState;
 import net.minecraft.world.level.storage.loot.functions.SetItemCountFunction;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 
@@ -73,7 +69,7 @@ public class BeyondBlockLoot extends BlockLootSubProvider {
 
         dropSelf(BeyondBlocks.PEARL_CHIMES.get());
         dropSelf(BeyondBlocks.ORNATE_MIRROR.get());
-        dropSelf(BeyondBlocks.PEARL_MIRROR.get());
+        dropSelf(BeyondBlocks.MIRROR.get());
 
         dropSelf(BeyondBlocks.GAUSSANITE.get());
         dropSelf(BeyondBlocks.GAUSS_VENT.get());
@@ -89,7 +85,7 @@ public class BeyondBlockLoot extends BlockLootSubProvider {
         // Pearl mirror: drops itself AND preserves its reflective-face configuration. copy_state
         // writes the per-face booleans into the item's block_state component, which BlockItem
         // re-applies on placement, so breaking + replacing keeps the exact face setup.
-        //add(BeyondBlocks.PEARL_MIRROR.get(), block -> LootTable.lootTable().withPool(
+        //add(BeyondBlocks.MIRROR.get(), block -> LootTable.lootTable().withPool(
         //        applyExplosionCondition(block, LootPool.lootPool()
         //                .setRolls(ConstantValue.exactly(1.0F))
         //                .add(LootItem.lootTableItem(block)

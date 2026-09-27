@@ -1,6 +1,7 @@
 package com.thebeyond.common.fluid;
 
 import com.thebeyond.common.entity.EnderglopEntity;
+import com.thebeyond.common.entity.PearlItemEntity;
 import com.thebeyond.common.registry.BeyondEffects;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.common.registry.BeyondSoundEvents;
@@ -46,8 +47,6 @@ public class GellidVoidBlock extends LiquidBlock {
 
     @Override
     protected BlockState updateShape(BlockState state, Direction facing, BlockState facingState, LevelAccessor level, BlockPos currentPos, BlockPos facingPos) {
-        //if(state.getValue(LEVEL) == 8 && level.getBlockState(currentPos.above()).isAir())
-        //    level.setBlock(currentPos.above(), BeyondBlocks.VOID_FLAME.get().defaultBlockState(), 3);
         return super.updateShape(state, facing, facingState, level, currentPos, facingPos);
     }
 
@@ -73,8 +72,9 @@ public class GellidVoidBlock extends LiquidBlock {
     @Override
     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
         super.entityInside(state, level, pos, entity);
-        if (!(entity instanceof Player player && player.isShiftKeyDown()))
-            entity.setDeltaMovement(entity.getDeltaMovement().add(0, .05, 0));
+        if (!(entity instanceof Player player && player.isShiftKeyDown())) {
+            if (!(entity instanceof PearlItemEntity)) entity.setDeltaMovement(entity.getDeltaMovement().add(0, .05, 0));
+        }
 
         if (entity.tickCount % (200 + level.random.nextInt(0, 100)) == 0 && level instanceof ServerLevel serverLevel && entity instanceof LivingEntity livingEntity) {
             if (livingEntity.hasEffect(BeyondEffects.WEIGHTLESS)) {

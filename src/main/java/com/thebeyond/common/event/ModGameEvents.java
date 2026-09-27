@@ -151,14 +151,6 @@ public class ModGameEvents {
     }
 
     @SubscribeEvent
-    public static void onCriticalHit(CriticalHitEvent event) {
-//        Entity entity = event.getTarget();
-//        if (entity instanceof BrubbleEntity brubbleEntity && event.isCriticalHit()) {
-//            brubbleEntity.disable();
-//        }
-    }
-
-    @SubscribeEvent
     public static void onLand(LivingFallEvent event) {
         if (!(event.getEntity() instanceof LivingEntity livingEntity)
                 || !livingEntity.getItemBySlot(EquipmentSlot.LEGS).is(BeyondItems.ANCHOR_LEGGINGS)) {

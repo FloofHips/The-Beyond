@@ -259,18 +259,6 @@ public class EnadrakeEntity extends PathfinderMob {
                 this.setHoldingItem(false);
 
                 return InteractionResult.SUCCESS;
-            } else {
-                if (itemstack.isEmpty()) return InteractionResult.FAIL;
-                this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(itemstack.getItem(), 1));
-                this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
-                itemstack.consume(1, player);
-                playSound(BeyondSoundEvents.ROOTS_CREAKING.get());
-                this.setHoldingItem(true);
-
-                if (player instanceof ServerPlayer serverPlayer) {
-                    BeyondCriteriaTriggers.GIFT_ENADRAKE.get().trigger(serverPlayer);
-                }
-                return InteractionResult.SUCCESS;
             }
         }
         return InteractionResult.CONSUME_PARTIAL;

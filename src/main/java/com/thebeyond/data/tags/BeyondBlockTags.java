@@ -27,6 +27,11 @@ public class BeyondBlockTags extends BlockTagsProvider {
                 .add(BeyondBlocks.PEEPING_OBIROOT.get())
                 .add(BeyondBlocks.OBIROOT_ARM.get());
 
+        tag(BlockTags.SWORD_EFFICIENT)
+                .add(BeyondBlocks.BLINDING_THORN.get())
+                .add(BeyondBlocks.BLEEDING_THORN.get())
+                .add(BeyondBlocks.COIL_VERTEBRAE.get());
+
         tag(BeyondTags.BRITTLE_METAL_BLOCKS)
                 .add(BeyondBlocks.BRITTLE_METAL.get())
                 .add(BeyondBlocks.BRITTLE_METAL_BLOCK.get())
@@ -105,7 +110,7 @@ public class BeyondBlockTags extends BlockTagsProvider {
                 .add(BeyondBlocks.MOLTEN_METAL.get())
                 .add(BeyondBlocks.PROJECTOR.get())
                 .add(BeyondBlocks.PRISMOGRAPH.get())
-                .add(BeyondBlocks.PEARL_MIRROR.get())
+                .add(BeyondBlocks.MIRROR.get())
                 .add(BeyondBlocks.PEARL_CHIMES.get())
                 .add(BeyondBlocks.ORNATE_MIRROR.get())
                 .add(BeyondBlocks.GAUSSANITE.get())

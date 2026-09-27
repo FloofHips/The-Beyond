@@ -24,7 +24,7 @@ public class BeyondBlockEntities {
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MirrorBlockEntity>> MIRROR = BLOCK_ENTITY_TYPES.
             register("mirror", () -> BlockEntityType.Builder.of(MirrorBlockEntity::new,
-                    BeyondBlocks.PEARL_MIRROR.get(),
+                    BeyondBlocks.MIRROR.get(),
                     BeyondBlocks.ORNATE_MIRROR.get()
             ).build(null));
 

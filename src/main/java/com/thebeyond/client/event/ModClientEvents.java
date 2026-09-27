@@ -44,7 +44,6 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.entity.FallingBlockRenderer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
-import net.minecraft.client.renderer.entity.ZombieRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.*;
@@ -56,6 +55,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.decoration.GlowItemFrame;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
@@ -82,7 +82,6 @@ import java.util.*;
 
 import net.neoforged.fml.ModList;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
-import org.lwjgl.glfw.GLFW;
 
 @SuppressWarnings("unused")
 @EventBusSubscriber(modid = TheBeyond.MODID, value = Dist.CLIENT)
@@ -161,7 +160,6 @@ public class ModClientEvents {
     public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(BeyondMenus.REFUGE.get(), RefugeScreen::new);
         event.register(BeyondMenus.PROJECTOR.get(), ProjectorScreen::new);
-        event.register(BeyondMenus.PRISMOGRAPH.get(), PrismographBlockScreen::new);
         event.register(BeyondMenus.MEMORY_BANK.get(), MemoryBankScreen::new);
     }
 
@@ -220,6 +218,18 @@ public class ModClientEvents {
 
         event.registerSpriteSet(BeyondParticleTypes.BITE.get(), sprites
                 -> new BiteParticle.Provider(sprites));
+
+        event.registerSpriteSet(BeyondParticleTypes.SHIMMER.get(), sprites
+                -> new ShimmerParticle.Provider(sprites));
+
+        event.registerSpriteSet(BeyondParticleTypes.EXCLAMATION.get(), sprites
+                -> new SmallDisappearingParticle.Provider(sprites));
+
+        event.registerSpriteSet(BeyondParticleTypes.BLOCK_POINT.get(), sprites
+                -> new BlockFaceParticle.Provider(sprites));
+
+        event.registerSpriteSet(BeyondParticleTypes.ARROW.get(), sprites
+                -> new SmallDisappearingParticle.Provider(sprites));
 
         event.registerSpriteSet(BeyondParticleTypes.WIND.get(), sprites
                 -> new WindParticle.Provider(sprites));
@@ -290,7 +300,7 @@ public class ModClientEvents {
                     stack.getOrDefault(net.minecraft.core.component.DataComponents.POTION_CONTENTS,
                             net.minecraft.world.item.alchemy.PotionContents.EMPTY);
             if (contents.potion().map(h -> h.is(BeyondPotions.DEAFENING.getKey())).orElse(false)) {
-                return 0x1e68b3;
+                return -12160095;
             }
             return contents.getColor();
         }, net.minecraft.world.item.Items.POTION, net.minecraft.world.item.Items.SPLASH_POTION,
@@ -591,7 +601,7 @@ public class ModClientEvents {
 
     @SubscribeEvent
     public static void onCameraEscape(ScreenEvent.Opening event) {
-        if (aimingWithCamera()) {
+        if (aimingWithCamera() && !event.getNewScreen().isPauseScreen()) {
             event.setCanceled(true);
             CameraAim.clear();
         }
@@ -608,6 +618,9 @@ public class ModClientEvents {
             InteractionHand hand = mc.player.getMainHandItem().getItem() instanceof PrismographBlockItem
                     ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
             mc.gameMode.useItem(mc.player, hand);
+        }
+        if (event.isAttack()) {
+            CameraAim.clear();
         }
     }
 
@@ -672,23 +685,22 @@ public class ModClientEvents {
             return;
         }
 
-        ResourceLocation tex = SnapshotTextures.getDownsampled(
-                px, Grades.NONE, FRAME_PHOTO_SIZE);
+        ResourceLocation tex = SnapshotTextures.getDownsampled(px, Grades.NONE, FRAME_PHOTO_SIZE);
 
         PoseStack pose = event.getPoseStack();
         pose.pushPose();
-        //pose.scale(0.5F, 0.5F, 0.5F);       // vanilla framed-item footprint
-        pose.translate(0.0F, 0.0F, -0.01F); // off the backing to avoid z-fighting
+        pose.translate(0.0F, 0.0F, -0.01F);
+        pose.scale(-1F, 1F, 1F); // off the backing to avoid z-fighting
 
         PoseStack.Pose last = pose.last();
         VertexConsumer vc = event.getMultiBufferSource().getBuffer(RenderType.entityCutoutNoCull(tex));
-        int light = 15728880; // full-bright so it reads in the dark
+        int light = event.getItemFrameEntity() instanceof GlowItemFrame ? 15728880 : event.getPackedLight(); // full-bright so it reads in the dark
 
         // v=0 at top (NativeImage row 0 is the photo's top); wind CCW from +Z so the front face survives culling.
-        frameVertex(vc, last, -0.5F, -0.5F, 0F, 1F, light);
-        frameVertex(vc, last, 0.5F, -0.5F, 1F, 1F, light);
-        frameVertex(vc, last, 0.5F, 0.5F, 1F, 0F, light);
         frameVertex(vc, last, -0.5F, 0.5F, 0F, 0F, light);
+        frameVertex(vc, last, 0.5F, 0.5F, 1F, 0F, light);
+        frameVertex(vc, last, 0.5F, -0.5F, 1F, 1F, light);
+        frameVertex(vc, last, -0.5F, -0.5F, 0F, 1F, light);
 
         pose.popPose();
         event.setCanceled(true);

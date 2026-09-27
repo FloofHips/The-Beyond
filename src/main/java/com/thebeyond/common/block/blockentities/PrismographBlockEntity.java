@@ -1,6 +1,5 @@
 package com.thebeyond.common.block.blockentities;
 
-import com.thebeyond.client.menu.PrismographMenu;
 import com.thebeyond.client.menu.PrismographSlots;
 import com.thebeyond.common.registry.BeyondBlockEntities;
 import com.thebeyond.common.registry.BeyondTags;
@@ -15,19 +14,15 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
-import net.minecraft.world.MenuProvider;
-import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-public class PrismographBlockEntity extends BlockEntity implements Container, MenuProvider {
+public class PrismographBlockEntity extends BlockEntity implements Container {
     // Slot layout and film cap live in PrismographSlots (the shared source); re-exposed here for this container's API and slot overrides.
     public static final int SLOTS = PrismographSlots.SLOTS;
     public static final int FILM = PrismographSlots.FILM;
@@ -211,16 +206,5 @@ public class PrismographBlockEntity extends BlockEntity implements Container, Me
         super.applyImplicitComponents(componentInput);
         clearSlots();
         componentInput.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY).copyInto(items);
-    }
-
-    @Override
-    public Component getDisplayName() {
-        return DEFAULT_NAME;
-    }
-
-    @Nullable
-    @Override
-    public AbstractContainerMenu createMenu(int containerId, Inventory inventory, Player player) {
-        return new PrismographMenu(containerId, inventory, this, this.getBlockPos());
     }
 }

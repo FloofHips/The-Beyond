@@ -8,8 +8,6 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.tags.ItemTagsProvider;
 import net.minecraft.tags.ItemTags;
-import net.minecraft.tags.TagKey;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
@@ -31,7 +29,7 @@ public class BeyondItemTags extends ItemTagsProvider {
 
         tag(BeyondTags.MIRRORS)
                 .add(BeyondBlocks.ORNATE_MIRROR.asItem())
-                .add(BeyondBlocks.PEARL_MIRROR.asItem());
+                .add(BeyondBlocks.MIRROR.asItem());
 
         tag(BeyondTags.ROOTS)
                 .add(BeyondBlocks.BLINDING_THORN.asItem())

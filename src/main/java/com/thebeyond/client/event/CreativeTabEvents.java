@@ -32,7 +32,6 @@ import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.thebeyond.common.registry.BeyondTabs.THE_BEYOND;
 
@@ -139,7 +138,7 @@ public class CreativeTabEvents {
         categories.get("building").add(BeyondBlocks.COBBLED_PEARL_BRICK_STAIRS.toStack());
         categories.get("building").add(BeyondBlocks.COBBLED_PEARL_BRICK_SLAB.toStack());
         categories.get("building").add(BeyondBlocks.COBBLED_PEARL_BRICK_WALL.toStack());
-        categories.get("building").add(BeyondBlocks.PEARL_MIRROR.toStack());
+        categories.get("building").add(BeyondBlocks.MIRROR.toStack());
         categories.get("building").add(BeyondBlocks.ORNATE_MIRROR.toStack());
         categories.get("building").add(BeyondBlocks.PEARL_CHIMES.toStack());
         categories.get("building").add(BeyondBlocks.VILET.toStack());
@@ -175,9 +174,10 @@ public class CreativeTabEvents {
         categories.get("functional").add(BeyondBlocks.PROJECTOR.toStack());
         categories.get("functional").add(BeyondItems.PRISMOGRAPH.toStack());
         categories.get("functional").add(BeyondBlocks.UNSTABLE_NACRE.toStack());
-        categories.get("functional").add(BeyondBlocks.PEARL_MIRROR.toStack());
+        categories.get("functional").add(BeyondBlocks.MIRROR.toStack());
         categories.get("functional").add(BeyondBlocks.ORNATE_MIRROR.toStack());
         categories.get("functional").add(BeyondItems.PEARL_BEAD.toStack());
+        categories.get("functional").add(BeyondItems.TRINKET_BUCKET.toStack());
         categories.get("functional").add(BeyondBlocks.PERKA_STALK_MOUTH.toStack());
         categories.get("functional").add(BeyondBlocks.COIL_VERTEBRAE.toStack());
 
@@ -230,10 +230,10 @@ public class CreativeTabEvents {
         categories.get("mobs").add(BeyondItems.ENDERGLOP_SPAWN_EGG.toStack());
         categories.get("mobs").add(BeyondItems.ENADRAKE_SPAWN_EGG.toStack());
         categories.get("mobs").add(BeyondItems.ENATIOUS_TOTEM_SPAWN_EGG.toStack());
+        categories.get("mobs").add(BeyondBlocks.PERKA_STALK_MOUTH.toStack());
         categories.get("mobs").add(BeyondItems.BRUBBLE_SPAWN_EGG.toStack());
         categories.get("mobs").add(BeyondItems.BAUBLE_SPAWN_EGG.toStack());
         categories.get("mobs").add(BeyondItems.TRINKET_SPAWN_EGG.toStack());
-        categories.get("mobs").add(BeyondItems.TRINKET_BUCKET.toStack());
 
         for (Collection<ItemStack> c : categories.values()) {
             padOutCategory(c);
@@ -415,7 +415,7 @@ public class CreativeTabEvents {
         categories.get("lustrous echoes").add(BeyondBlocks.COBBLED_PEARL_BRICK_STAIRS.toStack());
         categories.get("lustrous echoes").add(BeyondBlocks.COBBLED_PEARL_BRICK_SLAB.toStack());
         categories.get("lustrous echoes").add(BeyondBlocks.COBBLED_PEARL_BRICK_WALL.toStack());
-        categories.get("lustrous echoes").add(BeyondBlocks.PEARL_MIRROR.toStack());
+        categories.get("lustrous echoes").add(BeyondBlocks.MIRROR.toStack());
         categories.get("lustrous echoes").add(BeyondBlocks.ORNATE_MIRROR.toStack());
         categories.get("lustrous echoes").add(BeyondBlocks.PEARL_CHIMES.toStack());
         categories.get("lustrous echoes").add(BeyondItems.OCARINA.toStack());

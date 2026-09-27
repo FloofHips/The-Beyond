@@ -900,6 +900,7 @@ public class LivingBlock extends Mob {
     }
 
     public void clearMovementTarget() {
+        this.setPogoScaleTarget(new Vec3(1.0, 1.0, 1.0), IMPACT_RECOVER_TICKS);
         this.setMovementTarget(Target.NONE);
     }
 

@@ -1,6 +1,7 @@
 package com.thebeyond.common.block.blockentities;
 
 import com.thebeyond.common.block.EnadrakeHutBlock;
+import com.thebeyond.common.block.MirrorBlock;
 import com.thebeyond.common.block.blockstates.HutHeightProperty;
 import com.thebeyond.common.entity.EnadrakeEntity;
 import com.thebeyond.common.registry.*;
@@ -28,6 +29,7 @@ import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.block.state.properties.StairsShape;
 import net.minecraft.world.phys.Vec3;
@@ -530,6 +532,10 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
 
     private @NotNull BlockState getBlockState(Direction facing) {
         Rarity rarity = item.getRarity();
+
+        //replace with data driving
+        if (item.is(BeyondItems.PEARL_BEAD))
+            return BeyondBlocks.ORNATE_MIRROR.get().defaultBlockState().setValue(MirrorBlock.FACE_PROPERTIES.get(facing), true);
 
         if (rarity == Rarity.EPIC)
             return BeyondBlocks.ENADRAKE_FLARE.get().defaultBlockState();

@@ -97,7 +97,8 @@ public class TrinketRenderer extends LivingBlockRenderer {
         if (entity instanceof TrinketEntity trinket) {
             if (trinket.isSelected()) {
                 float sin = 0;
-                sin = Math.clamp(Mth.sin((entity.tickCount + trinket.getFeaturePlanSeed()/10000f) / 10f), 0, 1);
+                float v = Mth.sin((entity.tickCount + trinket.getFeaturePlanSeed() / 10000f) / 10f);
+                sin = Math.clamp(v, 0, 1);
                 int blockLight = LightTexture.block(packedLight);
                 int skyLight = LightTexture.sky(packedLight);
                 int fullBlockLight = LightTexture.block(LightTexture.FULL_BRIGHT);
@@ -106,7 +107,8 @@ public class TrinketRenderer extends LivingBlockRenderer {
                 int lerpBlockLight = (int) Mth.lerp(sin, blockLight, fullBlockLight);
                 int lerpSkyLight = (int) Mth.lerp(sin, skyLight, fullSkyLight);
                 int newPackedLight = LightTexture.pack(lerpBlockLight, lerpSkyLight);
-                renderAdditional(trinket, matrix, normalMatrix, poseStack, buffer, newPackedLight, color2.getRed(), Math.max(color2.getGreen(), sin), color2.getBlue(), 1);
+
+                renderAdditional(trinket, matrix, normalMatrix, poseStack, buffer, newPackedLight, (int) Mth.lerp(sin, color2.getRed(), 255), (int) Mth.lerp(sin, color2.getGreen(), 255), (int) Mth.lerp(sin, color2.getBlue(), 255), 255);
             } else renderAdditional(trinket, matrix, normalMatrix, poseStack, buffer, packedLight, color2.getRed(), color2.getGreen(), color2.getBlue(), 1);
 
         }

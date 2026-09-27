@@ -7,10 +7,13 @@ import com.thebeyond.api.compat.BeyondCompatHooks;
 import com.thebeyond.common.network.BlockCameraRenderRequestPayload;
 import com.thebeyond.common.camera.Grades;
 import com.thebeyond.common.camera.SnapshotRequests;
+import com.thebeyond.common.registry.BeyondTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.storage.loot.LootParams;
@@ -157,11 +160,40 @@ public class PrismographBlock extends BaseEntityBlock {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        // GUI only; photos fire on a redstone rising edge, never from this interaction.
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof PrismographBlockEntity be) {
-            player.openMenu(be, buf -> buf.writeBlockPos(pos));
+            level.scheduleTick(pos, this, 2);
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    @Override
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+        if (stack.is(BeyondTags.PRISMOGRAPH_FILM)) {
+            if (!level.isClientSide && level.getBlockEntity(pos) instanceof PrismographBlockEntity be) {
+                ItemStack film = be.getItem(0);
+
+                if (film.isEmpty()) {
+                    int toMove = Math.min(stack.getCount(), stack.getMaxStackSize());
+                    be.setItem(0, stack.copyWithCount(toMove));
+                    if (!player.getAbilities().instabuild) stack.shrink(toMove);
+                    be.setChanged();
+                    return ItemInteractionResult.sidedSuccess(false);
+                }
+
+                if (ItemStack.isSameItemSameComponents(film, stack)) {
+                    int space = film.getMaxStackSize() - film.getCount();
+                    if (space > 0) {
+                        int toMove = Math.min(space, stack.getCount());
+                        film.grow(toMove);
+                        if (!player.getAbilities().instabuild) stack.shrink(toMove);
+                        be.setChanged();
+                    }
+                    return ItemInteractionResult.sidedSuccess(false);
+                }
+            }
+            return ItemInteractionResult.sidedSuccess(level.isClientSide);
+        }
+        return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
     }
 
     private static void fireCapture(ServerLevel level, BlockPos pos, BlockState state) {

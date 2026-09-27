@@ -131,6 +131,7 @@ public class Lang extends LanguageProvider {
         add("screen.the_beyond.memory_bank.previous", "Previous page");
         add("screen.the_beyond.memory_bank.magnify", "Magnify");
         add("screen.the_beyond.ocarina.trinkets_selected", "Selected %s Trinkets");
+        add("screen.the_beyond.ocarina.trinkets_deselected", "Deselected %s Trinkets");
         add("screen.the_beyond.ocarina.no_trinkets", "No Trinkets selected");
 
         add("item.the_beyond.ocarina.mode.select", "Select mode");
@@ -315,6 +316,7 @@ public class Lang extends LanguageProvider {
         add("the_beyond.configuration.DropTotemOfRespite", "Totem of Respite drops");
 
         add("the_beyond.config.enable_custom_fog", "Custom fog");
+        add("the_beyond.config.clamp_lightmap", "Clamp lightmap");
         add("the_beyond.config.enable_custom_sky", "Custom sky");
         add("the_beyond.config.enable_swirling_clouds", "Swirling main island clouds");
         add("the_beyond.config.mirror_occlusion_model_based", "Mirror occlusion model based");

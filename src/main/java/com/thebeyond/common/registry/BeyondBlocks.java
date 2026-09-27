@@ -495,7 +495,7 @@ public class BeyondBlocks {
     public static final DeferredBlock<Block> COBBLED_PEARL_BRICK_WALL = registerBlock("cobbled_pearl_brick_wall", () -> new WallBlock(
             BlockBehaviour.Properties.ofFullCopy(COBBLED_PEARL_BRICKS.get()).sound(SoundType.NETHER_BRICKS)));
 
-    public static final DeferredBlock<Block> PEARL_MIRROR = registerBlock("pearl_mirror",
+    public static final DeferredBlock<Block> MIRROR = registerBlock("mirror",
             () -> new MirrorBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.TERRACOTTA_WHITE)
                     .sound(SoundType.AMETHYST)

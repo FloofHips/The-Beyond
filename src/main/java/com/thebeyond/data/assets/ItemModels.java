@@ -61,7 +61,7 @@ public class ItemModels extends ItemModelProvider {
 
         items.remove(BeyondItems.MEMORY_BANK.asItem());
         items.remove(BeyondBlocks.ORNATE_MIRROR.asItem());
-        items.remove(BeyondBlocks.PEARL_MIRROR.asItem());
+        items.remove(BeyondBlocks.MIRROR.asItem());
 
         handheldItem(BeyondItems.BRITTLE_SWORD.asItem());
         handheldItem(BeyondItems.BRITTLE_SHOVEL.asItem());
@@ -82,9 +82,6 @@ public class ItemModels extends ItemModelProvider {
         itemGeneratedModel(BeyondBlocks.BLEEDING_THORN.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/bleeding_thorn"));
         itemGeneratedModel(BeyondBlocks.BLINDING_THORN.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/blinding_thorn"));
         itemGeneratedModel(BeyondBlocks.PEARL_CHIMES.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/pearl_chimes"));
-        itemGeneratedModel(BeyondBlocks.ORNATE_MIRROR.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/ornate_mirror"));
-        itemGeneratedModel(BeyondBlocks.PEARL_MIRROR.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/pearl_mirror"));
-
         items.removeIf(i -> i instanceof BlockItem item && item.getBlock() instanceof WallBlock);
 
         takeAll(items, i -> i instanceof BlockItem).forEach(item -> blockBasedModel(item, ""));

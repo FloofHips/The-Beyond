@@ -25,10 +25,6 @@ public class SmokeFuseItem extends Item implements ProjectileItem {
 
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);
-        if (player.isShiftKeyDown()) {
-            itemstack.set(DataComponents.DYED_COLOR, new DyedItemColor(level.random.nextInt(48665565), true));
-            return InteractionResultHolder.success(itemstack);
-        }
 
         if (!level.isClientSide) {
             SmokeFuseEntity fuse = new SmokeFuseEntity(BeyondEntityTypes.SMOKE_FUSE.get(), level);

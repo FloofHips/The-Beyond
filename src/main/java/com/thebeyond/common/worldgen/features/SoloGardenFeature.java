@@ -68,7 +68,7 @@ public class SoloGardenFeature extends Feature<NoneFeatureConfiguration> {
                 return;
             }
             case 3 : {
-                worldgenlevel.setBlock(blockpos.below(), BeyondBlocks.PEARL_MIRROR.get().defaultBlockState().setValue(MirrorBlock.UP, true), 3);
+                worldgenlevel.setBlock(blockpos.below(), BeyondBlocks.MIRROR.get().defaultBlockState().setValue(MirrorBlock.UP, true), 3);
                 return;
             }
         }

@@ -2,7 +2,9 @@ package com.thebeyond.common.block;
 
 import com.thebeyond.client.particle.SmokeColorTransitionOptions;
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.common.registry.BeyondSoundEvents;
+import com.thebeyond.util.RenderUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -21,6 +23,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.client.event.ScreenEvent;
 import org.joml.Vector3f;
 
 public class PearlChimesBlock extends Block {
@@ -73,16 +76,14 @@ public class PearlChimesBlock extends Block {
                 BlockPos checkPos = pos.relative(direction, distance);
 
                 if (level.getBlockState(checkPos).isSolid()) {
-                    double x = checkPos.getX() + 0.5 - direction.getStepX() * 0.5;
-                    double y = checkPos.getY() + 0.5 - direction.getStepY() * 0.5;
-                    double z = checkPos.getZ() + 0.5 - direction.getStepZ() * 0.5;
-
-                    level.addParticle(ParticleTypes.END_ROD, x, y, z, 0, 0, 0);
+                    RenderUtils.spawnBlockFaceParticle(level, random, direction, checkPos);
                     break;
                 }
             }
         }
     }
+
+
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {

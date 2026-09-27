@@ -79,7 +79,7 @@ public class PerkaStalkMouthBlockEntity extends BlockEntity implements GameEvent
             if (gameEvent.is(GameEventTags.VIBRATIONS)) {
                 if (context.sourceEntity() != null) {
                     if (context.sourceEntity() instanceof StalkerEntity) return false;
-                    if (level.random.nextBoolean() && !(context.sourceEntity() instanceof Player)) return false;
+                    if (!(context.sourceEntity() instanceof Player)) return false;
                 }
                 Optional<Vec3> position = positionSource.getPosition(level);
                 if (position.isPresent()) {

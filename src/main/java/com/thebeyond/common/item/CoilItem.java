@@ -4,6 +4,7 @@ import com.thebeyond.api.compat.BeyondCompatHooks;
 import com.thebeyond.client.particle.CrosshairColorTransitionOptions;
 import com.thebeyond.common.entity.CoilEntity;
 import com.thebeyond.common.registry.*;
+import com.thebeyond.util.RenderUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -56,7 +57,7 @@ public class CoilItem extends Item {
                     CoilEntity coil = new CoilEntity(BeyondEntityTypes.COILED_STALK.get(), level, dir, blockPos);
 
                     coil.setPos(player.getX(), player.getY()+1, player.getZ());
-                    coil.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, 2F, 0.0F);
+                    coil.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, 2F, 0F);
                     level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ARROW_SHOOT, SoundSource.PLAYERS, 1.0F, 1.0F);
                     level.addFreshEntity(coil);
                 }
@@ -111,19 +112,15 @@ public class CoilItem extends Item {
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
         if (!isSelected) return;
 
-        if (entity.level().isClientSide && entity.tickCount % 15 == 0) {
+        if (entity.level().isClientSide && entity.tickCount % 10 == 0) {
             BlockHitResult result = rayCast(level, entity);
             if (result !=null) {
                 BlockPos pos = result.getBlockPos();
-                Direction dir = result.getDirection();
+                Direction dir = result.getDirection().getOpposite();
 
                 Vec3 blockCenter = BeyondCompatHooks.visibleOrCenter(level, pos.offset(dir.getStepX(), dir.getStepY(), dir.getStepZ()));
 
-                level.addParticle(new CrosshairColorTransitionOptions(
-                        new Vector3f(0.7f, 0.0f, 0.9f),
-                        new Vector3f(0.1f, 0.1f, 0.3f),
-                        0.2f
-                ), true, blockCenter.x+0.001f, blockCenter.y, blockCenter.z+0.001f, 0, 0, 0);
+                RenderUtils.spawnBlockFaceParticle(level, dir, pos);
             }
         }
     }
