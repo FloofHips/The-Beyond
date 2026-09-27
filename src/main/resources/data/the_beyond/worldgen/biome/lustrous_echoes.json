@@ -22,7 +22,9 @@
     ],
     [],
     [],
-    [],
+    [
+      "minecraft:end_gateway_return"
+    ],
     [
       "the_beyond:solo_garden"
     ],
@@ -32,6 +34,7 @@
     [],
     [],
     [
+      "the_beyond:ore_bedazzled_end_stone",
       "the_beyond:blinding_thorns"
     ]
   ],

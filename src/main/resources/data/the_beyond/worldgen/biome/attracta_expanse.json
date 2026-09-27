@@ -63,7 +63,8 @@
       "the_beyond:void_crystal"
     ],
     [
-      "the_beyond:magnolilly"
+      "the_beyond:magnolilly",
+      "minecraft:end_gateway_return"
     ],
     [
       "the_beyond:polar_antenna"

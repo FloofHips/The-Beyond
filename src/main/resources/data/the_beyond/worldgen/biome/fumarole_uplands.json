@@ -28,7 +28,8 @@
     ],
     [
       "the_beyond:void_puddle",
-      "the_beyond:brittle_metal"
+      "the_beyond:brittle_metal",
+      "minecraft:end_gateway_return"
     ],
     [
       "the_beyond:creeping_zymote"
