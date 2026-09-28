@@ -139,6 +139,9 @@ public class Lang extends LanguageProvider {
         add("item.the_beyond.ocarina.mode.follow", "Follow mode");
         add("item.the_beyond.ocarina.mode.scatter", "Scatter mode");
 
+        add("tooltip.block.the_beyond.brittle_metal.title", "Brittle Metal Casting");
+        add("tooltip.block.the_beyond.brittle_metal.desc", "Create tool shape then interact with center block to cast");
+
         add("trinket.small", "Small");
         add("trinket.medium", "Medium");
         add("trinket.large", "Large");

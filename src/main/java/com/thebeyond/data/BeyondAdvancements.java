@@ -80,7 +80,7 @@ public class BeyondAdvancements extends AdvancementProvider {
                             Component.translatable("advancements.the_beyond.brush_lantern.description"),
                             null,
                             AdvancementType.TASK,
-                            true, true, false
+                            true, false, false
                     )
                     .addCriterion("brush_lantern",
                             BeyondCriteriaTriggers.BRUSH_LANTERN.get().createCriterion(
@@ -96,7 +96,7 @@ public class BeyondAdvancements extends AdvancementProvider {
                             Component.translatable("advancements.the_beyond.ectoplasmic_ignition.description"),
                             null,
                             AdvancementType.TASK,
-                            true, true, false
+                            true, false, false
                     )
                     .addCriterion("obtain_live_flame",
                             BeyondCriteriaTriggers.OBTAIN_LIVE_FLAME.get().createCriterion(
@@ -162,7 +162,7 @@ public class BeyondAdvancements extends AdvancementProvider {
                             Component.translatable("advancements.the_beyond.sacred_passage.description"),
                             null,
                             AdvancementType.TASK,
-                            true, true, false
+                            true, false, false
                     )
                     .addCriterion("ride_nomad",
                             BeyondCriteriaTriggers.RIDE_NOMAD.get().createCriterion(
@@ -178,7 +178,7 @@ public class BeyondAdvancements extends AdvancementProvider {
                             Component.translatable("advancements.the_beyond.memories_returned.description"),
                             null,
                             AdvancementType.GOAL,
-                            true, true, false
+                            true, false, false
                     )
                     .addCriterion("fountain_offering",
                             BeyondCriteriaTriggers.FOUNTAIN_OFFERING.get().createCriterion(
@@ -253,20 +253,20 @@ public class BeyondAdvancements extends AdvancementProvider {
                                     new PlayerTrigger.TriggerInstance(Optional.empty())))
                     .save(consumer, "the_beyond:the_beyond/gift_enadrake");
 
-//            AdvancementHolder giftRareEnadrake = Advancement.Builder.advancement()
-//                    .parent(giftEnadrake)
-//                    .display(
-//                            new ItemStack(Items.ENCHANTED_GOLDEN_APPLE),
-//                            Component.translatable("advancements.the_beyond.gift_rare_enadrake.title"),
-//                            Component.translatable("advancements.the_beyond.gift_rare_enadrake.description"),
-//                            null,
-//                            AdvancementType.TASK,
-//                            true, true, false
-//                    )
-//                    .addCriterion("gift_rare_enadrake",
-//                            BeyondCriteriaTriggers.GIFT_RARE_ENADRAKE.get().createCriterion(
-//                                    new PlayerTrigger.TriggerInstance(Optional.empty())))
-//                    .save(consumer, "the_beyond:the_beyond/gift_rare_enadrake");
+            AdvancementHolder giftRareEnadrake = Advancement.Builder.advancement()
+                    .parent(giftEnadrake)
+                    .display(
+                            new ItemStack(Items.ENCHANTED_GOLDEN_APPLE),
+                            Component.translatable("advancements.the_beyond.gift_rare_enadrake.title"),
+                            Component.translatable("advancements.the_beyond.gift_rare_enadrake.description"),
+                            null,
+                            AdvancementType.TASK,
+                            true, false, false
+                    )
+                    .addCriterion("gift_rare_enadrake",
+                            BeyondCriteriaTriggers.GIFT_RARE_ENADRAKE.get().createCriterion(
+                                    new PlayerTrigger.TriggerInstance(Optional.empty())))
+                    .save(consumer, "the_beyond:the_beyond/gift_rare_enadrake");
 
             AdvancementHolder completeRefuge = Advancement.Builder.advancement()
                     .parent(giftEnadrake)

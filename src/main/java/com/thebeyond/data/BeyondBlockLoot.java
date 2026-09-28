@@ -75,7 +75,7 @@ public class BeyondBlockLoot extends BlockLootSubProvider {
         dropSelf(BeyondBlocks.GAUSS_VENT.get());
         dropSelf(BeyondBlocks.BELLOW.get());
         dropSelf(BeyondBlocks.SOOT_BLOCK.get());
-        dropSelf(BeyondBlocks.BRITTLE_METAL.get());
+        dropSelf(BeyondBlocks.BRITTLE_METAL_BLOCK.get());
         dropSelf(BeyondBlocks.BRITTLE_METAL_STAIRS.get());
         dropSelf(BeyondBlocks.PROJECTOR.get());
 

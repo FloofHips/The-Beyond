@@ -275,6 +275,7 @@ public class BeyondBlocks {
     public static final DeferredBlock<Block> ZYMOTE = registerBlock("zymote",
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                    .strength(0.3F, 0.0F)
                     .sound(SoundType.NYLIUM))
     );
     public static final DeferredBlock<Block> REACHING_ZYMOTE = registerBlock("reaching_zymote",

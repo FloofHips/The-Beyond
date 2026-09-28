@@ -1,11 +1,18 @@
 package com.thebeyond.common.block;
 
+import com.thebeyond.client.gui.BrittleMetalTutorialToast;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondItems;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.toasts.Toast;
+import net.minecraft.client.gui.components.toasts.ToastComponent;
+import net.minecraft.client.gui.components.toasts.TutorialToast;
+import net.minecraft.client.tutorial.Tutorial;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -92,17 +99,23 @@ public class BrittleMetalBlock extends Block {
             serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.BRITTLE_METAL.get().defaultBlockState()), pos.getX()+0.5f, pos.getY()+1.2f, pos.getZ()+0.5f, 5, 0.5F, 0.5F, 0.5F, 0.0F);
             if (itemStack.isEmpty()) return super.useWithoutItem(state, level, pos, player, hitResult);
 
-            //for (int x = -1; x <= 1; x++) {
-            //    for (int z = -1; z <= 1; z++) {
-            //        level.destroyBlock(pos.offset(x, 0, z), false);
-            //    }
-            //}
-
             ItemEntity entity = new ItemEntity(level, pos.getX() + 0.5f, pos.getY() + 1, pos.getZ() + 0.5f, itemStack);
             level.addFreshEntity(entity);
             entity.setDeltaMovement(entity.getDeltaMovement().add(0,0.1,0));
-
             serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE, pos.getX()+0.5f, pos.getY()+1.2f, pos.getZ()+0.5f, 5, 1, 0.5F, 1, 0.01F);
+        } else {
+            if (player.level().isClientSide && itemStack.isEmpty()) {
+                Minecraft mc = Minecraft.getInstance();
+                ToastComponent toastManager = mc.getToasts();
+
+                if (toastManager.getToast(BrittleMetalTutorialToast.class, Toast.NO_TOKEN) == null) {
+                    Toast t = new BrittleMetalTutorialToast(
+                            Component.translatable("tooltip.block.the_beyond.brittle_metal.title"),
+                            Component.translatable("tooltip.block.the_beyond.brittle_metal.desc")
+                    );
+                    toastManager.addToast(t);
+                }
+            }
         }
         return InteractionResult.SUCCESS_NO_ITEM_USED;
     }
@@ -146,7 +159,15 @@ public class BrittleMetalBlock extends Block {
             for (int col = -1; col <= 1; col++) {
                 BlockPos checkPos = pos.relative(forward, -row).relative(left, col);
                 boolean isMetal = level.getBlockState(checkPos).is(BeyondBlocks.BRITTLE_METAL.get());
-                if (!isMetal) return ItemStack.EMPTY;
+                boolean isMoltenMetal = level.getBlockState(checkPos).is(BeyondBlocks.MOLTEN_METAL.get());
+
+                if (isMoltenMetal) {
+                    pattern.append("0");
+                    if (col == 0) toBreak.add(checkPos);
+                    continue;
+                }
+
+                if (!isMetal && !isMoltenMetal) return ItemStack.EMPTY;
 
                 boolean isPowered = level.getBlockState(checkPos).getValue(POWERED);
                 pattern.append(isPowered ? "0" : "1");

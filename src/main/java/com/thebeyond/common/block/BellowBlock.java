@@ -167,7 +167,7 @@ public class BellowBlock extends BaseEntityBlock {
         return (double) strength / LEVELS_PER_BLOCK;
     }
     public static void serverPush(ServerLevel level, BlockPos pos, BlockState state, int signal, int strength, Direction direction) {
-        serverPush(level, pos, state, 15, 40, Direction.UP, false);
+        serverPush(level, pos, state, signal, strength, direction, false);
     }
     /** Server: pushes entities in the gust toward the facing; force scales with the signal and fades over the reach. */
     public static void serverPush(ServerLevel level, BlockPos pos, BlockState state, int signal, int strength, Direction direction, boolean givesEffect) {
