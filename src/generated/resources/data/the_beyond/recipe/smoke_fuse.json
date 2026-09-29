@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    {
+      "item": "the_beyond:blinding_thorn"
+    },
+    {
+      "item": "the_beyond:blinding_thorn"
+    },
+    {
+      "item": "the_beyond:blinding_thorn"
+    },
+    {
+      "item": "the_beyond:blinding_thorn"
+    }
+  ],
+  "result": {
+    "count": 4,
+    "id": "the_beyond:smoke_fuse"
+  }
+}

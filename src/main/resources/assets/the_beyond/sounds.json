@@ -862,6 +862,41 @@
       "the_beyond:mob/enadrake/teleport2"
     ],
     "subtitle": "subtitles.entity.enadrake.teleport"
+  },"entity.stalker.hurt": {
+    "sounds": [
+      "the_beyond:mob/stalker/hurt1",
+      "the_beyond:mob/stalker/hurt2",
+      "the_beyond:mob/stalker/hurt3"
+    ],
+    "subtitle": "subtitles.entity.stalker.hurt"
+  },
+  "entity.stalker.death": {
+    "sounds": [
+      "the_beyond:mob/stalker/death1",
+      "the_beyond:mob/stalker/death2"
+    ],
+    "subtitle": "subtitles.entity.stalker.death"
+  },
+  "entity.stalker.pop": {
+    "sounds": [
+      "the_beyond:mob/stalker/pop1",
+      "the_beyond:mob/stalker/pop2"
+    ],
+    "subtitle": "subtitles.entity.stalker.pop"
+  },
+  "entity.stalker.retreat": {
+    "sounds": [
+      "the_beyond:mob/stalker/pop1",
+      "the_beyond:mob/stalker/pop2"
+    ],
+    "subtitle": "subtitles.entity.stalker.retreat"
+  },
+  "entity.stalker.bite": {
+    "sounds": [
+      "the_beyond:mob/stalker/bite1",
+      "the_beyond:mob/stalker/bite2"
+    ],
+    "subtitle": "subtitles.entity.stalker.bite"
   },
   "entity.lantern.hurt": {
     "sounds": [

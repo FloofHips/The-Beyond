@@ -11,7 +11,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "the_beyond:brittle_metal"
+          "name": "the_beyond:brittle_metal_sheet"
         }
       ],
       "rolls": 1.0

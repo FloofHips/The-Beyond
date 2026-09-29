@@ -139,6 +139,12 @@ public class BeyondSoundEvents {
     public static final DeferredHolder<SoundEvent, SoundEvent> ENADRAKE_HURT = SOUND_EVENTS.register("entity.enadrake.hurt", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> ENADRAKE_SCREECH = SOUND_EVENTS.register("entity.enadrake.screech", SoundEvent::createVariableRangeEvent);
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> STALKER_POP = SOUND_EVENTS.register("entity.stalker.pop", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> STALKER_DEATH = SOUND_EVENTS.register("entity.stalker.death", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> STALKER_HURT = SOUND_EVENTS.register("entity.stalker.hurt", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> STALKER_RETREAT = SOUND_EVENTS.register("entity.stalker.retreat", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> STALKER_BITE = SOUND_EVENTS.register("entity.stalker.bite", SoundEvent::createVariableRangeEvent);
+
     public static final DeferredHolder<SoundEvent, SoundEvent> VOID_BURST = SOUND_EVENTS.register("block.gellid_void.burst", SoundEvent::createVariableRangeEvent);
 
     public static final DeferredHolder<SoundEvent, SoundEvent> LANTERN_HURT = SOUND_EVENTS.register("entity.lantern.hurt", SoundEvent::createVariableRangeEvent);

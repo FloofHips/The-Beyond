@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "M": {
+      "item": "the_beyond:mirror"
+    },
+    "S": {
+      "item": "the_beyond:brittle_metal_sheet"
+    }
+  },
+  "pattern": [
+    " S ",
+    "SMS",
+    " S "
+  ],
+  "result": {
+    "count": 1,
+    "id": "the_beyond:ornate_mirror"
+  }
+}

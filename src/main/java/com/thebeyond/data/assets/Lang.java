@@ -211,6 +211,12 @@ public class Lang extends LanguageProvider {
         add("subtitles.entity.enadrake.hurt", "Enadrake hurts");
         add("subtitles.entity.enadrake.screech", "Enadrake screeches");
 
+        add("subtitles.entity.stalker.death", "Stalker dies");
+        add("subtitles.entity.stalker.hurt", "Stalker hurts");
+        add("subtitles.entity.stalker.pop", "Stalker appears");
+        add("subtitles.entity.stalker.retreat", "Stalker retreats");
+        add("subtitles.entity.stalker.bite", "Stalker bites down");
+
         add("subtitles.entity.lantern.hurt", "Lantern hurts");
         add("subtitles.entity.lantern.idle", "Wind blows quietly");
         add("subtitles.entity.lantern.teleport", "Lantern teleports");

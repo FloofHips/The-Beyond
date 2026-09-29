@@ -30,7 +30,7 @@
             },
             {
               "type": "minecraft:item",
-              "name": "the_beyond:pearl"
+              "name": "the_beyond:cobbled_pearl"
             }
           ]
         }

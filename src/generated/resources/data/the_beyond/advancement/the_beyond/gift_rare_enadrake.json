@@ -1,0 +1,27 @@
+{
+  "parent": "the_beyond:the_beyond/gift_enadrake",
+  "criteria": {
+    "gift_rare_enadrake": {
+      "trigger": "the_beyond:gift_rare_enadrake"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancements.the_beyond.gift_rare_enadrake.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:enchanted_golden_apple"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.gift_rare_enadrake.title"
+    }
+  },
+  "requirements": [
+    [
+      "gift_rare_enadrake"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

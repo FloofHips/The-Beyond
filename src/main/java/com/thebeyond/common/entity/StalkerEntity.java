@@ -4,6 +4,7 @@ import com.thebeyond.client.particle.CircleColorTransitionOptions;
 import com.thebeyond.client.particle.PixelColorTransitionOptions;
 import com.thebeyond.common.registry.BeyondEntityTypes;
 import com.thebeyond.common.registry.BeyondParticleTypes;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.util.ColorUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -15,6 +16,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -45,6 +47,7 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
     private static final EntityDataAccessor<Direction> FACING = SynchedEntityData.defineId(StalkerEntity.class, EntityDataSerializers.DIRECTION);
     private static final EntityDataAccessor<Boolean> VIOLENT = SynchedEntityData.defineId(StalkerEntity.class, EntityDataSerializers.BOOLEAN);
     protected static final EntityDataAccessor<Optional<UUID>> OWNER = SynchedEntityData.defineId(StalkerEntity.class, EntityDataSerializers.OPTIONAL_UUID);
+    private static final EntityDataAccessor<Integer> OWNER_ID = SynchedEntityData.defineId(StalkerEntity.class, EntityDataSerializers.INT);
     public boolean markedForRemoval = false;
     private static final byte ATTACK = 67;
     public static final byte SPREAD = 68;
@@ -76,6 +79,7 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
         builder.define(FACING, Direction.NORTH);
         builder.define(VIOLENT, false);
         builder.define(OWNER, Optional.empty());
+        builder.define(OWNER_ID, -1);
     }
 
     public void readAdditionalSaveData(CompoundTag compound) {
@@ -84,12 +88,21 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
         yetToBud = compound.getBoolean("YetToBud");
         entityData.set(FACING, Direction.from3DDataValue(compound.getByte("Facing")));
         entityData.set(VIOLENT, compound.getBoolean("Violent"));
-        markedForRemoval = compound.getBoolean("Violent");
+        markedForRemoval = compound.getBoolean("MarkedForRemoval");
 
-        UUID uuid;
         if (compound.hasUUID("Owner")) {
-            uuid = compound.getUUID("Owner");
-            entityData.set(OWNER, Optional.ofNullable(uuid));
+            UUID uuid = compound.getUUID("Owner");
+            entityData.set(OWNER, Optional.of(uuid));
+
+//            if (level() instanceof ServerLevel serverLevel) {
+//                Entity ownerEntity = serverLevel.getEntity(uuid);
+//                if (ownerEntity != null) {
+//                    entityData.set(OWNER_ID, ownerEntity.getId());
+//                }
+//            }
+        } else {
+            entityData.set(OWNER, Optional.empty());
+            //entityData.set(OWNER_ID, -1);
         }
     }
 
@@ -143,11 +156,33 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
     }
 
     @Override
+    protected @Nullable SoundEvent getHurtSound(DamageSource damageSource) {
+        return BeyondSoundEvents.STALKER_HURT.get();
+    }
+
+    @Override
+    protected @Nullable SoundEvent getDeathSound() {
+        return BeyondSoundEvents.STALKER_DEATH.get();
+    }
+
+    @Override
     public void tick() {
         super.tick();
 
-        if (level().getDifficulty() == Difficulty.PEACEFUL) return;
+//        if (!level().isClientSide && (tickCount % 20 == 0)) {
+//            UUID uuid = getOwnerUUID();
+//            if (uuid != null) {
+//                if (level() instanceof ServerLevel serverLevel) {
+//                    Entity ownerEntity = serverLevel.getEntity(uuid);
+//                    int newId = ownerEntity != null ? ownerEntity.getId() : -1;
+//                    if (newId != entityData.get(OWNER_ID)) {
+//                        entityData.set(OWNER_ID, newId);
+//                    }
+//                }
+//            }
+//        }
 
+        if (level().getDifficulty() == Difficulty.PEACEFUL) return;
         if (!level().isClientSide) {
 
             if (!base && children <= 0 && !isViolent() && (tickCount % 60 == 0)) markedForRemoval = true;
@@ -170,6 +205,7 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
                     if (owner != null) {
                         owner.children--;
                     }
+                    level().playSound(null, this.getX(), this.getY(), this.getZ(), BeyondSoundEvents.STALKER_RETREAT.get(), SoundSource.HOSTILE, 1, 1 + level().random.nextFloat()/2f);
                     this.discard();
                 }
             }
@@ -200,8 +236,6 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
                 if (isSpaceOccupied(pos, d)) {
                     spawnChild(pos, d);
                     if (random.nextInt(10)==0) spawnChild(pos, d);
-                } else {
-                    level().playSound(null, pos.getX(), pos.getY(), pos.getZ(), SoundEvents.ITEM_BREAK, SoundSource.HOSTILE);
                 }
             }
         } else {
@@ -236,7 +270,7 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
 
         this.children++;
         yetToBud = false;
-        level().playSound(null, pos.getX(), pos.getY(), pos.getZ(), SoundEvents.BEEHIVE_EXIT, SoundSource.HOSTILE);
+        level().playSound(null, pos.getX(), pos.getY(), pos.getZ(), BeyondSoundEvents.STALKER_POP.get(), SoundSource.HOSTILE,1, 0.5f + getGeneration()/5f);
     }
 
     @Override
@@ -247,6 +281,8 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
     }
 
     private void attack() {
+        if (isRemoved()) return;
+        if (!isAlive()) return;
         setViolent(true);
         yetToBud = false;
         Vec3 pos = Vec3.atCenterOf(this.blockPosition().offset(getFacing().getStepX()*2, getFacing().getStepY()*2, getFacing().getStepZ()*2));
@@ -256,7 +292,7 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
 
         for (LivingEntity entity : entities) {
             if (entity instanceof StalkerEntity) continue;
-            entity.hurt(this.damageSources().mobAttack(this), 4f);
+            entity.hurt(this.damageSources().mobAttack(this), 8f);
         }
 
         if (level() instanceof ServerLevel serverLevel) {
@@ -274,7 +310,7 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
         }
 
         level().broadcastEntityEvent(this, ATTACK);
-        level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EVOKER_FANGS_ATTACK, SoundSource.HOSTILE);
+        level().playSound(null, this.getX(), this.getY(), this.getZ(), BeyondSoundEvents.STALKER_BITE.get(), SoundSource.HOSTILE, 1, 0.8f + level().random.nextFloat());
     }
 
     public void setOriginalTarget(Vec3 originalTarget) {
@@ -396,8 +432,7 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
 
     @Override
     public @Nullable UUID getOwnerUUID() {
-        Optional<UUID> uuid1 = entityData.get(OWNER);
-        return uuid1.orElse(null);
+        return entityData.get(OWNER).orElse(null);
     }
 
     @Override
@@ -405,9 +440,26 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
         if (level() instanceof ServerLevel serverLevel)
             return (LivingEntity) serverLevel.getEntity(getOwnerUUID());
         return null;
+//        int ownerId = entityData.get(OWNER_ID);
+//        if (ownerId == -1) return null;
+//
+//        Entity owner = level().getEntity(ownerId);
+//        return owner instanceof LivingEntity living ? living : null;
     }
 
     public void setOwner(UUID uuid) {
         entityData.set(OWNER, Optional.ofNullable(uuid));
+//
+//        if (uuid == null) {
+//            entityData.set(OWNER_ID, -1);
+//            return;
+//        }
+//
+//        if (level() instanceof ServerLevel serverLevel) {
+//            Entity ownerEntity = serverLevel.getEntity(uuid);
+//            if (ownerEntity != null) {
+//                entityData.set(OWNER_ID, ownerEntity.getId());
+//            }
+//        }
     }
 }

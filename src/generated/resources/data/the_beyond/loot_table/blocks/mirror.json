@@ -11,11 +11,11 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "the_beyond:pearl_mirror"
+          "name": "the_beyond:mirror"
         }
       ],
       "rolls": 1.0
     }
   ],
-  "random_sequence": "the_beyond:blocks/pearl_mirror"
+  "random_sequence": "the_beyond:blocks/mirror"
 }
