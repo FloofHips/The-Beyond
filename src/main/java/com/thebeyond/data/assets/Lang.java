@@ -257,6 +257,10 @@ public class Lang extends LanguageProvider {
         add("subtitles.block.refuge.roots_spreading", "Roots spread");
         add("subtitles.block.refuge.ready", "Refuge activates");
 
+        add("subtitles.block.pearl.scrape", "Scrape off");
+        add("subtitles.block.pearl.impact", "Pearl resonates");
+        add("subtitles.block.pearl.clink", "Pearl clinks");
+
         add("subtitles.item.magnet.success", "Magnet latches on");
         add("subtitles.item.magnet.fail", "Magnet falls short");
 

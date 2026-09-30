@@ -416,6 +416,83 @@
     ],
     "subtitle": "subtitles.block.generic.footsteps"
   },
+  "block.mirror.break": {
+    "sounds": [
+      "the_beyond:block/pearl/break1",
+      "the_beyond:block/pearl/break2",
+      "the_beyond:block/pearl/break3",
+      "the_beyond:block/pearl/break4"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },"block.pearl.break": {
+    "sounds": [
+      "the_beyond:block/pearl/heavy1",
+      "the_beyond:block/pearl/heavy2",
+      "the_beyond:block/pearl/heavy3"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.pearl.fall": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.pearl.break",
+        "type": "event"
+      }
+    ]
+  },
+  "block.pearl.hit": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.pearl.step",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.pearl.place": {
+    "sounds": [
+      "the_beyond:block/pearl/heavy1",
+      "the_beyond:block/pearl/heavy2",
+      "the_beyond:block/pearl/heavy3"
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.pearl.step": {
+    "sounds": [
+      "the_beyond:block/pearl/light1",
+      "the_beyond:block/pearl/light2",
+      "the_beyond:block/pearl/light3",
+      "the_beyond:block/pearl/light4"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.pearl.scrape": {
+    "sounds": [
+      "the_beyond:block/pearl/scrape1",
+      "the_beyond:block/pearl/scrape2",
+      "the_beyond:block/pearl/scrape3"
+    ],
+    "subtitle": "subtitles.block.pearl.scrape"
+  },
+  "block.pearl.clink": {
+    "sounds": [
+      "the_beyond:block/pearl/clink1",
+      "the_beyond:block/pearl/clink2",
+      "the_beyond:block/pearl/clink3",
+      "the_beyond:block/pearl/clink4",
+      "the_beyond:block/pearl/clink5"
+    ],
+    "subtitle": "subtitles.block.pearl.clink"
+  },
+  "block.pearl.impact": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.memor.hit",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.pearl.impact"
+  },
   "block.void_crystal.break": {
     "sounds": [
       "the_beyond:block/void_crystal/heavy1",

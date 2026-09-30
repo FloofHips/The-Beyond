@@ -3151,7 +3151,7 @@ public class LivingBlock extends Mob {
     }
 
     protected static @NotNull SoundEvent getContactSound() {
-        return BeyondSoundEvents.MEMOR_PLACE.get();
+        return BeyondSoundEvents.PEARL_IMPACT.get();
     }
 
     protected float getContactPitchModifier() {

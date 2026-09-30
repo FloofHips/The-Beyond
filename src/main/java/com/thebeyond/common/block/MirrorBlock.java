@@ -5,9 +5,7 @@ import com.thebeyond.client.particle.SmokeColorTransitionOptions;
 import com.thebeyond.common.block.blockentities.MirrorBlockEntity;
 import com.thebeyond.common.entity.AbyssalNomadEntity;
 import com.thebeyond.common.entity.BaubleEntity;
-import com.thebeyond.common.registry.BeyondBlocks;
-import com.thebeyond.common.registry.BeyondEntityTypes;
-import com.thebeyond.common.registry.BeyondParticleTypes;
+import com.thebeyond.common.registry.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -128,7 +126,7 @@ public class MirrorBlock extends BaseEntityBlock {
         if (face == null) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
-        level.playSound(player, pos, SoundEvents.AXE_WAX_OFF,SoundSource.BLOCKS, 1, 1);
+        level.playSound(player, pos, BeyondSoundEvents.PEARL_SCRAPE.get(), SoundSource.BLOCKS, 1, 1);
         if (!level.isClientSide) {
             level.setBlock(pos, state.cycle(face), Block.UPDATE_ALL);
             if (level instanceof ServerLevel serverLevel) serverLevel.sendParticles(ParticleTypes.WAX_OFF, pos.getX()+0.5, pos.getY()+0.5, pos.getZ()+0.5, 10, 0.5, 0.5, 0.5, 0.01);

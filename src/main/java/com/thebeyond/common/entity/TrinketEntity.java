@@ -6,6 +6,8 @@ import com.thebeyond.common.entity.util.livingblock.TrinketGrowth;
 import com.thebeyond.common.item.OcarinaItem;
 import com.thebeyond.common.registry.BeyondItems;
 import com.thebeyond.common.registry.BeyondParticleTypes;
+import com.thebeyond.common.registry.BeyondSoundEvents;
+import com.thebeyond.common.registry.BeyondSoundTypes;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -201,7 +203,7 @@ public class TrinketEntity extends BaubleEntity implements Bucketable, OwnableEn
         if (itemstack.is(Items.HONEYCOMB)) {
             if (!isWaxed()) {
                 setWaxed(true);
-                playSound(SoundEvents.HONEYCOMB_WAX_ON);
+                playSound(BeyondSoundEvents.PEARL_SCRAPE.get());
                 if (level() instanceof ServerLevel serverLevel) {
                     serverLevel.sendParticles(ParticleTypes.WAX_ON, this.getX(), this.getY(), this.getZ(), getDepth() + getWidth(), getDepth()/16f, getHeight()/16f, getWidth()/16f, 0.01);
                 }
@@ -214,7 +216,7 @@ public class TrinketEntity extends BaubleEntity implements Bucketable, OwnableEn
         if (itemstack.is(ItemTags.AXES)) {
             if (isWaxed()) {
                 setWaxed(false);
-                playSound(SoundEvents.AXE_WAX_OFF);
+                playSound(BeyondSoundEvents.PEARL_SCRAPE.get());
                 if (level() instanceof ServerLevel serverLevel) {
                     serverLevel.sendParticles(ParticleTypes.WAX_OFF, this.getX(), this.getY(), this.getZ(), getDepth() + getWidth(), getDepth()/16f, getHeight()/16f, getWidth()/16f, 0.01);
                 }

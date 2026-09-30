@@ -6,7 +6,10 @@ import com.thebeyond.common.registry.BeyondItems;
 import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
@@ -51,7 +54,15 @@ public class PearlItemEntity extends ThrowableItemProjectile {
                     double v = (isInFluidType() ? 1 : 0.6);
                     this.setDeltaMovement(motion.multiply(-v, 0.4, -v));
                     if (entityHit.getEntity().isPushable()) entityHit.getEntity().setDeltaMovement(motion.multiply(v, 0.4, v));
-                    this.playSound(BeyondSoundEvents.MEMOR_HIT.get(), 0.8F, 1.2F);
+                    if (this.isInFluidType()) {
+                        this.playSound(BeyondSoundEvents.PEARL_CLINK.get(), 0.8F, 1 + level().random.nextFloat());
+                        ServerLevel serverlevel = (ServerLevel)this.level();
+                        serverlevel.sendParticles(ParticleTypes.SPLASH, getX(), getY(), getZ(), 4 + this.random.nextInt(10), 0.1F, 0.0, 0.1F, 0.0);
+
+                    } else {
+                        this.playSound(BeyondSoundEvents.PEARL_IMPACT.get(), 0.8F, 1.2F);
+                    }
+
                 } else {
                     this.setDeltaMovement(motion.multiply(-0.3, 0.1, -0.3));
                 }
@@ -64,19 +75,24 @@ public class PearlItemEntity extends ThrowableItemProjectile {
                     float y = Math.abs(motion.y)<0.1 ? 0 : (float) (motion.y * -0.5f);
                     this.setDeltaMovement(motion.x, y, motion.z);
                     this.setOnGround(true);
-                    this.playSound(BeyondSoundEvents.MEMOR_HIT.get(), 0.5F, 1.5F);
+                    this.playSound(BeyondSoundEvents.PEARL_IMPACT.get(), 0.5F, 1.5F);
                 } else if (face == Direction.DOWN) {
                     this.setDeltaMovement(motion.x * 0.8, -Math.abs(motion.y) * 0.5, motion.z * 0.8);
-                    this.playSound(BeyondSoundEvents.MEMOR_HIT.get(), 0.6F, 1.0F);
+                    this.playSound(BeyondSoundEvents.PEARL_IMPACT.get(), 0.6F, 1.0F);
                 } else {
                     double bounceX = (face.getStepX() != 0) ? -motion.x * (isInFluidType() ? 1 : 0.7) : motion.x;
                     double bounceZ = (face.getStepZ() != 0) ? -motion.z * (isInFluidType() ? 1 : 0.7) : motion.z;
                     this.setDeltaMovement(bounceX, motion.y * 0.5, bounceZ);
-                    this.playSound(BeyondSoundEvents.MEMOR_HIT.get(), 0.7F, 1.0F);
+                    this.playSound(BeyondSoundEvents.PEARL_IMPACT.get(), 0.7F, 1.0F);
                 }
                 this.hasImpulse = true;
             }
         }
+    }
+
+    @Override
+    public SoundSource getSoundSource() {
+        return SoundSource.AMBIENT;
     }
 
     public BlockPos getBlockPosBelowThatAffectsMyMovement() {
@@ -130,9 +146,10 @@ public class PearlItemEntity extends ThrowableItemProjectile {
         if (!this.onGround() || this.getDeltaMovement().horizontalDistanceSqr() > (double)1.0E-5F || (this.tickCount + this.getId()) % 4 == 0) {
             this.move(MoverType.SELF, this.getDeltaMovement());
             float f = 0.98F;
+
             if (this.onGround()) {
                 BlockPos groundPos = this.getBlockPosBelowThatAffectsMyMovement();
-                f = this.level().getBlockState(groundPos).getFriction(this.level(), groundPos, this) * 1.5F;
+                f = Math.min(this.level().getBlockState(groundPos).getFriction(this.level(), groundPos, this) * 1.5F, 1);
             }
 
             this.setDeltaMovement(this.getDeltaMovement().multiply((double)f, 0.98, (double)f));

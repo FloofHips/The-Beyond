@@ -456,62 +456,62 @@ public class BeyondBlocks {
             () -> new WhistlingBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.TERRACOTTA_WHITE)
                     .strength(0.5F, 0.0F)
-                    .sound(BeyondSoundTypes.MEMOR)));
+                    .sound(BeyondSoundTypes.PEARL)));
     public static final DeferredBlock<Block> PEARL_STAIRS = registerBlock("pearl_stairs", () -> new StairBlock(
             PEARL.get().defaultBlockState(),
-            BlockBehaviour.Properties.ofFullCopy(PEARL.get()).sound(SoundType.NETHER_BRICKS)));
+            BlockBehaviour.Properties.ofFullCopy(PEARL.get())));
     public static final DeferredBlock<Block> PEARL_SLAB = registerBlock("pearl_slab", () -> new SlabBlock(
-            BlockBehaviour.Properties.ofFullCopy(PEARL.get()).sound(SoundType.NETHER_BRICKS)));
+            BlockBehaviour.Properties.ofFullCopy(PEARL.get())));
     public static final DeferredBlock<Block> PEARL_WALL = registerBlock("pearl_wall", () -> new WallBlock(
-            BlockBehaviour.Properties.ofFullCopy(PEARL.get()).sound(SoundType.NETHER_BRICKS)));
+            BlockBehaviour.Properties.ofFullCopy(PEARL.get())));
 
     public static final DeferredBlock<Block> PEARL_BRICKS = registerBlock("pearl_bricks",
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.TERRACOTTA_WHITE)
                     .strength(0.6F, 0.1F)
-                    .sound(SoundType.AMETHYST)));
+                    .sound(BeyondSoundTypes.PEARL)));
     public static final DeferredBlock<Block> PEARL_BRICK_STAIRS = registerBlock("pearl_brick_stairs", () -> new StairBlock(
             PEARL_BRICKS.get().defaultBlockState(),
-            BlockBehaviour.Properties.ofFullCopy(PEARL_BRICKS.get()).sound(SoundType.NETHER_BRICKS)));
+            BlockBehaviour.Properties.ofFullCopy(PEARL_BRICKS.get())));
     public static final DeferredBlock<Block> PEARL_BRICK_SLAB = registerBlock("pearl_brick_slab", () -> new SlabBlock(
-            BlockBehaviour.Properties.ofFullCopy(PEARL_BRICKS.get()).sound(SoundType.NETHER_BRICKS)));
+            BlockBehaviour.Properties.ofFullCopy(PEARL_BRICKS.get())));
     public static final DeferredBlock<Block> PEARL_BRICK_WALL = registerBlock("pearl_brick_wall", () -> new WallBlock(
-            BlockBehaviour.Properties.ofFullCopy(PEARL_BRICKS.get()).sound(SoundType.NETHER_BRICKS)));
+            BlockBehaviour.Properties.ofFullCopy(PEARL_BRICKS.get())));
 
     public static final DeferredBlock<Block> COBBLED_PEARL = registerBlock("cobbled_pearl",
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.TERRACOTTA_WHITE)
                     .strength(0.6F, 0.1F)
-                    .sound(SoundType.AMETHYST)));
+                    .sound(BeyondSoundTypes.PEARL)));
     public static final DeferredBlock<Block> COBBLED_PEARL_BRICKS = registerBlock("cobbled_pearl_bricks",
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.TERRACOTTA_WHITE)
                     .strength(0.6F, 0.1F)
-                    .sound(SoundType.AMETHYST)));
+                    .sound(BeyondSoundTypes.PEARL)));
     public static final DeferredBlock<Block> COBBLED_PEARL_BRICK_STAIRS = registerBlock("cobbled_pearl_brick_stairs", () -> new StairBlock(
             COBBLED_PEARL_BRICKS.get().defaultBlockState(),
-            BlockBehaviour.Properties.ofFullCopy(COBBLED_PEARL_BRICKS.get()).sound(SoundType.NETHER_BRICKS)));
+            BlockBehaviour.Properties.ofFullCopy(COBBLED_PEARL_BRICKS.get())));
     public static final DeferredBlock<Block> COBBLED_PEARL_BRICK_SLAB = registerBlock("cobbled_pearl_brick_slab", () -> new SlabBlock(
-            BlockBehaviour.Properties.ofFullCopy(COBBLED_PEARL_BRICKS.get()).sound(SoundType.NETHER_BRICKS)));
+            BlockBehaviour.Properties.ofFullCopy(COBBLED_PEARL_BRICKS.get())));
     public static final DeferredBlock<Block> COBBLED_PEARL_BRICK_WALL = registerBlock("cobbled_pearl_brick_wall", () -> new WallBlock(
-            BlockBehaviour.Properties.ofFullCopy(COBBLED_PEARL_BRICKS.get()).sound(SoundType.NETHER_BRICKS)));
+            BlockBehaviour.Properties.ofFullCopy(COBBLED_PEARL_BRICKS.get())));
 
     public static final DeferredBlock<Block> MIRROR = registerBlock("mirror",
             () -> new MirrorBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.TERRACOTTA_WHITE)
-                    .sound(SoundType.AMETHYST)
+                    .sound(BeyondSoundTypes.MIRROR_PEARL)
                     .strength(1.0F, 0.1F)
                     .noOcclusion()));
     public static final DeferredBlock<Block> ORNATE_MIRROR = registerBlock("ornate_mirror",
             () -> new MirrorBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.TERRACOTTA_WHITE)
-                    .sound(SoundType.AMETHYST)
+                    .sound(BeyondSoundTypes.MIRROR_PEARL)
                     .strength(1.0F, 0.1F)
                     .noOcclusion()));
     public static final DeferredBlock<Block> PEARL_CHIMES = registerBlock("pearl_chimes",
             () -> new PearlChimesBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_LIGHT_GRAY)
-                    .sound(SoundType.AMETHYST)
+                    .sound(BeyondSoundTypes.PEARL)
                     .noCollission()
                     .strength(1.0F, 0.1F)
                     .noOcclusion()));
