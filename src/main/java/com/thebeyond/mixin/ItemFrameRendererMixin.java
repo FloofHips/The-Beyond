@@ -6,6 +6,7 @@ import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.MapItem;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -27,7 +28,7 @@ public class ItemFrameRendererMixin<T extends ItemFrame> {
         boolean flag = entity.getType() == EntityType.GLOW_ITEM_FRAME;
         ModelResourceLocation result;
 
-        if (item.getItem() instanceof SnapshotItem) {
+        if (item.getItem() instanceof SnapshotItem || item.getItem() instanceof MapItem) {
             result = flag ? GLOW_MAP_FRAME_LOCATION : MAP_FRAME_LOCATION;
         } else {
             result = flag ? GLOW_FRAME_LOCATION : FRAME_LOCATION;

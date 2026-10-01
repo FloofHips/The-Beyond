@@ -88,6 +88,7 @@ public class TrinketEntity extends BaubleEntity implements Bucketable, OwnableEn
 
     public TrinketEntity(final EntityType<? extends Mob> type, final Level level) {
         super(type, level);
+        invalidateBoundsCache();
     }
 
     @Override
@@ -141,6 +142,7 @@ public class TrinketEntity extends BaubleEntity implements Bucketable, OwnableEn
 
     @Override
     public void tick() {
+        if (tickCount == 1 || tickCount%200 == 0) invalidateBoundsCache();
         if (!isWaxed() && tickCount%120 == 0) {
             BlockPos touched = null;
             if (this.onGround()) {
@@ -171,6 +173,7 @@ public class TrinketEntity extends BaubleEntity implements Bucketable, OwnableEn
     }
 
     public void grow() {
+        invalidateBoundsCache();
         if (this.level().isClientSide() || !this.isOrientationSettled()) {
             return;
         }
@@ -188,6 +191,20 @@ public class TrinketEntity extends BaubleEntity implements Bucketable, OwnableEn
                 return;
             }
         }
+    }
+
+    public AABB inflatedBounds;
+    public float minX, minY, minZ, maxX, maxY, maxZ;
+
+    public void invalidateBoundsCache() {
+        AABB b = getShapeBounds().inflate(0.002);
+        this.inflatedBounds = b;
+        this.minX = (float) b.min(Direction.Axis.X);
+        this.minY = (float) b.min(Direction.Axis.Y);
+        this.minZ = (float) b.min(Direction.Axis.Z);
+        this.maxX = (float) b.max(Direction.Axis.X);
+        this.maxY = (float) b.max(Direction.Axis.Y);
+        this.maxZ = (float) b.max(Direction.Axis.Z);
     }
 
     @Override

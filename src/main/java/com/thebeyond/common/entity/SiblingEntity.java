@@ -68,7 +68,7 @@ public class SiblingEntity extends PathfinderMob {
             }
         }
         if (getBirth() && tickCount == 50) setBirth(false);
-        if (tickCount % (2000+level().random.nextInt(2000)) == 0) {
+        if (!level().isClientSide && tickCount % (2000+level().random.nextInt(2000)) == 0) {
             split();
             discard();
         }

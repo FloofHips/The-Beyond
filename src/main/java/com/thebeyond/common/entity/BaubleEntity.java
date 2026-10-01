@@ -188,12 +188,12 @@ public class BaubleEntity extends LivingBlock {
             }
             attemptFuse();
         }
-        if (tickCount % (level().isRaining() ? 200 : 2000) == 0) {
+        if (this.random.nextBoolean() && tickCount % (level().isRaining() ? 200 : 2000) == 0) {
             Player player = level().getNearestPlayer(this, 16);
             if (player == null) return;
             this.setMovementTarget(Target.followingEntity(player, 2));
         }
-        if (tickCount % 2200 == 0) this.clearMovementTarget();
+        if (!seekingFusion && tickCount % 300 == 0) this.clearMovementTarget();
     }
 
     private void attemptFuse() {

@@ -1,6 +1,7 @@
 package com.thebeyond.common.block;
 
 import com.thebeyond.client.gui.BrittleMetalTutorialToast;
+import com.thebeyond.client.gui.ToastManager;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondItems;
 import net.minecraft.client.Minecraft;
@@ -36,6 +37,8 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.loading.FMLEnvironment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -104,17 +107,8 @@ public class BrittleMetalBlock extends Block {
             entity.setDeltaMovement(entity.getDeltaMovement().add(0,0.1,0));
             serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE, pos.getX()+0.5f, pos.getY()+1.2f, pos.getZ()+0.5f, 5, 1, 0.5F, 1, 0.01F);
         } else {
-            if (player.level().isClientSide && itemStack.isEmpty()) {
-                Minecraft mc = Minecraft.getInstance();
-                ToastComponent toastManager = mc.getToasts();
-
-                if (toastManager.getToast(BrittleMetalTutorialToast.class, Toast.NO_TOKEN) == null) {
-                    Toast t = new BrittleMetalTutorialToast(
-                            Component.translatable("tooltip.block.the_beyond.brittle_metal.title"),
-                            Component.translatable("tooltip.block.the_beyond.brittle_metal.desc")
-                    );
-                    toastManager.addToast(t);
-                }
+            if (player.level().isClientSide && FMLEnvironment.dist == Dist.CLIENT && itemStack.isEmpty()) {
+                ToastManager.showBrittleMetalTutorialToast();
             }
         }
         return InteractionResult.SUCCESS_NO_ITEM_USED;

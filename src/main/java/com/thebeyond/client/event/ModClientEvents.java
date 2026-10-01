@@ -673,7 +673,7 @@ public class ModClientEvents {
                 ClientCameraTooltip::new);
     }
 
-    private static final int FRAME_PHOTO_SIZE = 16; // downsampled from the 32x32 snapshot
+    private static final int FRAME_PHOTO_SIZE = 16;
 
     /** Draw a framed snapshot as the photo. Cancelling skips only the FIXED render, so hand/GUI/ground stay vanilla. */
     @SubscribeEvent
@@ -689,18 +689,16 @@ public class ModClientEvents {
 
         PoseStack pose = event.getPoseStack();
         pose.pushPose();
-        pose.translate(0.0F, 0.0F, -0.01F);
-        pose.scale(-1F, 1F, 1F); // off the backing to avoid z-fighting
+        pose.translate(0.0F, 0.0F, -0.005F);
 
         PoseStack.Pose last = pose.last();
         VertexConsumer vc = event.getMultiBufferSource().getBuffer(RenderType.entityCutoutNoCull(tex));
-        int light = event.getItemFrameEntity() instanceof GlowItemFrame ? 15728880 : event.getPackedLight(); // full-bright so it reads in the dark
+        int light = event.getItemFrameEntity() instanceof GlowItemFrame ? 15728850 : event.getPackedLight(); // full-bright so it reads in the dark
 
-        // v=0 at top (NativeImage row 0 is the photo's top); wind CCW from +Z so the front face survives culling.
-        frameVertex(vc, last, -0.5F, 0.5F, 0F, 0F, light);
-        frameVertex(vc, last, 0.5F, 0.5F, 1F, 0F, light);
-        frameVertex(vc, last, 0.5F, -0.5F, 1F, 1F, light);
-        frameVertex(vc, last, -0.5F, -0.5F, 0F, 1F, light);
+        frameVertex(vc, last, -0.5F,  0.5F, 1F, 0F, light);
+        frameVertex(vc, last,  0.5F,  0.5F, 0F, 0F, light);
+        frameVertex(vc, last,  0.5F, -0.5F, 0F, 1F, light);
+        frameVertex(vc, last, -0.5F, -0.5F, 1F, 1F, light);
 
         pose.popPose();
         event.setCanceled(true);
