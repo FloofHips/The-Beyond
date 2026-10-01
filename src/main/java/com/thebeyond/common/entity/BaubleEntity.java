@@ -7,6 +7,7 @@ import com.thebeyond.common.entity.util.livingblock.LivingBlock;
 import com.thebeyond.common.entity.util.livingblock.movement.Target;
 import com.thebeyond.common.registry.BeyondEntityTypes;
 import com.thebeyond.common.registry.BeyondParticleTypes;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -14,6 +15,8 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -39,6 +42,7 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.fluids.FluidType;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 import java.awt.*;
@@ -150,6 +154,21 @@ public class BaubleEntity extends LivingBlock {
     }
 
     @Override
+    public float getVoicePitch() {
+        return getContactPitchModifier();
+    }
+
+    @Override
+    protected @Nullable SoundEvent getHurtSound(DamageSource damageSource) {
+        return BeyondSoundEvents.PEARL_HURT.get();
+    }
+
+    @Override
+    protected @Nullable SoundEvent getDeathSound() {
+        return BeyondSoundEvents.PEARL_DEATH.get();
+    }
+
+    @Override
     protected float getContactPitchModifier() {
         return 2 - ((getDepth() + getHeight() + getWidth()) / 3f) / 8f;
     }
@@ -192,6 +211,7 @@ public class BaubleEntity extends LivingBlock {
                 serverLevel.sendParticles(BeyondParticleTypes.WIND.get(), this.getX(), this.getY()+1, this.getZ(), 10, 0, 1, 0, 0.1);
             }
 
+            level().playSound(this, this.getOnPos(), BeyondSoundEvents.PEARL_CLINK.get(), SoundSource.AMBIENT, 1, 1);
             SiblingEntity sibling = new SiblingEntity(BeyondEntityTypes.SIBLING.get(), level());
             sibling.setPos(this.position());
             sibling.setBirth(true);

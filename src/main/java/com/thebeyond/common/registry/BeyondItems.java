@@ -119,7 +119,7 @@ public class BeyondItems {
 
     public static final DeferredItem<Item> PEARL_BEAD = registerItem("pearl_bead", () -> new PearlItem(new Item.Properties()));
     public static final DeferredItem<Item> OCARINA = registerItem("ocarina", () -> new OcarinaItem(new Item.Properties().stacksTo(1)));
-    public static final DeferredItem<Item> TRINKET_BUCKET = registerItem("trinket_bucket", () -> new NoFluidMobBucketItem(BeyondEntityTypes.TRINKET.get(), Fluids.EMPTY, SoundEvents.BUCKET_EMPTY_TADPOLE, (new Item.Properties()).stacksTo(1).component(DataComponents.BUCKET_ENTITY_DATA, CustomData.EMPTY)));
+    public static final DeferredItem<Item> TRINKET_BUCKET = registerItem("trinket_bucket", () -> new NoFluidMobBucketItem(BeyondEntityTypes.TRINKET.get(), Fluids.EMPTY, BeyondSoundEvents.TRINKET_BUCKET_EMPTY.get(), (new Item.Properties()).stacksTo(1).component(DataComponents.BUCKET_ENTITY_DATA, CustomData.EMPTY)));
     public static final DeferredItem<Item> STALKER_SEGMENT = registerItem("stalker_segment", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> SMOKE_FUSE = registerItem("smoke_fuse", () -> new SmokeFuseItem(new Item.Properties().component(DataComponents.DYED_COLOR, new DyedItemColor(DyeColor.BLACK.getFireworkColor(), true))));
     public static final DeferredItem<Item> COILED_STALK = registerItem("coiled_stalk", () -> new CoilItem(new Item.Properties()));

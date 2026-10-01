@@ -53,6 +53,20 @@ public class BeyondSoundEvents {
     public static final DeferredHolder<SoundEvent, SoundEvent> PEARL_SCRAPE = SOUND_EVENTS.register("block.pearl.scrape", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> PEARL_CLINK = SOUND_EVENTS.register("block.pearl.clink", SoundEvent::createVariableRangeEvent);
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> SIBLING_DEATH = SOUND_EVENTS.register("entity.sibling.death", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> PEARL_HURT = SOUND_EVENTS.register("entity.pearl.hurt", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> PEARL_DEATH = SOUND_EVENTS.register("entity.pearl.death", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> TRINKET_BUCKET_FILL = SOUND_EVENTS.register("entity.trinket.fill", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> TRINKET_BUCKET_EMPTY = SOUND_EVENTS.register("entity.trinket.empty", SoundEvent::createVariableRangeEvent);
+
+    public static final DeferredHolder<SoundEvent, SoundEvent> OCARINA_SELECT = SOUND_EVENTS.register("item.ocarina.select", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> OCARINA_GUIDE = SOUND_EVENTS.register("item.ocarina.guide", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> OCARINA_FOLLOW = SOUND_EVENTS.register("item.ocarina.follow", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> OCARINA_SCATTER = SOUND_EVENTS.register("item.ocarina.scatter", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> OCARINA_DESELECT = SOUND_EVENTS.register("item.ocarina.deselect", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> OCARINA_USE = SOUND_EVENTS.register("item.ocarina.use", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> OCARINA_FAIL = SOUND_EVENTS.register("item.ocarina.fail", SoundEvent::createVariableRangeEvent);
+
     public static final DeferredHolder<SoundEvent, SoundEvent> BONFIRE_BREAK = SOUND_EVENTS.register("block.bonfire.break", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> BONFIRE_STEP = SOUND_EVENTS.register("block.bonfire.step", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> BONFIRE_PLACE = SOUND_EVENTS.register("block.bonfire.place", SoundEvent::createVariableRangeEvent);
@@ -158,7 +172,7 @@ public class BeyondSoundEvents {
     public static final DeferredHolder<SoundEvent, SoundEvent> VOID_BURST = SOUND_EVENTS.register("block.gellid_void.burst", SoundEvent::createVariableRangeEvent);
 
     public static final DeferredHolder<SoundEvent, SoundEvent> LANTERN_HURT = SOUND_EVENTS.register("entity.lantern.hurt", SoundEvent::createVariableRangeEvent);
-    public static final DeferredHolder<SoundEvent, SoundEvent> LANTERN_IDLE = SOUND_EVENTS.register("entity.lantern.idle", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> WIND_HOWLING = SOUND_EVENTS.register("entity.lantern.idle", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> LANTERN_SHED = SOUND_EVENTS.register("entity.lantern.shed", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> LANTERN_SPAWN = SOUND_EVENTS.register("entity.lantern.spawn", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> LANTERN_TELEPORT = SOUND_EVENTS.register("entity.lantern.teleport", SoundEvent::createVariableRangeEvent);

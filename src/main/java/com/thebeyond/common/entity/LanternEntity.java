@@ -25,7 +25,6 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.control.FlyingMoveControl;
 import net.minecraft.world.entity.ai.control.SmoothSwimmingLookControl;
 import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
@@ -275,7 +274,7 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
 
     @Override
     protected @Nullable SoundEvent getAmbientSound() {
-        return BeyondSoundEvents.LANTERN_IDLE.get();
+        return BeyondSoundEvents.WIND_HOWLING.get();
     }
 
     @Override

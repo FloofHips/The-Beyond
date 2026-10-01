@@ -1,13 +1,11 @@
 package com.thebeyond.common.entity;
 
-import com.thebeyond.common.entity.util.livingblock.LivingBlock;
 import com.thebeyond.common.entity.util.livingblock.LivingBlockOrientation;
 import com.thebeyond.common.entity.util.livingblock.TrinketGrowth;
 import com.thebeyond.common.item.OcarinaItem;
 import com.thebeyond.common.registry.BeyondItems;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.common.registry.BeyondSoundEvents;
-import com.thebeyond.common.registry.BeyondSoundTypes;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -48,9 +46,6 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
-import net.neoforged.neoforge.common.Tags;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
@@ -203,7 +198,7 @@ public class TrinketEntity extends BaubleEntity implements Bucketable, OwnableEn
         if (itemstack.is(Items.HONEYCOMB)) {
             if (!isWaxed()) {
                 setWaxed(true);
-                playSound(BeyondSoundEvents.PEARL_SCRAPE.get());
+                playSound(SoundEvents.HONEYCOMB_WAX_ON);
                 if (level() instanceof ServerLevel serverLevel) {
                     serverLevel.sendParticles(ParticleTypes.WAX_ON, this.getX(), this.getY(), this.getZ(), getDepth() + getWidth(), getDepth()/16f, getHeight()/16f, getWidth()/16f, 0.01);
                 }
@@ -424,7 +419,7 @@ public class TrinketEntity extends BaubleEntity implements Bucketable, OwnableEn
 
     @Override
     public SoundEvent getPickupSound() {
-        return SoundEvents.BUCKET_FILL_TADPOLE;
+        return BeyondSoundEvents.TRINKET_BUCKET_FILL.get();
     }
 
     static <T extends LivingEntity & Bucketable> Optional<InteractionResult> bucketMobPickup(Player player, InteractionHand hand, T entity) {

@@ -260,6 +260,16 @@ public class Lang extends LanguageProvider {
         add("subtitles.block.pearl.scrape", "Scrape off");
         add("subtitles.block.pearl.impact", "Pearl resonates");
         add("subtitles.block.pearl.clink", "Pearl clinks");
+        add("subtitles.entity.sibling.death", "Sibling shatters");
+
+        add("subtitles.item.trinket.fill", "Trinket secured");
+        add("subtitles.item.trinket.empty", "Bucket empties");
+
+        add("subtitles.entity.pearl.hurt", "Pearl hurts");
+        add("subtitles.entity.pearl.death", "Pearl shatters");
+
+        add("subtitles.item.ocarina.play", "Ocarina played");
+        add("subtitles.item.ocarina.play", "Ocarina fails");
 
         add("subtitles.item.magnet.success", "Magnet latches on");
         add("subtitles.item.magnet.fail", "Magnet falls short");

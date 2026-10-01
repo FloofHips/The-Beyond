@@ -1,6 +1,7 @@
 package com.thebeyond.common.item;
 
 import com.thebeyond.common.registry.BeyondEntityTypes;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
@@ -11,6 +12,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -62,6 +64,7 @@ public class NoFluidMobBucketItem extends MobBucketItem {
                         level.gameEvent(player, GameEvent.ENTITY_PLACE, blockpos1);
                     }
 
+                    level.playSound(player, blockpos1, BeyondSoundEvents.TRINKET_BUCKET_EMPTY.get(), SoundSource.NEUTRAL, 1.0F, 1F + level.random.nextFloat());
                     player.awardStat(Stats.ITEM_USED.get(this));
                     ItemStack itemstack1 = ItemUtils.createFilledResult(itemstack, player, getEmptySuccessItem(itemstack, player));
                     return InteractionResultHolder.sidedSuccess(itemstack1, level.isClientSide());

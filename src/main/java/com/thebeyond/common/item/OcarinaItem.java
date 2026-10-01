@@ -5,11 +5,14 @@ import com.thebeyond.common.entity.TrinketEntity;
 import com.thebeyond.common.entity.util.livingblock.movement.Target;
 import com.thebeyond.common.registry.BeyondComponents;
 import com.thebeyond.common.registry.BeyondParticleTypes;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.util.OcarinaMode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -39,7 +42,7 @@ public class OcarinaItem extends Item {
     private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
     private static final double CALL_RADIUS = 0.1;
     private static final double DETECTION_RADIUS = 8;
-    private static final int MODE_SWITCH_TICKS = 20;
+    private static final int MODE_SWITCH_TICKS = 12;
 
     private final List<TrinketEntity> linkedTrinkets = new ArrayList<>();
 
@@ -59,7 +62,7 @@ public class OcarinaItem extends Item {
 
     @Override
     public void releaseUsing(ItemStack stack, Level level, LivingEntity livingEntity, int timeCharged) {
-        if (getUseDuration(stack, livingEntity) - timeCharged < 20) {
+        if (getUseDuration(stack, livingEntity) - timeCharged < MODE_SWITCH_TICKS) {
             if (livingEntity instanceof Player player)
                 doUse(level, player, stack);
         }
@@ -68,6 +71,7 @@ public class OcarinaItem extends Item {
 
     private void doUse(Level level, Player player, ItemStack stack) {
         if (player.isShiftKeyDown()) {
+            level.playSound(player, player.blockPosition(), BeyondSoundEvents.OCARINA_DESELECT.get(), SoundSource.PLAYERS, 1f,1);
             if (!linkedTrinkets.isEmpty()) {
                 player.displayClientMessage(Component.translatable("screen.the_beyond.ocarina.trinkets_deselected", linkedTrinkets.size()), true);
                 deselectAll();
@@ -78,12 +82,19 @@ public class OcarinaItem extends Item {
         OcarinaMode mode = getMode(stack);
         if (mode == OcarinaMode.SELECT) {
             select(level, player);
+            player.getCooldowns().addCooldown(stack.getItem(), MODE_SWITCH_TICKS);
             return;
         }
+
         if (linkedTrinkets.isEmpty()) {
             player.displayClientMessage(Component.translatable("screen.the_beyond.ocarina.no_trinkets"), true);
+            player.playSound(BeyondSoundEvents.OCARINA_FAIL.get(), 1f, 1+level.random.nextFloat());
             return;
         }
+
+        player.playSound(getSoundEvent(mode), 1f,1+level.random.nextFloat()*0.1f);
+        player.getCooldowns().addCooldown(stack.getItem(), MODE_SWITCH_TICKS);
+
         if (mode == OcarinaMode.GUIDE) {
             guide(level, player);
             return;
@@ -112,11 +123,12 @@ public class OcarinaItem extends Item {
     public void onUseTick(Level level, LivingEntity livingEntity, ItemStack stack, int remainingUseDuration) {
         int elapsed = getUseDuration(stack, livingEntity) - remainingUseDuration;
         if (livingEntity instanceof Player player)
-            if (elapsed > 0 && elapsed % 15 == 0) {
+            if (elapsed > 0 && elapsed % MODE_SWITCH_TICKS == 0) {
                 OcarinaMode current = getMode(stack);
                 OcarinaMode next = current.next();
                 setMode(stack, next);
 
+                level.playSound(player, player.blockPosition(), BeyondSoundEvents.OCARINA_USE.get(), SoundSource.PLAYERS, 1f,1+level.random.nextFloat());
                 if (level.isClientSide) {
                     player.displayClientMessage(next.displayName(), true);
                     OcarinaOverlay.alpha = 1;
@@ -167,6 +179,10 @@ public class OcarinaItem extends Item {
         }
 
         player.displayClientMessage(Component.translatable("screen.the_beyond.ocarina.trinkets_selected", linkedTrinkets.size()), true);
+        if (linkedTrinkets.isEmpty())
+            player.playSound(BeyondSoundEvents.OCARINA_FAIL.get(), 1f,1+level.random.nextFloat());
+        else
+            player.playSound(getSoundEvent(OcarinaMode.SELECT),1f,1+level.random.nextFloat()*0.1f);
     }
 
     private void follow(Player player) {
@@ -180,6 +196,7 @@ public class OcarinaItem extends Item {
         Vec3 eyePos = player.getEyePosition();
         Vec3 endPos = eyePos.add(player.getLookAngle().scale(64));
         Vec3 forClient = null;
+
         if (!level.isClientSide) {
             ClipContext clipContext = new ClipContext(
                     eyePos,
@@ -209,7 +226,6 @@ public class OcarinaItem extends Item {
     }
 
     private void scatter(Level level, Player player) {
-        //replace with random raycast
         if (!linkedTrinkets.isEmpty()) {
             List<TrinketEntity> snapshot = new ArrayList<>(linkedTrinkets);
             for (TrinketEntity trinket : snapshot) {
@@ -228,7 +244,7 @@ public class OcarinaItem extends Item {
     private BlockPos findScatterPos(Level level, BlockPos origin, int radius) {
         BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
 
-        Iterable<BlockPos> pos = BlockPos.randomBetweenClosed(level.random,10,origin.getX()-radius, origin.getY()-radius/2, origin.getZ()-radius, origin.getX()+radius, origin.getY()+radius, origin.getZ()+radius);
+        Iterable<BlockPos> pos = BlockPos.randomBetweenClosed(level.random,20,origin.getX()-radius, origin.getY()-1, origin.getZ()-radius, origin.getX()+1, origin.getY()+radius, origin.getZ()+radius);
             for (BlockPos position : pos) {
                 if (position == null) continue;
 
@@ -260,5 +276,23 @@ public class OcarinaItem extends Item {
     @Override
     public UseAnim getUseAnimation(ItemStack stack) {
         return UseAnim.BOW;
+    }
+
+    public SoundEvent getSoundEvent(OcarinaMode mode) {
+        switch (mode) {
+            case SELECT -> {
+                return BeyondSoundEvents.OCARINA_SELECT.get();
+            }
+            case FOLLOW -> {
+                return BeyondSoundEvents.OCARINA_FOLLOW.get();
+            }
+            case SCATTER -> {
+                return BeyondSoundEvents.OCARINA_SCATTER.get();
+            }
+            case GUIDE -> {
+                return BeyondSoundEvents.OCARINA_GUIDE.get();
+            }
+        }
+        return null;
     }
 }

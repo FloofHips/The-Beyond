@@ -424,7 +424,90 @@
       "the_beyond:block/pearl/break4"
     ],
     "subtitle": "subtitles.block.generic.break"
-  },"block.pearl.break": {
+  },
+  "entity.sibling.death": {
+    "sounds": [
+      "the_beyond:block/pearl/break1",
+      "the_beyond:block/pearl/break2",
+      "the_beyond:block/pearl/break3",
+      "the_beyond:block/pearl/break4"
+    ],
+    "subtitle": "subtitles.entity.sibling.death"
+  },
+  "entity.trinket.fill": {
+    "sounds": [
+      "the_beyond:item/trinket/fill1",
+      "the_beyond:item/trinket/fill2",
+      "the_beyond:item/trinket/fill3"
+    ],
+    "subtitle": "subtitles.item.trinket.fill"
+  },
+  "entity.trinket.empty": {
+    "sounds": [
+      "the_beyond:item/trinket/empty"
+    ],
+    "subtitle": "subtitles.item.trinket.empty"
+  },
+  "item.ocarina.select": {
+    "sounds": [
+      "the_beyond:item/ocarina/select"
+    ],
+    "subtitle": "subtitles.item.ocarina.play"
+  },
+  "item.ocarina.deselect": {
+    "sounds": [
+      "the_beyond:item/ocarina/deselect"
+    ],
+    "subtitle": "subtitles.item.ocarina.play"
+  },
+  "item.ocarina.scatter": {
+    "sounds": [
+      "the_beyond:item/ocarina/scatter"
+    ],
+    "subtitle": "subtitles.item.ocarina.play"
+  },
+  "item.ocarina.follow": {
+    "sounds": [
+      "the_beyond:item/ocarina/follow"
+    ],
+    "subtitle": "subtitles.item.ocarina.play"
+  },
+  "item.ocarina.guide": {
+    "sounds": [
+      "the_beyond:item/ocarina/guide"
+    ],
+    "subtitle": "subtitles.item.ocarina.play"
+  },
+  "item.ocarina.use": {
+    "sounds": [
+      "the_beyond:item/ocarina/use"
+    ],
+    "subtitle": "subtitles.item.ocarina.play"
+  },
+  "item.ocarina.fail": {
+    "sounds": [
+      "the_beyond:item/ocarina/fail"
+    ],
+    "subtitle": "subtitles.item.ocarina.fails"
+  },
+  "entity.pearl.hurt": {
+    "sounds": [
+      "the_beyond:block/pearl/heavy1",
+      "the_beyond:block/pearl/heavy2",
+      "the_beyond:block/pearl/heavy3"
+    ],
+    "subtitle": "subtitles.entity.pearl.hurt"
+  },
+  "entity.pearl.death": {
+    "sounds": [
+      "the_beyond:block/pearl/break1",
+      "the_beyond:block/pearl/break2",
+      "the_beyond:block/pearl/break3",
+      "the_beyond:block/pearl/break4"
+    ],
+    "subtitle": "subtitles.entity.pearl.death"
+  },
+  "block.pearl.break": {
     "sounds": [
       "the_beyond:block/pearl/heavy1",
       "the_beyond:block/pearl/heavy2",
