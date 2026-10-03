@@ -37,7 +37,7 @@ public class GaussVentBlock extends Block {
         if (!level.getBlockState(pos.above()).isAir()) return;
         if (!level.isRaining() && level.random.nextFloat() < 0.3) return;
         if (isBig(level, pos)) {
-            level.playSound(null, pos, BeyondSoundEvents.GAUSS_VENT_START.get(), SoundSource.BLOCKS,3,0 + level.random.nextFloat()*0.5f);
+            level.playSound(null, pos, BeyondSoundEvents.GAUSS_VENT_START.get(), SoundSource.BLOCKS,2f,0 + level.random.nextFloat()*0.5f);
             level.sendParticles(new SmokeColorTransitionOptions(
                     new Vector3f(0.9f, 0.75f, 0.9f),
                     new Vector3f(1f, 1f, 1f),
@@ -45,7 +45,7 @@ public class GaussVentBlock extends Block {
             ), pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5, 30, 0.5, 0.5, 0.5, 0.02);
             BellowBlock.serverPush(level, pos, state, 15, 40, Direction.UP);
         } else {
-            level.playSound(null, pos, BeyondSoundEvents.GAUSS_VENT_START.get(), SoundSource.BLOCKS,3,1 + level.random.nextFloat()*0.5f);
+            level.playSound(null, pos, BeyondSoundEvents.GAUSS_VENT_START.get(), SoundSource.BLOCKS,2f,1 + level.random.nextFloat()*0.5f);
             level.sendParticles(new SmokeColorTransitionOptions(
                     new Vector3f(0.9f, 0.75f, 0.9f),
                     new Vector3f(1f, 1f, 1f),
@@ -61,11 +61,11 @@ public class GaussVentBlock extends Block {
         if (!level.getBlockState(pos.above()).isAir()) return;
 
         if (isBig(level, pos)) {
-            if (random.nextInt(10) < 2) level.playSound(null, pos, BeyondSoundEvents.GAUSS_VENT_MIDDLE.get(), SoundSource.BLOCKS,2, level.random.nextFloat());
+            if (random.nextInt(10) < 2) level.playSound(null, pos, BeyondSoundEvents.GAUSS_VENT_MIDDLE.get(), SoundSource.BLOCKS,1.5f, level.random.nextFloat());
             PacketDistributor.sendToPlayersNear(level, null, pos.getX(), pos.getY(), pos.getZ(), 128, new GaussVentParticlePayload(pos, true));
             BellowBlock.serverPush(level, pos, state, 15, 40, Direction.UP, true);
         } else {
-            if (random.nextInt(10) < 2) level.playSound(null, pos, BeyondSoundEvents.GAUSS_VENT_MIDDLE.get(), SoundSource.BLOCKS,2, 1+level.random.nextFloat());
+            if (random.nextInt(10) < 2) level.playSound(null, pos, BeyondSoundEvents.GAUSS_VENT_MIDDLE.get(), SoundSource.BLOCKS,1.5f, 1+level.random.nextFloat());
             PacketDistributor.sendToPlayersNear(level, null, pos.getX(), pos.getY(), pos.getZ(), 64, new GaussVentParticlePayload(pos, false));
             BellowBlock.serverPush(level, pos, state, 15, 15, Direction.UP, true);
         }

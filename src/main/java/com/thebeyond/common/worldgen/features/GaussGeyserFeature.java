@@ -215,6 +215,8 @@ public class GaussGeyserFeature extends Feature<NoneFeatureConfiguration> {
 
         BlockPos.MutableBlockPos ceiling = start;
 
+        groundRadius = Math.min(groundRadius, 16);
+
         for (int x = -groundRadius; x <= groundRadius; x++) {
             for (int y = -groundRadius; y <= 2; y++) {
                 for (int z = -groundRadius; z <= groundRadius; z++) {
