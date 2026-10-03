@@ -2,6 +2,7 @@ package com.thebeyond.common.block;
 
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondItems;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -32,7 +33,10 @@ public class MoltenMetalBlock extends Block {
 
     @Override
     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        if (level.random.nextFloat() > 0.8f) level.setBlock(pos, BeyondBlocks.BRITTLE_METAL.get().defaultBlockState().setValue(BrittleMetalBlock.POWERED, true),3);
+        if (level.random.nextFloat() > 0.8f) {
+            level.playSound(null, pos, BeyondSoundEvents.BRITTLE_METAL_REFORM.get(), SoundSource.BLOCKS,1, 0.5f+level.random.nextFloat());
+            level.setBlock(pos, BeyondBlocks.BRITTLE_METAL.get().defaultBlockState().setValue(BrittleMetalBlock.POWERED, true), 3);
+        }
     }
 
     @Override
@@ -74,7 +78,7 @@ public class MoltenMetalBlock extends Block {
         if (level instanceof ServerLevel serverLevel) {
             if (neighborState.is(BlockTags.ICE) || neighborState.is(Blocks.WATER)) {
                 serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE, pos.getX() + 0.5f, pos.getY() + 0.7f, pos.getZ() + 0.5f, 10, 0.5f, 1, 0.5f, 0.01F);
-                serverLevel.playSound(null, pos.getX(), pos.getY(), pos.getZ(), SoundEvents.FIRE_EXTINGUISH, SoundSource.BLOCKS, 1, 1);
+                serverLevel.playSound(null, pos.getX(), pos.getY(), pos.getZ(), BeyondSoundEvents.MOLTEN_METAL_FREEZE.get(), SoundSource.BLOCKS, 1, 1);
                 level.removeBlock(pos, false);
 
                 ItemEntity prismuth = new ItemEntity(serverLevel, pos.getX() + 0.5f, pos.getY() + 1, pos.getZ() + 0.5f, new ItemStack(BeyondItems.PRISMUTH.get(), ((ServerLevel) level).random.nextInt(1,3)));

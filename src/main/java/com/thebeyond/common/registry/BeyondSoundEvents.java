@@ -67,6 +67,26 @@ public class BeyondSoundEvents {
     public static final DeferredHolder<SoundEvent, SoundEvent> OCARINA_USE = SOUND_EVENTS.register("item.ocarina.use", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> OCARINA_FAIL = SOUND_EVENTS.register("item.ocarina.fail", SoundEvent::createVariableRangeEvent);
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> BRITTLE_METAL_SHATTER = SOUND_EVENTS.register("block.brittle_metal.shatter", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> BRITTLE_METAL_IMPACT = SOUND_EVENTS.register("block.brittle_metal.impact", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> BRITTLE_METAL_SUCCESS = SOUND_EVENTS.register("block.brittle_metal.success", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> BRITTLE_METAL_FAIL = SOUND_EVENTS.register("block.brittle_metal.fail", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> BRITTLE_METAL_REFORM = SOUND_EVENTS.register("block.brittle_metal.reform", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> MOLTEN_METAL_FREEZE = SOUND_EVENTS.register("block.molten_metal.freeze", SoundEvent::createVariableRangeEvent);
+
+    public static final DeferredHolder<SoundEvent, SoundEvent> BRITTLE_METAL_BREAK = SOUND_EVENTS.register("block.brittle_metal.break", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> BRITTLE_METAL_STEP = SOUND_EVENTS.register("block.brittle_metal.step", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> BRITTLE_METAL_PLACE = SOUND_EVENTS.register("block.brittle_metal.place", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> BRITTLE_METAL_HIT = SOUND_EVENTS.register("block.brittle_metal.hit", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> BRITTLE_METAL_FALL = SOUND_EVENTS.register("block.brittle_metal.fall", SoundEvent::createVariableRangeEvent);
+
+    public static final DeferredHolder<SoundEvent, SoundEvent> BRITTLE_METAL_DOOR_OPEN = SOUND_EVENTS.register("block.brittle_metal_door.open", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> BRITTLE_METAL_DOOR_CLOSE = SOUND_EVENTS.register("block.brittle_metal_door.close", SoundEvent::createVariableRangeEvent);
+
+    public static final DeferredHolder<SoundEvent, SoundEvent> GAUSS_VENT_START = SOUND_EVENTS.register("block.gauss_vent.start", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> GAUSS_VENT_MIDDLE = SOUND_EVENTS.register("block.gauss_vent.middle", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> GAUSS_VENT_END = SOUND_EVENTS.register("block.gauss_vent.end", SoundEvent::createVariableRangeEvent);
+
     public static final DeferredHolder<SoundEvent, SoundEvent> BONFIRE_BREAK = SOUND_EVENTS.register("block.bonfire.break", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> BONFIRE_STEP = SOUND_EVENTS.register("block.bonfire.step", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> BONFIRE_PLACE = SOUND_EVENTS.register("block.bonfire.place", SoundEvent::createVariableRangeEvent);

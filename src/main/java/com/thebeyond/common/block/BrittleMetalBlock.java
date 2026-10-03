@@ -4,6 +4,7 @@ import com.thebeyond.client.gui.BrittleMetalTutorialToast;
 import com.thebeyond.client.gui.ToastManager;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondItems;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.toasts.Toast;
 import net.minecraft.client.gui.components.toasts.ToastComponent;
@@ -66,13 +67,13 @@ public class BrittleMetalBlock extends Block {
         if (!(entity instanceof Player)) return;
         if (!state.getValue(POWERED)) level.scheduleTick(pos, this, 20);
         else if (level.random.nextBoolean()) level.scheduleTick(pos, this, 20);
-        level.playSound(null, pos, SoundEvents.COPPER_BULB_BREAK, SoundSource.BLOCKS);
+        level.playSound(null, pos, BeyondSoundEvents.BRITTLE_METAL_IMPACT.get(), SoundSource.BLOCKS, 1, 0.8f+level.random.nextFloat());
     }
 
     @Override
     protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         super.tick(state, level, pos, random);
-        level.playSound(null, pos, SoundEvents.IRON_GOLEM_DAMAGE, SoundSource.BLOCKS);
+        level.playSound(null, pos, BeyondSoundEvents.BRITTLE_METAL_SHATTER.get(), SoundSource.BLOCKS, 1, 0.8f+level.random.nextFloat());
         level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.BRITTLE_METAL.get().defaultBlockState()), pos.getX()+0.5f, pos.getY()+1.2f, pos.getZ()+0.5f, 10, 0.5F, 0.5F, 0.5F, 0.1F);
         BlockState blockState = !state.getValue(POWERED) ? BeyondBlocks.BRITTLE_METAL.get().defaultBlockState().setValue(POWERED, true) : BeyondBlocks.MOLTEN_METAL.get().defaultBlockState();
         level.setBlockAndUpdate(pos, blockState);
@@ -86,7 +87,7 @@ public class BrittleMetalBlock extends Block {
     protected void attack(BlockState state, Level level, BlockPos pos, Player player) {
         if (!level.isClientSide) {
             if (!state.getValue(POWERED)) {
-                level.playSound(null, pos, SoundEvents.IRON_GOLEM_DAMAGE, SoundSource.BLOCKS);
+                level.playSound(null, pos, BeyondSoundEvents.BRITTLE_METAL_SHATTER.get(), SoundSource.BLOCKS, 1, 0.8f+level.random.nextFloat());
                 level.setBlockAndUpdate(pos, BeyondBlocks.BRITTLE_METAL.get().defaultBlockState().setValue(POWERED, true));
             }
         }
@@ -95,13 +96,13 @@ public class BrittleMetalBlock extends Block {
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         ItemStack itemStack = determineTool(level, pos, Direction.fromYRot(player.getNearestViewDirection().toYRot()));
-        level.playSound(null, pos, SoundEvents.COPPER_BULB_BREAK, SoundSource.BLOCKS);
 
         if (level instanceof ServerLevel serverLevel) {
 
             serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.BRITTLE_METAL.get().defaultBlockState()), pos.getX()+0.5f, pos.getY()+1.2f, pos.getZ()+0.5f, 5, 0.5F, 0.5F, 0.5F, 0.0F);
             if (itemStack.isEmpty()) return super.useWithoutItem(state, level, pos, player, hitResult);
 
+            level.playSound(null, pos, BeyondSoundEvents.BRITTLE_METAL_SUCCESS.get(), SoundSource.BLOCKS, 1, 1);
             ItemEntity entity = new ItemEntity(level, pos.getX() + 0.5f, pos.getY() + 1, pos.getZ() + 0.5f, itemStack);
             level.addFreshEntity(entity);
             entity.setDeltaMovement(entity.getDeltaMovement().add(0,0.1,0));
@@ -110,6 +111,10 @@ public class BrittleMetalBlock extends Block {
             if (player.level().isClientSide && FMLEnvironment.dist == Dist.CLIENT && itemStack.isEmpty()) {
                 ToastManager.showBrittleMetalTutorialToast();
             }
+            if (itemStack.isEmpty()) {
+                level.playSound(player, pos, BeyondSoundEvents.BRITTLE_METAL_FAIL.get(), SoundSource.BLOCKS, 1, 0.8f + level.random.nextFloat());
+                return super.useWithoutItem(state, level, pos, player, hitResult);
+            }
         }
         return InteractionResult.SUCCESS_NO_ITEM_USED;
     }
@@ -117,7 +122,7 @@ public class BrittleMetalBlock extends Block {
     @Override
     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         if (random.nextFloat() > 0.2f) return;
-        level.playSound(null, pos, SoundEvents.COPPER_GRATE_HIT, SoundSource.BLOCKS);
+        level.playSound(null, pos, BeyondSoundEvents.BRITTLE_METAL_REFORM.get(), SoundSource.BLOCKS, 1, 0.8f+level.random.nextFloat());
         level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.BRITTLE_METAL.get().defaultBlockState()), pos.getX()+0.5f, pos.getY()+1.2f, pos.getZ()+0.5f, 5, 0.5F, 0.5F, 0.5F, 0.0F);
         level.setBlockAndUpdate(pos, BeyondBlocks.BRITTLE_METAL.get().defaultBlockState().setValue(POWERED, false));
     }

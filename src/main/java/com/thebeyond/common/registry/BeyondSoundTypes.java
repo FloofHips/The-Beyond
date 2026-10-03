@@ -101,4 +101,12 @@ public class BeyondSoundTypes {
             BeyondSoundEvents.PLATE_BLOCK_FALL
     );
 
+    public static SoundType BRITTLE_METAL = new DeferredSoundType(1.0F, 2F,
+            BeyondSoundEvents.BRITTLE_METAL_BREAK,
+            BeyondSoundEvents.BRITTLE_METAL_STEP,
+            BeyondSoundEvents.BRITTLE_METAL_PLACE,
+            BeyondSoundEvents.BRITTLE_METAL_HIT,
+            BeyondSoundEvents.BRITTLE_METAL_FALL
+    );
+
 }

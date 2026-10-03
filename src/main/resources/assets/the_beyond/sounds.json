@@ -576,6 +576,122 @@
     ],
     "subtitle": "subtitles.block.pearl.impact"
   },
+  "block.brittle_metal.impact": {
+    "sounds": [
+      "the_beyond:block/brittle_metal/step1",
+      "the_beyond:block/brittle_metal/step2"
+    ],
+    "subtitle": "subtitles.block.brittle_metal.step"
+  },
+  "block.brittle_metal.shatter": {
+    "sounds": [
+      "the_beyond:block/brittle_metal/break1",
+      "the_beyond:block/brittle_metal/break2"
+    ],
+    "subtitle": "subtitles.block.brittle_metal.break"
+  },
+  "block.brittle_metal.fail": {
+    "sounds": [
+      "the_beyond:block/brittle_metal/fail1",
+      "the_beyond:block/brittle_metal/fail2"
+    ],
+    "subtitle": "subtitles.block.brittle_metal.fail"
+  },
+  "block.brittle_metal.success": {
+    "sounds": [
+      "the_beyond:block/brittle_metal/success1"
+    ],
+    "subtitle": "subtitles.block.brittle_metal.success"
+  },
+  "block.molten_metal.freeze": {
+    "sounds": [
+      "the_beyond:block/molten_metal/freeze1",
+      "the_beyond:block/molten_metal/freeze2",
+      "the_beyond:block/molten_metal/freeze3"
+    ],
+    "subtitle": "subtitles.block.molten_metal.freeze"
+  },
+  "block.brittle_metal.reform": {
+    "sounds": [
+      "the_beyond:block/brittle_metal/reform"
+    ],
+    "subtitle": "subtitles.block.brittle_metal.reform"
+  },
+  "block.brittle_metal.break": {
+    "sounds": [
+      "the_beyond:block/brittle_metal_block/heavy1",
+      "the_beyond:block/brittle_metal_block/heavy2",
+      "the_beyond:block/brittle_metal_block/heavy3"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.brittle_metal.fall": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.brittle_metal.break",
+        "type": "event"
+      }
+    ]
+  },
+  "block.brittle_metal.hit": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.brittle_metal.step",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.brittle_metal.place": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.brittle_metal.break",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.brittle_metal.step": {
+    "sounds": [
+      "the_beyond:block/brittle_metal_block/light1",
+      "the_beyond:block/brittle_metal_block/light2",
+      "the_beyond:block/brittle_metal_block/light3"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.brittle_metal_door.open": {
+    "sounds": [
+      "the_beyond:block/brittle_metal_block/door_open"
+    ],
+    "subtitle": "subtitles.block.brittle_metal_block.open"
+  },
+  "block.brittle_metal_door.close": {
+    "sounds": [
+      "the_beyond:block/brittle_metal_block/door_close"
+    ],
+    "subtitle": "subtitles.block.brittle_metal_block.close"
+  },
+  "block.gauss_vent.start": {
+    "sounds": [
+      "the_beyond:block/gauss_vent/start1",
+      "the_beyond:block/gauss_vent/start2"
+    ],
+    "subtitle": "subtitles.block.gauss_vent.start"
+  },
+  "block.gauss_vent.middle": {
+    "sounds": [
+      "the_beyond:block/gauss_vent/middle1",
+      "the_beyond:block/gauss_vent/middle2"
+    ],
+    "subtitle": "subtitles.block.gauss_vent.middle"
+  },
+  "block.gauss_vent.end": {
+    "sounds": [
+      "the_beyond:block/gauss_vent/end1",
+      "the_beyond:block/gauss_vent/end2"
+    ],
+    "subtitle": "subtitles.block.gauss_vent.end"
+  },
   "block.void_crystal.break": {
     "sounds": [
       "the_beyond:block/void_crystal/heavy1",

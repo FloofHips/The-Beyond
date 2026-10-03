@@ -7,6 +7,7 @@ import com.thebeyond.client.particle.SmokeColorTransitionOptions;
 import com.thebeyond.common.network.CameraShootPayload;
 import com.thebeyond.common.network.GaussVentParticlePayload;
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.util.ColorUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -34,8 +35,9 @@ public class GaussVentBlock extends Block {
     @Override
     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         if (!level.getBlockState(pos.above()).isAir()) return;
-        level.playSound(null, pos, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS);
+        if (!level.isRaining() && level.random.nextFloat() < 0.3) return;
         if (isBig(level, pos)) {
+            level.playSound(null, pos, BeyondSoundEvents.GAUSS_VENT_START.get(), SoundSource.BLOCKS,3,0 + level.random.nextFloat()*0.5f);
             level.sendParticles(new SmokeColorTransitionOptions(
                     new Vector3f(0.9f, 0.75f, 0.9f),
                     new Vector3f(1f, 1f, 1f),
@@ -43,6 +45,7 @@ public class GaussVentBlock extends Block {
             ), pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5, 30, 0.5, 0.5, 0.5, 0.02);
             BellowBlock.serverPush(level, pos, state, 15, 40, Direction.UP);
         } else {
+            level.playSound(null, pos, BeyondSoundEvents.GAUSS_VENT_START.get(), SoundSource.BLOCKS,3,1 + level.random.nextFloat()*0.5f);
             level.sendParticles(new SmokeColorTransitionOptions(
                     new Vector3f(0.9f, 0.75f, 0.9f),
                     new Vector3f(1f, 1f, 1f),
@@ -57,18 +60,19 @@ public class GaussVentBlock extends Block {
     protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         if (!level.getBlockState(pos.above()).isAir()) return;
 
-        if (random.nextInt(10) < 2) level.playSound(null, pos, SoundEvents.SOUL_ESCAPE.value(), SoundSource.BLOCKS);
-
         if (isBig(level, pos)) {
+            if (random.nextInt(10) < 2) level.playSound(null, pos, BeyondSoundEvents.GAUSS_VENT_MIDDLE.get(), SoundSource.BLOCKS,2, level.random.nextFloat());
             PacketDistributor.sendToPlayersNear(level, null, pos.getX(), pos.getY(), pos.getZ(), 128, new GaussVentParticlePayload(pos, true));
             BellowBlock.serverPush(level, pos, state, 15, 40, Direction.UP, true);
         } else {
+            if (random.nextInt(10) < 2) level.playSound(null, pos, BeyondSoundEvents.GAUSS_VENT_MIDDLE.get(), SoundSource.BLOCKS,2, 1+level.random.nextFloat());
             PacketDistributor.sendToPlayersNear(level, null, pos.getX(), pos.getY(), pos.getZ(), 64, new GaussVentParticlePayload(pos, false));
             BellowBlock.serverPush(level, pos, state, 15, 15, Direction.UP, true);
         }
 
         if (random.nextInt(100) > 1) level.scheduleTick(pos, this, 1);
         else {
+            level.playSound(null, pos, BeyondSoundEvents.GAUSS_VENT_END.get(), SoundSource.BLOCKS,1, 0.5f + level.random.nextFloat());
             level.sendParticles(new PixelColorTransitionOptions(
                     new Vector3f(0.9f, 0.75f, 0.9f),
                     new Vector3f(1f, 1f, 1f),

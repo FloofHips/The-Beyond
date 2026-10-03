@@ -271,6 +271,20 @@ public class Lang extends LanguageProvider {
         add("subtitles.item.ocarina.play", "Ocarina played");
         add("subtitles.item.ocarina.play", "Ocarina fails");
 
+        add("subtitles.block.molten_metal.freeze", "Metal freezes rapidly");
+        add("subtitles.block.brittle_metal.reform", "Brittle metal reforms");
+        add("subtitles.block.brittle_metal.success", "Metal tool casted");
+        add("subtitles.block.brittle_metal.fail", "Brittle metal reverberates");
+        add("subtitles.block.brittle_metal.shatter", "Brittle metal breaks");
+        add("subtitles.block.brittle_metal.impact", "Brittle metal tinks");
+
+        add("subtitles.block.brittle_metal_block.open", "Brittle door opened");
+        add("subtitles.block.brittle_metal_block.close", "Brittle door closed");
+
+        add("subtitles.block.gauss_vent.start", "Gauss Erupted");
+        add("subtitles.block.gauss_vent.middle", "Gauss venting");
+        add("subtitles.block.gauss_vent.end", "Gauss vented");
+
         add("subtitles.item.magnet.success", "Magnet latches on");
         add("subtitles.item.magnet.fail", "Magnet falls short");
 

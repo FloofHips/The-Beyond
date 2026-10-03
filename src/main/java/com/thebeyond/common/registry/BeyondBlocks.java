@@ -300,14 +300,14 @@ public class BeyondBlocks {
 
     public static final DeferredBlock<Block> GAUSSANITE = registerBlock("gaussanite",
             () -> new Block(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.COLOR_GRAY)
+                    .mapColor(MapColor.TERRACOTTA_CYAN)
                     .strength(1.5F, 2.0F)
                     .sound(SoundType.TUFF))
     );
 
     public static final DeferredBlock<Block> GAUSS_VENT = registerBlock("gauss_vent",
             () -> new GaussVentBlock(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.COLOR_GRAY)
+                    .mapColor(MapColor.COLOR_BLACK)
                     .strength(1.5F, 2.0F)
                     .sound(SoundType.TUFF))
     );
@@ -323,29 +323,29 @@ public class BeyondBlocks {
             () -> new MoltenMetalBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_ORANGE)
                     .strength(0.5F, 0.5F)
-                    .sound(SoundType.COPPER_GRATE))
+                    .sound(SoundType.NETHERITE_BLOCK))
     );
 
     public static final DeferredBlock<Block> BRITTLE_METAL = registerBlock("brittle_metal",
             () -> new BrittleMetalBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_LIGHT_GRAY)
                     .strength(0.5F, 0.5F)
-                    .sound(SoundType.COPPER_GRATE))
+                    .sound(BeyondSoundTypes.BRITTLE_METAL))
     );
 
     public static final DeferredBlock<Block> BRITTLE_METAL_BLOCK = registerBlock("brittle_metal_block",
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_LIGHT_GRAY)
                     .strength(0.5F, 0.5F)
-                    .sound(SoundType.COPPER_GRATE))
+                    .sound(BeyondSoundTypes.BRITTLE_METAL))
     );
 
     public static final DeferredBlock<Block> BRITTLE_METAL_STAIRS = registerBlock("brittle_metal_stairs", () -> new StairBlock(
             BRITTLE_METAL.get().defaultBlockState(),
-            BlockBehaviour.Properties.ofFullCopy(BRITTLE_METAL.get()).sound(SoundType.COPPER_GRATE)));
+            BlockBehaviour.Properties.ofFullCopy(BRITTLE_METAL.get())));
 
     public static final DeferredBlock<Block> BRITTLE_METAL_SLAB = registerBlock("brittle_metal_slab", () -> new SlabBlock(
-            BlockBehaviour.Properties.ofFullCopy(BRITTLE_METAL.get()).sound(SoundType.COPPER_GRATE)));
+            BlockBehaviour.Properties.ofFullCopy(BRITTLE_METAL.get())));
 
     public static final DeferredBlock<Block> BRITTLE_METAL_DOOR = registerBlock("brittle_metal_door", () -> new WearyDoorBlock(
             BeyondBlockSetTypes.BRITTLE_METAL,

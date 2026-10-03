@@ -54,7 +54,7 @@ public final class ProjectorDepthMap {
     private static Slot[] slots;
     private static final List<Active> ACTIVE = new ArrayList<>();
     private static final java.util.Set<ProjectorBlockEntity> CAPTURED = new java.util.HashSet<>(); // render-thread only
-    private static boolean loggedActive;
+    private static boolean loggedActive = false;
     private static final Map<BlockPos, String> DIAG_LAST = new HashMap<>();
     // Never route through shared mc.renderBuffers(): an endBatch() inside the capture corrupts Iris's whole-frame entity
     // batcher (cape/held-item break, stay broken after the pack toggles off). Private immediate source isolates it.
@@ -135,8 +135,7 @@ public final class ProjectorDepthMap {
                 slots[i] = new Slot();
             }
         }
-        if (!loggedActive) {
-            loggedActive = true;
+        if (loggedActive) {
             TheBeyond.LOGGER.info("[TheBeyond] projector per-pixel deferred path active ({}, rev r34)",
                     ShaderCompatLib.isShaderPackActive() ? "shaderpack: decal post-final" : "no shaderpack");
         }
@@ -164,7 +163,7 @@ public final class ProjectorDepthMap {
                 try {
                     captureOne(slots[slotIdx++], be, camPos, mc, partialTick);
                 } catch (Throwable t) {
-                    TheBeyond.LOGGER.error("Projector depth capture failed for one projector", t);
+                    if (loggedActive) TheBeyond.LOGGER.error("Projector depth capture failed for one projector", t);
                 }
             }
             for (ProjectorBlockEntity be : litSub) {
@@ -174,7 +173,7 @@ public final class ProjectorDepthMap {
                 try {
                     captureOneSub(slots[slotIdx++], be, camPos, mc, partialTick);
                 } catch (Throwable t) {
-                    TheBeyond.LOGGER.error("Projector contraption depth capture failed for one projector", t);
+                    if (loggedActive) TheBeyond.LOGGER.error("Projector contraption depth capture failed for one projector", t);
                 }
             }
         } finally {
@@ -273,7 +272,7 @@ public final class ProjectorDepthMap {
                     renderConeEntities(CAPTURE_BUFFER, coneEntities, p.camPos(), partialTick, mc);
                     p.target().unbindWrite();
                 } catch (Throwable t) {
-                    TheBeyond.LOGGER.error("Projector deferred entity capture failed", t);
+                    if (loggedActive) TheBeyond.LOGGER.error("Projector deferred entity capture failed", t);
                 }
             }
         } finally {
@@ -484,7 +483,7 @@ public final class ProjectorDepthMap {
                     disp.render(e, ex - camPos.x, ey - camPos.y, ez - camPos.z, eyaw, partialTick,
                             new PoseStack(), forceDist, LightTexture.FULL_BRIGHT);
                 } catch (Throwable t) {
-                    TheBeyond.LOGGER.error("Projector entity-depth render failed for {}", e, t);
+                    if (loggedActive) TheBeyond.LOGGER.error("Projector entity-depth render failed for {}", e, t);
                 }
             }
             buf.endBatch();
@@ -568,7 +567,7 @@ public final class ProjectorDepthMap {
             return resolved.orElse(fallback);
         } catch (Throwable t) {
             rtReflectionFailed = true; // latch off: never retry-spam
-            TheBeyond.LOGGER.warn("[Projector DIAG] render-type texture reflection failed — entity layers (cape/elytra) "
+            if (loggedActive) TheBeyond.LOGGER.warn("[Projector DIAG] render-type texture reflection failed — entity layers (cape/elytra) "
                     + "will alpha-test against the body atlas (garbled shadow silhouettes possible)", t);
             return fallback;
         }
@@ -600,7 +599,7 @@ public final class ProjectorDepthMap {
             slot.target.bindWrite(false);
             int status = GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER);
             slot.target.unbindWrite();
-            TheBeyond.LOGGER.info("[Projector DIAG] depth-map FBO status=0x{} internalFormat=0x{} (expected status=0x8CD5, format=0x881A RGBA16F)",
+            if (loggedActive) TheBeyond.LOGGER.info("[Projector DIAG] depth-map FBO status=0x{} internalFormat=0x{} (expected status=0x8CD5, format=0x881A RGBA16F)",
                     Integer.toHexString(status).toUpperCase(), Integer.toHexString(ifmt).toUpperCase());
         }
         if (slot.targetFar == null) {
@@ -614,7 +613,7 @@ public final class ProjectorDepthMap {
             slot.targetFar.bindWrite(false);
             int statusFar = GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER);
             slot.targetFar.unbindWrite();
-            TheBeyond.LOGGER.info("[Projector DIAG] depth-map FAR FBO status=0x{} internalFormat=0x{} (expected status=0x8CD5, format=0x881A RGBA16F)",
+            if (loggedActive) TheBeyond.LOGGER.info("[Projector DIAG] depth-map FAR FBO status=0x{} internalFormat=0x{} (expected status=0x8CD5, format=0x881A RGBA16F)",
                     Integer.toHexString(statusFar).toUpperCase(), Integer.toHexString(ifmtFar).toUpperCase());
         }
     }
@@ -722,7 +721,8 @@ public final class ProjectorDepthMap {
     /** Logs a capture summary for {@code pos} on change only; counts bucketed (0/1-9/10-99/100+) so raw jitter isn't spam. */
     private static void diag(BlockPos pos, String summary) {
         String bucketed = BUCKET_NUM.matcher(summary).replaceAll(r -> bucket(Integer.parseInt(r.group(1))));
-        if (!bucketed.equals(DIAG_LAST.put(pos, bucketed))) {
+
+        if (!bucketed.equals(DIAG_LAST.put(pos, bucketed)) && loggedActive) {
             TheBeyond.LOGGER.info("[Projector DIAG] {}: {}", pos.toShortString(), bucketed);
         }
     }

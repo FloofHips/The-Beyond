@@ -192,7 +192,7 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
     }
 
     private void checkRevealOnChange(ResourceLocation group, boolean wasComplete) {
-        if (group != null && !wasComplete && isGroupComplete(group) && level != null && !level.isClientSide) {
+        if (group != null  && isGroupComplete(group) && level != null && !level.isClientSide) {
             BlockState state = getBlockState();
             BlockPos front = ProjectorBlock.frontOrigin(getBlockPos(), state);
             Vec3 c = BeyondCompatHooks.visibleOrCenter(level, front);

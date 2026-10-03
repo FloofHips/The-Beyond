@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import com.thebeyond.TheBeyond;
+import com.thebeyond.client.camera.CameraAim;
 import com.thebeyond.client.renderer.util.LivingBlockMeshBaker;
 import com.thebeyond.common.entity.TrinketEntity;
 import com.thebeyond.common.entity.util.livingblock.LivingBlock;
@@ -82,7 +83,7 @@ public class TrinketRenderer extends LivingBlockRenderer {
         Matrix4f matrix = poseStack.last().pose();
         Matrix3f normalMatrix = poseStack.last().normal();
 
-        if (entity.position().distanceToSqr(Minecraft.getInstance().getCameraEntity().position()) < 28 * 28) {
+        if (CameraAim.isAiming() || entity.position().distanceToSqr(Minecraft.getInstance().getCameraEntity().position()) < 28 * 28) {
             List<LivingBlockMeshBaker.MeshQuad> mesh = this.meshCache.computeIfAbsent(shape, LivingBlockMeshBaker::bake);
 
             VertexConsumer rim = buffer.getBuffer(BeyondRenderTypes.entityTranslucentNoCulled(this.skin.rim()));
