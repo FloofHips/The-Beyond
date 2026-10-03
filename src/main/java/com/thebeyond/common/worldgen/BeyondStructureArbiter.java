@@ -179,7 +179,7 @@ public final class BeyondStructureArbiter {
                             StructureStart.INVALID_START, chunk);
                 }
                 if (BeyondGenDiagnostics.loggedArbitration.add(loserKey + "|" + winnerKey)) {
-                    com.thebeyond.TheBeyond.LOGGER.info(
+                    com.thebeyond.TheBeyond.LOGGER.debug(
                             "[Beyond] structure overlap: {} {} dropped, it was born inside {} {}",
                             loserKey, (selfYields ? selfBox : rivalBox), winnerKey, (selfYields ? rivalBox : selfBox));
                 }

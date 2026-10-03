@@ -45,9 +45,7 @@ public final class HiddenContentFilter {
                 || (tag.getNamespace().equals("the_beyond") && tag.getPath().startsWith("hidden_until/"));
     }
 
-    // ---------------------------------------------------------------------
-    //  Item tags — consumed by creative tab/search + JEI.
-    // ---------------------------------------------------------------------
+    // item tags, read by the creative tab, search and JEI
 
     public static final TagKey<Item> HIDDEN_UNTIL_FARLANDS =
             TagKey.create(Registries.ITEM, tagId("farlands"));
@@ -62,9 +60,7 @@ public final class HiddenContentFilter {
             HIDDEN_UNTIL_BEYOND,   BeyondAwarenessKeys.BEYOND_ACCESS
     );
 
-    // ---------------------------------------------------------------------
-    //  Structure tags — consumed by Explorer's Compass.
-    // ---------------------------------------------------------------------
+    // structure tags, read by Explorer's Compass
 
     public static final TagKey<Structure> STRUCTURE_HIDDEN_UNTIL_FARLANDS =
             TagKey.create(Registries.STRUCTURE, tagId("farlands"));
@@ -79,9 +75,7 @@ public final class HiddenContentFilter {
             STRUCTURE_HIDDEN_UNTIL_BEYOND,   BeyondAwarenessKeys.BEYOND_ACCESS
     );
 
-    // ---------------------------------------------------------------------
-    //  Biome tags — consumed by Nature's Compass.
-    // ---------------------------------------------------------------------
+    // biome tags, read by Nature's Compass
 
     public static final TagKey<Biome> BIOME_HIDDEN_UNTIL_FARLANDS =
             TagKey.create(Registries.BIOME, tagId("farlands"));
@@ -95,10 +89,6 @@ public final class HiddenContentFilter {
             BIOME_HIDDEN_UNTIL_WALL,     BeyondAwarenessKeys.WALL_PROXIMITY,
             BIOME_HIDDEN_UNTIL_BEYOND,   BeyondAwarenessKeys.BEYOND_ACCESS
     );
-
-    // =====================================================================
-    //  Item queries.
-    // =====================================================================
 
     /** Should this item be hidden from the viewer right now? */
     public static boolean isHidden(ItemStack stack, Player viewer) {
@@ -189,7 +179,7 @@ public final class HiddenContentFilter {
         return false;
     }
 
-    /** Hidden ids in a registry, walked from the small gated tags (not the whole registry) so lookups stay O(1) regardless of pack size. */
+    /** Hidden ids, walked from the small gated tags instead of the registry so lookups stay O(1) at any pack size. */
     private static <T> Set<ResourceLocation> hiddenIds(Registry<T> reg, Map<TagKey<T>, ResourceLocation> tagToKey,
                                                        Set<ResourceLocation> known,
                                                        Function<ResourceLocation, ResourceLocation> marker) {
@@ -220,10 +210,6 @@ public final class HiddenContentFilter {
         return out;
     }
 
-    // =====================================================================
-    //  Structure queries (Explorer's Compass).
-    // =====================================================================
-
     /** Batched hidden-test for filtering structure id lists/streams: builds the hidden set once, then O(1) per check. */
     public static Predicate<ResourceLocation> structureHiddenTest(ServerPlayer viewer) {
         if (!BeyondAwareness.gateEnabled() || viewer == null) return id -> false;
@@ -233,10 +219,10 @@ public final class HiddenContentFilter {
         return hidden::contains;
     }
 
-    /** Client-side copy of the gated-structure map; empty on the server. */
+    /** Client-side copy of the gated-structure map, empty on the server. */
     private static volatile Map<ResourceLocation, Set<ResourceLocation>> clientGatedStructures = Map.of();
 
-    /** Maps each gated structure to the regions that unlock it, so the client can gate /locate without the structure registry (which it never receives). */
+    /** Each gated structure and the regions that unlock it, so the client gates /locate without the structure registry. */
     public static Map<ResourceLocation, Set<ResourceLocation>> gatedStructureMap(ServerPlayer viewer) {
         Registry<Structure> reg = viewer.level().registryAccess().registryOrThrow(Registries.STRUCTURE);
         Map<ResourceLocation, Set<ResourceLocation>> out = new HashMap<>();
@@ -319,10 +305,6 @@ public final class HiddenContentFilter {
         }
         return false;
     }
-
-    // =====================================================================
-    //  Biome queries (Nature's Compass).
-    // =====================================================================
 
     /** Should this biome stay hidden from the viewer? */
     public static boolean isBiomeHidden(ResourceLocation key, Player viewer) {

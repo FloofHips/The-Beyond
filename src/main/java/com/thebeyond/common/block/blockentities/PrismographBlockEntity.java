@@ -175,7 +175,7 @@ public class PrismographBlockEntity extends BlockEntity implements Container {
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        clearSlots(); // loadAllItems skips absent slots; reset first so emptied slots clear on the client
+        clearSlots();  // loadAllItems skips absent slots, so emptied ones would stay on the client
         ContainerHelper.loadAllItems(tag, items, registries);
         owner = tag.hasUUID("Owner") ? tag.getUUID("Owner") : Util.NIL_UUID;
         lastCaptureTick = tag.getLong("LastCapture");

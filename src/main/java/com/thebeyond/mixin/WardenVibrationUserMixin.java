@@ -14,8 +14,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Warden vibration branch of deafening: {@code canReceiveVibration} is the single gate every vibration passes
- *  before it can feed anger, so rejecting here while deafened blocks it entirely and leaves smell as the fallback sense. */
+/** A deaf Warden rejects every vibration here, leaving smell as its only sense. */
 @Mixin(targets = "net.minecraft.world.entity.monster.warden.Warden$VibrationUser")
 public abstract class WardenVibrationUserMixin {
 

@@ -18,8 +18,7 @@ import org.jetbrains.annotations.ApiStatus;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-/** Deterministic per-chunk spot picker: chunk-seeded shuffle of the 4×4 Voronoi grid for
- *  the first pancake top whose biome matches the structure filter. */
+/** Deterministic per-chunk spot picker over a seeded shuffle of the 4x4 Voronoi grid, the first matching layer top wins. */
 @ApiStatus.Experimental
 public final class PancakeScan {
     private static final TagKey<Biome> END_TAG = TagKey.create(
@@ -68,10 +67,8 @@ public final class PancakeScan {
 
     public static final int LAYER_MIN_HEADROOM = 8;
 
-    /** Shallower than {@link #BURY_DEPTH}: surface structures sit nearly flush at this depth. */
     public static final int LAYER_BURY_DEPTH = 1;
 
-    /** Only shifts preference among already-safe candidates — the topmost always clears the headroom gate. */
     public static final int LOWER_LAYER_WEIGHT = 3;
 
     public static int pickWeightedIndex(int[] weights, int n, long seed) {
@@ -159,8 +156,7 @@ public final class PancakeScan {
                         && !col.getBlock(y - 1).isAir() && !col.getBlock(y - 2).isAir()) {
                     Holder<Biome> biome = gen.getBiomeSource().getNoiseBiome(wx >> 2, y >> 2, wz >> 2, rs.sampler());
                     boolean matches = structureBiomes != null ? structureBiomes.contains(biome) : biome.is(END_TAG);
-                    // Full footprint check (not a single cross probe): guards against a small qualifying pancake
-                    // letting a large structure's base overhang into the void.
+                    // the whole footprint, or a small qualifying layer lets a large base overhang the void
                     double cov = matches
                             ? footprintCoverage(wx, wz, y, radius, stride, BeyondTerrain::isSolidAt, flushTol)
                             : -1.0;
@@ -188,15 +184,14 @@ public final class PancakeScan {
         return cands.get(pickWeightedIndex(w, w.length, seed));
     }
 
-    /** Returns the solid top (not +1); {@link Integer#MIN_VALUE} if none qualifies. */
+    /** The solid top itself (not plus one), MIN_VALUE when none qualifies. */
     public static int pickColumnPancakeY(ChunkGenerator gen, int x, int z, LevelHeightAccessor level, RandomState rs,
                                          HolderSet<Biome> structureBiomes, int minHeadroom, int radius) {
         return pickColumnPancakeY(gen, x, z, level, rs, structureBiomes, minHeadroom, radius,
                 FOOTPRINT_SUPPORT_STRIDE, FOOTPRINT_SUPPORT_FRACTION);
     }
 
-    /** As above, but a caller-chosen coverage {@code stride}/{@code fraction} so a wide-footprint structure can't
-     *  qualify on a small pancake. Draws one qualifying pancake, lower layers weighted heavier. */
+    /** With a caller-chosen coverage so a wide structure cannot qualify on a small layer, lower layers weigh more. */
     public static int pickColumnPancakeY(ChunkGenerator gen, int x, int z, LevelHeightAccessor level, RandomState rs,
                                          HolderSet<Biome> structureBiomes, int minHeadroom, int radius, int stride, double fraction) {
         int minY = level.getMinBuildHeight(), maxY = level.getMaxBuildHeight() - 1;
@@ -227,8 +222,7 @@ public final class PancakeScan {
         public boolean grounded() { return seatY != Integer.MIN_VALUE; }
     }
 
-    /** Weighted-lottery seat for a grounded ruin: draws one of its column's island layers the base-beard can bridge to,
-     *  seating at its surface median. A non-{@link GroundedSeat#grounded()} result ⇒ nothing grounds it, caller rejects. */
+    /** Draws one layer the base beard can bridge to and seats a grounded ruin at its median, else the caller rejects. */
     public static GroundedSeat pickGroundedPancake(ChunkGenerator gen, int x, int z, LevelHeightAccessor level, RandomState rs,
             HolderSet<Biome> biomes, int minHeadroom, int radius, int stride, double minCover, int fill, int over) {
         record CandidateLayer(int seatMedian, int coverPct, int top) {}
@@ -270,7 +264,7 @@ public final class PancakeScan {
         if (valid.isEmpty()) {
             return new GroundedSeat(Integer.MIN_VALUE, 0, topmost, 0, layerTops.size(), Integer.MIN_VALUE);
         }
-        // Weighted draw among the grounded layers, lower heavier; chunk-seeded so it's deterministic.
+        // weighted draw among the grounded layers, lower ones heavier, seeded by chunk so it is deterministic
         long seed = ((long) (x >> 4)) * SEED_P1 ^ ((long) (z >> 4)) * SEED_P2;
         int[] w = new int[valid.size()];
         for (int i = 0; i < w.length; i++) w[i] = i == 0 ? 1 : LOWER_LAYER_WEIGHT;

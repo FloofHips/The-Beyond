@@ -56,12 +56,10 @@ public final class ProjectorDepthMap {
     private static final java.util.Set<ProjectorBlockEntity> CAPTURED = new java.util.HashSet<>(); // render-thread only
     private static boolean loggedActive = false;
     private static final Map<BlockPos, String> DIAG_LAST = new HashMap<>();
-    // Never route through shared mc.renderBuffers(): an endBatch() inside the capture corrupts Iris's whole-frame entity
-    // batcher (cape/held-item break, stay broken after the pack toggles off). Private immediate source isolates it.
+    // a private buffer: an endBatch() on mc.renderBuffers() inside the capture corrupts Iris's entity batcher
     private static final MultiBufferSource.BufferSource CAPTURE_BUFFER =
             MultiBufferSource.immediate(new ByteBufferBuilder(4096));
-    // Entity passes deferred to AFTER_LEVEL: dispatching entities mid-pipeline collides with Iris's entity hooks and
-    // persistently corrupts cape/held-item. The slot FBO + its depth survive to the collision-free post-final window.
+    // entity passes wait for AFTER_LEVEL, mid-pipeline they collide with Iris's entity hooks and break capes
     private record PendingEntities(TextureTarget target, Matrix4f proj, Matrix4f view,
                                    ProjectorRenderer.Pinhole gather, Vec3 camPos, BlockPos pos) {
     }
@@ -107,8 +105,7 @@ public final class ProjectorDepthMap {
         }
 
         Vec3 camPos = camera.getPosition();
-        // HOST projectors are world-frustum-culled here; CONTRAPTION cones sit at plot coords ~2e7 so cannot be, and are
-        // resolved (or dropped to the BER mesh) in captureOneSub. Both share the MAX_SLOTS budget.
+        // host projectors are frustum-culled here, contraption cones sit at plot coords and resolve in captureOneSub
         List<ProjectorBlockEntity> litHost = new ArrayList<>();
         List<ProjectorBlockEntity> litSub = new ArrayList<>();
         for (ProjectorBlockEntity be : ProjectorBlockEntity.LOADED) {
@@ -136,7 +133,7 @@ public final class ProjectorDepthMap {
             }
         }
         if (loggedActive) {
-            TheBeyond.LOGGER.info("[TheBeyond] projector per-pixel deferred path active ({}, rev r34)",
+            TheBeyond.LOGGER.info("[TheBeyond] projector per-pixel deferred path active ({})",
                     ShaderCompatLib.isShaderPackActive() ? "shaderpack: decal post-final" : "no shaderpack");
         }
 
@@ -202,7 +199,7 @@ public final class ProjectorDepthMap {
         Matrix4f vp = new Matrix4f(proj).mul(view);
 
         ensureSized(slot);
-        slot.target.setClearColor(1.0039f, 0.0f, 1.0039f, 1.0f); // R,B>1.0 = max dist (untouched); G=0 = no entity
+        slot.target.setClearColor(1.0039f, 0.0f, 1.0039f, 1.0f);  // R and B above 1 mean untouched, G 0 means no entity
         slot.target.clear(Minecraft.ON_OSX);
         slot.target.bindWrite(true);
 
@@ -261,7 +258,7 @@ public final class ProjectorDepthMap {
         try {
             for (PendingEntities p : PENDING_ENTITIES) {
                 try {
-                    p.target().bindWrite(true); // NO clear: solid-stage blocks + depth stay; LEQUAL keeps nearest entity
+                    p.target().bindWrite(true);  // no clear: the blocks and depth stay, LEQUAL keeps the nearest entity
                     RenderSystem.setProjectionMatrix(p.proj(), VertexSorting.DISTANCE_TO_ORIGIN);
                     mvStack.set(p.view());
                     RenderSystem.applyModelViewMatrix();
@@ -287,11 +284,7 @@ public final class ProjectorDepthMap {
     private record CrossStats(int frames, int blocks) {
     }
 
-    /**
-     * Each contraption crossing the WORLD cone is drawn in its own grid frame (cone lifted via {@code minv}, blocks
-     * emitted {@code gridCoord-rp}, mapped by {@code view*m}) so LEQUAL keeps the nearest surface across all frames.
-     * {@code ownM} skips the projector's own craft (already drawn by the grid pass).
-     */
+    /** Each contraption in the world cone is drawn in its own grid frame, so LEQUAL keeps the nearest surface of all. */
     private static CrossStats captureCrossContraptions(MultiBufferSource.BufferSource buf, ProjectorRenderer.Pinhole phWorld,
                                                        Matrix4f view, Vec3 camPos, float partialTick, Minecraft mc, Matrix4f ownM,
                                                        RenderType type, boolean frontOnly) {
@@ -335,11 +328,7 @@ public final class ProjectorDepthMap {
         return new CrossStats(used, emitted);
     }
 
-    /**
-     * Per-pixel capture for a CONTRAPTION projector: the cone lives in the sub-level grid frame, so the pinhole is lifted
-     * into camera-relative VISIBLE space and the map rendered in multiple frames into one FBO (own grid blocks, host
-     * blocks, host entities, crossed crafts). Falls back to the BER mesh (no publish) on a missing/anisotropic frame.
-     */
+    /** Per-pixel capture for a contraption projector, rendered in several frames into one FBO, else the BER mesh. */
     private static void captureOneSub(Slot slot, ProjectorBlockEntity be, Vec3 camPos, Minecraft mc, float partialTick) {
         skippedGlass = 0;
         blocksCapped = false;
@@ -403,7 +392,7 @@ public final class ProjectorDepthMap {
         Matrix4fStack mvStack = RenderSystem.getModelViewStack();
         MultiBufferSource.BufferSource buf = CAPTURE_BUFFER;
 
-        // Own grid blocks then host world blocks into one FBO; LEQUAL keeps the nearer frame per texel.
+        // own grid blocks, then host world blocks, into one FBO, LEQUAL keeps the nearer frame per texel
         mvStack.set(modelViewB);
         RenderSystem.applyModelViewMatrix();
         int ownBlocks = emitConeBlocks(buf.getBuffer(BeyondRenderTypes.PROJECTOR_DEPTH_BLOCK), mc.level, gridReader(mc, new HashMap<>()), phGrid, rpOrigin);
@@ -488,7 +477,7 @@ public final class ProjectorDepthMap {
             }
             buf.endBatch();
         } finally {
-            disp.setRenderShadow(true); // no getter; vanilla default is true
+            disp.setRenderShadow(true);  // there is no getter, vanilla's default is true
         }
     }
 
@@ -512,7 +501,7 @@ public final class ProjectorDepthMap {
         return out;
     }
 
-    /** Routes NEW_ENTITY (body) geometry through our entity-dist type; sinks every other part (leash, glint, lines). */
+    /** Sends entity bodies through the entity-dist type and drops every other part (leash, glint, lines). */
     private static final class ProjectorDistEntitySource implements MultiBufferSource {
         private final MultiBufferSource.BufferSource inner;
         private final ResourceLocation tex;
@@ -587,9 +576,7 @@ public final class ProjectorDepthMap {
     private static void ensureSized(Slot slot) {
         if (slot.target == null) {
             slot.target = new TextureTarget(BASE_RES, BASE_RES, true, Minecraft.ON_OSX);
-            // Re-spec RGBA8 -> RGBA16F (R=radial dist, G=entity bit, B=blocks-only dist) so the decal can hardware-LINEAR
-            // it: a hi/lo-packed value can't be filtered, and that bilinear blend removes the moving-silhouette snap.
-            // Re-speccing the SAME texture id keeps the completed attachment valid (fixed res, no resize).
+            // RGBA16F instead of RGBA8 so the decal can filter it linearly, which removes the moving-silhouette snap
             GlStateManager._bindTexture(slot.target.getColorTextureId());
             GlStateManager._texImage2D(GL11.GL_TEXTURE_2D, 0, GL30.GL_RGBA16F, BASE_RES, BASE_RES, 0,
                     GL11.GL_RGBA, GL11.GL_FLOAT, (IntBuffer) null);
@@ -623,7 +610,7 @@ public final class ProjectorDepthMap {
         BlockState at(BlockPos pos);
     }
 
-    /** Grid-frame reader: Sable's ClientChunkCache mixin returns the sub-level chunk for plot coords; cached per chunk. */
+    /** Grid-frame reader: Sable's chunk cache mixin returns the sub-level chunk for plot coords, cached per chunk. */
     private static BlockReader gridReader(Minecraft mc, Map<Long, LevelChunk> cache) {
         return p -> {
             long ck = ChunkPos.asLong(p.getX() >> 4, p.getZ() >> 4);
@@ -636,8 +623,7 @@ public final class ProjectorDepthMap {
         };
     }
 
-    /** Cone-walk: emit in-cone solid-block quads de-biased by {@code origin} (camera in world frame, rotation point in
-     *  grid frame). {@code level} is the neighbour face-sturdy context. Returns quads emitted. */
+    /** Emits the solid-block quads inside the cone relative to origin and returns how many it emitted. */
     private static int emitConeBlocks(VertexConsumer vc, Level level, BlockReader reader, ProjectorRenderer.Pinhole ph, Vec3 origin) {
         return emitConeBlocks(vc, level, reader, ph, origin, false);
     }
@@ -688,7 +674,7 @@ public final class ProjectorDepthMap {
                             }
                         }
                         if (frontOnly) {
-                            // Peel keeps only lens-facing surfaces: an exit face would read as a "second wall" behind every block.
+                            // only lens-facing surfaces, an exit face would read as a second wall behind every block
                             float[] m = q.pos();
                             double dx = x + m[0] - ph.eye().x, dy = y + m[1] - ph.eye().y, dz = z + m[2] - ph.eye().z;
                             if (q.nx() * dx + q.ny() * dy + q.nz() * dz >= -1.0e-6) {
@@ -707,7 +693,7 @@ public final class ProjectorDepthMap {
         return emitted;
     }
 
-    /** One model quad as 4 POSITION_TEX vertices de-biased by {@code origin}; the atlas UV drives the shader cutout test. */
+    /** One model quad as 4 POSITION_TEX vertices de-biased by {@code origin}. The atlas UV drives the shader cutout test. */
     private static void emitQuad(VertexConsumer vc, ProjectorRenderer.ModelQuad q, int bx, int by, int bz, Vec3 origin) {
         float[] m = q.pos();
         float[] t = q.uv();
@@ -718,7 +704,7 @@ public final class ProjectorDepthMap {
         }
     }
 
-    /** Logs a capture summary for {@code pos} on change only; counts bucketed (0/1-9/10-99/100+) so raw jitter isn't spam. */
+    /** Logs a capture summary for pos when it changes, with counts bucketed so jitter does not spam. */
     private static void diag(BlockPos pos, String summary) {
         String bucketed = BUCKET_NUM.matcher(summary).replaceAll(r -> bucket(Integer.parseInt(r.group(1))));
 
@@ -733,7 +719,7 @@ public final class ProjectorDepthMap {
         return n == 0 ? "=0" : n < 10 ? "=1-9" : n < 100 ? "=10-99" : "=100+";
     }
 
-    /** Drop per-frame state on logout; pooled FBOs survive the session. */
+    /** Drops per-frame state on logout, the pooled FBOs survive the session. */
     public static void clear() {
         ACTIVE.clear();
         CAPTURED.clear();

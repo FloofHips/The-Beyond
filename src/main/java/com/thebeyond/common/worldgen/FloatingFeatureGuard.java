@@ -15,8 +15,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** Drops feature parts the {@link com.thebeyond.api.worldgen.FeatureGuard} severed — any recorded block whose own
- *  {@code canSurvive} now fails (or an unsupported falling fruit), cascading up. Generic, no per-mod block list. */
+/** Drops recorded feature blocks the guard left unsupported, whose canSurvive now fails, cascading up. */
 public final class FloatingFeatureGuard {
     private static final ThreadLocal<List<Long>> RECORDED = ThreadLocal.withInitial(ArrayList::new);
     private static final AtomicBoolean loggedFirstSweep = new AtomicBoolean(false);
@@ -54,7 +53,7 @@ public final class FloatingFeatureGuard {
                 finally { SanctionedWrite.exit(); }
                 live.remove(p);
                 removed++;
-                // Removing this may unsupport a recorded neighbour (esp. the one above) — recheck them.
+                // removing this may unsupport a recorded neighbour, so they are checked again
                 for (long np : new long[]{
                         BlockPos.asLong(px, py + 1, pz), BlockPos.asLong(px, py - 1, pz),
                         BlockPos.asLong(px + 1, py, pz), BlockPos.asLong(px - 1, py, pz),
@@ -64,7 +63,7 @@ public final class FloatingFeatureGuard {
             }
         }
         if (removed > 0 && loggedFirstSweep.compareAndSet(false, true)) {
-            TheBeyond.LOGGER.info("[FloatingFeature] removed {} base-less feature block(s) near a carve structure", removed);
+            TheBeyond.LOGGER.debug("[FloatingFeature] removed {} base-less feature block(s) near a carve structure", removed);
         }
         rec.clear();
     }

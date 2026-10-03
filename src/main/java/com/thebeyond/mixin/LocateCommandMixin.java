@@ -25,12 +25,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
-/** Makes /locate skip biomes and structures you haven't discovered yet, so the game just says
- *  "not found" like it would for anything far away. Only players get filtered. */
+/** /locate skips undiscovered biomes and structures for players, answering not found as for anything far. */
 @Mixin(LocateCommand.class)
 public abstract class LocateCommandMixin {
 
-    /** Drops hidden biomes from the search; if nothing's left the game reports "not found". */
+    /** Drops hidden biomes from the search, and with none left the game reports not found. */
     @WrapOperation(
         method = "locateBiome",
         at = @At(value = "INVOKE",
@@ -43,7 +42,7 @@ public abstract class LocateCommandMixin {
         if (!BeyondAwareness.gateEnabled() || !(source.getEntity() instanceof ServerPlayer sp)) {
             return op.call(level, original, pos, radius, hStep, vStep);
         }
-        // Build the hidden-set once — findClosestBiome3d tests the predicate per sampled point.
+        // built once, findClosestBiome3d tests the predicate per sampled point
         Predicate<ResourceLocation> biomeHidden = HiddenContentFilter.biomeHiddenTest(sp);
         Predicate<Holder<Biome>> gated = h -> original.test(h)
                 && h.unwrapKey().map(k -> !biomeHidden.test(k.location())).orElse(true);

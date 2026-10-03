@@ -21,8 +21,7 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
 import java.util.ArrayList;
 import java.util.List;
 
-/** Per-pancake port of BetterEnd's {@code CrystalMountainPiece.postProcess}, scaling the
- *  height bonus by how high this pancake sits in the column's Crystal-Mountains span. */
+/** Per-layer port of BetterEnd's crystal mountains, with the height bonus scaled by the layer's place in the span. */
 public class AuroraCrystalClusterFeature extends Feature<NoneFeatureConfiguration> {
     private static final TagKey<Biome> CRYSTAL_MOUNTAINS_TAG = TagKey.create(
             Registries.BIOME,
@@ -120,8 +119,7 @@ public class AuroraCrystalClusterFeature extends Feature<NoneFeatureConfiguratio
         return Math.min(wanted, maxAllowed);
     }
 
-    /** Chunk-local (x, z) at least {@link #MIN_CLUSTER_SPACING_SQ} from every placed center,
-     *  with a solid block below. 6 attempts; {@code null} if none satisfy. */
+    /** Chunk-local spot at least MIN_CLUSTER_SPACING_SQ from every placed center over solid ground, null after 6 tries. */
     private static BlockPos sampleSpacedPosition(int chunkOriginX, int chunkOriginZ, int posY,
                                                   int radius, WorldGenLevel level,
                                                   RandomSource random, List<BlockPos> placedCenters) {
@@ -144,8 +142,7 @@ public class AuroraCrystalClusterFeature extends Feature<NoneFeatureConfiguratio
         return null;
     }
 
-    /** Tilted diamond pillar buried 3-7 blocks into the surface (port of BetterEnd's
-     *  {@code CrystalMountainPiece.crystal}). */
+    /** Tilted diamond pillar buried 3 to 7 blocks into the surface, ported from BetterEnd. */
     private void placeCrystal(WorldGenLevel level, BlockPos pos, int radius, int height,
                               float fill, RandomSource random, BlockState crystal) {
         BlockPos.MutableBlockPos mut = new BlockPos.MutableBlockPos();
@@ -171,7 +168,7 @@ public class AuroraCrystalClusterFeature extends Feature<NoneFeatureConfiguratio
         }
     }
 
-    /** Returns the lowest Y > {@code yStart} that contains a non-air block; {@code yMax} if none. */
+    /** The lowest Y above yStart holding a non-air block, yMax if none. */
     private static int findNextSolidAbove(WorldGenLevel level, int x, int yStart, int z, int yMax) {
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         for (int y = yStart + 1; y < yMax; y++) {

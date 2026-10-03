@@ -1,5 +1,6 @@
 package com.thebeyond.compat.sodium.client;
 
+import com.thebeyond.client.renderer.RenderFailureLog;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.renderer.BlockCameraCapture;
 import com.thebeyond.mixin.compat.sodium.SodiumWorldRendererAccessor;
@@ -53,7 +54,7 @@ public final class SodiumSecondaryView {
             complete = visible > 0 && swr.isTerrainRenderComplete();
             logOnce("[camera] Sodium secondary view active: visibleChunks=" + visible + " complete=" + complete);
         } catch (Throwable t) {
-            TheBeyond.LOGGER.error("[camera] Sodium secondary view failed", t);
+            RenderFailureLog.error("[camera] Sodium secondary view failed", t);
         } finally {
             switchContext(swr, swap, ctx);
         }

@@ -39,8 +39,7 @@ public abstract class SimEndSeaHeightMixin {
         try {
             if (the_beyond$ctor == null) the_beyond$resolve(original.getClass());
 
-            // Offset the sea relative to the auroracite floor (= the build floor). Negative drops it below the floor;
-            // EndVoidFloorMixin lowers the void-death line in step (same 64-block buffer) so riders don't void out.
+            // the sea sits relative to the auroracite floor, and below it EndVoidFloorMixin lowers the void line too
             int minY = level.getMinBuildHeight();
             double targetStartY = minY + BeyondConfig.VOID_SEA_OFFSET.get();
             double currentStartY = (double) the_beyond$mStartY.invoke(original);
@@ -55,7 +54,7 @@ public abstract class SimEndSeaHeightMixin {
                     dimension, priority, targetStartY, depthGradient, drag));
             if (!the_beyond$loggedStartY) {
                 the_beyond$loggedStartY = true;
-                TheBeyond.LOGGER.info("[Beyond] void sea startY={} (minY={}, offset={})",
+                TheBeyond.LOGGER.debug("[Beyond] void sea startY={} (minY={}, offset={})",
                         targetStartY, minY, BeyondConfig.VOID_SEA_OFFSET.get());
             }
         } catch (Throwable t) {

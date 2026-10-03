@@ -10,10 +10,7 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Per-grade luminance-ramp LUT (256x1) for the item-icon grade shader: holds the pure {@link Grade#rampRgb} colour,
- * the shader blends at the grade's strength. GL thread only; cleared on disconnect (grade registry re-syncs on reconnect).
- */
+/** Per-grade 256x1 ramp LUT for the item-icon grade shader, GL thread only, cleared on disconnect. */
 public final class ProjectorGradeLut {
     private static final int N = 256;
     private static final Map<ResourceLocation, ResourceLocation> CACHE = new HashMap<>();
@@ -22,7 +19,7 @@ public final class ProjectorGradeLut {
     private ProjectorGradeLut() {
     }
 
-    /** Cached LUT texture id; null when the grade is passthrough (no stops). */
+    /** Cached LUT texture id, null for a passthrough grade. */
     public static ResourceLocation get(ResourceLocation gradeId, Grade grade) {
         if (grade == null || grade.stops().length == 0) {
             return null;

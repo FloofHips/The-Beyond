@@ -12,8 +12,7 @@ import java.util.stream.IntStream;
 public final class BeyondTerrain {
     private BeyondTerrain() {}
 
-    /** Descending pancake-top Y at {@code (x, z)} within {@code [minY, maxY]} (first solid
-     *  above each air→solid transition); empty for a uniform column. */
+    /** Layer tops at (x, z) within [minY, maxY], highest first, empty for a uniform column. */
     public static IntStream streamPancakeTops(int x, int z, int minY, int maxY) {
         BeyondEndChunkGenerator.ColumnScratch scratch = BeyondEndChunkGenerator.getColumnScratch();
         float distance = (float) Math.sqrt((double) x * x + (double) z * z);
@@ -28,8 +27,7 @@ public final class BeyondTerrain {
         return b.build();
     }
 
-    /** Whether Beyond's End terrain reports solid at {@code (x, y, z)}, using the same density predicate as
-     *  the placed chunks; best-effort {@code false} outside Beyond's End or before the sampler is primed. */
+    /** Whether Beyond's End terrain is solid here by the chunks' own density, false outside it or before it is primed. */
     public static boolean isSolidAt(int x, int y, int z) {
         if (!BeyondTerrainState.isActive()) return false;
         try {
@@ -42,8 +40,7 @@ public final class BeyondTerrain {
         }
     }
 
-    /** Highest solid Y in {@code [minY, maxY]} at {@code (x, z)}, or {@link Integer#MIN_VALUE} if empty /
-     *  unowned / not primed. Complements {@link #streamPancakeTops}, which streams every layer top. */
+    /** Highest solid Y in [minY, maxY] at (x, z), MIN_VALUE when empty, not Beyond's, or not primed. */
     public static int findSurfaceTop(int x, int z, int minY, int maxY) {
         if (!BeyondTerrainState.isActive()) return Integer.MIN_VALUE;
         try {
@@ -59,8 +56,7 @@ public final class BeyondTerrain {
         }
     }
 
-    /** Beyond's biome-noise simplex field, or {@code null} before worldgen bootstraps.
-     *  Read-only; for biome-aligned macro-region deformation. */
+    /** Beyond's biome-noise simplex, read only, null before worldgen bootstraps. */
     @Nullable
     public static HashSimplexNoise biomeSimplexNoise() {
         return BeyondEndChunkGenerator.biomeSimplexNoise;

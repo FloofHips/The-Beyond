@@ -11,13 +11,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Warden branch of deafening stealth: {@code increaseAngerAt} is the one choke point all vibration- and
- *  damage-driven anger routes through, so gating there stops fresh anger without calling off an already-hunting Warden. */
+/** Deafening for the Warden: increaseAngerAt is where all its anger passes, so new anger stops without a recall. */
 @Mixin(Warden.class)
 public abstract class WardenDeafenAngerMixin {
 
-    /** Direct-damage anger offset; vibration/roar offsets are much smaller (10/20/35), so filtering below
-     *  this threshold leaves a deaf Warden still aggroing when actually hit. */
+    /** Anger offset of a direct hit, far above vibration's, so a deaf Warden still reacts when hit. */
     private static final int DAMAGE_ANGER_OFFSET = 100;
 
     @Inject(method = "increaseAngerAt(Lnet/minecraft/world/entity/Entity;IZ)V", at = @At("HEAD"), cancellable = true)

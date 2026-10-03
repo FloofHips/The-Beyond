@@ -22,7 +22,7 @@ public abstract class SableVoxelNeighborhoodStateMixin {
         }
     }
 
-    /** Auroracite non-solid for Sable physics so contraptions pass through; vanilla entity collision is untouched. */
+    /** Auroracite is non-solid for Sable physics so contraptions pass, vanilla entity collision is untouched. */
     @Inject(method = "isSolid", at = @At("HEAD"), cancellable = true, remap = false)
     private static void the_beyond$auroraciteNonSolidForPhysics(final BlockGetter blockGetter, final BlockPos pos,
                                                                 final BlockState state,

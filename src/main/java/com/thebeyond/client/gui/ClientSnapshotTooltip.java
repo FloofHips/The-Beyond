@@ -8,7 +8,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.resources.ResourceLocation;
 
-/** Pixels live on the item, so the texture is the cached {@link SnapshotTextures} entry — no network fetch. */
+/** The pixels live on the item, so the texture is the cached SnapshotTextures entry with no network fetch. */
 public class ClientSnapshotTooltip implements ClientTooltipComponent {
     private static final int SIZE = 32;
 

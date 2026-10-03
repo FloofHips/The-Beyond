@@ -6,8 +6,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 import java.util.List;
 
-/** Exposes the private block palettes so the occupancy mask can read a structure's real block footprint
- *  (not just its bounding box). Read-only. */
+/** Exposes the block palettes so the occupancy mask reads the real footprint, not just the box. */
 @Mixin(StructureTemplate.class)
 public interface StructureTemplateAccessor {
     @Accessor("palettes")

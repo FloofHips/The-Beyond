@@ -9,8 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Maps a foreign structure to its {@link StructureIntegrationProfile}. LEAVE-ALONE by default — hosting
- *  requires explicit registration during {@code BeyondCommonSetupEvent}. */
+/** Maps a foreign structure to its integration profile: explicit registrations first, then the automatic policy. */
 @ApiStatus.Experimental
 public final class BeyondForeignStructureProfiles {
 
@@ -18,26 +17,24 @@ public final class BeyondForeignStructureProfiles {
 
     private static final Set<ResourceLocation> AUTO_REANCHORED = ConcurrentHashMap.newKeySet();
 
-    /** Foreign structures another addon's bespoke compat owns; the automatic policy must not double-handle them. */
+    /** Foreign structures another addon's own compat handles, so the automatic policy skips them. */
     private static final Set<ResourceLocation> SUPPRESS_AUTO = ConcurrentHashMap.newKeySet();
 
     private static final Set<ResourceLocation> SUPPRESS_DIRT_COVER = ConcurrentHashMap.newKeySet();
 
-    /** Crashed ships: interior-only carve — core columns clear, no foundation/base-beard platform; read by the carver as {@code carveOnly}. */
+    /** Crashed ships: the carver clears only the interior (carveOnly), with no foundation or base beard. */
     private static final Set<ResourceLocation> EMBEDDED = ConcurrentHashMap.newKeySet();
     private static final Set<ResourceLocation> BASE_PEDESTAL = ConcurrentHashMap.newKeySet();
 
-    /** Unlike {@link #AUTO_REANCHORED}, Beyond never moves these, so rejection stays off. */
     private static final Set<ResourceLocation> AUTO_PROJECTED = ConcurrentHashMap.newKeySet();
 
-    /** Keyed by {@code "structureId@startChunkLong"}. */
     private static final Set<String> LAYER_DISTRIBUTED = ConcurrentHashMap.newKeySet();
 
     private static final Set<String> SESSION_STARTS = ConcurrentHashMap.newKeySet();
 
     private static volatile boolean warming;
 
-    /** Genuine void floaters instead opt in via explicit FLOATING registration — never auto-classified. */
+    /** Real void floaters opt in with an explicit FLOATING registration, they are never auto-classified. */
     private static final StructureIntegrationProfile AUTO_SEATED =
             StructureIntegrationProfile.builder(StructureIntegrationProfile.Anchor.SEATED).coverGroundDirt(true).build();
 
@@ -66,7 +63,7 @@ public final class BeyondForeignStructureProfiles {
 
     private static void noteAutoHost(String set, ResourceLocation structureId) {
         if (!warming) {
-            com.thebeyond.TheBeyond.LOGGER.info("[Beyond] auto-host {} += {} outside the start-up warm-up", set, structureId);
+            com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] auto-host {} += {} outside the start-up warm-up", set, structureId);
         }
     }
 
@@ -160,22 +157,17 @@ public final class BeyondForeignStructureProfiles {
     public static boolean isBasePedestal(@Nullable ResourceLocation structureId,
             @Nullable net.minecraft.core.Registry<Structure> registry, @Nullable Structure structure) {
         if (isBasePedestal(structureId)) return true;
-        if (registry == null || structure == null) return false;
-        try {
-            return registry.wrapAsHolder(structure).is(com.thebeyond.common.registry.BeyondTags.BASE_PEDESTAL);
-        } catch (Throwable t) {
-            return false;
-        }
+        return structure != null && com.thebeyond.common.worldgen.StructureReadings.pedestal(structure, structureId, registry);
     }
 
-    public static boolean pedestalByTagOnly(@Nullable ResourceLocation structureId,
+    public static boolean pedestalByReading(@Nullable ResourceLocation structureId,
             @Nullable net.minecraft.core.Registry<Structure> registry, @Nullable Structure structure,
             @Nullable StructureIntegrationProfile profile) {
         if (isBasePedestal(structureId) || (profile != null && profile.basePedestal())) return false;
         return isBasePedestal(structureId, registry, structure);
     }
 
-    /** Precedence: explicit registration, then auto-reanchored/auto-projected; everything else is null. */
+    /** Explicit registration first, then the automatic re-anchor or projection, anything else is null. */
     @Nullable
     public static StructureIntegrationProfile resolve(@Nullable Structure structure, @Nullable ResourceLocation id) {
         if (id == null) return null;

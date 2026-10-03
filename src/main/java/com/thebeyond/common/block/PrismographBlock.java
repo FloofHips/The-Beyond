@@ -202,7 +202,7 @@ public class PrismographBlock extends BaseEntityBlock {
         }
         long now = level.getGameTime();
         long last = be.getLastCaptureTick();
-        // MIN_VALUE = never captured; also dodges now - MIN_VALUE overflow.
+        // MIN_VALUE means never captured, and skipping it avoids the now - MIN_VALUE overflow
         if (last != Long.MIN_VALUE && now - last < CAPTURE_COOLDOWN) {
             return;
         }
@@ -210,21 +210,19 @@ public class PrismographBlock extends BaseEntityBlock {
             level.playSound(null, pos, SoundEvents.UI_BUTTON_CLICK.value(), SoundSource.BLOCKS, 0.5f, 0.6f);
             return;
         }
-        // FUEL SCAFFOLD (inactive): when fuel is wired, gate + spend it here too, e.g.:
-        //   if (!be.hasFuel()) { level.playSound(...dry-fire...); return; }
-        //   be.consumeFuel();
+        // fuel goes here once wired: return on !be.hasFuel() with a dry-fire sound, else be.consumeFuel()
         ServerPlayer client = pickRenderClient(level, pos, be.getOwner());
         if (client == null) {
             return;
         }
         be.setLastCaptureTick(now);
         be.consumeFilm();
-        // In a Sable sub-level these hooks remap the block-frame POV into the visible moving frame; outside one they no-op.
+        // inside a Sable sub-level these hooks map the block POV into the moving frame, elsewhere they do nothing
         Vec3 storedForward = Vec3.atLowerCornerOf(state.getValue(FACING).getNormal());
         Vec3 visForward = BeyondCompatHooks.toVisibleDir(level, pos, storedForward);
         Vec3 forward = visForward != null ? visForward.normalize() : storedForward;
         Vec3 eye = BeyondCompatHooks.visibleOrCenter(level, pos).add(forward.scale(0.5));
-        // Placed cameras stamp the default look; CAMERA_GRADE is a handheld-only concept.
+        // placed cameras stamp the default look, CAMERA_GRADE belongs to the handheld only
         long requestId = SnapshotRequests.issue(client, pos, Grades.NONE);
         PacketDistributor.sendToPlayer(client,
                 new BlockCameraRenderRequestPayload(requestId, eye, forward));

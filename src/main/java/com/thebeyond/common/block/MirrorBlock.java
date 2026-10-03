@@ -85,7 +85,7 @@ public class MirrorBlock extends BaseEntityBlock {
         }
     }
 
-    // Queried per mirror per frame by the reflection pass; at most 64 states, and BlockStates are interned.
+    // asked per mirror per frame, at most 64 states and BlockStates are interned
     private static final Map<BlockState, List<Direction>> FACE_CACHE = new ConcurrentHashMap<>();
 
     public static List<Direction> reflectiveFaces(BlockState state) {

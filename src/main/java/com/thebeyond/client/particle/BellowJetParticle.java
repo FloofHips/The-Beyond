@@ -9,10 +9,7 @@ import net.minecraft.client.particle.TextureSheetParticle;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
-/**
- * Smoke puff for the Bellow jet. Lifetime comes from the spawn options so the jet length tracks the redstone-driven
- * reach; with friction off, travel is exactly velocity*lifetime.
- */
+/** Bellow jet puff whose lifetime comes from the spawn options, so without friction it travels velocity times lifetime. */
 public class BellowJetParticle extends TextureSheetParticle {
     private final SpriteSet sprites;
 

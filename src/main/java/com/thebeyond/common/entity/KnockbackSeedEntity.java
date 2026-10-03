@@ -130,7 +130,7 @@ public class KnockbackSeedEntity extends AbstractSeedEntity {
             livingEntity.setDeltaMovement(getDeltaMovement().add(0, 0.5, 0).scale(-1));
             livingEntity.hurt(damagesource,1);
             livingEntity.hurtMarked = true;
-            // DEAFENED on a player = client audio-mute; on a mob = the FOV-stealth state.
+            // on a player DEAFENED mutes the audio, on a mob it is the FOV-stealth state
             livingEntity.addEffect(new MobEffectInstance(BeyondEffects.DEAFENED, 200));
         }
     }

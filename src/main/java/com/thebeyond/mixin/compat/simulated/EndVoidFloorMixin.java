@@ -7,13 +7,11 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-/** Lowers the End's void-death line in step with a below-floor void sea (negative {@link BeyondConfig#VOID_SEA_OFFSET})
- *  so a rider isn't voided out; a non-negative offset is a no-op, so the line never rises above vanilla. */
+/** Lowers the void-death line with a sea below the floor (negative VOID_SEA_OFFSET), never above vanilla. */
 @Mixin(Entity.class)
 public abstract class EndVoidFloorMixin {
 
-    // Redirect (not a cancellable @Inject) so this per-entity-per-tick path allocates no CallbackInfo. checkBelowWorld voids
-    // out below getMinBuildHeight()-64; same target as SimContraptionFloorMixin, so the pilot and contraption floors move in lockstep.
+    // a redirect allocates no CallbackInfo per entity tick, same target as SimContraptionFloorMixin
     @Redirect(
             method = "checkBelowWorld",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;getMinBuildHeight()I"),

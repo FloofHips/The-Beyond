@@ -592,9 +592,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
 
         be.oRot = be.rot;
 
-        // Inside a sub-level (Sable/Aeronautics contraption) the block sits at far-off grid coordinates:
-        // search for the player at the contraption's real-world position, and measure the facing angle in the
-        // contraption's local frame (its render pose rotates the model), so the refuge still turns to the player.
+        // inside a sub-level the player is searched at the real position and the angle measured in the local frame
         Vec3 visible = com.thebeyond.api.compat.BeyondCompatHooks.visibleOnAnyLevel(level, pos);
         double searchX = visible != null ? visible.x : (double) pos.getX() + 0.5D;
         double searchY = visible != null ? visible.y : (double) pos.getY() + 0.5D;
@@ -675,8 +673,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         reapplyIfRelocated();
     }
 
-    /** Re-runs {@code addRefuge} on relocation; probes the center chunk first to skip
-     *  legacy saves whose counter was already applied in a prior session. */
+    /** Re-runs addRefuge after relocation, probing the center chunk so a counter applied in an earlier session is skipped. */
     private void reapplyIfRelocated() {
         if (level == null || level.isClientSide) return;
         if (currentMode < 0 || currentMode > 3) return;

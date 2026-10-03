@@ -15,7 +15,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 
-/** Spyglass scope reused as a viewfinder: scope fills the captured square ({@code side = min(screenW, screenH)}), bars black out the rest, so it doubles as an accurate frame. */
+/** The spyglass scope as viewfinder: it fills the captured square and black bars hide the rest, an accurate frame. */
 public class CameraViewfinderLayer implements LayeredDraw.Layer {
     private static final ResourceLocation OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/prismograph/overlay.png");
 
@@ -25,7 +25,7 @@ public class CameraViewfinderLayer implements LayeredDraw.Layer {
     public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
-        // Reset only when the aim truly ends or the camera's dropped — never on an F5 toggle, else the raise restarts.
+        // reset only when the aim ends or the camera is dropped, an F5 toggle would restart the raise
         if (!CameraAim.isAiming() || mc.level == null || player == null || !holdingCamera(player)) {
             if (player == null || !holdingCamera(player)) {
                 CameraAim.clear();
@@ -38,7 +38,7 @@ public class CameraViewfinderLayer implements LayeredDraw.Layer {
         // Constants verbatim from Gui#renderSpyglassOverlay.
         scopeScale = Mth.lerp(0.5F * deltaTracker.getGameTimeDeltaTicks(), scopeScale, 1.3F);
 
-        // Draw only in first person; third person keeps it ticking but hidden, so switching back resumes mid-raise.
+        // drawn only in first person, third person keeps it ticking so switching back resumes mid-raise
         if (mc.options.hideGui || !mc.options.getCameraType().isFirstPerson()) {
             return;
         }

@@ -20,6 +20,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
@@ -45,10 +46,7 @@ import net.minecraft.util.RandomSource;
 import net.neoforged.neoforge.common.Tags;
 import net.minecraft.world.level.block.TransparentBlock;
 
-/**
- * Casts a ray from the lens along the facing; the image lands on the first surface hit, scaled by throw distance. Works
- * in the host world and inside Sable sub-levels (the BER PoseStack carries the contraption frame).
- */
+/** The image lands on the first surface the lens ray hits, scaled by throw distance, also inside Sable sub-levels. */
 public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEntity> {
     /** Null off the Sable path. */
     public static volatile ProjectorClipFn subLevelClip;
@@ -58,7 +56,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         double clip(Level level, BlockPos pos, Vec3 eye, Vec3 forward, double maxThrow);
     }
 
-    /** Sable raw cross-frame clip; plain {@code level.clip} is rewritten by Sable to project rays between frames. Null -> plain clip. */
+    /** Sable's raw cross-frame clip, since Sable rewrites level.clip to project rays between frames, null for plain clip. */
     public static volatile ProjectorOccFn meshOcc;
 
     /** Returns 1.0 = visible, 0.0 = occluded. */
@@ -75,7 +73,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         boolean test(Level level, BlockPos pos);
     }
 
-    /** Contraption's camera-relative visible transform; consumed by the per-pixel depth capture. Null on the base path. */
+    /** The contraption's camera-relative transform for the per-pixel depth capture, null on the base path. */
     public static volatile ProjectorContraptionFrameFn contraptionFrame;
 
     @FunctionalInterface
@@ -83,11 +81,11 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         ContraptionFrame resolve(Level level, BlockPos pos, Vec3 camPos, float partialTick);
     }
 
-    /** {@code m}: (gridCoord - rp) -> camera-relative visible; {@code minv}: its inverse; {@code rp*}: rotation point. */
+    /** m maps grid coordinates minus the rotation point to camera-relative space, minv is its inverse. */
     public record ContraptionFrame(Matrix4f m, Matrix4f minv, double rpx, double rpy, double rpz) {
     }
 
-    /** Visible frames of contraptions intersecting a world AABB, so a host projector can capture them as occluders. Null on the base path. */
+    /** Frames of contraptions crossing a world box, so a host projector captures them as occluders, null on the base path. */
     public static volatile ProjectorIntersectingFramesFn intersectingFrames;
 
     @FunctionalInterface
@@ -100,8 +98,12 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
 
     static boolean DIAG_GLASS_TONE = true;
     private static final ConcurrentHashMap<BlockPos, ResourceLocation> DIAG_LAST_TONE = new ConcurrentHashMap<>();
+    static boolean DIAG_DRAW = true;
+    private static final ConcurrentHashMap<BlockPos, int[]> DIAG_LAST_DRAW = new ConcurrentHashMap<>();
+    private static final int DRAW_DEFERRED = 1, DRAW_NO_ITEMS = 2, DRAW_UNLIT = 3, DRAW_NO_SURFACE = 4, DRAW_NO_SLOTS = 5,
+            DRAW_NO_TEXTURE = 6, DRAW_OK = 7, DIAG_DRAW_CAP = 12;
 
-    static final double MAX_THROW = 16.0; // beam reach (blocks); shared with the depth-map passes. Cosmetic look knobs live in ProjectorTunables.
+    static final double MAX_THROW = 16.0;  // beam reach in blocks, shared with the depth-map passes
     private static final double SURFACE_EPS = 0.003;  // float just off the hit surface
     private static final int FULL_BRIGHT = 15728880;
     private static final int CONFORM_GRID = 4;
@@ -119,8 +121,6 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
 
     public ProjectorRenderer(BlockEntityRendererProvider.Context ctx) {
     }
-
-    // ===== Pinhole basis: shared by the BER drape and the per-pixel depth-map/decal passes =====
 
     /** {@code coneK} is the cone half-spread. */
     record Pinhole(Vec3 eye, Vec3 forward, Vec3 right, Vec3 up, double coneK) {
@@ -145,14 +145,14 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         return new Pinhole(eye, forward, right, up, BASE_HALF / REF_DIST);
     }
 
-    /** Glass-family blocks let the beam pass through. Deliberately NOT {@code !canOcclude()} — fences/stairs must still block. */
+    /** Glass lets the beam through. Not !canOcclude(), since fences and stairs must still block it. */
     public static boolean isLightTransmitting(BlockState st) {
         return st.getBlock() instanceof TransparentBlock
                 || st.is(Tags.Blocks.GLASS_BLOCKS)
                 || st.is(Tags.Blocks.GLASS_PANES);
     }
 
-    /** Grade of a stained-glass block/pane glued to the front, else AS_PHOTO. getBlockState, never level.clip (Sable rewrites clip). */
+    /** Grade of the stained glass right in front, else NONE, read with getBlockState since Sable rewrites clip. */
     static ResourceLocation frontGlassGradeId(ProjectorBlockEntity be) {
         Level level = be.getLevel();
         if (level == null) {
@@ -167,7 +167,6 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         return tone;
     }
 
-    /** True when a full-block light source sits directly behind the lens (a torch or lantern is not enough). */
     static boolean isLit(ProjectorBlockEntity be) {
         Level level = be.getLevel();
         if (level == null) {
@@ -201,7 +200,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
-    /** Kill-switch for the pack-active per-pixel path; false restores BER-mesh-under-pack. */
+    /** Kill switch for the per-pixel path under a pack, false brings back the BER mesh. */
     private static final boolean PACK_PATH = true;
 
     private static boolean shadersLoaded() {
@@ -230,8 +229,9 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         if (ShaderCompatLib.isShadowPass()) {
             return;
         }
-        // Exactly one path paints each projector per frame: the deferred decal owns it only when captured this frame, else the BER.
+        // one path paints each projector per frame: the deferred decal when captured this frame, else the BER
         if (deferredAvailable() && ProjectorDepthMap.wasCaptured(be)) {
+            diagDraw(be, DRAW_DEFERRED, 0, 0);
             return;
         }
         Level level = be.getLevel();
@@ -244,11 +244,13 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         }
         NonNullList<ItemStack> items = be.getItems();
         if (allEmpty(items)) {
+            diagDraw(be, DRAW_NO_ITEMS, 0, 0);
             return;
         }
 
         BlockPos pos = be.getBlockPos();
         if (!isLit(be)) {
+            diagDraw(be, DRAW_UNLIT, 0, 0);
             return;
         }
         Pinhole ph = pinhole(be);
@@ -261,7 +263,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
 
         ProjectorClipFn fn = subLevelClip; // null on the base path
 
-        // Cast lens centre + four image corners; similar distances keep the single-quad path, else conform per-cell.
+        // lens centre and four corners: similar distances keep one quad, else the image conforms per cell
         double centerDist = clipDist(fn, level, pos, eye, forward);
         double cTL = clipDist(fn, level, pos, eye, coneDir(forward, right, up, -coneK, +coneK));
         double cTR = clipDist(fn, level, pos, eye, coneDir(forward, right, up, +coneK, +coneK));
@@ -279,11 +281,12 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
             }
         }
         if (!anyHit) {
+            diagDraw(be, DRAW_NO_SURFACE, 0, 0);
             return; // aimed fully at open air
         }
         boolean flat = allHit && (maxD - minD) < FLAT_TOL;
 
-        // Vertices are emitted relative to (ox,oy,oz) through this pose, so a Sable baked PoseStack rotates the image with the contraption.
+        // vertices are relative to the block through this pose, so a Sable PoseStack rotates the image with its craft
         PoseStack.Pose pose = poseStack.last();
         double ox = pos.getX(), oy = pos.getY(), oz = pos.getZ();
 
@@ -292,6 +295,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         int[] filled = be.filledSlots();
         int f = filled.length;
         if (f == 0) {
+            diagDraw(be, DRAW_NO_SLOTS, 0, 0);
             return;
         }
         int carousel = Math.floorMod(be.getCarouselIndex(), f);
@@ -300,7 +304,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         Vec3 flatCenter = eye.add(forward.scale(flatDist));
         float flatHalf = BASE_HALF * (float) Mth.clamp(flatDist / REF_DIST, MIN_SCALE, MAX_SCALE);
 
-        // Mesh decal conforms to stairs/slabs; empty -> flat/cone fallback. Sable keeps contraption blocks in mc.level at plot coords.
+        // the mesh decal follows stairs and slabs, and an empty mesh falls back to the flat or cone quad
         List<ClipFace> mesh = buildMeshDecal(level, eye, forward, right, up, coneK);
         boolean canMesh = !mesh.isEmpty();
         if (DIAG_CONTRAPTION && subLevelClip != null && isOnContraption(be) && DIAG_LOGGED.add(pos)) {
@@ -310,10 +314,12 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
                     String.format(Locale.ROOT, "%.2f", centerDist), mesh.size(), canMesh, flat);
         }
 
+        int unresolved = 0, drawn = 0;
         for (int j = 0; j < f; j++) {
             int slot = filled[j];
             Resolved base = resolveTexture(items.get(slot), gradeId);
             if (base == null) {
+                unresolved++;
                 continue;
             }
             if (mode == ProjectorBlockEntity.MODE_CAROUSEL && j != carousel) {
@@ -327,7 +333,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
             } else if (flat) {
                 Vec3 quadCenter = flatCenter;
                 if (mode == ProjectorBlockEntity.MODE_MIXUP) {
-                    // Push each layer toward the lens (anti z-fight); full-image layers also fan so stacked photos stay visible.
+                    // each layer moves toward the lens against z-fighting, full images also fan out so stacked photos show
                     quadCenter = quadCenter.subtract(forward.scale(j * LAYER_DEPTH));
                     if (isFull(region)) {
                         double fan = j * LAYER_FAN * flatHalf;
@@ -339,7 +345,38 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
                 emitConformGrid(vc, pose, eye, forward, right, up, normal, coneK, region,
                         base.opacity(), base.flipV(), layerDepth, fn, level, pos, ox, oy, oz);
             }
+            drawn++;
         }
+        diagDraw(be, drawn == 0 ? DRAW_NO_TEXTURE : DRAW_OK, f, unresolved);
+    }
+
+    /** Logs why a projector draws or not whenever that changes, capped per projector so frame-to-frame flips cannot spam. */
+    private static void diagDraw(ProjectorBlockEntity be, int code, int slots, int unresolved) {
+        if (!DIAG_DRAW) {
+            return;
+        }
+        int key = code * 1000 + unresolved;
+        int[] last = DIAG_LAST_DRAW.computeIfAbsent(be.getBlockPos(), p -> new int[]{0, 0});
+        if (last[0] == key || last[1] >= DIAG_DRAW_CAP) {
+            return;
+        }
+        last[0] = key;
+        last[1]++;
+        String why = switch (code) {
+            case DRAW_DEFERRED -> "drawn by the deferred decal";
+            case DRAW_NO_ITEMS -> "not drawn: no items";
+            case DRAW_UNLIT -> {
+                BlockPos behind = be.getBlockPos().relative(be.getBlockState().getValue(ProjectorBlock.FACING).getOpposite());
+                BlockState behindState = be.getLevel().getBlockState(behind);
+                yield "not drawn: unlit (behind: " + BuiltInRegistries.BLOCK.getKey(behindState.getBlock())
+                        + ", light " + behindState.getLightEmission(be.getLevel(), behind) + ")";
+            }
+            case DRAW_NO_SURFACE -> "not drawn: no surface within reach";
+            case DRAW_NO_SLOTS -> "not drawn: no filled slot";
+            case DRAW_NO_TEXTURE -> "not drawn: " + unresolved + " of " + slots + " slot(s) without an image";
+            default -> "drawing " + slots + " slot(s), " + unresolved + " without an image";
+        };
+        TheBeyond.LOGGER.info("[Projector draw] be@{} {}", be.getBlockPos().toShortString(), why);
     }
 
     private static boolean isFull(ProjectorTexture.Region r) {
@@ -367,7 +404,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         }
     }
 
-    /** Quadrant layout: 2x2 row-major; 1-3 filled slots get centered cells so the picture stays balanced. */
+    /** 2x2 row-major quadrants, with 1 to 3 filled slots centred so the picture stays balanced. */
     private static ProjectorTexture.Region quadrantRegion(int j, int f) {
         if (f == 1) {
             return new ProjectorTexture.Region(0.25f, 0.25f, 0.75f, 0.75f);
@@ -423,7 +460,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
             return fn.clip(level, pos, eye, dir, MAX_THROW);
         }
         try {
-            // COLLIDER (not OUTLINE): decoratives have empty colliders and pass through; glass is stepped through to the wall behind.
+            // COLLIDER, not OUTLINE: decorations have no collider and pass, glass is stepped through to the wall behind
             Vec3 end = eye.add(dir.scale(MAX_THROW));
             Vec3 from = eye;
             for (int i = 0; i < 5; i++) {
@@ -494,7 +531,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         }
     }
 
-    /** Cell-quad normal flipped to face the lens; {@code def} when degenerate. */
+    /** Cell normal flipped to face the lens, def when degenerate. */
     private static Vec3 quadNormal(Vec3 tl, Vec3 tr, Vec3 bl, Vec3 eye, Vec3 def) {
         Vec3 nrm = tr.subtract(tl).cross(bl.subtract(tl));
         double len = nrm.length();
@@ -517,8 +554,6 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         double cell = Math.max(e1.length(), e2.length());
         return dev <= CREASE_FRAC * cell;
     }
-
-    // ===== Mesh decal (host path): real VoxelShape faces clipped to the projector frustum, with projective UV =====
 
     private static final Direction[] DIRS = Direction.values();
 
@@ -658,7 +693,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         }
     }
 
-    /** Full strength on any surface the light reaches; only edge-on faces get nothing (no distance fade). */
+    /** Full strength wherever the light reaches, only edge-on faces get nothing, with no distance fade. */
     private static double vertexAlpha(Vec3 n, Vec3 p, Vec3 eye) {
         Vec3 rel = p.subtract(eye);
         double dist = rel.length();
@@ -697,7 +732,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         }
     }
 
-    /** 1.0 if the lens can see {@code p}; 0.0 if a nearer solid or an entity blocks it. */
+    /** 1.0 if the lens can see {@code p}, 0.0 if a nearer solid or an entity blocks it. */
     private static double cornerOcc(Level level, Vec3 eye, Vec3 p, BlockPos self) {
         if (blockOccluded(level, eye, p, self)) {
             return 0.0;
@@ -751,7 +786,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         return false;
     }
 
-    /** {@code cull}: -1 = none, else Direction 3D id; {@code pos}: 12 local-space corner floats. */
+    /** cull is -1 for none or a Direction 3D id, pos holds 12 local-space corner floats. */
     record ModelQuad(int cull, float[] pos, float[] uv, double nx, double ny, double nz) {
     }
 
@@ -776,7 +811,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
             rand.setSeed(42L); // stable per state: CTM/dynamic models vary texture, not geometry
             for (BakedQuad bq : model.getQuads(state, face, rand)) {
                 int[] v = bq.getVertices();
-                int stride = v.length / 4; // ints/vertex; position first 3, atlas UV at 4-5
+                int stride = v.length / 4;  // ints per vertex, position first, atlas UV at 4 and 5
                 float[] qp = new float[12];
                 float[] qt = new float[8];
                 for (int k = 0; k < 4; k++) {
@@ -804,7 +839,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         boolean fullRegion = u0 == 0.0 && v0 == 0.0 && u1 == 1.0 && v1 == 1.0;
         for (ClipFace cf : faces) {
             List<double[]> poly = faceVerts(cf);
-            // Bound to the cone footprint with the SAME boundary for every face, so adjacent faces meet at the cone edge without cracking.
+            // one cone boundary for every face, so adjacent faces meet at the cone edge without cracks
             poly = clipAxis(poly, 3, true, 0.0);
             poly = clipAxis(poly, 3, false, 1.0);
             poly = clipAxis(poly, 4, true, 0.0);
@@ -971,8 +1006,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         if (pt != null) {
             return new Resolved(pt.texture(), pt.region(), pt.opacity(), false);
         }
-        // Fallback: live inventory icon, null until its FBO renders; flipV since the FBO is bottom-up.
-        // Plain item has no photo to defer to, so no-glass (AS_PHOTO) stays untinted.
+        // fallback to the live inventory icon, null until its FBO renders, flipped since the FBO is bottom-up
         ResourceLocation gradeId = asPhoto ? Grades.NONE : projectorGradeId;
         ResourceLocation icon = ItemIconTextures.get(stack, gradeId);
         return icon != null ? new Resolved(icon, ProjectorTexture.Region.FULL, 1f, true) : null;

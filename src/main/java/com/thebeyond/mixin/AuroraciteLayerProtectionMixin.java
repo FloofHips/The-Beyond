@@ -16,8 +16,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Vetoes foreign block writes at the End's auroracite floor. Whitelist: Beyond's
- *  auroracite, plus DT's source fluid when DT is loaded. */
+/** Vetoes foreign writes at the End's auroracite floor, except auroracite and DT's fluid. */
 @Mixin(WorldGenRegion.class)
 public abstract class AuroraciteLayerProtectionMixin {
 

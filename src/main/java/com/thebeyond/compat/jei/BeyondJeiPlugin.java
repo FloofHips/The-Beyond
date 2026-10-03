@@ -42,13 +42,10 @@ public class BeyondJeiPlugin implements IModPlugin {
     private IIngredientManager ingredientManager;
     private IRecipeManager recipeManager;
 
-    /** Recipes we hid, grouped by type so we can put them back. */
     private final Map<RecipeType<?>, Set<Object>> hiddenByType = new HashMap<>();
 
-    /** What the player knew last time we ran, so we can skip the sweep if nothing changed. */
     private Set<ResourceLocation> lastKnown;
 
-    /** The few recipes that touch locked items - the only ones that can ever be hidden. Built lazily. */
     private List<IndexedRecipe> gatedRecipes;
 
     @Override
@@ -79,7 +76,6 @@ public class BeyondJeiPlugin implements IModPlugin {
     private void refresh() {
         if (ingredientManager == null) return;
         if (!BeyondAwareness.gateEnabled()) {
-            // Feature off — re-add everything previously hidden by this plugin.
             if (!removedByUs.isEmpty()) {
                 ingredientManager.addIngredientsAtRuntime(VanillaTypes.ITEM_STACK, List.copyOf(removedByUs));
                 removedByUs.clear();
@@ -126,7 +122,7 @@ public class BeyondJeiPlugin implements IModPlugin {
         refreshRecipes(known);
     }
 
-    /** First pass finds the recipes that use locked items; after that we only re-check those, so big packs stay cheap. */
+    /** The first pass finds recipes using locked items, later passes recheck only those so big packs stay cheap. */
     private void refreshRecipes(Set<ResourceLocation> known) {
         if (recipeManager == null) return;
         if (gatedRecipes == null) {

@@ -3,7 +3,7 @@ package com.thebeyond.common.item.components;
 public class Components {
     public record DynamicColorComponent (float red, float green, float blue, float alpha, float roffset, float goffset, float boffset, float aoffset, int brightness) {}
 
-    /** On the stack so it syncs to clients; raw RGB, 3 bytes/pixel. */
+    /** On the stack so it syncs to clients, raw RGB at 3 bytes per pixel. */
     public record SnapshotPixelsComponent(int width, int height, byte[] rgb) {
         /** The pixel buffer is present and matches the declared dimensions (3 bytes/pixel). */
         public boolean isRenderable() {

@@ -17,8 +17,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 
-/** Accepts feeding from nearby enadrakes (writes to {@code blockEntityData.item}) and
- *  drains the held item over time. Stored enadrake NBT preserved; rehydrates on stop. */
+/** Takes feeding from nearby enadrakes and drains the held item, keeping the stored enadrakes for the stop. */
 public class EnadrakeHutMovementBehaviour implements MovementBehaviour {
     private static final double FEED_CHANCE = 0.05 * 0.5;
     private static final int CYCLE = 20;

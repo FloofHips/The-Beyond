@@ -19,10 +19,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
-/**
- * Debug view of the deafening FOV cone ({@link #ENABLED} + F3 open): draws {@link FovStealth}'s acceptance boundary at each deafened mob's eye, tilted with live head yaw/pitch.
- * Singleplayer/LAN-host only: mob effects don't sync to clients, so deafness is read off the integrated server.
- */
+/** Debug view of the deafening cone at each deaf mob's eye, single player only since effects come off the integrated server. */
 @EventBusSubscriber(modid = TheBeyond.MODID, value = Dist.CLIENT)
 public final class FovConeDebugRenderer {
 
@@ -65,8 +62,7 @@ public final class FovConeDebugRenderer {
         buffers.endBatch(RenderType.lines());
     }
 
-    /** Draws the cone as one closed wireframe frustum in the mob's head frame: rim loop (top green,
-     *  sides red, bottom blue), a dimmed half-radius rim for depth, and gray lateral rays. */
+    /** The cone as one wireframe frustum in the head frame, with a dimmed half-radius rim for depth. */
     private static void drawCone(PoseStack pose, VertexConsumer lines, Vec3 eye, FovStealth.Basis head) {
         double hh = FovStealth.H_HALF_DEG, up = FovStealth.V_UP_DEG, down = FovStealth.V_DOWN_DEG;
 
@@ -92,10 +88,7 @@ public final class FovConeDebugRenderer {
         line(pose, lines, eye, at(eye, head, 0, 0), 1.0f, 1.0f, 1.0f, 1.0f); // forward ray (white)
     }
 
-    /**
-     * Point at {@code RADIUS} along (azimuth, elevation) in the head frame — the same basis
-     * {@link FovStealth#inFovCone} tests against, so the drawn boundary coincides with the thresholds.
-     */
+    /** Point at RADIUS along azimuth and elevation in the head frame, the same basis inFovCone tests. */
     private static Vec3 at(Vec3 eye, FovStealth.Basis head, double azDeg, double elevDeg) {
         double e = Math.toRadians(elevDeg);
         double a = Math.toRadians(azDeg);

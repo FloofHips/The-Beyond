@@ -10,9 +10,7 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.HashSet;
 import java.util.Set;
 
-/** S2C sync for {@code PlayerAwareness}. {@code replace=true} overwrites the client's set
- *  (login snapshot or revoke); {@code replace=false} unions for per-grant deltas. Set wire
- *  format keeps batched grants cheap. */
+/** Server-to-client awareness sync: replace overwrites the client's set, otherwise the keys are added. */
 public record PlayerAwarenessSyncPayload(Set<ResourceLocation> keys, boolean replace) implements CustomPacketPayload {
     public static final Type<PlayerAwarenessSyncPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "player_awareness_sync"));

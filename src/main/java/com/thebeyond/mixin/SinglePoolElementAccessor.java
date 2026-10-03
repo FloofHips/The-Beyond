@@ -7,8 +7,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-/** Exposes the private template reference so the occupancy mask can resolve a single pool element's
- *  StructureTemplate (its real block footprint). Read-only. */
+/** Exposes the template so the occupancy mask reads a single pool element's real block footprint. */
 @Mixin(SinglePoolElement.class)
 public interface SinglePoolElementAccessor {
     @Accessor("template")

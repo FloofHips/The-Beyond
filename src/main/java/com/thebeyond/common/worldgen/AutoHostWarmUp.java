@@ -19,6 +19,8 @@ import net.minecraft.world.level.levelgen.structure.structures.EndCityStructure;
 import net.minecraft.world.level.levelgen.structure.structures.JigsawStructure;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /** Classifies every foreign type at start-up: the host keeps classes in memory only, and a restart would lose their carve. */
@@ -47,9 +49,17 @@ public final class AutoHostWarmUp {
                 default -> { }
             }
         }
+        List<String> pedestals = new ArrayList<>(), knees = new ArrayList<>();
+        for (var e : reg.entrySet()) {
+            if (!inEnd(e.getValue(), endBiomes)) continue;
+            ResourceLocation key = e.getKey().location();
+            if (StructureReadings.pedestal(e.getValue(), key, reg)) pedestals.add(key.toString());
+            if (StructureReadings.knee(reg.wrapAsHolder(e.getValue()))) knees.add(key.toString());
+        }
         com.thebeyond.TheBeyond.LOGGER.info("[Beyond] restart warm-up: {} projected, {} generic, {} floaters, {} reanchored,"
-                + " template manager bound", n[Kind.PROJECTED.ordinal()], n[Kind.GENERIC.ordinal()],
-                n[Kind.FLOATER.ordinal()], n[Kind.REANCHORED.ordinal()]);
+                + " {} pedestal and {} knee types read, template manager bound", n[Kind.PROJECTED.ordinal()],
+                n[Kind.GENERIC.ordinal()], n[Kind.FLOATER.ordinal()], n[Kind.REANCHORED.ordinal()], pedestals.size(), knees.size());
+        com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] structure readings: pedestal {}, knee {}", pedestals, knees);
     }
 
     public static void reset() {
@@ -86,7 +96,7 @@ public final class AutoHostWarmUp {
         boolean far = (double) c.getMinBlockX() * c.getMinBlockX() + (double) c.getMinBlockZ() * c.getMinBlockZ() >= 650.0 * 650.0;
         if (!far || !seatsOnLayer(start.getStructure(), key, endBiomes)) return false;
         if (BeyondGenDiagnostics.loggedRestartLayer.size() < 2000 && BeyondGenDiagnostics.loggedRestartLayer.add(key + "@" + cp)) {
-            com.thebeyond.TheBeyond.LOGGER.info("[Beyond] restart layer {} start@[{},{}]: seated on a layer in an earlier session", key, c.x, c.z);
+            com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] restart layer {} start@[{},{}]: seated on a layer in an earlier session", key, c.x, c.z);
         }
         return true;
     }

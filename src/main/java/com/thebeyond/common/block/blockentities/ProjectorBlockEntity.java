@@ -36,7 +36,7 @@ import org.jetbrains.annotations.Nullable;
 public class ProjectorBlockEntity extends BlockEntity implements Container, MenuProvider {
     public static final int SLOTS = 4;
 
-    /** Client-side only; iterated by the renderer's per-pixel passes. */
+    /** Client side only, walked by the renderer's per-pixel passes. */
     public static final java.util.Set<ProjectorBlockEntity> LOADED = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     @Override
@@ -53,12 +53,12 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
         LOADED.remove(this);
     }
 
-    // Must match ProjectorMenu, ProjectorScreen, and the renderer. Order is the wire contract: the index is cast to the ProjectorSetModePayload byte.
+    // the order is the wire contract (the ProjectorSetModePayload byte), keep it in step with menu, screen and renderer
     public static final int MODE_MIXUP = 0;
     public static final int MODE_CAROUSEL = 1;
     public static final int MODE_LINE = 2;
     public static final int MODE_QUADRANT = 3;
-    // Button labels, positionally aligned to the MODE_* values above. Raw strings (not Component) so this class still loads server-side.
+    // button labels in MODE order, raw strings so this class still loads on the server
     public static final String[] MODE_NAMES = {"Mix-up", "Carousel", "Line", "Quadrant"};
 
     private static final Component DEFAULT_NAME = Component.translatable("container.the_beyond.projector");
@@ -282,7 +282,7 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
         clearSlots();
     }
 
-    /** {@code clear()} throws on the fixed-size NonNullList; reset in place instead. */
+    /** clear() throws on the fixed-size NonNullList, so the slots reset in place. */
     private void clearSlots() {
         for (int i = 0; i < items.size(); i++) {
             items.set(i, ItemStack.EMPTY);
@@ -300,7 +300,7 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        clearSlots(); // loadAllItems only writes present slots; reset first or an emptied slot stays stale clientside
+        clearSlots();  // loadAllItems writes only present slots, so an emptied slot would stay stale on the client
         ContainerHelper.loadAllItems(tag, items, registries);
         mode = tag.getInt("Mode");
         carouselIndex = tag.getInt("CarouselIndex");

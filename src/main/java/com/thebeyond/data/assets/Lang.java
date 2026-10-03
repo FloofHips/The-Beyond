@@ -36,11 +36,7 @@ public class Lang extends LanguageProvider {
         Set<Block> blocks = BuiltInRegistries.BLOCK.stream().filter(i -> TheBeyond.MODID.equals(BuiltInRegistries.BLOCK.getKey(i).getNamespace()))
                 .collect(Collectors.toSet());
 
-        // Use the block's own registry key, NOT block.asItem().toString(). For blocks registered
-        // without a BlockItem (registerBlockWithoutItem), asItem() falls back to Items.AIR, which
-        // makes getLangName produce "Air" — that's why gellid_void_block, void_flame, ectoplasm,
-        // etc. were all showing as "Air" in tooltips and Jade.
-        // Gellid Void Block is a liquid — display name should be just "Gellid Void", not "Gellid Void Block".
+        // the block's own key, since blocks without an item would read as Air through asItem()
         blocks.forEach(block -> {
             String key = BuiltInRegistries.BLOCK.getKey(block).toString();
             if (key.equals("the_beyond:gellid_void_block")) {
@@ -57,8 +53,7 @@ public class Lang extends LanguageProvider {
 
         effects.forEach(effect -> add(effect, getName(effect.getDescriptionId())));
 
-        // Deafening potion (a delivery-only potion — the effect is applied on break, not on drink).
-        // Item names live in the vanilla minecraft potion translation-key namespace with the "deafening" prefix.
+        // the deafening potion names live in vanilla's potion key namespace
         add("item.minecraft.potion.effect.deafening", "Potion of Deafening");
         add("item.minecraft.splash_potion.effect.deafening", "Splash Potion of Deafening");
         add("item.minecraft.lingering_potion.effect.deafening", "Lingering Potion of Deafening");
@@ -71,7 +66,7 @@ public class Lang extends LanguageProvider {
 
         mobs.forEach(mob -> {
             String path = BuiltInRegistries.ENTITY_TYPE.getKey(mob).getPath();
-            // "Totem Of Respite" → "Totem of Respite" — prepositions should stay lowercase.
+            // the preposition stays lowercase
             if (path.equals("totem_of_respite")) {
                 add(mob, "Totem of Respite");
             } else {
@@ -79,9 +74,7 @@ public class Lang extends LanguageProvider {
             }
         });
 
-        // Entity translations added manually as a safety net — DeferredRegister entities
-        // may not be populated in BuiltInRegistries at datagen time depending on load order.
-        // If the loop above already added them, these will be silently skipped (duplicate key).
+        // a safety net for entities missing from the registry at datagen, duplicates are skipped
         safeAdd("entity.the_beyond.lantern", "Lantern");
         safeAdd("entity.the_beyond.abyssal_nomad", "Abyssal Nomad");
         safeAdd("entity.the_beyond.totem_of_respite", "Totem of Respite");
@@ -100,13 +93,9 @@ public class Lang extends LanguageProvider {
         safeAdd("entity.the_beyond.smoke_fuse", "Smoke Fuse");
         safeAdd("entity.the_beyond.coiled_stalk", "Coiled Stalk");
 
-        // Fluid type translation — shown by Jade and other overlay mods for fluid tooltips.
         safeAdd("fluid_type.the_beyond.gellid_void", "Gellid Void");
 
-        // Biomes are datapack-registered (JSON in data/the_beyond/worldgen/biome/), so they
-        // don't appear in BuiltInRegistries.BIOME at datagen time and can't be iterated like
-        // the registries above. Add them by hand. Without these keys, mods that surface
-        // biome names (Xaero's, EMI, /locate output, F3) show the raw resource path.
+        // datapack biomes are not in the registry at datagen, so their names are added by hand
 
         add("biome.the_beyond.attracta_expanse", "Attracta Expanse");
         add("biome.the_beyond.pearlescent_planes", "Pearlescent Planes");
@@ -359,8 +348,7 @@ public class Lang extends LanguageProvider {
         add("the_beyond.config.mirror_occlusion_model_based", "Mirror occlusion model based");
     }
 
-    /** Tracks keys already registered so {@link #add(String, String)} can skip duplicates
-     *  instead of triggering LanguageProvider's {@code IllegalStateException}. */
+    /** Keys already added, so a duplicate is skipped instead of LanguageProvider throwing. */
     private final Set<String> addedKeys = new java.util.HashSet<>();
 
     @Override

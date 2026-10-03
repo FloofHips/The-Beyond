@@ -184,7 +184,7 @@ public final class ItemIconTextures {
                 RenderSystem.enableCull();
             }
         } catch (Throwable t) {
-            TheBeyond.LOGGER.error("[projector] item-icon render failed", t);
+            RenderFailureLog.error("[projector] item-icon render failed", t);
         } finally {
             if (pushed) {
                 mv.popMatrix();

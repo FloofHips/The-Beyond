@@ -178,7 +178,7 @@ public class BeyondRenderTypes extends RenderType {
         return MIRROR_PACK.apply(location);
     }
 
-    // Stacked layers composite by submission order; an aggressive shaderpack sort may break it.
+    // stacked layers composite in submission order, an aggressive pack sort may break that
     public static final Function<ResourceLocation, RenderType> PROJECTOR_PACK = Util.memoize((location) -> {
         CompositeState compositeState = CompositeState.builder()
                 .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)

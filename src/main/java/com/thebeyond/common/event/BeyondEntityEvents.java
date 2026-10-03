@@ -49,18 +49,15 @@ public class BeyondEntityEvents {
         }
     }
 
-    /**
-     * Deafening FOV-stealth: gates a deafened mob's player-acquisition. Hooks {@code Mob.setTarget} (goals + Species'
-     * Ghoul, whose vestigial VibrationSystem makes this its real hook) and {@code StartAttacking}; not the Warden (its mixins).
-     */
+    /** A deafened mob acquires the player only through its FOV cone, via setTarget and StartAttacking (not the Warden). */
     @SubscribeEvent
     public static void onLivingChangeTarget(LivingChangeTargetEvent event) {
         if (!(event.getEntity() instanceof Mob mob)) return;
-        if (mob.level().isClientSide) return; // target acquisition is server-authoritative; skip the client copy
+        if (mob.level().isClientSide) return;  // target acquisition is server-authoritative
         if (!(event.getNewAboutToBeSetTarget() instanceof Player player)) return;
         if (Deafening.isImmune(mob)) return;              // always notices
         if (!Deafening.isDeafened(mob)) return;           // not deaf → normal targeting
-        if (mob.getLastHurtByMob() == player) return;     // retaliation — being attacked always aggros
+        if (mob.getLastHurtByMob() == player) return;  // retaliation always aggros
 
         boolean nonVisual = Deafening.sensesViaVibration(mob);
         if (!nonVisual && Deafening.canSeeInFov(mob, player)) return; // sighted: player within cone + LOS → noticed
@@ -72,15 +69,12 @@ public class BeyondEntityEvents {
         }
     }
 
-    /**
-     * Disengage on cone-exit: a deafened mob DROPS an acquired player target when the player leaves its live frontal cone/LOS (re-evaluated with body yaw, so it turns with the mob).
-     * Checked every 10 ticks; non-visual ({@code senses_via_vibration}), immune, and just-hit mobs are exempt; re-acquisition is then blocked by {@link #onLivingChangeTarget}.
-     */
+    /** Every 10 ticks a deaf mob drops a player out of its cone or sight, unless it senses vibration, is immune or was hit. */
     @SubscribeEvent
     public static void onEntityTick(EntityTickEvent.Post event) {
         if (!(event.getEntity() instanceof Mob mob)) return;
         if (mob.level().isClientSide) return;
-        Deafening.tickStartle(mob); // post-AI so the stare wins over look goals; O(1) when no startle is active
+        Deafening.tickStartle(mob);  // after the AI so the stare wins over look goals, O(1) without a startle
         if (mob.tickCount % 10 != 0) return;
         if (!(mob.getTarget() instanceof Player player)) return;
         if (!BeyondConfig.DEAFENING_DISENGAGE.get()) return;
@@ -89,8 +83,8 @@ public class BeyondEntityEvents {
         if (mob.getLastHurtByMob() == player) return; // don't drop someone who just hit us
         if (Deafening.canSeeInFov(mob, player)) return;
 
-        mob.setTarget(null);                                        // goal-based mobs (fires the change event with null — ignored above)
-        mob.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET); // brain-based mobs; no-op when the module is absent
+        mob.setTarget(null);  // goal-based mobs, the null change event is ignored above
+        mob.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);  // brain-based mobs, a no-op without the module
         TheBeyond.LOGGER.debug("[Deafening] {} dropped player target (deaf + player left FOV cone/LOS)",
                 mob.getType().getDescriptionId());
     }

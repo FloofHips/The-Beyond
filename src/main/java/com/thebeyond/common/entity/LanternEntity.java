@@ -198,8 +198,7 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
         return new AABB(getX() - 0.7, getY() - 0.8, getZ() - 0.7, getX() + 0.7, getY() + 0.8, getZ() + 0.7);
     }
 
-    /** Models extend far beyond the collision AABB (Leviathan body ~5b vs 1.4b); without
-     *  this, frustum culling pops the entity in/out and a shaderpack's bloom flickers. */
+    /** The models reach far past the collision box, so culling would pop them and a pack's bloom would flicker. */
     @Override
     public AABB getBoundingBoxForCulling() {
         double inflate = switch (getSize()) {
@@ -409,8 +408,7 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
     }
 
     public static boolean checkMonsterSpawnRules(EntityType<LanternEntity> lanternEntityEntityType, ServerLevelAccessor serverLevelAccessor, MobSpawnType mobSpawnType, BlockPos blockPos, RandomSource randomSource) {
-        // Keep lanterns above the dimension-floor band (the_paths / abyssal_nomad zone, dimMinY+8): vanilla's uniform
-        // spawn-Y collapses to the world-surface, which in island-free columns is that floor, funnelling most onto dimMinY.
+        // lanterns stay above the floor band, where vanilla's spawn Y collapses in island-free columns
         if (blockPos.getY() <= BeyondTerrainState.getDimMinY() + 8) return false;
         return serverLevelAccessor.getBlockState(blockPos.below()).isAir() && serverLevelAccessor.getBlockState(blockPos.above()).isAir() && serverLevelAccessor.getBlockState(blockPos).isAir();
     }

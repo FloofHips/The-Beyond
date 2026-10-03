@@ -11,16 +11,14 @@ import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import net.minecraft.world.level.levelgen.synth.SimplexNoise;
 
-/** 2-layer auroracite floor tracking the active dim_type's min_y, gated by
- *  {@code SimplexNoise(x*0.1, z*0.1) > 0} for organic patches (~50% coverage). */
+/** Two-layer auroracite floor at the dimension's min_y, in noise patches covering about half. */
 public class AuroraciteLayerFeature extends Feature<NoneFeatureConfiguration> {
 
     private record SeededNoise(long seed, SimplexNoise noise) {}
 
     private static volatile SeededNoise floorNoise;
 
-    // Diagnostic: logs the first minY seen per world load to record which dim_type won.
-    // Integer.MIN_VALUE is a safe sentinel (-128 < minY < 320 by worldgen convention).
+    // logs the first minY of each world load, to show which dimension type won
     private static volatile int loggedMinY = Integer.MIN_VALUE;
 
     public AuroraciteLayerFeature(Codec<NoneFeatureConfiguration> codec) {
@@ -36,7 +34,7 @@ public class AuroraciteLayerFeature extends Feature<NoneFeatureConfiguration> {
             if (n == null || n.seed() != seed) {
                 n = new SeededNoise(seed, new SimplexNoise(RandomSource.create(seed)));
                 floorNoise = n;
-                TheBeyond.LOGGER.info("[AuroraciteLayerFeature] floor noise built from world seed {}", seed);
+                TheBeyond.LOGGER.debug("[AuroraciteLayerFeature] floor noise built from world seed {}", seed);
             }
             return n.noise();
         }
@@ -56,7 +54,7 @@ public class AuroraciteLayerFeature extends Feature<NoneFeatureConfiguration> {
         int minY = level.getMinBuildHeight();
         if (loggedMinY != minY) {
             loggedMinY = minY;
-            TheBeyond.LOGGER.info("[AuroraciteLayerFeature] placing at minY={}", minY);
+            TheBeyond.LOGGER.debug("[AuroraciteLayerFeature] placing at minY={}", minY);
         }
         int chunkX = origin.getX() & ~15; // align to chunk
         int chunkZ = origin.getZ() & ~15;

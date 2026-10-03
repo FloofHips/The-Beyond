@@ -207,8 +207,7 @@ public class PancakeLakeFeature extends Feature<NoneFeatureConfiguration> {
             }
         }
 
-        // Promotes the lakebed top to end_stone so vegetation features' block_predicate_filters (which expect
-        // END_STONES) find a recognised surface.
+        // the lakebed top becomes end_stone so vegetation filters expecting END_STONES find their surface
         for (int ox = -rInt; ox <= rInt; ox++) {
             for (int oz = -rInt; oz <= rInt; oz++) {
                 for (int oy = 0; oy >= -dInt - 2; oy--) {
@@ -227,7 +226,7 @@ public class PancakeLakeFeature extends Feature<NoneFeatureConfiguration> {
             }
         }
 
-        // Water adjacent to void becomes end_stone; 3 passes so newly-placed end_stone can reveal downstream leaks.
+        // water next to void becomes end_stone, three passes so new end_stone can reveal further leaks
         BlockPos.MutableBlockPos neighbour = new BlockPos.MutableBlockPos();
         int[] sideDx = {1, -1, 0, 0, 0};
         int[] sideDy = {0, 0, 0, 0, -1};
@@ -252,7 +251,7 @@ public class PancakeLakeFeature extends Feature<NoneFeatureConfiguration> {
             }
         }
 
-        // Clears floating land features above the lake; fluid/waterlogged blocks and lily pads are preserved.
+        // clears floating land features above the lake, keeping fluids, waterlogged blocks and lily pads
         for (int ox = -rInt; ox <= rInt; ox++) {
             for (int oz = -rInt; oz <= rInt; oz++) {
                 double noise = edgeNoise.getValue(ox * 0.12, oz * 0.12);

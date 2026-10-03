@@ -19,8 +19,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Makes undiscovered structures (and hidden utility tags) parse as unknown, like the biome gate does.
- *  We check gating client-side since the structure registry isn't synced to the client. */
+/** Undiscovered structures and hidden tags parse as unknown, checked on the client without the structure registry. */
 @Mixin(ResourceOrTagKeyArgument.class)
 public abstract class ResourceOrTagKeyArgumentParseMixin {
 

@@ -20,8 +20,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Makes undiscovered biomes (and hidden utility tags) parse as unknown, so typing one turns red and won't run.
- *  Client-side, because that's where command text gets validated. */
+/** Undiscovered biomes and hidden tags parse as unknown on the client, so typing one turns red. */
 @Mixin(ResourceOrTagArgument.class)
 public abstract class ResourceOrTagArgumentParseMixin {
 

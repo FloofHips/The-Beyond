@@ -23,7 +23,7 @@ import org.joml.Vector3dc;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Sable-only; load only when Sable present. Plain {@code level.clip} projects from/to independently and returns plot-LOCAL hits, so we ray in host space and raw-clip each crossed frame. */
+/** Sable only: level.clip there returns plot-local hits, so the ray runs in host space and clips each crossed frame. */
 public final class ProjectorSableFrame {
     private ProjectorSableFrame() {
     }
@@ -36,7 +36,7 @@ public final class ProjectorSableFrame {
         ProjectorRenderer.intersectingFrames = ProjectorSableFrame::intersectingFrames;
     }
 
-    /** {@code m} maps {@code (gridCoord - rotationPoint)} to camera-relative space; getTransformation bakes in {@code -camPos}. */
+    /** m maps grid coordinates minus the rotation point to camera space, getTransformation includes -camPos. */
     private static ProjectorRenderer.ContraptionFrame contraptionFrame(Level level, BlockPos pos, Vec3 camPos, float partialTick) {
         try {
             return Sable.HELPER.getContaining(level, pos) instanceof ClientSubLevel csl ? frameOf(csl, camPos, partialTick) : null;
@@ -63,7 +63,7 @@ public final class ProjectorSableFrame {
     }
 
     private static ProjectorRenderer.ContraptionFrame frameOf(ClientSubLevel csl, Vec3 camPos, float partialTick) {
-        csl.renderPose(partialTick); // populates the interpolated-pose cache; do not drop
+        csl.renderPose(partialTick);  // fills the interpolated-pose cache, keep it
         Vector3dc rp = csl.renderPose().rotationPoint();
         Matrix4f m = csl.getRenderData().getTransformation(camPos.x, camPos.y, camPos.z, new Matrix4f());
         Matrix4f minv = new Matrix4f(m).invert();

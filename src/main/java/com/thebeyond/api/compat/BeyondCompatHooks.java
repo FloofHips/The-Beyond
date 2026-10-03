@@ -7,8 +7,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
-/** Static hook surface used by BlockEntity ticks to query compat-side translators
- *  without referencing third-party types directly. */
+/** Static hooks block entity ticks use to reach compat translators without touching third-party types. */
 @ApiStatus.Experimental
 public final class BeyondCompatHooks {
     private BeyondCompatHooks() {}
@@ -48,21 +47,21 @@ public final class BeyondCompatHooks {
         return storedForVisible(level, visiblePos.getCenter());
     }
 
-    /** Visible/world center of {@code storedPos} when inside a sub-level (any Level, client-safe); {@code null} otherwise. */
+    /** World center of storedPos inside a sub-level on any Level (client-safe), else null. */
     @Nullable
     public static Vec3 visibleOnAnyLevel(Level level, BlockPos storedPos) {
         LocationTranslator t = locationTranslator;
         return t == null ? null : t.toVisibleAny(level, storedPos);
     }
 
-    /** World point projected into the local frame of the sub-level containing {@code containedPos}; {@code null} if none. */
+    /** World point projected into the local frame of the sub-level containing {@code containedPos}, or {@code null} if none. */
     @Nullable
     public static Vec3 toLocalFrame(Level level, BlockPos containedPos, Vec3 worldPoint) {
         LocationTranslator t = locationTranslator;
         return t == null ? null : t.toLocal(level, containedPos, worldPoint);
     }
 
-    /** Local direction at {@code containedPos} rotated into visible/world space by the sub-level's pose; {@code null} if none. */
+    /** A local direction at containedPos turned into world space by the sub-level's pose, else null. */
     @Nullable
     public static Vec3 toVisibleDir(Level level, BlockPos containedPos, Vec3 localDir) {
         LocationTranslator t = locationTranslator;

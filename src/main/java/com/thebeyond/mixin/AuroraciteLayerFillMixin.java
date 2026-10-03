@@ -26,8 +26,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** Safety-net auroracite floor for End chunks that bypass Beyond's chunkgen.
- *  Tail-injected so it fires under any generator. */
+/** Safety-net auroracite floor for End chunks Beyond does not generate, injected at the tail of any generator. */
 @Mixin(ChunkGenerator.class)
 public abstract class AuroraciteLayerFillMixin {
 
@@ -60,7 +59,7 @@ public abstract class AuroraciteLayerFillMixin {
         final boolean placeLiquid = hasDT && !dtFluid.isAir() && DimensionalTearsCompat.oceanEnabled();
 
         if (LOGGED_FIRST_FIRE.compareAndSet(false, true)) {
-            TheBeyond.LOGGER.info(
+            TheBeyond.LOGGER.debug(
                     "[AuroraciteLayerFillMixin] first fire: minY={}, dtLoaded={}, dtFluidAir={}",
                     minY, hasDT, dtFluid.isAir());
         }

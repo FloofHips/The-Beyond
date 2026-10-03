@@ -52,13 +52,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Per-plane mirror reflection: mirrors are grouped by plane, the nearest {@link #MAX_PLANES} each captured into
- * an FBO (front entities reflected across the plane, drawn with the main camera's perspective) and sampled
- * projectively by that plane's faces — gl_FragCoord without a shader pack, per-corner screen UVs under one.
- */
+/** Per-plane mirror reflection: the nearest planes are captured into FBOs and sampled projectively by their faces. */
 public final class MirrorReflection {
-    // The real limiter is the visible-face frustum cull in capture(); this is only a runaway guard.
+    // a runaway guard only, the visible-face frustum cull in capture() is the real limit
     private static final int MAX_PLANES = 32;
 
     private static final int TINT_R = 202, TINT_G = 222, TINT_B = 234;
@@ -86,10 +82,10 @@ public final class MirrorReflection {
     private static final float BLOB_R_FAR = 0.7f;      // smaller than near, so the blob grows on approach
     private static final float BLOB_GROW_DIST = 5.0f;
     private static final int MAX_BLOB_FACES = 600;
-    private static final double NEAR_ENTITY = 0.85;    // shade only cells this close to the entity footprint (kills terrain scatter)
+    private static final double NEAR_ENTITY = 0.85;  // shade only cells this close to the entity footprint
     private static final boolean DEBUG_SHADE = false;
 
-    // LOS raycast is the costly part of capture; refresh the selection every few ticks, not every frame.
+    // the line-of-sight raycast is the costly part of capture, so the selection refreshes every few ticks
     private static final int ENTITY_REFRESH_TICKS = 4;
 
     private static final Vec3[] FACE_NORMALS = new Vec3[6];
@@ -107,7 +103,7 @@ public final class MirrorReflection {
     // Cached per state: CTM/dynamic models vary only texture, not these positions, so the cache stays correct.
     private static final java.util.Map<BlockState, float[]> OCCLUDER_MODEL_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
 
-    // Frame-shared so each chunk is fetched once per frame, not once per ray. Cleared per frame; render-thread only.
+    // shared over a frame so each chunk is fetched once per frame, render thread only
     private static final Long2ObjectOpenHashMap<net.minecraft.world.level.chunk.LevelChunk> LOS_CHUNK_CACHE =
             new Long2ObjectOpenHashMap<>();
     // Frame-shared so the (possibly mod-intercepted) light lookup runs once per entity, not per entity per plane.
@@ -319,7 +315,7 @@ public final class MirrorReflection {
         Vec3 camPos = camera.getPosition();
         boolean packPath = ShaderCompatLib.isShaderPackActive();
 
-        // No-pack path samples gl_FragCoord/ScreenSize — one global uniform, same for all planes.
+        // without a pack the shader samples gl_FragCoord over ScreenSize, one uniform for all planes
         ShaderInstance mirrorShader = BeyondShaders.getMirror();
         if (mirrorShader != null) {
             mirrorShader.safeGetUniform("ScreenSize").set((float) w, (float) h);
@@ -346,7 +342,7 @@ public final class MirrorReflection {
                     capturePlane(slot, selected.get(i).getKey(), info, packPath, mc, disp,
                             projIn, viewIn, camPos, partialTick);
                 } catch (Throwable t) {
-                    TheBeyond.LOGGER.error("Mirror reflection capture failed for one plane", t);
+                    RenderFailureLog.error("Mirror reflection capture failed for one plane", t);
                     slot.valid = false;
                 }
             }
@@ -392,7 +388,7 @@ public final class MirrorReflection {
                     (float) -camPos.x, (float) -camPos.y, (float) -camPos.z);
         }
 
-        // Refresh every ENTITY_REFRESH_TICKS; keyed by plane so a reused slot never serves a stale plane's list.
+        // keyed by plane, so a reused slot never serves another plane's stale list
         long nowTick = mc.level.getGameTime();
         if (slot.reflectedCache == null || !key.equals(slot.reflectedCacheKey)
                 || nowTick - slot.reflectedTick >= ENTITY_REFRESH_TICKS) {
@@ -403,7 +399,7 @@ public final class MirrorReflection {
             slot.reflectedCache.removeIf(Entity::isRemoved);
         }
         List<Entity> reflected = slot.reflectedCache;
-        slot.heldBoost = packPath ? heldLightBoost(reflected, info.point, partialTick) : 0; // handheld light is a pack-only feature
+        slot.heldBoost = packPath ? heldLightBoost(reflected, info.point, partialTick) : 0;
 
         slot.target.setClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         slot.target.clear(Minecraft.ON_OSX);
@@ -419,7 +415,7 @@ public final class MirrorReflection {
         renderOccluderDepth(buf, reflected, camPos, mc, info.normal, info.point);
 
         disp.setRenderShadow(false);
-        // The reflection flips winding; invert the front face so culled parts don't render inside-out.
+        // the reflection flips the winding, so the front face is inverted or culled parts render inside out
         GL11.glFrontFace(GL11.GL_CW);
         for (Entity e : reflected) {
             double ex = Mth.lerp(partialTick, e.xOld, e.getX());
@@ -448,7 +444,7 @@ public final class MirrorReflection {
         slot.valid = true;
     }
 
-    /** Depth-only prepass. Only FRONT-of-plane blocks qualify — a block behind the plane reflects to the wrong side. */
+    /** Depth-only prepass of the blocks in front of the plane, a block behind it would reflect to the wrong side. */
     public static void renderOccluderDepth(MultiBufferSource.BufferSource buf, List<Entity> reflected,
                                            Vec3 camPos, Minecraft mc, Vec3 n, Vec3 p0) {
         if (reflected.isEmpty()) {
@@ -456,7 +452,7 @@ public final class MirrorReflection {
         }
         double minX = Double.POSITIVE_INFINITY, minY = Double.POSITIVE_INFINITY, minZ = Double.POSITIVE_INFINITY;
         double maxX = Double.NEGATIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY, maxZ = Double.NEGATIVE_INFINITY;
-        double dMax = 0.0; // farthest entity extent along +normal — the slab's outer bound
+        double dMax = 0.0;  // farthest entity extent along the normal, the slab's outer bound
         for (Entity e : reflected) {
             AABB b = e.getBoundingBox();
             minX = Math.min(minX, b.minX);
@@ -475,7 +471,7 @@ public final class MirrorReflection {
         boolean modelBased = com.thebeyond.BeyondConfig.MIRROR_OCCLUSION_MODEL_BASED.get();
         BlockPos min = BlockPos.containing(minX - OCCLUDER_MARGIN, minY - OCCLUDER_MARGIN, minZ - OCCLUDER_MARGIN);
         BlockPos max = BlockPos.containing(maxX + OCCLUDER_MARGIN, maxY + OCCLUDER_MARGIN, maxZ + OCCLUDER_MARGIN);
-        // MAX_OCCLUDER_BLOCKS caps rendered blocks, not iterated cells; bail before betweenClosed walks a huge box.
+        // MAX_OCCLUDER_BLOCKS caps rendered blocks, not walked cells, so a huge box bails before betweenClosed
         if (max.getX() - min.getX() > BORDER_DIM || max.getY() - min.getY() > BORDER_DIM
                 || max.getZ() - min.getZ() > BORDER_DIM) {
             return;
@@ -563,7 +559,7 @@ public final class MirrorReflection {
             rand.setSeed(42L);
             for (net.minecraft.client.renderer.block.model.BakedQuad q : model.getQuads(state, face, rand)) {
                 int[] v = q.getVertices();
-                int stride = v.length / 4; // ints per vertex; position is the first 3
+                int stride = v.length / 4;  // ints per vertex, the position is the first 3
                 float[] qp = new float[12];
                 for (int k = 0; k < 4; k++) {
                     qp[k * 3] = Float.intBitsToFloat(v[k * stride]);
@@ -584,12 +580,12 @@ public final class MirrorReflection {
         return arr;
     }
 
-    /** Call on resource reload — models are re-baked. */
+    /** Call on resource reload, the models are re-baked. */
     public static void clearModelCache() {
         OCCLUDER_MODEL_CACHE.clear();
     }
 
-    /** getBlockState memoized per chunk; same result as level.getBlockState. */
+    /** getBlockState memoized per chunk, same result as level.getBlockState. */
     private static final class ChunkMemo {
         private net.minecraft.world.level.chunk.LevelChunk chunk;
         private int cx = Integer.MIN_VALUE, cz = Integer.MIN_VALUE;
@@ -651,7 +647,7 @@ public final class MirrorReflection {
                     if (bs.getBlock() instanceof MirrorBlock || bs.isAir()) {
                         continue;
                     }
-                    // Shade any block with a shape, even non-occluding (leaves) — this is depth cueing, not occlusion.
+                    // any block with a shape is shaded, even leaves: this is depth cueing, not occlusion
                     if (bs.getShape(level, mp).isEmpty()) {
                         continue;
                     }
@@ -691,7 +687,7 @@ public final class MirrorReflection {
                     double hdx = Math.max(Math.max(eb.minX - hcx, hcx - eb.maxX), 0.0);
                     double hdz = Math.max(Math.max(eb.minZ - hcz, hcz - eb.maxZ), 0.0);
                     if (hdx * hdx + hdz * hdz > NEAR_ENTITY * NEAR_ENTITY) {
-                        continue; // not under/around the entity — don't shade distant terrain
+                        continue;  // not near the entity, distant terrain stays unshaded
                     }
                     double eCy = (eb.minY + eb.maxY) * 0.5, eCx = (eb.minX + eb.maxX) * 0.5, eCz = (eb.minZ + eb.maxZ) * 0.5;
                     mp.set(wx, wy, wz);
@@ -721,7 +717,7 @@ public final class MirrorReflection {
                     if (!topOpen && !botOpen) {
                         continue; // interior cell
                     }
-                    // Cut on the side facing the entity's visible half when that side is exposed; else the other.
+                    // cut on the side facing the entity's visible half when exposed, else the other
                     boolean coverLower = (wy + 0.5) < eCy;
                     boolean cutTop = coverLower ? topOpen : !botOpen;
                     float cornerY = cutTop ? sMaxY : sMinY;
@@ -790,7 +786,7 @@ public final class MirrorReflection {
                                 case WEST -> { orient = 1; fx = wx;     fa0 = wz; fa1 = wz + 1; fb0 = wy; fb1 = wy + 1; ccx = wx;      ccy = eCy;    ccz = eCz;     }
                                 case EAST -> { orient = 1; fx = wx + 1; fa0 = wz; fa1 = wz + 1; fb0 = wy; fb1 = wy + 1; ccx = wx + 1;  ccy = eCy;    ccz = eCz;     }
                                 case NORTH -> { orient = 2; fx = wz;    fa0 = wx; fa1 = wx + 1; fb0 = wy; fb1 = wy + 1; ccx = eCx;     ccy = eCy;    ccz = wz;      }
-                                default ->   { orient = 2; fx = wz + 1; fa0 = wx; fa1 = wx + 1; fb0 = wy; fb1 = wy + 1; ccx = eCx;     ccy = eCy;    ccz = wz + 1;  } // SOUTH
+                                default ->   { orient = 2; fx = wz + 1; fa0 = wx; fa1 = wx + 1; fb0 = wy; fb1 = wy + 1; ccx = eCx;     ccy = eCy;    ccz = wz + 1;  }
                             }
                             double dcb = camPos.distanceTo(new Vec3(ccx, ccy, ccz));
                             float radb = Mth.lerp(smootherstep((float) Mth.clamp(dcb / BLOB_GROW_DIST, 0.0, 1.0)), BLOB_R_NEAR, BLOB_R_FAR);
@@ -816,7 +812,7 @@ public final class MirrorReflection {
         return BORDER_OCC[borderIdx(ix, iy, iz, dy, dz)];
     }
 
-    /** {@code orient}: 0 = horizontal (fixed y), 1 = X-face (fixed x), 2 = Z-face (fixed z); falloff from the shared centre {@code px,py,pz} so it wraps across faces. */
+    /** orient 0 is a horizontal face, 1 an X face, 2 a Z face, and the falloff from the shared centre wraps faces. */
     private static void blobFace3D(VertexConsumer vc, int orient, float fixed,
                                    float a0, float a1, float b0, float b1,
                                    double px, double py, double pz, float r, Vec3 camPos, float c) {
@@ -866,12 +862,11 @@ public final class MirrorReflection {
         vc.addVertex(vx - ox, vy - oy, vz - oz).setColor(c, c, c, alpha);
     }
 
-    /** C² smootherstep — zero end derivatives, so the coarse tessellated gradient has no Mach-band ridges. */
+    /** Smootherstep has zero end derivatives, so the coarse gradient shows no Mach bands. */
     private static float smootherstep(float t) {
         return t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f);
     }
 
-    // ---- Debug overlay (gated by DEBUG_SHADE) ----
     private static void debugV(VertexConsumer vc, float x, float y, float z, Vec3 camPos,
                                float r, float g, float b, float a) {
         vc.addVertex(x - (float) camPos.x, y - (float) camPos.y, z - (float) camPos.z).setColor(r, g, b, a);
@@ -922,7 +917,7 @@ public final class MirrorReflection {
         return max;
     }
 
-    /** Brightest reflected holder's emission, attenuated one level per block to the face; a pack's handheld light never reaches our static lightmap. */
+    /** Brightest reflected holder's light, one level less per block, since a pack's handheld light skips our lightmap. */
     public static int heldLightBoost(List<Entity> reflected, Vec3 facePoint, float partialTick) {
         int boost = 0;
         for (Entity e : reflected) {
@@ -941,7 +936,7 @@ public final class MirrorReflection {
         return boost;
     }
 
-    /** LOS test is essential — the FBO holds no world geometry, so without it an entity behind a wall shows through. */
+    /** Line of sight matters: the FBO has no world geometry, so an entity behind a wall would show through. */
     private static List<Entity> collectReflectedEntities(Minecraft mc, PlaneInfo info, float partialTick) {
         double r = RENDER_DIST;
         AABB box = new AABB(info.point.x - r, info.point.y - r, info.point.z - r,
@@ -982,7 +977,7 @@ public final class MirrorReflection {
         double ey = Mth.lerp(partialTick, e.yOld, e.getY());
         double ez = Mth.lerp(partialTick, e.zOld, e.getZ());
         double h = e.getBbHeight();
-        // Surface point at the mirror's own height; the perpendicular foot alone culls short bodies below a mirror.
+        // a point at the mirror's own height, the perpendicular foot alone would cull short bodies below it
         Vec3 surface = info.point.add(info.normal.scale(0.1));
         for (double f : new double[]{0.1, 0.4, 0.7, 1.0}) {
             Vec3 from = new Vec3(ex, ey + h * f, ez);
@@ -998,7 +993,7 @@ public final class MirrorReflection {
         return false;
     }
 
-    /** Voxel walk, not {@link net.minecraft.world.level.BlockGetter#clip}, to sidestep mods that wrap clip(); mirrors are transparent. */
+    /** A voxel walk instead of clip(), which other mods wrap, and mirrors count as transparent. */
     private static boolean hasLineOfSight(Entity e, Vec3 eye, Vec3 target) {
         var level = e.level();
         double dx = target.x - eye.x, dy = target.y - eye.y, dz = target.z - eye.z;
@@ -1006,7 +1001,7 @@ public final class MirrorReflection {
         if (dist < 1.0e-4) {
             return true;
         }
-        // An entity that changed reference frame this frame has xOld a grid away; don't march millions of steps.
+        // an entity that changed frame this tick has xOld a grid away, so do not march millions of steps
         if (dist > RENDER_DIST * 2.0) {
             return false;
         }
@@ -1042,7 +1037,7 @@ public final class MirrorReflection {
                 continue; // mirrors are transparent to another plane's reflection
             }
             if (st.canOcclude() && st.isCollisionShapeFullBlock(level, mp)) {
-                return false; // only a full opaque cube culls; partial blocks pass, the depth occluder covers them
+                return false;  // only a full opaque cube culls, the depth occluder covers partial blocks
             }
         }
         return true;
@@ -1206,12 +1201,9 @@ public final class MirrorReflection {
         return LOD_FRACS[3];
     }
 
-    /**
-     * Lengyel oblique near-plane clip: rewrites {@code proj}'s near plane to the mirror plane, drives the
-     * hardware clip (no shader, holds under a pack), keeping the half-space behind the mirror. Assumes GL z in [-1,1].
-     */
+    /** Lengyel oblique clip: proj's near plane becomes the mirror plane, so hardware clipping works under a pack too. */
     public static void applyObliqueNearClip(Matrix4f proj, Matrix4f viewIn, Vec3 n, Vec3 p0rel) {
-        // Eye space: scene is camera-relative; normal points away from the kept side, so the camera is on w < 0.
+        // eye space is camera-relative and the normal points away from the kept side, so the camera is at w < 0
         Vector4f nEye = new Vector4f((float) n.x, (float) n.y, (float) n.z, 0.0f);
         viewIn.transform(nEye); // w = 0 → direction only
         float cx = -nEye.x, cy = -nEye.y, cz = -nEye.z;
@@ -1222,7 +1214,7 @@ public final class MirrorReflection {
         float qw = (1.0f + proj.m22()) / proj.m32();
         float denom = cx * qx + cy * qy - cz + cw * qw; // qz = −1
         float s = 2.0f / denom;
-        // Degenerate (camera on/grazing the plane) → s non-finite; keep plain proj so the reflection survives uncut.
+        // a camera on the plane makes s non-finite, so the plain projection keeps the reflection uncut
         if (!Float.isFinite(qx) || !Float.isFinite(qy) || !Float.isFinite(qw)
                 || !Float.isFinite(s) || Math.abs(denom) < 1.0e-4f) {
             return;

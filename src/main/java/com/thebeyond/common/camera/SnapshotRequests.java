@@ -9,10 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Gates pixel uploads: the server accepts one only if the id was issued to that same player and hasn't expired.
- * {@code ejectAt == null} gives the finished item to the player, else ejects at the camera block.
- */
+/** The server accepts an upload only for a live id issued to that player, and ejectAt picks where the photo goes. */
 public final class SnapshotRequests {
     public record Claim(boolean valid, @Nullable BlockPos ejectAt, @Nullable ResourceLocation gradeId) {
         public static final Claim INVALID = new Claim(false, null, null);

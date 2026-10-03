@@ -2,10 +2,7 @@ package com.thebeyond.util;
 
 import net.minecraft.world.phys.Vec3;
 
-/**
- * Tests whether a target sits in a mob's frontal FOV — a flattened, vertically asymmetric cone
- * (independent H/V limits) that rotates with head yaw+pitch. Geometry only, no raycast.
- */
+/** Whether a target sits in a mob's frontal cone, flattened and asymmetric, turning with the head (no raycast). */
 public final class FovStealth {
     private FovStealth() {}
 
@@ -29,10 +26,9 @@ public final class FovStealth {
         double dz = targetEyeZ - mobEyeZ;
 
         double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (dist < MIN_DIST) return true; // overlapping — noticed regardless of facing
+        if (dist < MIN_DIST) return true;  // overlapping, noticed whatever the facing
 
-        // Head frame (no roll). Forward = MC view vector; right = normalize(F × worldUp), falling back to
-        // the yaw-only right when the gaze is vertical; up = R × F. All unit, mutually orthogonal.
+        // head frame without roll: forward is the view vector, right is F x up (yaw only when vertical), up is R x F
         double yr = Math.toRadians(yawDeg);
         double pr = Math.toRadians(pitchDeg);
         double cp = Math.cos(pr);
@@ -42,7 +38,7 @@ public final class FovStealth {
 
         double rx = -fz, rz = fx;                 // F × worldUp = (−fz, 0, fx)
         double rLen = Math.sqrt(rx * rx + rz * rz);
-        if (rLen < MIN_DIST) {                    // gazing straight up/down — right from yaw alone
+        if (rLen < MIN_DIST) {  // gazing straight up or down, right from yaw alone
             rx = -Math.cos(yr);
             rz = -Math.sin(yr);
         } else {
@@ -63,17 +59,17 @@ public final class FovStealth {
         double hy = dy - du * uy;
         double hz = dz - du * uz;
         double hLen = Math.sqrt(hx * hx + hy * hy + hz * hz);
-        if (hLen < MIN_DIST) return true; // essentially on the gaze's vertical axis — treat as seen
+        if (hLen < MIN_DIST) return true;  // on the gaze's vertical axis, treated as seen
         double dot = (hx * fx + hy * fy + hz * fz) / hLen;
         return dot >= COS_H_HALF;
     }
 
-    /** Vec3 convenience overload; pass the mob's and target's eye positions and the head rotation. */
+    /** Vec3 overload taking both eye positions and the head rotation. */
     public static boolean inFovCone(Vec3 mobEye, Vec3 targetEye, float yawDeg, float pitchDeg) {
         return inFovCone(mobEye.x, mobEye.y, mobEye.z, targetEye.x, targetEye.y, targetEye.z, yawDeg, pitchDeg);
     }
 
-    /** Head-frame basis (unit forward/right/up, no roll) — the visualization mirror of the test above. */
+    /** Head-frame basis without roll, the debug view of the test above. */
     public record Basis(Vec3 fwd, Vec3 right, Vec3 up) {}
 
     public static Basis basis(float yawDeg, float pitchDeg) {

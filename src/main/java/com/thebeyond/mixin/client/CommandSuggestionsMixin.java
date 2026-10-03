@@ -15,8 +15,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-/** Hides the {@code awareness} debug branch from {@code /the_beyond} tab-complete but keeps it typeable - we just
- *  drop it from the parent's suggestions, the node stays in the tree. */
+/** Hides the awareness debug branch from /the_beyond suggestions while it stays typeable. */
 @Mixin(CommandSuggestions.class)
 public abstract class CommandSuggestionsMixin {
 
@@ -32,7 +31,7 @@ public abstract class CommandSuggestionsMixin {
         try {
             ctx = parse.getContext().findSuggestionContext(cursor);
         } catch (Exception ignored) {
-            return future;   // brigadier couldn't resolve the cursor context — leave suggestions alone
+            return future;  // brigadier could not resolve the cursor context
         }
         if (ctx.parent == null || !"the_beyond".equals(ctx.parent.getName())) return future;
         return future.thenApply(suggestions -> {

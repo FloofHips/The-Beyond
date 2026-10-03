@@ -36,12 +36,17 @@ public class SoloGardenFeature extends Feature<NoneFeatureConfiguration> {
                     BlockPos offset = blockpos.below().offset(i, 0, j);
                     if (worldgenlevel.getBlockState(offset).is(BeyondTags.END_DECORATOR_REPLACEABLE) || worldgenlevel.getBlockState(offset).isAir()) {
                         if ((Mth.abs(i)!=3 && Mth.abs(j)!=3)) {
-                            worldgenlevel.setBlock(offset, getBlockState(i, j, randomsource.nextInt(6)), 3);
+                            int rake = randomsource.nextInt(6);
+                            // Skip cells that would leave the rock above hanging, or would hang over the void themselves.
+                            if (!worldgenlevel.isEmptyBlock(offset.above()) && !worldgenlevel.isEmptyBlock(offset.above(2))) continue;
+                            if (worldgenlevel.isEmptyBlock(offset) && worldgenlevel.isEmptyBlock(offset.below()) && worldgenlevel.isEmptyBlock(offset.below(2))) continue;
+                            worldgenlevel.setBlock(offset, getBlockState(i, j, rake), 3);
                             worldgenlevel.setBlock(offset.above(), Blocks.AIR.defaultBlockState(), 3);
                             if (worldgenlevel.getBlockState(offset.below()).isAir()) worldgenlevel.setBlock(offset.below(), Blocks.END_STONE.defaultBlockState(), 3);
                         }
                         else {
-                            if (((Mth.abs(i)<2) || (Mth.abs(j)<2))) worldgenlevel.setBlock(offset, Blocks.END_STONE.defaultBlockState(), 3);
+                            if (((Mth.abs(i)<2) || (Mth.abs(j)<2)) && !(worldgenlevel.isEmptyBlock(offset) && worldgenlevel.isEmptyBlock(offset.below())))
+                                worldgenlevel.setBlock(offset, Blocks.END_STONE.defaultBlockState(), 3);
                         }
                     }
                 }

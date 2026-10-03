@@ -19,7 +19,7 @@ public class BeyondDataMaps extends DataMapProvider {
 
     @Override
     protected void gather(HolderLookup.Provider provider) {
-        // Ornament and hand are left/right halves of one image; the Regions tile it.
+        // ornament and hand are the left and right halves of one image, tiled by the regions
         ResourceLocation punishment = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "memory/punishment");
         ResourceLocation prison = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "memory/prison");
         ResourceLocation key = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "memory/key");

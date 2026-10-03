@@ -22,9 +22,7 @@ public abstract class RefugeHungerMixin {
         if (level.isClientSide) return;
         if ((level instanceof ServerLevel serverLevel)) {
             BlockPos playerPos = player.blockPosition();
-            // Non-creating lookup: calling getChunkAt (create=true) from here can re-enter
-            // chunk loading while DistanceManager.runAllUpdates is iterating, causing a
-            // ConcurrentModificationException.
+            // no chunk creation here, it could re-enter loading during runAllUpdates and throw
             ChunkAccess chunk = serverLevel.getChunkSource()
                     .getChunk(playerPos.getX() >> 4, playerPos.getZ() >> 4, false);
             if (chunk != null) {

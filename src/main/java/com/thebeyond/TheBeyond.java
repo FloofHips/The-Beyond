@@ -85,19 +85,19 @@ public class TheBeyond {
                     PackSource.DEFAULT, Optional.empty());
             Pack.ResourcesSupplier supplier = new PathPackResources.PathResourcesSupplier(resourcePath);
 
-            // Toggleable only with Convergence (isleweaver); else required and hidden.
+            // toggleable only with Isleweaver, otherwise required and hidden
             boolean convergencePresent = ModList.get().isLoaded("isleweaver");
             PackSelectionConfig selection =
                     new PackSelectionConfig(!convergencePresent, Pack.Position.TOP, false);
 
-            // Addons contribute compat child packs (rewriting End dim-type y-bounds); highest priority wins.
+            // addons contribute child packs that rewrite the End height bounds, the highest priority wins
             com.thebeyond.api.event.BeyondTerrainPackAssembleEvent assembleEvent =
                     new com.thebeyond.api.event.BeyondTerrainPackAssembleEvent(event);
             net.neoforged.fml.ModLoader.postEvent(assembleEvent);
 
             com.thebeyond.api.event.BeyondTerrainPackAssembleEvent.Contribution winner =
                     assembleEvent.resolveWinner();
-            LOGGER.info(
+            LOGGER.debug(
                     "[TheBeyond] BeyondTerrainPackAssembleEvent resolved: {} total contribution(s), winner={}",
                     assembleEvent.getContributions().size(),
                     winner == null ? "<none>" : winner.packName() + " (priority " + winner.priority() + ")");
@@ -116,7 +116,7 @@ public class TheBeyond {
                 if (!convergencePresent) {
                     toAccept = toAccept.hidden();
                 }
-                LOGGER.info(
+                LOGGER.debug(
                         "[TheBeyond] Submitting beyond_terrain pack to repository source: id={} childCount={} visible={}",
                         toAccept.getId(), finalChildren.size(), convergencePresent);
                 consumer.accept(toAccept);

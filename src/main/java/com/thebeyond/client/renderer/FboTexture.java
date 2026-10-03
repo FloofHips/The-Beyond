@@ -3,8 +3,7 @@ package com.thebeyond.client.renderer;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.server.packs.resources.ResourceManager;
 
-/** Wraps an externally-owned GL texture id (the reflection FBO's color attachment) so a
- *  RenderType can bind it via a ResourceLocation. Does NOT own/delete the id. */
+/** Wraps the reflection FBO's color texture id so a RenderType can bind it, without owning or deleting it. */
 public class FboTexture extends AbstractTexture {
     public void setId(int id) {
         this.id = id;

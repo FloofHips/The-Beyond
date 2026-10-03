@@ -59,8 +59,7 @@ public class ModGameEvents {
     private static final boolean CURIOS_LOADED = net.neoforged.fml.ModList.get().isLoaded("curios");
 
     private static RefugeChunkData getChunkData(ServerLevel level, BlockPos pos) {
-        // Never force-load: a recursive load during DistanceManager.runAllUpdates throws CME.
-        // An unloaded chunk has no refuge data anyway, so null means "no protection".
+        // never force-load, a recursive load in runAllUpdates throws, and an unloaded chunk has no refuge anyway
         ChunkAccess chunk = level.getChunkSource().getChunk(pos.getX() >> 4, pos.getZ() >> 4, false);
         if (chunk != null) {
             RefugeChunkData data = chunk.getData(BeyondAttachments.REFUGE_DATA);
@@ -78,8 +77,7 @@ public class ModGameEvents {
         return chunk == null ? null : chunk.getData(BeyondAttachments.REFUGE_DATA);
     }
 
-    // NeoForge doesn't sync attachments to the client, so it starts empty on login, respawn, and
-    // dimension change - we re-push the known set on all three or content gets re-hidden.
+    // attachments are not synced, so the known set is re-sent on login, respawn and dimension change
     @SubscribeEvent
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer sp) syncAwarenessTo(sp);
@@ -276,7 +274,7 @@ public class ModGameEvents {
                 persistent.putBoolean(TAG_PENDING_TOTEM, true);
             }
 
-            TheBeyond.LOGGER.info("[TotemRespite] totem captured items={} (curios among them={}) curiosLoaded={} corpse={}",
+            TheBeyond.LOGGER.debug("[TotemRespite] totem captured items={} (curios among them={}) curiosLoaded={} corpse={}",
                     itemsList.size(), curiosCount, CURIOS_LOADED, net.neoforged.fml.ModList.get().isLoaded("corpse"));
 
             player.getPersistentData().put(Player.PERSISTED_NBT_TAG, persistent);

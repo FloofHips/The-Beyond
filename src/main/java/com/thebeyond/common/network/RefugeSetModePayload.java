@@ -8,9 +8,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
-/**
- * Sent from client to server when the player confirms a mode selection in the Refuge GUI.
- */
+/** Client to server when the player confirms a mode in the Refuge GUI. */
 public record RefugeSetModePayload(BlockPos pos, byte mode) implements CustomPacketPayload {
     public static final Type<RefugeSetModePayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "refuge_set_mode"));
 

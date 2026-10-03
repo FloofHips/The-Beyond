@@ -7,13 +7,12 @@ import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-/** Lowers Simulated's contraption out-of-world disassembly floor in step with a below-floor void sea (negative
- *  {@link BeyondConfig#VOID_SEA_OFFSET}); a non-negative offset is a no-op, so the floor never rises above vanilla. */
+/** Lowers Simulated's disassembly floor with a sea below the floor (negative VOID_SEA_OFFSET), never above vanilla. */
 @Pseudo
 @Mixin(targets = "dev.simulated_team.simulated.content.blocks.physics_assembler.PhysicsAssemblerBlockEntity", remap = false)
 public abstract class SimContraptionFloorMixin {
 
-    // The disassembly check is `bb.minY() < level.getMinBuildHeight()`; drop that floor to the lowered sea's Y.
+    // The disassembly check is `bb.minY() < level.getMinBuildHeight()`, so that floor drops to the lowered sea's Y.
     @Redirect(
             method = "throwDisassemblyExceptions",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;getMinBuildHeight()I"),

@@ -7,8 +7,7 @@ import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
-/** Suppresses lightning spawn in the End via the {@code isThundering()} check inside
- *  {@code tickChunk}; random ticks and ice/snow logic are preserved. */
+/** No lightning in the End through tickChunk's isThundering() check, random ticks and snow logic stay. */
 @Mixin(ServerLevel.class)
 public abstract class ServerLevelLightningSuppressMixin {
     @WrapOperation(

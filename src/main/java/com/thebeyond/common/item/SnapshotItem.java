@@ -9,7 +9,7 @@ import net.minecraft.world.item.ItemStack;
 
 import java.util.Optional;
 
-/** Keeps the missing-texture model on purpose; the photo shows only as a tooltip image. */
+/** Keeps the missing-texture model on purpose, the photo shows only in the tooltip. */
 public class SnapshotItem extends Item {
     public SnapshotItem(Properties properties) {
         super(properties);

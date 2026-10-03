@@ -3,7 +3,7 @@ package com.thebeyond.client.camera;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.event.ModClientEvents;
 
-/** Client-only aim flag; the viewfinder layer also clears it when the camera is dropped so the overlay can't stick on. */
+/** Client-only aim flag, the viewfinder layer also clears it when the camera is dropped so the overlay never sticks. */
 public final class CameraAim {
     private static boolean aiming;
     private static View view;
@@ -27,7 +27,7 @@ public final class CameraAim {
     /** The photo renders a server round trip later, with the zoom gone and the mouse moved, so it keeps this view. */
     public static void shoot() {
         shot = view;
-        TheBeyond.LOGGER.info("[camera] shutter {}", shot);
+        TheBeyond.LOGGER.debug("[camera] shutter {}", shot);
         clear();
     }
 

@@ -12,8 +12,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-/** Mod-bus event during {@code AddPackFindersEvent}: addons submit a bounds-override child
- *  pack; they can't coexist, so only the highest-{@code priority} one is attached. */
+/** Mod-bus event in AddPackFindersEvent where addons submit a height-bounds pack, only the highest priority attaches. */
 @ApiStatus.Experimental
 public class BeyondTerrainPackAssembleEvent extends Event implements IModBusEvent {
     /** A single bounds-override proposal. */
@@ -28,8 +27,7 @@ public class BeyondTerrainPackAssembleEvent extends Event implements IModBusEven
 
     public AddPackFindersEvent getNeoForgeEvent() { return neoForgeEvent; }
 
-    /** Submit a bounds-override child pack. Higher {@code priority} wins on conflict;
-     *  ties are resolved in registration order (first wins). */
+    /** Submits a height-bounds child pack, the higher priority wins and a tie goes to the first registered. */
     public void contributeBoundsOverride(String packName, int priority, Pack pack, String logMessage) {
         contributions.add(new Contribution(packName, priority, pack, logMessage));
     }

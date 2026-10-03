@@ -19,12 +19,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Optional;
 
-/** Rejects a foreign structure's placement (far-field only) when its footprint can't host it organically,
- *  rather than fabricating terrain to fit it; profiles come from addons via {@link BeyondForeignStructureProfiles}. */
+/** Rejects a foreign structure in the far field when its footprint cannot host it, instead of faking terrain. */
 @Mixin(Structure.class)
 public abstract class ForeignStructureRejectionMixin {
 
-    /** Far-field threshold² — property of the pancake terrain model, not any one structure. */
+    /** Squared far-field threshold, a property of the layered terrain, not of one structure. */
     private static final double FAR_FIELD_SQ = 650.0 * 650.0;
 
     @Inject(method = "findValidGenerationPoint", at = @At("RETURN"), cancellable = true)
@@ -49,7 +48,7 @@ public abstract class ForeignStructureRejectionMixin {
             if (d2 < FAR_FIELD_SQ) {
                 if (!com.thebeyond.common.worldgen.BeyondGenDiagnostics.loggedReject) {
                     com.thebeyond.common.worldgen.BeyondGenDiagnostics.loggedReject = true;
-                    com.thebeyond.TheBeyond.LOGGER.info(
+                    com.thebeyond.TheBeyond.LOGGER.debug(
                             "[Beyond] foreign structure REJECTED (central/inner zone): {} at {}", key, pos);
                 }
                 cir.setReturnValue(Optional.empty());
@@ -81,13 +80,13 @@ public abstract class ForeignStructureRejectionMixin {
             if (reject) {
                 if (!com.thebeyond.common.worldgen.BeyondGenDiagnostics.loggedReject) {
                     com.thebeyond.common.worldgen.BeyondGenDiagnostics.loggedReject = true;
-                    com.thebeyond.TheBeyond.LOGGER.info(
+                    com.thebeyond.TheBeyond.LOGGER.debug(
                             "[Beyond] foreign structure REJECTED (footprint unfit): {} at {} anchor={}", key, pos, profile.anchor());
                 }
                 cir.setReturnValue(Optional.empty());
             } else if (!com.thebeyond.common.worldgen.BeyondGenDiagnostics.loggedAccept) {
                 com.thebeyond.common.worldgen.BeyondGenDiagnostics.loggedAccept = true;
-                com.thebeyond.TheBeyond.LOGGER.info(
+                com.thebeyond.TheBeyond.LOGGER.debug(
                         "[Beyond] foreign structure accepted (fits): {} at {} anchor={}", key, pos, profile.anchor());
             }
         } catch (Throwable t) {

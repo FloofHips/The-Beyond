@@ -25,7 +25,7 @@ import java.util.List;
 
 /** Deferred screen-space decal: reconstructs each opaque pixel's world pos and tests it against the projector depth map. */
 public final class ProjectorDeferredDecal {
-    private static final float BIAS = 0.0015f;                        // z-fight floor; fsh's texel-scaled term does the real work
+    private static final float BIAS = 0.0015f;  // z-fight floor, the shader's texel-scaled term does the real work
     private static final float TEXEL = 1.0f / ProjectorDepthMap.BASE_RES; // PCF tap spacing
 
     private static TextureTarget sceneDepthCopy;
@@ -33,7 +33,7 @@ public final class ProjectorDeferredDecal {
     private ProjectorDeferredDecal() {
     }
 
-    /** postFinal=true under an Iris pack: main target holds composited image + full depth; the hand cutoff engages. */
+    /** postFinal under an Iris pack: the main target holds the final image and full depth, so the hand cutoff applies. */
     public static void draw(Matrix4f projIn, Matrix4f viewIn, boolean postFinal) {
         if (ShaderCompatLib.isShadowPass()) {
             return;
@@ -58,7 +58,7 @@ public final class ProjectorDeferredDecal {
             return;
         }
 
-        // Decal reads this copy while the cone draws into main; avoids read-while-write feedback.
+        // the decal reads this copy while the cone draws into main, so it never reads what it writes
         ensureSceneDepth(w, h);
         sceneDepthCopy.copyDepthFrom(main);
         main.bindWrite(true);
@@ -96,7 +96,7 @@ public final class ProjectorDeferredDecal {
                 drawProjectorSlots(shader, be, postFinal);
             }
         } finally {
-            // Units 1/2 double as lightmap/overlay in vanilla entity shaders; clear them.
+            // units 1 and 2 are the lightmap and overlay in vanilla entity shaders, so clear them
             RenderSystem.setShaderTexture(1, 0);
             RenderSystem.setShaderTexture(2, 0);
             RenderSystem.setShaderTexture(3, 0);

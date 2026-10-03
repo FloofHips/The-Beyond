@@ -7,10 +7,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * A data-driven snapshot filter: a luminance ramp blended over the real colors at decode time (CPU, no shaders).
- * Loaded from {@code data/<ns>/the_beyond/grade/*.json}; empty stops = passthrough.
- */
+/** Data-driven snapshot filter: a luminance ramp blended over the real colors on the CPU, no stops means passthrough. */
 public record Grade(int[][] stops, float strength) {
     /** A single stop, authored as a {@code "#RRGGBB"} hex string. */
     public static final Codec<int[]> COLOR = Codec.STRING.comapFlatMap(Grade::parseColor, Grade::colorToHex);
@@ -20,7 +17,7 @@ public record Grade(int[][] stops, float strength) {
             Codec.FLOAT.optionalFieldOf("strength", 0.45f).forGetter(Grade::strength)
     ).apply(i, (stops, strength) -> new Grade(stops.toArray(int[][]::new), strength)));
 
-    /** Small data — the network codec is just the full codec. */
+    /** Small data, so the network codec is the full codec. */
     public static final Codec<Grade> NETWORK_CODEC = CODEC;
 
     private static DataResult<int[]> parseColor(String s) {
@@ -53,7 +50,7 @@ public record Grade(int[][] stops, float strength) {
         return 0xFF000000 | (nb << 16) | (ng << 8) | nr;
     }
 
-    /** Pure ramp colour at luminance {@code l}, packed 0xRRGGBB; caller guarantees at least one stop. */
+    /** Ramp colour at luminance l as 0xRRGGBB, the caller guarantees at least one stop. */
     public int rampRgb(float l) {
         float pos = Math.max(0f, Math.min(1f, l)) * (stops.length - 1);
         int idx = Math.min((int) pos, stops.length - 2);

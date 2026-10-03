@@ -9,9 +9,6 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public class BeyondPotions {
     public static final DeferredRegister<Potion> POTIONS = DeferredRegister.create(BuiltInRegistries.POTION, TheBeyond.MODID);
 
-    /**
-     * Carries no vanilla effects: vanilla splash/AoE would hit players and ignore the crowd cap. The capped, mob-only
-     * effect is applied on break by {@link com.thebeyond.common.event.BeyondDeafeningPotionEvents}; the name prefix drives the translation keys.
-     */
+    /** No vanilla effects, which would ignore the crowd cap, the capped effect is applied on break instead. */
     public static final DeferredHolder<Potion, Potion> DEAFENING = POTIONS.register("deafening", () -> new Potion("deafening"));
 }

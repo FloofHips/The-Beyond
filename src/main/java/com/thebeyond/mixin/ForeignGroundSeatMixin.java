@@ -52,7 +52,7 @@ public abstract class ForeignGroundSeatMixin {
         var registry = the_beyond$registry(context);
         boolean held = BeyondForeignStructureProfiles.isBasePedestal(key, registry, self)
                 || (declared != null && declared.basePedestal());
-        boolean mayGiveUp = held && BeyondForeignStructureProfiles.pedestalByTagOnly(key, registry, self, declared);
+        boolean mayGiveUp = held && BeyondForeignStructureProfiles.pedestalByReading(key, registry, self, declared);
         try {
             // Already grounded by a host, so no second seat. A pedestal only settles onto the island under its floor.
             if (key != null && BeyondForeignStructureProfiles.isLayerDistributed(key, cp.toLong())) {
@@ -225,9 +225,9 @@ public abstract class ForeignGroundSeatMixin {
     private static void the_beyond$logSeat(Structure.GenerationContext context,
             @org.jetbrains.annotations.Nullable ResourceLocation key, String what) {
         ChunkPos cp = context.chunkPos();
-        if (BeyondGenDiagnostics.loggedMaskKeys.add("ground-seat@" + key + "@" + cp.toLong())
-                && BeyondGenDiagnostics.loggedMaskKeys.size() <= 4000) {
-            com.thebeyond.TheBeyond.LOGGER.info("[Beyond] held seat {} at chunk [{},{}]: {}", key, cp.x, cp.z, what);
+        if (BeyondGenDiagnostics.loggedMaskKeys.size() < 4000
+                && BeyondGenDiagnostics.loggedMaskKeys.add("ground-seat@" + key + "@" + cp.toLong())) {
+            com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] held seat {} at chunk [{},{}]: {}", key, cp.x, cp.z, what);
         }
     }
 

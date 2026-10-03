@@ -19,9 +19,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** HEAD-cancels {@code FogRenderer.setupFog} in the End and writes Beyond's distances —
- *  disables all competing fog logic (vanilla, NeoForge event, other mods' mixins) instead
- *  of trying to outprioritize them. Gated by client config {@code enableCustomFog}. */
+/** Cancels setupFog in the End and writes Beyond's distances ahead of every other fog logic, gated by enableCustomFog. */
 @Mixin(FogRenderer.class)
 public class FogRendererMixin {
 

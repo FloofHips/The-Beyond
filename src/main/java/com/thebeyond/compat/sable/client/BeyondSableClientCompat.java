@@ -13,7 +13,7 @@ public final class BeyondSableClientCompat {
         try {
             BlockEntityRenderers.register(BeyondBlockEntities.MIRROR.get(), MirrorSableRenderer::new);
             net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(SableReflectionFrame::onRenderStage);
-            ProjectorSableFrame.install(); // reuses the base projector BER inside sub-levels; registers none
+            ProjectorSableFrame.install();  // reuses the base projector BER inside sub-levels
             TheBeyond.LOGGER.info("[TheBeyond] Sable mirror + projector renderers registered.");
         } catch (Throwable t) {
             TheBeyond.LOGGER.error("[TheBeyond] Failed to register Sable renderers", t);

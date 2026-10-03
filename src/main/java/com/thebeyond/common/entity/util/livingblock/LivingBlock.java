@@ -1088,7 +1088,7 @@ public class LivingBlock extends Mob {
     private Vec3 frozenFrom = Vec3.ZERO;
     private int frozenTicks;
 
-    private static final boolean TRACE_WRITERS = true;
+    private static final boolean TRACE_WRITERS = shouldLog;
 
     private String lastArcRefusal = "";
     private double penLast;
@@ -3589,7 +3589,6 @@ public class LivingBlock extends Mob {
                 this.zo += this.getZ() - beforeRecentreZ;
             }
             }
-            //setBoundingBox(rotateAABB());
         }
 
         Vector3f facing = new Vector3f();

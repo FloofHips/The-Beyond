@@ -19,8 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-/** Emits one position per pancake top when Beyond owns the End; single-surface columns
- *  fall through to vanilla so other mods' {@code getPositions} mixins still execute. */
+/** One position per layer top on Beyond's End, single-surface columns fall through so other mods' mixins run. */
 @Mixin(HeightmapPlacement.class)
 public abstract class HeightmapPlacementMultiSurfaceMixin {
     @Shadow @Final private Heightmap.Types heightmap;
@@ -64,7 +63,6 @@ public abstract class HeightmapPlacementMultiSurfaceMixin {
 
     private static int[] scanColumn(PlacementContext ctx, int x, int z, int minY, int topY) {
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, minY, z);
-        // Pre-size assumes ≤8 pancakes per column; grow if needed.
         int[] tmp = new int[8];
         int n = 0;
         boolean wasSolid = false;
@@ -88,10 +86,7 @@ public abstract class HeightmapPlacementMultiSurfaceMixin {
         return result;
     }
 
-    /**
-     * Single-chunk LRU: invalidates entries when the active chunk changes.
-     * Chunks are decorated sequentially per thread, so a one-chunk window is enough.
-     */
+    /** One-chunk cache, enough since each thread decorates chunks one at a time. */
     private static final class ChunkColumnCache {
         long currentChunk = Long.MIN_VALUE;
         Map<Long, int[]> columns = new HashMap<>();

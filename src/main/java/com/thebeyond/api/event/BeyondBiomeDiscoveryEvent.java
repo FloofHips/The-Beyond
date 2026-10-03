@@ -10,8 +10,7 @@ import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Map;
 
-/** Fires during End biome auto-discovery; subscribers add biome holders the tag scan
- *  can't see (e.g. Fabric-port mods exposing End biomes via static fields). */
+/** Fires during End biome discovery, so subscribers can add biomes the tag scan cannot see. */
 @ApiStatus.Experimental
 public class BeyondBiomeDiscoveryEvent extends Event {
     private final MinecraftServer server;
@@ -29,8 +28,7 @@ public class BeyondBiomeDiscoveryEvent extends Event {
     public MinecraftServer getServer() { return server; }
     public Registry<Biome> getBiomeRegistry() { return biomeRegistry; }
 
-    /** Adds {@code holder} to the candidate pool; no-op if unbound or its
-     *  {@link ResourceKey} is already taken. @return {@code true} if newly registered. */
+    /** Adds holder to the candidates unless unbound or already present, true when it was new. */
     public boolean contribute(Holder<Biome> holder) {
         return holder.unwrapKey()
                 .map(key -> candidates.putIfAbsent(key, holder) == null)

@@ -42,10 +42,7 @@ public class AbyssalNomadGlowLayer extends RenderLayer<AbyssalNomadEntity, Abyss
         this.model.setupAnim(entity, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
         this.model.prepareMobModel(entity, limbSwing, limbSwingAmount, partialTick);
 
-        // Iris/Oculus strip NeoForge's unlit translucent shader from the G-Buffer pipeline,
-        // making the glow layer (eyes + body hole colors) invisible. entityTranslucentEmissive
-        // is a vanilla type that shader mods handle — renders fullbright with proper alpha,
-        // preserving the Nomad's glowing eye/hole aesthetic.
+        // shader mods strip the unlit translucent shader, so the glow uses vanilla's emissive type they handle
         RenderType renderType = ShaderCompatLib.isShaderModLoaded()
                 ? RenderType.entityTranslucentEmissive(TEXTURE)
                 : NeoForgeRenderTypes.getUnlitTranslucent(TEXTURE);

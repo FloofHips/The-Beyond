@@ -31,7 +31,7 @@ public class ModEvents {
         event.put(BeyondEntityTypes.SIBLING.get(), SiblingEntity.createAttributes().build());
     }
 
-    /** Registered on both sides; a Dist.CLIENT-only registration would skip dedicated servers. */
+    /** Registered on both sides, a client-only registration would skip dedicated servers. */
     @SubscribeEvent
     public static void registerSpawnPlacements(RegisterSpawnPlacementsEvent event) {
         event.register(
@@ -59,7 +59,7 @@ public class ModEvents {
         );
     }
 
-    /** Custom synced datapack registry for snapshot filters; entries load from data/<ns>/the_beyond/grade/*.json. */
+    /** Synced datapack registry of snapshot filters, from data/<ns>/the_beyond/grade/*.json. */
     @SubscribeEvent
     public static void registerDatapackRegistries(DataPackRegistryEvent.NewRegistry event) {
         event.dataPackRegistry(Grades.REGISTRY, Grade.CODEC, Grade.NETWORK_CODEC);

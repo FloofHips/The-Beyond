@@ -33,7 +33,7 @@ public class AuroraBorealisRenderer {
     public static final ResourceLocation AURORA_3_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/aurora_3");
     public static final ResourceLocation AURORA_CRUMBLING_MODEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "models/aurora_crumbling");
 
-    // Relative-chunk offsets for the player's chunk; recomputed on chunk-boundary crossing, not per frame.
+    // relative chunk offsets for the player's chunk, recomputed on crossing a chunk border
     private static final java.util.List<long[]> activeOffsets = new java.util.ArrayList<>();
     private static long activeKey = Long.MIN_VALUE;
     private static int activeRd = -1;

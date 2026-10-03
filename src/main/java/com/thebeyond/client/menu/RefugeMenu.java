@@ -19,7 +19,7 @@ public class RefugeMenu extends AbstractContainerMenu {
     private final ContainerData refugeData;
     private final BlockPos blockPos;
 
-    // Client-side constructor — called by IMenuTypeExtension with extra data
+    // client-side constructor, called by IMenuTypeExtension with the extra data
     public RefugeMenu(int containerId, Inventory playerInventory, FriendlyByteBuf extraData) {
         this(containerId, playerInventory, new SimpleContainerData(1), ContainerLevelAccess.NULL, extraData.readBlockPos());
     }

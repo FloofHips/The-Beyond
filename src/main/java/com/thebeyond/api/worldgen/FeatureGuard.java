@@ -2,21 +2,22 @@ package com.thebeyond.api.worldgen;
 
 import org.jetbrains.annotations.ApiStatus;
 
-/** Stops biome features from overwriting a foreign structure placed just before them in the same chunk
- *  step. Protected volume is the generator's own carve-clear predicate, so it never disagrees with the carve. */
+/** Keeps biome features off a foreign structure placed just before them, using the carve's own clear test. */
 @ApiStatus.Internal
 public final class FeatureGuard {
 
-    /** The region a feature write must avoid — supplied by the generator so it equals the carve's clear. */
+    /** The region a feature write must avoid, supplied by the generator so it equals the carve's clear. */
     @FunctionalInterface
     public interface ProtectedVolume {
         boolean contains(int x, int y, int z);
     }
 
     private static final ThreadLocal<ProtectedVolume> VOLUME = new ThreadLocal<>();
-    /** A carve structure's solid footprint — bars the gellid-void pool from intruding into it. */
+    /** A carve structure's solid footprint, which bars the gellid-void pool. */
     private static final ThreadLocal<ProtectedVolume> STRUCTURE_VOLUME = new ThreadLocal<>();
     private static final ThreadLocal<ProtectedVolume> PIECE_VOLUME = new ThreadLocal<>();
+    /** Piece boxes, the ground under them and a shore around them, kept free of gellid lakes. */
+    private static final ThreadLocal<ProtectedVolume> PIECE_CLEARANCE = new ThreadLocal<>();
     private static final ThreadLocal<int[]> DEPTH = ThreadLocal.withInitial(() -> new int[1]);
     /** depth, decision (0 undecided, 1 allowed, 2 blocked). */
     private static final ThreadLocal<int[]> FEATURE = ThreadLocal.withInitial(() -> new int[2]);
@@ -30,7 +31,16 @@ public final class FeatureGuard {
 
     public static void setPieceVolume(ProtectedVolume volume) { PIECE_VOLUME.set(volume); }
 
-    public static void clearVolume() { VOLUME.remove(); STRUCTURE_VOLUME.remove(); PIECE_VOLUME.remove(); }
+    public static void setPieceClearance(ProtectedVolume volume) { PIECE_CLEARANCE.set(volume); }
+
+    public static void clearVolume() {
+        VOLUME.remove(); STRUCTURE_VOLUME.remove(); PIECE_VOLUME.remove(); PIECE_CLEARANCE.remove();
+    }
+
+    public static boolean insidePieceClearance(int x, int y, int z) {
+        ProtectedVolume v = PIECE_CLEARANCE.get();
+        return v != null && v.contains(x, y, z);
+    }
 
     public static boolean insidePieceVolume(int x, int y, int z) {
         if (DEPTH.get()[0] > 0) return false;
@@ -63,8 +73,7 @@ public final class FeatureGuard {
         return f[1] == 2;
     }
 
-    /** {@code true} if (x,y,z) is inside a carve structure's footprint (gellid-void barred here); a structure's own
-     *  placement (DEPTH&gt;0) bypasses. */
+    /** True inside a carve structure's footprint, except during the structure's own placement. */
     public static boolean insideStructureVolume(int x, int y, int z) {
         if (DEPTH.get()[0] > 0) return false;
         ProtectedVolume v = STRUCTURE_VOLUME.get();

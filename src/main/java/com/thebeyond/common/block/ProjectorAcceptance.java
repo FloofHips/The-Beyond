@@ -2,10 +2,7 @@ package com.thebeyond.common.block;
 
 import net.minecraft.world.item.ItemStack;
 
-/**
- * Any non-empty item is accepted. Display picks per item: snapshot shows captured pixels, a projector-texture data-map
- * entry shows that image, everything else falls back to the inventory (GUI) model.
- */
+/** Accepts any item: a snapshot shows its pixels, a data-map texture its image, anything else its inventory model. */
 public final class ProjectorAcceptance {
     private ProjectorAcceptance() {
     }

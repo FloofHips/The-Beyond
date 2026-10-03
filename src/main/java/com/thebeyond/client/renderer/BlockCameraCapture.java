@@ -23,13 +23,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-/**
- * Renders a POV offscreen (a camera block's facing, or the player's own first person), reads the FBO back, and uploads it.
- *
- * <p>Sodium/Iris composite into {@code getMainRenderTarget()} and ignore a merely-bound target, so mainRenderTarget
- * must <em>point</em> at the capture FBO. Sodium's visible-chunk graph builds over several frames, so a capture spans
- * up to MAX_WARMUP_FRAMES.
- */
+/** Renders a POV offscreen through mainRenderTarget, since Sodium and Iris ignore a merely bound target. */
 public final class BlockCameraCapture {
 
     private record Pending(long requestId, Vec3 eye, Vec3 forward, boolean selfPov) {
@@ -130,7 +124,7 @@ public final class BlockCameraCapture {
 
         Entity savedCamEntity = mc.cameraEntity; // field, not setter: setter has post-effect side effects
         CameraType savedCamType = mc.options.getCameraType();
-        // renderBlockOutline/renderHand have no getters; live they're always their defaults (true)
+        // renderBlockOutline and renderHand have no getters and are always true when live
         CameraAccessor camAcc = (CameraAccessor) gr.getMainCamera();
         float savedEyeHeight = camAcc.the_beyond$getEyeHeight();
         float savedEyeHeightOld = camAcc.the_beyond$getEyeHeightOld();
@@ -166,7 +160,7 @@ public final class BlockCameraCapture {
                 camAcc.the_beyond$setEyeHeight(0.0f);
                 camAcc.the_beyond$setEyeHeightOld(0.0f);
             }
-            // Handheld (selfPov): keep the player as camera — first person hides the model and uses their eyes/look.
+            // handheld: the player stays the camera, first person hides the model and uses their eyes
             if (shot != null) {
                 // Look where the viewfinder was at the click, not where the mouse went during the server round trip.
                 aimer.setYRot(shot.yaw());
@@ -198,7 +192,7 @@ public final class BlockCameraCapture {
             TheBeyond.LOGGER.error("[camera] block-camera capture failed", t);
             return true;
         } finally {
-            // restore in reverse order; a miss here corrupts the player's live frame
+            // restored in reverse order, a miss here corrupts the player's live frame
             ((MinecraftMainTargetAccessor) mc).the_beyond$setMainRenderTarget(realMain);
             camAcc.the_beyond$setEyeHeight(savedEyeHeight);
             camAcc.the_beyond$setEyeHeightOld(savedEyeHeightOld);

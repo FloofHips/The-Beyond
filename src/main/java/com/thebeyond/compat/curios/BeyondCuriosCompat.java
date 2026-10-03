@@ -9,11 +9,11 @@ import top.theillusivec4.curios.api.type.inventory.IDynamicStackHandler;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Soft-dep bridge to Curios (compileOnly); callers MUST gate on {@code ModList.get().isLoaded("curios")} or this fails to link. */
+/** Soft bridge to Curios (compileOnly), callers must check that curios is loaded or this fails to link. */
 public final class BeyondCuriosCompat {
     private BeyondCuriosCompat() {}
 
-    /** Copies + clears every equipped curio (functional + cosmetic) so the totem carries them back, not another handler (Curios/Corpse). */
+    /** Copies and clears every equipped curio so the totem carries them back instead of Curios or Corpse. */
     public static List<ItemStack> collectAndClear(Player player) {
         List<ItemStack> out = new ArrayList<>();
         CuriosApi.getCuriosInventory(player).ifPresent(handler -> {

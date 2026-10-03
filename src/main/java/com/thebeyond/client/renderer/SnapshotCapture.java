@@ -20,7 +20,7 @@ public final class SnapshotCapture {
     public static void downsampleQuantizeUpload(RenderTarget src, long requestId) {
         NativeImage full = null;
         try {
-            full = Screenshot.takeScreenshot(src); // ABGR; ours to close
+            full = Screenshot.takeScreenshot(src);  // ABGR, ours to close
             int w = full.getWidth(), h = full.getHeight();
             int side = Math.min(w, h);
             int cx = (w - side) / 2, cy = (h - side) / 2;

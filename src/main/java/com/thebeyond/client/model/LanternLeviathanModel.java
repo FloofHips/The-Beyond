@@ -42,17 +42,11 @@ public class LanternLeviathanModel<T extends LanternEntity> extends EntityModel<
 
         PartDefinition root = partdefinition.addOrReplaceChild("root", CubeListBuilder.create(), PartPose.offset(0.0F, 24.0F, 0.0F));
 
-        // Main solid body cube. Zero-thickness decoration quads live on the
-        // "bone_decorations" child so the split-pass renderer routes them
-        // through the CULL pass (body=NO_CULL, fins/decorations=CULL) and
-        // avoids z-fighting on their coplanar quad twins.
         PartDefinition bone = root.addOrReplaceChild("bone", CubeListBuilder.create()
                 .texOffs(0, 0).addBox(-15.0769F, -13.9615F, -6.4615F, 32.0F, 27.0F, 80.0F, new CubeDeformation(0.0F)),
                 PartPose.offset(-0.9231F, -13.0385F, -25.5385F));
 
-        // Decoration quads — PartPose.ZERO keeps the same local origin as "bone"
-        // so original world-space positions are preserved; animation follows
-        // automatically because this is a child of "bone".
+        // PartPose.ZERO keeps bone's origin, and as a child of bone the decorations follow its animation
         bone.addOrReplaceChild("bone_decorations", CubeListBuilder.create()
                 .texOffs(138, 52).addBox(-5.0769F, 9.0385F, -6.4615F, 6.0F, 0.0F, 6.0F, new CubeDeformation(0.0F))
                 .texOffs(138, 58).addBox(-5.0769F, 3.0385F, -6.4615F, 6.0F, 0.0F, 6.0F, new CubeDeformation(0.0F))
@@ -123,12 +117,4 @@ public class LanternLeviathanModel<T extends LanternEntity> extends EntityModel<
     public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int i, int i1, int i2) {
         root.render(poseStack, vertexConsumer, i, i1, i2);
     }
-
-    /** Root part — entry point for {@code LanternRenderer}'s split-pass render. */
-    public ModelPart getRoot() { return root; }
-
-    /** Main part for the Leviathan (named {@code bone}, not {@code body}). Carries
-     *  the solid 32×27×80 cube; fin/tail chains and decoration quads are children,
-     *  so the renderer draws body with NO_CULL and descendants with CULL. */
-    public ModelPart getMainPart() { return bone; }
 }

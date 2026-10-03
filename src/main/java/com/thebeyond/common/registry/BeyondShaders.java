@@ -72,7 +72,7 @@ public class BeyondShaders {
         PROJECTOR_DIST_PEEL_SHADER = instance;
     }
 
-    /** Entity depth: R+G radial pack + B=1.0 entity bit; NEW_ENTITY vertex format. */
+    /** Entity depth: radial distance in R and G, entity bit in B, NEW_ENTITY vertex format. */
     @Nullable
     public static ShaderInstance getProjectorDistEntity() {
         return PROJECTOR_DIST_ENTITY_SHADER;

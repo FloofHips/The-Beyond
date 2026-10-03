@@ -11,8 +11,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.Set;
 
-/** What does a player know? Per-player or shared-world depending on config.
- *  With the gate off, everything counts as known. */
+/** What a player knows, per player or shared by config, everything when the gate is off. */
 public final class BeyondAwareness {
 
     private BeyondAwareness() {}

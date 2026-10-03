@@ -109,8 +109,7 @@ public class EnadrakeHutBlock extends BaseEntityBlock {
             return;
         }
 
-        // Skip exit during contraption assembly (Create or Sable/Aeronautics) — the BE NBT
-        // travels with the assembly; ejecting would duplicate the enadrake.
+        // no exit while a contraption assembles, the block data travels along and ejecting would duplicate the enadrake
         if (!com.thebeyond.compat.create.ContraptionAssemblyDetector.isAssembling()) {
             BlockEntity baseBE = level.getBlockEntity(pos);
             if (baseBE instanceof EnadrakeHutBlockEntity hutblockentity) {
@@ -122,7 +121,7 @@ public class EnadrakeHutBlock extends BaseEntityBlock {
     }
 
     public static void fillHut(ItemStack stack, Level level, BlockPos pos, LivingEntity entity, EnadrakeHutBlockEntity hutblockentity, ItemStack itemstack1) {
-        // Cap at maxStackSize; the ItemStack codec rejects saves past 99.
+        // capped at maxStackSize, the ItemStack codec rejects saves past 99
         if (!hutblockentity.isEmpty() && itemstack1.getCount() >= itemstack1.getMaxStackSize()) return;
 
         ItemStack itemstack = stack.consumeAndReturn(1, entity);

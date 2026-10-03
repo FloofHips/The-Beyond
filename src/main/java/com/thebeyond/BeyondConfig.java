@@ -18,31 +18,25 @@ public class BeyondConfig {
 
     public static ModConfigSpec.BooleanValue MIRROR_OCCLUSION_MODEL_BASED;
 
-    // Hide progression-gated content until the player discovers it.
     public static ModConfigSpec.BooleanValue HIDE_UNDISCOVERED_CONTENT;
 
-    // How discovery is shared between players.
     public static ModConfigSpec.EnumValue<AwarenessMode> AWARENESS_MODE;
 
     public static ModConfigSpec.BooleanValue DROP_TOTEM_OF_RESPITE;
 
     public static ModConfigSpec.BooleanValue DEAFENING_DISENGAGE;
-    /** Above this many eligible mobs in a burst radius, the burst deafens nobody. */
     public static ModConfigSpec.IntValue DEAFENING_LOCAL_CAP;
     public static ModConfigSpec.IntValue DEAFENING_GLOBAL_CAP;
-    /** Anger applied to a Warden when a deafening potion breaks near it ({@code >=80} enrages + pursues). */
     public static ModConfigSpec.IntValue WARDEN_ENRAGE_ANGER;
-    /** A deafened Warden still "smells" the player within this radius (blocks); beyond it, player-driven anger is suppressed. */
     public static ModConfigSpec.IntValue WARDEN_SMELL_RADIUS;
 
-    /** Void sea height above the End's auroracite floor; clamped at the floor so a negative offset can't drown a contraption in the void. */
     public static ModConfigSpec.IntValue VOID_SEA_OFFSET;
 
     static {
 
         ModConfigSpec.Builder COMMON_BUILDER = new ModConfigSpec.Builder();
 
-        // Optional discovery gating (hide content until players find it). Off by default; uncomment to enable.
+        // optional discovery gating that hides content until players find it, off by default, uncomment to enable
         /*
         COMMON_BUILDER.comment("Progression / discovery gating").push("awareness");
         HIDE_UNDISCOVERED_CONTENT = COMMON_BUILDER

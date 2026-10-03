@@ -6,7 +6,7 @@ import net.minecraft.resources.ResourceLocation;
 
 import java.util.Optional;
 
-/** {@code region} is the fragment's sub-rect of the plate; fragments sharing a {@code composeGroup} form one picture the projector detects as complete. */
+/** region is the fragment's part of the plate, and fragments sharing a composeGroup form one picture. */
 public record ProjectorTexture(ResourceLocation texture, Region region, Optional<ResourceLocation> composeGroup, float opacity) {
 
     /** UV sub-rect, all in [0,1]. */

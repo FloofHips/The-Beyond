@@ -2,13 +2,11 @@ package com.thebeyond.api.worldgen;
 
 import org.jetbrains.annotations.ApiStatus;
 
-/** Per-structure policy for hosting a foreign structure in the Beyond End: placement fitness gate
- *  plus occupancy-carve + foundation. Addons set only what they need via {@link #builder(Anchor)}; unset fields keep Beyond's defaults. */
+/** How a foreign structure is hosted in the Beyond End: fitness gate, carve and foundation, unset fields keep defaults. */
 @ApiStatus.Experimental
 public final class StructureIntegrationProfile {
 
-    /** How the structure meets the island vertically: {@code SEATED} rests on it (rejected if too much
-     *  footprint would float, gets a foundation fill); {@code FLOATING} hangs in the void (e.g. a space station), rejected only on ceiling clip. */
+    /** SEATED rests on the island with a foundation, FLOATING hangs in the void and is rejected only on a ceiling clip. */
     public enum Anchor { SEATED, FLOATING }
 
     private final Anchor anchor;
@@ -42,31 +40,19 @@ public final class StructureIntegrationProfile {
     }
 
     public Anchor anchor()            { return anchor; }
-    /** Run the placement fitness gate at all (false → the structure is always accepted where vanilla put it). */
     public boolean rejectUnfit()      { return rejectUnfit; }
-    /** SEATED: half-extent of the footprint scan when pinned, else the fallback when no pieces can be read. */
     public int towerRadius()          { return towerRadius; }
     public boolean towerRadiusPinned() { return towerRadiusPinned; }
-    /** SEATED: step of the footprint support scan. */
     public int towerStep()            { return towerStep; }
-    /** SEATED: a column counts as supported if solid sits within this many blocks below the floor —
-     *  and the foundation fill uses this SAME window, so nothing the gate accepts as supported ends up ungrounded. */
     public int flushTolerance()       { return flushTolerance; }
-    /** SEATED: reject when more than this fraction of the footprint lacks support. */
     public double padRejectFraction() { return padRejectFraction; }
-    /** FLOATING: body height used only for the ceiling-clip rejection. */
     public int floatEnvelope()        { return floatEnvelope; }
-    /** Build an occupancy mask and feather the islands around the structure's real footprint. */
     public boolean carve()            { return carve; }
     public boolean connectDetached()  { return connectDetached; }
 
-    /** Lays ground under the start piece's footprint where the island misses it. Towers and bridges keep hanging. */
     public boolean basePedestal()     { return basePedestal; }
 
-    /** The structure hollows its own interior with authored AIR, so the island-carve veto must let it through. */
     public boolean selfHollowing()    { return selfHollowing; }
-    /** Replace the structure's OWN overworld-ground blocks (dirt family) with end_stone after it places, so
-     *  a ruin authored with a dirt floor reads as End stone instead of dirt on Beyond's terrain. */
     public boolean coverGroundDirt()  { return coverGroundDirt; }
 
     public static Builder builder(Anchor anchor) { return new Builder(anchor); }

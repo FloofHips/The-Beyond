@@ -2,6 +2,7 @@ package com.thebeyond.client.renderer.blockentities;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.thebeyond.client.renderer.RenderFailureLog;
 import com.thebeyond.TheBeyond;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
@@ -12,7 +13,7 @@ import org.lwjgl.opengl.GL11;
 import java.util.HashMap;
 import java.util.Map;
 
-/** CPU mirror of {@code rendertype_refuge_gradient.fsh}; stops/weights below must stay in sync with it. */
+/** CPU mirror of {@code rendertype_refuge_gradient.fsh}: the stops and weights below must stay in sync with it. */
 public class RefugeGradientTextureManager {
 
     private static final Map<ResourceLocation, CachedTexture> cache = new HashMap<>();
@@ -98,7 +99,7 @@ public class RefugeGradientTextureManager {
             return newLocation;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            RenderFailureLog.error("[TheBeyond] refuge gradient texture failed for " + skinTexture, e);
             return skinTexture;
         }
     }

@@ -6,10 +6,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-/**
- * Swaps Minecraft's main render target field for a capture FBO: Sodium/Iris composite into whatever
- * {@code getMainRenderTarget()} returns, so binding alone won't route the scene — the field must change.
- */
+/** Swaps the main render target for a capture FBO, Sodium and Iris composite into whatever the field holds. */
 @Mixin(Minecraft.class)
 public interface MinecraftMainTargetAccessor {
     @Mutable

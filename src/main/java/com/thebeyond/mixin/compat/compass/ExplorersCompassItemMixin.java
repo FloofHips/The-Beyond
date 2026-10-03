@@ -16,8 +16,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import java.util.List;
 import java.util.Map;
 
-/** Filters Explorer's Compass results per-player. Wraps all three {@code StructureUtils}
- *  queries in {@code use()} so hidden names don't leak via the group multimaps. */
+/** Filters Explorer's Compass per player, wrapping all three StructureUtils queries so no hidden name leaks. */
 @Pseudo
 @Mixin(targets = "com.chaosthedude.explorerscompass.items.ExplorersCompassItem", remap = false)
 public abstract class ExplorersCompassItemMixin {

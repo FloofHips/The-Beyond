@@ -24,8 +24,7 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import org.spongepowered.asm.mixin.Mixin;
 
-/** Sanctions Beyond's own structure writes so the carve veto ({@link IslandCarveProtectionMixin}) lets them
- *  overwrite their own footprint; foreign structures stay unsanctioned so their template AIR can't carve islands. */
+/** Sanctions Beyond's own structure writes past the carve veto, foreign template air stays barred from the islands. */
 @Mixin(StructureStart.class)
 public abstract class StructureStartSanctionMixin {
 
@@ -55,8 +54,7 @@ public abstract class StructureStartSanctionMixin {
             return;   // draws nothing this chunk
         }
         if (own) SanctionedWrite.enter();
-        // Mark the structure-placement phase so the feature guard (which only vetoes feature writes) lets
-        // this structure build inside its own bbox.
+        // marks structure placement so the feature guard lets this structure build in its own box
         if (beyondGen) FeatureGuard.enterStructure();
         boolean foreign = beyondGen && !own;
         ForeignStructureWrite.Scope displaced = null;
@@ -85,20 +83,20 @@ public abstract class StructureStartSanctionMixin {
         if (scope == null) return;
         if (scope.selfOverwrite > 0
                 && BeyondGenDiagnostics.loggedCarveLedger.add(scope.structureId + ":self")) {
-            com.thebeyond.TheBeyond.LOGGER.info(
+            com.thebeyond.TheBeyond.LOGGER.debug(
                     "[IslandCarveProtection] {}: self-overwrite allowed {} (first slice)",
                     scope.structureId, scope.selfOverwrite);
         }
         if (scope.featureVeto > 0
                 && BeyondGenDiagnostics.loggedCarveLedger.add(scope.structureId + ":feature")) {
-            com.thebeyond.TheBeyond.LOGGER.info(
+            com.thebeyond.TheBeyond.LOGGER.debug(
                     "[FeatureGuard] {}: {} of its OWN solid blocks refused while it was placing itself"
                     + " (first slice); a nonzero count here is the structure losing its own geometry",
                     scope.structureId, scope.featureVeto);
         }
         if (scope.terrainVeto > 0
                 && BeyondGenDiagnostics.loggedCarveLedger.add(scope.structureId + ":veto")) {
-            com.thebeyond.TheBeyond.LOGGER.info(
+            com.thebeyond.TheBeyond.LOGGER.debug(
                     "[IslandCarveProtection] {}: terrain veto {} (first slice)",
                     scope.structureId, scope.terrainVeto);
         }
@@ -136,13 +134,12 @@ public abstract class StructureStartSanctionMixin {
         }
         if (key != null && swapped > 0
                 && BeyondGenDiagnostics.loggedDirtCover.add(key.toString())) {
-            com.thebeyond.TheBeyond.LOGGER.info(
+            com.thebeyond.TheBeyond.LOGGER.debug(
                     "[Beyond] dirt-cover {} swapped {} ground block(s) -> end_stone (first chunk slice)", key, swapped);
         }
     }
 
-    /** True for landmarks rerouted onto a far-field pancake top (aberrant_remains / arch / bonfire).
-     *  Central structures anchor to the floor/void instead, so they're excluded. */
+    /** True for landmarks moved onto a far-field layer top (aberrant_remains, arch, bonfire). */
     private static boolean the_beyond$isPancakeSeatedLandmark(ResourceLocation key) {
         if (key == null) return false;
         String p = key.getPath();

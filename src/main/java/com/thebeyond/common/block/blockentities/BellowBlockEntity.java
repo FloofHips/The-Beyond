@@ -9,10 +9,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-/**
- * Drives the Bellow: the server ticker polls redstone, syncs {@code STRENGTH} and pushes entities; the client ticker
- * emits the smoke jet locally. Stateless — the gust is purely transient.
- */
+/** The server ticker polls redstone, syncs STRENGTH and pushes entities, the client ticker emits the jet. */
 public class BellowBlockEntity extends BlockEntity {
     public BellowBlockEntity(BlockPos pos, BlockState state) {
         super(BeyondBlockEntities.BELLOW.get(), pos, state);

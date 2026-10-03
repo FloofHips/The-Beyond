@@ -104,8 +104,7 @@ public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
 
         byte displayMode = selectedMode >= 0 ? selectedMode : menu.getMode();
 
-        // Set up transforms for raw PlayerModel rendering in GUI
-        // In GUI space Y goes down, same as PlayerModel, so no Y flip needed
+        // GUI space has Y down like PlayerModel, so the raw model needs no flip
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(this.leftPos + 130, this.topPos - 9, 50.0);
         guiGraphics.pose().scale(55, 55, 55);

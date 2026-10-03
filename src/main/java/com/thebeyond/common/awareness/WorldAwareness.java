@@ -13,11 +13,10 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-/** Server-wide awareness store for {@link AwarenessMode#SHARED_WORLD}; ignored in
- *  per-player modes. Persisted to the overworld's {@code DataStorage}. */
+/** Server-wide awareness for SHARED_WORLD, saved in the overworld's data storage. */
 public class WorldAwareness extends SavedData {
 
-    /** Stable across versions — renaming breaks save compat. */
+    /** Never rename, saves depend on it. */
     public static final String DATA_NAME = "the_beyond_world_awareness";
 
     private final Set<ResourceLocation> known = new HashSet<>();

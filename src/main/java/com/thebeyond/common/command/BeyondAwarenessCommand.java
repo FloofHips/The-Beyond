@@ -129,7 +129,7 @@ public final class BeyondAwarenessCommand {
         CommandSourceStack src = ctx.getSource();
         int total = 0;
         for (ServerPlayer sp : targets) {
-            // Copy first — the snapshot might be a live view of what we're mutating.
+            // copied first, the snapshot may be a live view of what changes
             for (ResourceLocation key : Set.copyOf(BeyondAwareness.knownSnapshot(sp))) {
                 if (BeyondAwareness.revoke(sp, key)) total++;
             }

@@ -228,8 +228,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         return color.lerp(new Vec3(0,0,0), 1-effectFog);
     }
 
-    /** Vanilla {@code shouldCreateWorldFog} first, then any boss-bar entry (Stellarity's
-     *  {@code /bossbar add} doesn't set the createWorldFog flag). */
+    /** shouldCreateWorldFog first, then any boss bar, since Stellarity's /bossbar does not set the fog flag. */
     private static boolean isBossFightActive() {
         var overlay = Minecraft.getInstance().gui.getBossOverlay();
         if (overlay.shouldCreateWorldFog()) return true;
@@ -480,8 +479,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
     }
 
 
-    /** Iris-only: a live shaderpack overdraws the custom End sky and eats the cracks drawn in
-     *  {@link #renderSky}, so they're re-drawn here in the world pass. No-op without a pack. */
+    /** Under an Iris pack the sky cracks from renderSky get overdrawn, so they are redrawn in the world pass. */
     public static void renderCracksWorld(PoseStack poseStack, net.minecraft.client.renderer.MultiBufferSource buffer) {
         if (BeyondConfig.ENABLE_CUSTOM_SKY.isFalse()) return;
         if (thunderCracks.isEmpty() || !ShaderCompatLib.isShaderPackActive()) return;
@@ -490,7 +488,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         for (ThunderCrack crack : thunderCracks) {
             ResourceLocation tex = crack.lifeTime < 0.3 ? CRACK_3_LOCATION
                     : (crack.lifeTime < 0.6 ? CRACK_2_LOCATION : CRACK_1_LOCATION);
-            // Emissive translucent: survives the Iris world-pass and alpha-blends; alpha tracks lifeTime.
+            // emissive translucent survives the Iris world pass and blends, with alpha following lifeTime
             float a = Math.min(crack.lifeTime, 0.8f);
             VertexConsumer vc = buffer.getBuffer(com.thebeyond.common.registry.BeyondRenderTypes.entityTranslucentEmissiveNoCulled(tex));
             poseStack.pushPose();

@@ -7,6 +7,7 @@ import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexSorting;
+import com.thebeyond.client.renderer.RenderFailureLog;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.compat.ShaderCompatLib;
 import com.thebeyond.client.renderer.FboTexture;
@@ -54,7 +55,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
-/** Capture lives in {@link #captureAll}: a mid-frame offscreen FBO capture corrupts the in-progress render under Iris/Veil/Sodium. */
+/** Capture happens in captureAll, an offscreen capture mid-frame corrupts the render under Iris, Veil or Sodium. */
 public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBlockEntity> {
 
     private static final int TINT_R = 202, TINT_G = 222, TINT_B = 234;
@@ -72,7 +73,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
     private static final double OCCLUDER_MARGIN = 2.5;
     private static final int MAX_OCCLUDER_BLOCKS = 512;
     private static final int BORDER_DIM = 32;
-    // skip the contraption's own mounting blocks flush with the face; a real occluder sits deeper
+    // skips the contraption's mounting blocks flush with the face, a real occluder sits deeper
     private static final double NEAR_FACE_SKIP = 1.0;
     private static final float BORDER_SHADE = 0.05f;
     private static final int BLOB_TESS = 8;
@@ -96,10 +97,8 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
     private static final Long2ObjectOpenHashMap<Slot> SLOTS = new Long2ObjectOpenHashMap<>();
     private static final MultiBufferSource.BufferSource FBO_BUFFER =
             MultiBufferSource.immediate(new ByteBufferBuilder(2048));
-    // bounded name pool: a counter would leak one memoized RenderType per plane ever seen
     private static final boolean[] TEX_SLOT_USED = new boolean[MAX_FBOS];
     private static final Object2IntOpenHashMap<Entity> LIGHT_CACHE = new Object2IntOpenHashMap<>();
-    // identity-keyed: sub-levels aren't value-equal
     private static final java.util.IdentityHashMap<ClientSubLevel, SubTransform> SUBXF_CACHE = new java.util.IdentityHashMap<>();
     private static int losBudget;
 
@@ -141,7 +140,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         }
         SubLevel sub = Sable.HELPER.getContaining(be.getLevel(), be.getBlockPos());
         if (sub == null) {
-            return; // main world — handled by the world-event reflection path
+            return;  // the main world goes through the world-event reflection path
         }
         BlockState st = be.getBlockState();
         if (!(st.getBlock() instanceof MirrorBlock)) {
@@ -175,7 +174,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
             if (planeDist > RENDER_DIST) {
                 continue;
             }
-            // front-of-face cull; a back face z-fights the block body
+            // front-face cull, a back face z-fights the block body
             if (p.x * nf.x + p.y * nf.y + p.z * nf.z >= 0.0) {
                 continue;
             }
@@ -210,7 +209,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
             float[][] corners = faceQuad(facing, FACE_OUTSET);
             if (slot.packPath) {
                 VertexConsumer vc = buf.getBuffer(BeyondRenderTypes.mirrorPack(slot.texture));
-                // FBO is unlit albedo under a pack; light from the front cell, since the face cell reads sky and pins full-bright
+                // under a pack the FBO is unlit, and the face cell reads sky, so the light comes from the front cell
                 int ambient = LevelRenderer.getLightColor(mc.level, be.getBlockPos().relative(facing));
                 if (slot.heldBoost > 0) {
                     ambient = (Math.max((ambient >> 4) & 0xF, slot.heldBoost) << 4) | (((ambient >> 20) & 0xF) << 20);
@@ -295,7 +294,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
                     }
                     captureSlot(slot, mainProj, mainView, camPos, pt, disp, mc);
                 } catch (Throwable t) {
-                    TheBeyond.LOGGER.error("[TheBeyond] Sable mirror capture failed for one plane", t);
+                    RenderFailureLog.error("[TheBeyond] Sable mirror capture failed for one plane", t);
                 }
             }
         } finally {
@@ -308,7 +307,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
 
     private static void captureSlot(Slot slot, Matrix4f mainProj, Matrix4f mainView, Vec3 camPos, float pt,
                                     EntityRenderDispatcher disp, Minecraft mc) {
-        // recompute the plane from this frame's transform; the BER's is one frame stale and desyncs FBO from face
+        // the plane comes from this frame's transform, the BER's is a frame stale and desyncs the FBO from the face
         SubTransform st = resolveSubTransform(slot, camPos, pt, mc);
         if (st != null) {
             float[] fcp = faceCenterLocal(slot.facing);
@@ -372,7 +371,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
 
         mvStack.set(modelView);
         RenderSystem.applyModelViewMatrix();
-        // world-frame occluders (not modelViewB); self-flushes depth before the entities
+        // world-frame occluders, not modelViewB, flushing their depth before the entities
         MirrorReflection.renderOccluderDepth(FBO_BUFFER, reflected, camPos, mc, n, slot.worldPoint);
         disp.setRenderShadow(false);
         GL11.glFrontFace(GL11.GL_CW); // reflection flips winding
@@ -446,7 +445,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         return (subBits << 35) | ((long) facing.get3DDataValue() << 32) | (coord & 0xFFFFFFFFL);
     }
 
-    /** Pays Sable's bounds mixin once per chunk, not per cell; valid only within one captureAll. */
+    /** Pays Sable's bounds mixin once per chunk instead of per cell, valid only within one captureAll. */
     private static BlockState cachedState(net.minecraft.world.level.Level level, BlockPos pos) {
         long ckey = ChunkPos.asLong(pos.getX() >> 4, pos.getZ() >> 4);
         LevelChunk chunk = LOS_CHUNK_CACHE.get(ckey);
@@ -508,7 +507,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         return false;
     }
 
-    /** Voxel walk (only a non-mirror full opaque cube blocks); level.clip()'s per-ray cost would dominate capture. */
+    /** A voxel walk where only a full opaque non-mirror cube blocks, clip() per ray would dominate capture. */
     private static boolean hasLineOfSight(Entity e, Vec3 eye, Vec3 target) {
         var level = e.level();
         double dx = target.x - eye.x, dy = target.y - eye.y, dz = target.z - eye.z;
@@ -618,7 +617,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
     }
 
 
-    // emit (gridCoord − rotationPoint): raw grid coords ~2e7 lose sub-block precision as float32. modelViewB = modelView·M maps the de-biased coord; bodies → grid via M⁻¹.
+    // vertices are emitted relative to the rotation point, raw grid coords near 2e7 lose sub-block float precision
 
     private static final class SubBlockFrame {
         final Matrix4f modelViewB;
@@ -959,7 +958,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
                                 case WEST -> { orient = 1; fx = (float) rbx;       fa0 = (float) rbz; fa1 = (float) (rbz + 1); fb0 = (float) rby; fb1 = (float) (rby + 1); ccx = wx;     ccy = eCy;    ccz = eCz;    }
                                 case EAST -> { orient = 1; fx = (float) (rbx + 1); fa0 = (float) rbz; fa1 = (float) (rbz + 1); fb0 = (float) rby; fb1 = (float) (rby + 1); ccx = wx + 1; ccy = eCy;    ccz = eCz;    }
                                 case NORTH -> { orient = 2; fx = (float) rbz;      fa0 = (float) rbx; fa1 = (float) (rbx + 1); fb0 = (float) rby; fb1 = (float) (rby + 1); ccx = eCx;    ccy = eCy;    ccz = wz;     }
-                                default ->   { orient = 2; fx = (float) (rbz + 1); fa0 = (float) rbx; fa1 = (float) (rbx + 1); fb0 = (float) rby; fb1 = (float) (rby + 1); ccx = eCx;    ccy = eCy;    ccz = wz + 1; } // SOUTH
+                                default ->   { orient = 2; fx = (float) (rbz + 1); fa0 = (float) rbx; fa1 = (float) (rbx + 1); fb0 = (float) rby; fb1 = (float) (rby + 1); ccx = eCx;    ccy = eCy;    ccz = wz + 1; }
                             }
                             double dgx = sf.camGx - ccx, dgy = sf.camGy - ccy, dgz = sf.camGz - ccz;
                             float radb = Mth.lerp(smootherstep((float) Mth.clamp(Math.sqrt(dgx * dgx + dgy * dgy + dgz * dgz) / BLOB_GROW_DIST, 0.0, 1.0)), BLOB_R_NEAR, BLOB_R_FAR);
@@ -984,8 +983,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         vc.addVertex(x1, y0, z0); vc.addVertex(x1, y1, z0); vc.addVertex(x1, y1, z1); vc.addVertex(x1, y0, z1);
     }
 
-    /** Alpha falls off from a shared 3D centre so the blob wraps seamlessly across adjacent faces.
-     *  orient: 0 = horizontal (y fixed), 1 = X-face (x fixed), 2 = Z-face (z fixed). */
+    /** Alpha falls off from a shared 3D centre so the blob wraps across faces (orient 0 horizontal, 1 X, 2 Z). */
     private static void blobFace3D(VertexConsumer vc, int orient, float fixed,
                                    float a0, float a1, float b0, float b1,
                                    double px, double py, double pz, float r, float c) {

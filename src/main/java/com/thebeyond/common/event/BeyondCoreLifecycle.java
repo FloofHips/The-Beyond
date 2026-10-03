@@ -19,16 +19,14 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 
-/** Beyond-owned static state lifecycle and {@link BeyondServerLifecycleEvent} dispatch.
- *  State recompute runs first (HIGHEST), API event fires last (LOWEST) so subscribers see resolved state. */
+/** Beyond's static state lifecycle: recompute at HIGHEST, the API event at LOWEST so subscribers see settled state. */
 @EventBusSubscriber(modid = TheBeyond.MODID)
 public final class BeyondCoreLifecycle {
     private BeyondCoreLifecycle() {}
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void recomputeState(ServerAboutToStartEvent event) {
-        // Reset before re-detection — active flag can be stale from CreateWorldScreen
-        // constructing a BeyondEndBiomeSource. LEVEL_STEM registry is the source of truth.
+        // reset first, CreateWorldScreen may have left the flag stale, the LEVEL_STEM registry decides
         BeyondTerrainStateInternal.reset();
         Registry<LevelStem> levelStems = event.getServer().registryAccess()
                 .registryOrThrow(Registries.LEVEL_STEM);
@@ -64,11 +62,12 @@ public final class BeyondCoreLifecycle {
         BeyondTerrainStateInternal.reset();
         BeyondEndChunkGenerator.resetNoises();
         com.thebeyond.common.worldgen.BeyondGenDiagnostics.reset();   // re-arm one-shot gen logs for next world
-        com.thebeyond.api.worldgen.BeyondForeignStructureProfiles.clearLayerDistributed();   // drop per-placement distributed decisions (no cross-world leak)
+        com.thebeyond.api.worldgen.BeyondForeignStructureProfiles.clearLayerDistributed();
         com.thebeyond.common.worldgen.AutoHostWarmUp.reset();
         com.thebeyond.common.worldgen.BeyondStructureArbiter.reset();
         com.thebeyond.api.compat.PancakeScan.clearCache();
         com.thebeyond.common.worldgen.StructureShape.reset();
+        com.thebeyond.common.worldgen.StructureReadings.reset();
         AuroraciteLayerFeature.resetNoise();
         AuroraciteLayerDTFeature.reset();
         AnchorLeggingsItem.clearCreativeTracking();

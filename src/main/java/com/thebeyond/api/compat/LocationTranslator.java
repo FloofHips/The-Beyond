@@ -7,8 +7,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
-/** Bridges stored ↔ visible coordinates for blocks inside a virtual contraption/sub-level
- *  (e.g. Sable plot). Registered in {@link BeyondCompatHooks} by compat modules at mod-load. */
+/** Converts stored and visible coordinates of blocks inside a sub-level (a Sable plot), registered by compat modules. */
 @ApiStatus.Experimental
 public interface LocationTranslator {
     /** Stored BE pos → visible Vec3 (or {@code null} when not in a sub-level). */
@@ -17,14 +16,12 @@ public interface LocationTranslator {
     /** Visible Vec3 → stored BlockPos (or {@code null} when not inside any sub-level). */
     @Nullable BlockPos toStored(ServerLevel level, Vec3 visiblePos);
 
-    /** Stored pos → visible/world center on any Level (client-safe); {@code null} when not in a sub-level. */
+    /** Stored pos to world center on any Level (client-safe), null outside a sub-level. */
     @Nullable default Vec3 toVisibleAny(Level level, BlockPos storedPos) { return null; }
 
-    /** World point → the local (stored) frame of the sub-level containing {@code containedPos};
-     *  {@code null} when not in a sub-level. */
+    /** World point to the stored frame of the sub-level holding containedPos, null outside a sub-level. */
     @Nullable default Vec3 toLocal(Level level, BlockPos containedPos, Vec3 worldPoint) { return null; }
 
-    /** Local direction at {@code containedPos} rotated into visible/world space by the sub-level's pose;
-     *  {@code null} when not in a sub-level (caller keeps the axis as-is). */
+    /** A local direction at containedPos turned into world space, null outside a sub-level so the caller keeps it. */
     @Nullable default Vec3 toVisibleDir(Level level, BlockPos containedPos, Vec3 localDir) { return null; }
 }

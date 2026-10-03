@@ -9,9 +9,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.Vec3;
 
-/** Protection follows the contraption: re-applies {@link RefugeChunkData#addRefuge} to a
- *  9-chunk square around {@link MovementContext#position}, removing from the prior area
- *  when crossing a chunk boundary or mode change. */
+/** Protection follows the contraption: a 9-chunk square around it moves when it crosses a chunk or the mode changes. */
 public class RefugeMovementBehaviour implements MovementBehaviour {
     private static final int PROTECTION_RADIUS = 9;
     private static final int CHUNK_RADIUS = PROTECTION_RADIUS / 2;
@@ -29,8 +27,7 @@ public class RefugeMovementBehaviour implements MovementBehaviour {
 
     @Override
     public void stopMoving(MovementContext context) {
-        // Final transfer to the disassembly position so the reconstructed BlockEntity
-        // (same 9-chunk square via makeChunks) doesn't drop protection until re-toggled.
+        // a last transfer to the disassembly spot, so the rebuilt block entity keeps protection
         if (!(context.world instanceof ServerLevel server)) return;
         Vec3 p = context.position;
         if (p == null) return;

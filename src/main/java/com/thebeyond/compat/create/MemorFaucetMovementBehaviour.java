@@ -26,9 +26,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 
-/** Full faucet logic at {@link MovementContext#position}: detection, item consumption,
- *  virtual age progression (stored in {@code context.data}), nomad spawn at age 1 and
- *  aurora/birthday at max. */
+/** The whole faucet logic on the move: detection, consumption, age in context.data, nomad at 1, aurora at max. */
 public class MemorFaucetMovementBehaviour implements MovementBehaviour {
     private static final int CHECK_INTERVAL = 50;
     private static final int DETECTION_RANGE = 5;

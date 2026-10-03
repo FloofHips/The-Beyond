@@ -18,8 +18,7 @@ import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import net.minecraft.world.level.levelgen.synth.SimplexNoise;
 
-/** DT variant of {@link AuroraciteLayerFeature}: auroracite islands above DT's source fluid
- *  in the noise-gap cells, falling back to air when DT isn't loaded. */
+/** Dimensional Tears variant: auroracite above DT's fluid in the noise gaps, air when DT is absent. */
 public class AuroraciteLayerDTFeature extends Feature<NoneFeatureConfiguration> {
 
     private static final ResourceLocation DT_FLUID_ID = ResourceLocation.parse("dimensional_tears:dimensional_tears");
@@ -46,13 +45,11 @@ public class AuroraciteLayerDTFeature extends Feature<NoneFeatureConfiguration> 
         synchronized (AuroraciteLayerDTFeature.class) {
             if (cachedDTFluid == null) {
                 Block block = BuiltInRegistries.BLOCK.get(DT_FLUID_ID);
-                // Missing DT -> registry returns air; fall back to the air state.
                 if (block == null || block == Blocks.AIR) {
                     cachedDTFluid = Blocks.AIR.defaultBlockState();
                 } else {
                     BlockState state = block.defaultBlockState();
-                    // is_ocean=true enables DT's skipRendering optimization for stacked fluid
-                    // cells. Looked up by name so a DT rename falls back to the default state.
+                    // is_ocean lets DT skip rendering stacked fluid, looked up by name so a rename falls back to the default
                     Property<?> isOceanProp = block.getStateDefinition().getProperty("is_ocean");
                     if (isOceanProp instanceof BooleanProperty boolProp) {
                         state = state.setValue(boolProp, Boolean.TRUE);
@@ -75,7 +72,7 @@ public class AuroraciteLayerDTFeature extends Feature<NoneFeatureConfiguration> 
         int minY = level.getMinBuildHeight();
         if (loggedMinY != minY) {
             loggedMinY = minY;
-            TheBeyond.LOGGER.info("[AuroraciteLayerDTFeature] placing at minY={}", minY);
+            TheBeyond.LOGGER.debug("[AuroraciteLayerDTFeature] placing at minY={}", minY);
         }
         int chunkX = origin.getX() & ~15; // align to chunk
         int chunkZ = origin.getZ() & ~15;

@@ -49,7 +49,7 @@ public class BeyondComponents {
                     .cacheEncoding()
     );
 
-    /** The filter (data-driven grade id) a snapshot was created with; shown wherever the photo renders. */
+    /** The filter a snapshot was taken with, used wherever the photo renders. */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<ResourceLocation>> SNAPSHOT_GRADE = COMPONENTS.registerComponentType(
             "snapshot_grade",
             builder -> builder

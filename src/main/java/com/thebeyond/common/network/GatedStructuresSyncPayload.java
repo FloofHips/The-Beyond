@@ -12,8 +12,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-/** Tells the client which region keys hide each gated structure, so it can gate {@code /locate structure}
- *  itself - structures aren't in the client registry, so it can't just read their tags. */
+/** Which regions hide each gated structure, so the client can gate /locate without the structure registry. */
 public record GatedStructuresSyncPayload(Map<ResourceLocation, Set<ResourceLocation>> gated) implements CustomPacketPayload {
     public static final Type<GatedStructuresSyncPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "gated_structures_sync"));

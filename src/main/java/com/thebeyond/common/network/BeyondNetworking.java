@@ -58,7 +58,7 @@ public class BeyondNetworking {
     private static final int SNAPSHOT_REQ_MAX_PER_WINDOW = 64;
     private static final Map<UUID, long[]> SNAPSHOT_REQ_WINDOW = new HashMap<>(); // uuid -> [windowStart, count]
 
-    // (8 blocks)^2; shared reach gate for the projector and Refuge interactions.
+    // (8 blocks)^2, the shared reach gate for the projector and Refuge interactions.
     private static final double INTERACT_REACH_SQ = 64.0;
 
     public static void onRegisterPayloads(RegisterPayloadHandlersEvent event) {

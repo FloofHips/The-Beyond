@@ -10,7 +10,6 @@ import com.thebeyond.common.entity.LanternEntity;
 import com.thebeyond.common.registry.BeyondRenderTypes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.EntityModel;
-import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -21,7 +20,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
 
-// java.awt.Color removed — unavailable on headless server JVMs, replaced with bit math
+// colors use bit math, java.awt.Color is missing on headless server JVMs
 
 public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeModel<LanternEntity>> {
     private static final ResourceLocation TEXTURE_LEVIATHAN = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/lantern/leviathan_lantern.png");
@@ -41,9 +40,6 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
     @Nullable
     @Override
     protected RenderType getRenderType(LanternEntity livingEntity, boolean bodyVisible, boolean translucent, boolean glowing) {
-        // Used by MobRenderer only for secondary effects (leash/outline/shadow) —
-        // the body is rendered via the split-pass in render() below. Returns the
-        // standard entity_translucent shader so visuals stay identical under Iris.
         return BeyondRenderTypes.entityTranslucentNoCulled(getTextureLocation(livingEntity));
     }
 
@@ -91,20 +87,12 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
         float alpha = Math.max(((transMax - distance) / (float) transMax), entity.level().getRainLevel(partialTicks));
 
         int finalAlpha = ModClientEvents.aimingWithCamera() ? 255 : (int) Math.max(255 * alpha, entity.getAlpha());
-        // Pack ARGB manually: Color(r=255, g=finalAlpha, b=255, a=finalAlpha).
-        // Magenta/pink tint as finalAlpha drops — the ghostly fade aesthetic.
+        // ARGB with green and alpha at finalAlpha, so the lantern fades to a ghostly magenta
         int color = (finalAlpha << 24) | (0xFF << 16) | (finalAlpha << 8) | 0xFF;
 
-        // Split-pass: body NO_CULL (volumetric translucent — back face then front),
-        // fins CULL (zero-thickness quads z-fight without culling). Selection is
-        // driven by each model's getRoot()/getMainPart().
         ResourceLocation textureLocation = getTextureLocation(entity);
 
-        // Leviathan: unlit NO_CULL body fixes the UP≈1.0/DOWN≈0.4 hue mismatch
-        // on zero-thickness fin/tail quads (Mojang's face-normal shading). Under
-        // an active pack, Iris/Oculus strip the custom shader via G-Buffer, so
-        // fall back to plain translucent (bloom pass below compensates). Gate
-        // on live pack state — isShaderPackActive — not mere mod presence.
+        // the unlit Leviathan body avoids face-normal shading on its fins, plain translucent under a live shader pack
         RenderType leviathanRenderType = ShaderCompatLib.isShaderPackActive()
                 ? BeyondRenderTypes.entityTranslucentNoCulled(textureLocation)
                 : BeyondRenderTypes.entityTranslucentNoCulledUnlit(textureLocation);
@@ -112,13 +100,7 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
 
         model.renderToBuffer(poseStack, buffer.getBuffer(entity.getSize()==3 ? leviathanRenderType : smallRenderType), packedLight, OverlayTexture.NO_OVERLAY, color);
 
-        // Additive bloom halo for shader-mod setups; emissive render type lets
-        // the pack apply bloom on top of the base pass. Size gates CULL to
-        // prevent z-fighting: Leviathan (size 3) uses NO_CULL — its DOWN UVs
-        // are α=0%, so coplanar quads don't z-fight, and NO_CULL is required
-        // for underside bloom. Smaller lanterns (0–2) use CULL — their DOWN UVs
-        // are opaque (81–100%), so NO_CULL would trigger "scribble" z-fighting
-        // on coplanar fin quads.
+        // bloom under shader mods: the Leviathan unculled for its underside, smaller lanterns culled against z-fighting
         if (ShaderCompatLib.isShaderModLoaded() && finalAlpha > 10) {
             RenderType emissiveRenderType = entity.getSize() == 3
                     ? BeyondRenderTypes.entityTranslucentEmissiveNoCulled(textureLocation)
@@ -152,52 +134,5 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
         if (size == 1) return medium;
         if (size == 3) return leviathan;
         return super.getModel();
-    }
-
-    // Split-pass helpers — dispatch by instanceof since the Lantern models
-    // don't share a base class. Null return triggers single-pass fallback.
-
-    @Nullable
-    private static ModelPart getModelRoot(EntityModel<LanternEntity> model) {
-        if (model instanceof LanternSmallModel<?> m) return m.getRoot();
-        if (model instanceof LanternMediumModel<?> m) return m.getRoot();
-        if (model instanceof LanternLargeModel<?> m) return m.getRoot();
-        if (model instanceof LanternLeviathanModel<?> m) return m.getRoot();
-        return null;
-    }
-
-    @Nullable
-    private static ModelPart getModelMainPart(EntityModel<LanternEntity> model) {
-        if (model instanceof LanternSmallModel<?> m) return m.getMainPart();
-        if (model instanceof LanternMediumModel<?> m) return m.getMainPart();
-        if (model instanceof LanternLargeModel<?> m) return m.getMainPart();
-        if (model instanceof LanternLeviathanModel<?> m) return m.getMainPart();
-        return null;
-    }
-
-    /** NO_CULL body pass: hides all descendants of mainPart so only its own
-     *  cubes render, then restores visibility. */
-    private static void renderBodyPass(PoseStack poseStack, ModelPart root, ModelPart mainPart,
-                                        VertexConsumer buffer, int lightLevel, int color) {
-        // Hide everything below mainPart (all fins are descendants of it).
-        mainPart.getAllParts().forEach(p -> { if (p != mainPart) p.visible = false; });
-        try {
-            root.render(poseStack, buffer, lightLevel, OverlayTexture.NO_OVERLAY, color);
-        } finally {
-            mainPart.getAllParts().forEach(p -> { if (p != mainPart) p.visible = true; });
-        }
-    }
-
-    /** CULL fins pass: skipDraw on mainPart skips its own cube but still
-     *  recurses into children, preserving transform and animation. */
-    private static void renderFinsPass(PoseStack poseStack, ModelPart root, ModelPart mainPart,
-                                        VertexConsumer buffer, int lightLevel, int color) {
-        boolean prevSkip = mainPart.skipDraw;
-        mainPart.skipDraw = true;
-        try {
-            root.render(poseStack, buffer, lightLevel, OverlayTexture.NO_OVERLAY, color);
-        } finally {
-            mainPart.skipDraw = prevSkip;
-        }
     }
 }

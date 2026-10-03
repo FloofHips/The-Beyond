@@ -25,7 +25,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
-/** Hides undiscovered biomes from tab-complete. Client-side because that's where suggestions get built - the real gate lives on the server. */
+/** Hides undiscovered biomes from tab-complete on the client, where suggestions are built, the gate is on the server. */
 @Mixin(ResourceOrTagArgument.class)
 public abstract class ResourceOrTagArgumentMixin {
 

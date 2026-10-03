@@ -142,8 +142,7 @@ public class RenderUtils {
         RenderSystem.defaultBlendFunc();
     }
 
-    /** A model resolved once per frame and reused across draws, skipping the per-call ModelManager
-     *  lookup + getRenderPasses() allocation. Re-resolved each frame (no cross-frame cache). */
+    /** A model resolved once per frame and reused across draws, sparing the lookup and allocation per call. */
     public static final class ResolvedModel {
         private final List<BakedModel> passes;
         private ResolvedModel(List<BakedModel> passes) { this.passes = passes; }

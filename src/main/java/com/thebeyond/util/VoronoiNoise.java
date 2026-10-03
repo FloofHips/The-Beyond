@@ -159,7 +159,7 @@ public class VoronoiNoise {
         for (int zCur = zInt - 2; zCur <= zInt + 2; zCur++) {
             for (int xCur = xInt - 2; xCur <= xInt + 2; xCur++) {
                 long cellSeed = (long)xCur * 1619L + (long)zCur * 6971L + this.seed;
-                // Inlined Random(cellSeed).nextLong() — identical output, no allocation.
+                // Random(cellSeed).nextLong() inlined, same output with no allocation
                 long s = (cellSeed ^ 0x5DEECE66DL) & 0xFFFFFFFFFFFFL;
                 s = (s * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFFL;
                 int h = (int)(s >>> 16);
@@ -216,7 +216,7 @@ public class VoronoiNoise {
                             + (long)zCur * 6971L
                             + this.seed;
 
-                    // Inlined Random(cellSeed).nextLong() × 2 — identical output, no allocation.
+                    // two Random(cellSeed).nextLong() inlined, same output with no allocation
                     long s = (cellSeed ^ 0x5DEECE66DL) & 0xFFFFFFFFFFFFL;
                     s = (s * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFFL;
                     int h1 = (int)(s >>> 16);

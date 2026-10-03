@@ -16,7 +16,7 @@ import java.util.Map;
 public final class SnapshotTextures {
     private static final int MAX = 64;
 
-    /** {@code size == 0} -> native 1:1 decode; {@code size > 0} -> box-downsampled to size x size. */
+    /** size 0 decodes 1:1, a positive size box-downsamples to size x size. */
     private record Key(Components.SnapshotPixelsComponent pixels, ResourceLocation gradeId, int size) {
     }
 

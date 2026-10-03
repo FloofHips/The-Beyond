@@ -3,8 +3,7 @@ package com.thebeyond.common.worldgen;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** One-shot flags gating the worldgen debug logs, held here (not as mixin statics) so {@link #reset()} can
- *  re-arm them on server stop instead of firing once ever in a singleplayer session. Purely diagnostic. */
+/** One-shot flags of the worldgen debug logs, here so reset() re-arms them on server stop. */
 public final class BeyondGenDiagnostics {
     private BeyondGenDiagnostics() {}
 
@@ -46,12 +45,9 @@ public final class BeyondGenDiagnostics {
     public static final Set<String> loggedLeaveAlone = ConcurrentHashMap.newKeySet();
     public static final Set<String> loggedCavityReject = ConcurrentHashMap.newKeySet();
     public static final Set<String> loggedMaskPieces = ConcurrentHashMap.newKeySet();
-    /** Carve starts whose mask reached a chunk only via the far maskCache pass (>8 chunks out, no STRUCTURE_REFERENCES). */
     public static final Set<Integer> loggedFarMaskKeys = ConcurrentHashMap.newKeySet();
-    /** Carve starts that placed blocks in a chunk which doesn't reference them (past vanilla's ±8 decoration window). */
     public static final Set<Integer> loggedFarBuild = ConcurrentHashMap.newKeySet();
     public static final Set<String> loggedDistributedY = ConcurrentHashMap.newKeySet();
-    /** DISTRIBUTED starts whose footing + lip was suppressed because the instance is surface-projected (topmost, not re-anchored). */
     public static final Set<Integer> loggedFootingSuppressed = ConcurrentHashMap.newKeySet();
 
     private static final java.util.concurrent.ConcurrentMap<String, Set<Long>> DECISIONS = new ConcurrentHashMap<>();
@@ -64,7 +60,7 @@ public final class BeyondGenDiagnostics {
 
     static void dumpDecisions() {
         new java.util.TreeMap<>(DECISIONS).forEach((k, v) ->
-                com.thebeyond.TheBeyond.LOGGER.info("[Beyond] structure decisions {} starts={}", k, v.size()));
+                com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] structure decisions {} starts={}", k, v.size()));
         DECISIONS.clear();
     }
 
@@ -80,7 +76,7 @@ public final class BeyondGenDiagnostics {
         boolean due = n < CARVE_PERF_EVERY ? n >= CARVE_PERF_FIRST && (n & (n - 1)) == 0 : n % CARVE_PERF_EVERY == 0;
         if (!due) return;
         double total = CARVE_NANOS.sum() / 1e6 / n, begin = BEGIN_NANOS.sum() / 1e6 / n;
-        com.thebeyond.TheBeyond.LOGGER.info("[Beyond] carve-perf {} chunks with a carve mask: {} ms each, {} ms of it opening columns",
+        com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] carve-perf {} chunks with a carve mask: {} ms each, {} ms of it opening columns",
                 n, String.format(java.util.Locale.ROOT, "%.2f", total), String.format(java.util.Locale.ROOT, "%.2f", begin));
     }
 

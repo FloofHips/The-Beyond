@@ -76,10 +76,8 @@ public final class BeyondStructureCarver {
     static final int COURTYARD_GUARD_DOWN = 4;
     static final int COURTYARD_GUARD_UP = 6;
     static final int GRAIN_WART_ROCK = 2;
-    // 7 is unreachable on a 6-neighbourhood, so the pit arm is off (every fill rule tried planted cover at depth).
     static final int GRAIN_PIT_ROCK = 7;
     static final int GRAIN_BUILD_MARGIN = 12;
-    // Two passes: filling the pit a removed wart leaves needs the state after the removal.
     static final int GRAIN_PASSES = 2;
     private static final int[][] DEBRIS_DIRS = {{1,0,0},{-1,0,0},{0,1,0},{0,-1,0},{0,0,1},{0,0,-1}};
     static final int CARVE_VERT_REACH = FLOAT_VMARGIN + CARVE_ERODE_REACH;   // 17
@@ -92,10 +90,8 @@ public final class BeyondStructureCarver {
     static final double CARVE_DIST_WARP_GAIN = 2.0;
     static final double CARVE_WARP_AMT = 1.0;
     private static final double CARVE_WARP_FREQ = 0.08, CARVE_WARP_FREQ_HI = 0.18;
-    // A floater's open cut turns the short octave into dither, so it warps long. Others keep the tight wave.
     private static final double CARVE_WARP_FREQ_WIDE = 0.045, CARVE_WARP_FREQ_HI_WIDE = 0.09;
 
-    /** HARD INVARIANT: {@code DT3_REACH + DT3_WARP_AMP (=8) <= FLOAT_HMARGIN (=8)}, so the warped clear stays ⊆ guard. */
     static final int DT3_REACH = 6;
     static final double DT3_WARP_AMP = 2.0;
     static final int DT3_CAP = DT3_REACH + (int) Math.ceil(DT3_WARP_AMP) + 1;   // = 9
@@ -118,8 +114,8 @@ public final class BeyondStructureCarver {
         the_beyond$apronLogged = true;
         StringBuilder run = new StringBuilder();
         for (int t = 0; t <= CEIL_LAT; t++) run.append(t == 0 ? "" : ",").append(CEIL_APRON_HITS.get(t));
-        com.thebeyond.TheBeyond.LOGGER.info(
-                "[Beyond] ceil-apron lat={} slope={} reach={} run=[{}] (cumulative, all seated masks)",
+        com.thebeyond.TheBeyond.LOGGER.debug(
+                "[Beyond] ceil-apron lat={} slope={} reach={} run=[{}] (cumulative)",
                 CEIL_LAT, CEIL_SLOPE, CARVE_CEIL_REACH, run);
     }
 
@@ -342,16 +338,11 @@ public final class BeyondStructureCarver {
                 && envV <= (y > hi[k] ? ENVELOPE_UP : ENVELOPE_DOWN);
     }
 
-    /** Feeds the kernel the undilated span clear and the full-width apron: the shape every constant-fed gate pins. */
     static final int SPAN_GROW_OFF = -1;
 
-    /** Per-column dilation of the span clear and apron, breaking the union of rectangles. CEIL_LAT keeps it in the guard band. */
     static final int SPAN_GROW_MAX = CEIL_LAT;
-    /** A long octave near a piece's edge in size, and a short one that varies within one perimeter instead of moving it whole. */
     private static final double SPAN_GROW_FREQ = 0.09, SPAN_GROW_FREQ_HI = BeyondStructureCarver.PEDESTAL_RING_FREQ;
-    /** Slower than the lateral octaves: the wall is meant to lean and swell over a dozen courses, not to serrate. */
     private static final double SPAN_GROW_VFREQ = 0.05, SPAN_GROW_VFREQ_HI = 0.15;
-    /** Simplex rarely leaves its middle, so without this gain every side of a footprint comes out the same width. */
     private static final double SPAN_GROW_GAIN = 1.9;
 
     static final java.util.concurrent.atomic.AtomicLongArray SPAN_GROW_HITS =
@@ -369,9 +360,7 @@ public final class BeyondStructureCarver {
     }
 
     static final int ROUND_R = 5;
-    /** How far from a cell the ends of its natural island are looked for. A thicker island keeps square edges. */
     static final int RIM_SCAN = 32;
-    /** Finite, so a beard that lifts the cell still keeps it, as it does against the skirt. */
     static final double RIM_PENALTY = 1.0e6;
     static final java.util.concurrent.atomic.AtomicLong RIM_HITS = new java.util.concurrent.atomic.AtomicLong();
     private static volatile boolean the_beyond$rimLogged = false;
@@ -380,7 +369,7 @@ public final class BeyondStructureCarver {
         if (the_beyond$rimLogged || RIM_HITS.get() < APRON_LOG_MIN / 2) return;
         if (!BeyondGenDiagnostics.loggedMaskKeys.add("rim-round")) return;
         the_beyond$rimLogged = true;
-        com.thebeyond.TheBeyond.LOGGER.info("[Beyond] rim-round R={} cells={} (cumulative: island edges rounded where a structure passes through)",
+        com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] rim-round R={} cells={} (cumulative)",
                 ROUND_R, RIM_HITS.get());
     }
 
@@ -410,9 +399,8 @@ public final class BeyondStructureCarver {
         the_beyond$branchLogged = true;
         StringBuilder ring = new StringBuilder();
         for (int t = 1; t <= SPAN_GROW_MAX; t++) ring.append(t == 1 ? "" : ",").append(SPAN_GROW_HITS.get(t));
-        com.thebeyond.TheBeyond.LOGGER.info(
-                "[Beyond] carve-branches: span-grow by ring=[{}] total={} island-cap-keep={} (cumulative, all"
-                + " masks; a ring at zero means the dilation never reached it)", ring, total, ISLAND_KEEP_HITS.get());
+        com.thebeyond.TheBeyond.LOGGER.debug(
+                "[Beyond] carve-branches: span-grow by ring=[{}] total={} island-cap-keep={} (cumulative)", ring, total, ISLAND_KEEP_HITS.get());
     }
 
     /** Extra ring around the start's box so the span grow is not clipped, at the cost of hole closing sealing channel mouths. */
@@ -465,10 +453,8 @@ public final class BeyondStructureCarver {
         if (n == 0) return;
         double mean = (double) sum / n;
         double sd = Math.sqrt(Math.max(0.0, (double) sumSq / n - mean * mean));
-        com.thebeyond.TheBeyond.LOGGER.info(
-                "[Beyond] span-grow {}: perimeter n={} min={} max={} mean={} sd={} changes/100={} (max={}; the"
-                + " gate scores the change count, and under 20 per 100 the field correlated across the footprint"
-                + " and the cut still reads square)",
+        com.thebeyond.TheBeyond.LOGGER.debug(
+                "[Beyond] span-grow {}: perimeter n={} min={} max={} mean={} sd={} changes/100={} cap={}",
                 id, n, min, max, String.format(java.util.Locale.ROOT, "%.2f", mean),
                 String.format(java.util.Locale.ROOT, "%.2f", sd),
                 String.format(java.util.Locale.ROOT, "%.1f", 100.0 * changes / n), SPAN_GROW_MAX);
@@ -617,6 +603,19 @@ public final class BeyondStructureCarver {
         return v < -1.0 ? -1.0 : (v > 1.0 ? 1.0 : v);
     }
 
+    /** Wave bending a pedestal lift's steps, with a period near 14 blocks so no straight run of 7 survives along a wall. */
+    static final double LIFT_WAVE_FREQ = 0.07, LIFT_WAVE_GAIN = 1.4;
+
+    static double the_beyond$liftWave(int x, int z) {
+        return the_beyond$liftWaveAt(BeyondEndChunkGenerator.simplexNoise, x, z);
+    }
+
+    static double the_beyond$liftWaveAt(com.thebeyond.util.HashSimplexNoise n, int x, int z) {
+        if (n == null) return 0.0;
+        double v = LIFT_WAVE_GAIN * n.getValue(x * LIFT_WAVE_FREQ + 3301.0, 0.0, z * LIFT_WAVE_FREQ - 1777.0);
+        return v < -1.0 ? -1.0 : (v > 1.0 ? 1.0 : v);
+    }
+
     /** Courses of island kept under a pedestal city's start, or its carve sands away the thin rim its first floor stands on. */
     static final int GROUND_KEEP = 5;
     static final int BEARD_GROUND_BAND = 16;
@@ -650,7 +649,7 @@ public final class BeyondStructureCarver {
     static void the_beyond$notePlanKeptOut(CarveMask owner, int x, int y, int z, String by) {
         if (owner.planKeptOutLogged) return;
         owner.planKeptOutLogged = true;
-        com.thebeyond.TheBeyond.LOGGER.info("[Beyond] ground under {}: planned cell [{},{},{}] kept out by {}",
+        com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] ground under {}: planned cell [{},{},{}] kept out by {}",
                 owner.structureKey, x, y, z, by);
     }
 
@@ -669,9 +668,11 @@ public final class BeyondStructureCarver {
                     p.floor, m.baseBox.minZ(), p.missing);
             return;
         }
-        com.thebeyond.TheBeyond.LOGGER.info("[Beyond] ground under {} at [{},{},{}]: ground floor held {}, step {}, missing {},"
-                + " sunk {}, apron missing {}, laid {} blocks in {} columns, overhang {}", m.structureKey, m.baseBox.minX(),
-                p.floor, m.baseBox.minZ(), p.held, p.step, p.missing, p.sunk, p.apron, p.volume, p.columns, Math.round(p.reach));
+        com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] ground under {} at [{},{},{}]: ground floor held {}, step {}, missing {},"
+                + " sunk {}, apron missing {}, laid {} blocks in {} columns, edge {} blocks in {} columns, overhang {},"
+                + " island lift up to {} over {} columns",
+                m.structureKey, m.baseBox.minX(), p.floor, m.baseBox.minZ(), p.held, p.step, p.missing, p.sunk, p.apron, p.volume,
+                p.columns, p.edgeVolume, p.edgeColumns, Math.round(p.reach), Math.round(p.liftMax * 10f) / 10f, p.liftColumns);
     }
 
     final java.util.Map<StructureStart, CarveMask> the_beyond$maskCache =
@@ -854,7 +855,7 @@ public final class BeyondStructureCarver {
         final it.unimi.dsi.fastutil.longs.LongOpenHashSet attached = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
         final it.unimi.dsi.fastutil.longs.LongArrayList stack = new it.unimi.dsi.fastutil.longs.LongArrayList();
         final it.unimi.dsi.fastutil.longs.LongArrayList body = new it.unimi.dsi.fastutil.longs.LongArrayList();
-        final java.util.function.LongPredicate solid = c -> the_beyond$debrisSolid(level, cp, snap, probe,
+        final java.util.function.LongPredicate solid = c -> the_beyond$debrisSolid(level, masks, cp, snap, probe,
                 BlockPos.getX(c), BlockPos.getY(c), BlockPos.getZ(c));
         final BlockState air = Blocks.AIR.defaultBlockState();
         int dropped = 0;
@@ -863,8 +864,8 @@ public final class BeyondStructureCarver {
                 if (!the_beyond$inCarveReach(masks, x, z)) continue;
                 for (int y = yLo; y <= yHi; y++) {
                     long key = BlockPos.asLong(x, y, z);
-                    if (seen.contains(key) || !the_beyond$debrisSolid(level, cp, snap, probe, x, y, z)) continue;
-                    if (the_beyond$debrisDegree(level, cp, snap, probe, x, y, z) > DEBRIS_SEED_DEGREE) continue;
+                    if (seen.contains(key) || !the_beyond$debrisSolid(level, masks, cp, snap, probe, x, y, z)) continue;
+                    if (the_beyond$debrisDegree(level, masks, cp, snap, probe, x, y, z) > DEBRIS_SEED_DEGREE) continue;
                     if (!the_beyond$floodDebris(key, solid, seen, attached, body, stack)) {
                         if (body.size() <= DEBRIS_MAX_CELLS) BeyondGenDiagnostics.debrisAttached.addAndGet(body.size());
                         continue;
@@ -905,7 +906,7 @@ public final class BeyondStructureCarver {
                 boolean sampled = false;
                 for (int y = yLo; y <= yHi; y++) {
                     final boolean nearBuild = y >= band[0] && y <= band[1];
-                    boolean self = the_beyond$debrisSolid(level, cp, snap, p, x, y, z);
+                    boolean self = the_beyond$debrisSolid(level, masks, cp, snap, p, x, y, z);
                     if (self && nearBuild) continue;   // beard, envelope and courtyard fill are deliberate
                     int rock = 0;
                     boolean readable = true, roofed = false, openAbove = false;
@@ -914,7 +915,7 @@ public final class BeyondStructureCarver {
                         int nx = x + d[0], ny = y + d[1], nz = z + d[2];
                         if (ny < level.getMinBuildHeight() || ny >= level.getMaxBuildHeight()
                                 || Math.abs((nx >> 4) - cp.x) > 1 || Math.abs((nz >> 4) - cp.z) > 1) { readable = false; break; }
-                        boolean solid = the_beyond$debrisSolid(level, cp, snap, p, nx, ny, nz);
+                        boolean solid = the_beyond$debrisSolid(level, masks, cp, snap, p, nx, ny, nz);
                         if (solid) {
                             rock++;
                             if (self) continue;
@@ -1031,7 +1032,7 @@ public final class BeyondStructureCarver {
         return false;
     }
 
-    private static boolean the_beyond$debrisSolid(WorldGenLevel level, ChunkPos cp, TerrainSnapshot snap,
+    private static boolean the_beyond$debrisSolid(WorldGenLevel level, List<CarveMask> masks, ChunkPos cp, TerrainSnapshot snap,
             BlockPos.MutableBlockPos p, int x, int y, int z) {
         if (y < level.getMinBuildHeight() || y >= level.getMaxBuildHeight()) return false;
         int dcx = (x >> 4) - cp.x, dcz = (z >> 4) - cp.z;
@@ -1039,16 +1040,24 @@ public final class BeyondStructureCarver {
         if (dcx == 0 && dcz == 0) {
             if (!snap.covers(y)) return !level.getBlockState(p.set(x, y, z)).isAir();
             BlockState was = snap.at(x, y, z);
-            return was != null && level.getBlockState(p.set(x, y, z)) == was;
+            if (was == null) return false;
+            BlockState now = level.getBlockState(p.set(x, y, z));
+            return now == was || the_beyond$keptRock(was, now, BeyondEndChunkGenerator.the_beyond$insideAnyPieceBox(masks, x, y, z));
         }
         return !level.getBlockState(p.set(x, y, z)).isAir();
     }
 
-    private static int the_beyond$debrisDegree(WorldGenLevel level, ChunkPos cp, TerrainSnapshot snap,
+    /** Snapshot rock a feature recoloured (ores write straight into the section) is still island, but not inside a piece box. */
+    static boolean the_beyond$keptRock(BlockState was, BlockState now, boolean inPieceBox) {
+        if (was == null || now.isAir()) return false;
+        return now == was || (!inPieceBox && now.blocksMotion());
+    }
+
+    private static int the_beyond$debrisDegree(WorldGenLevel level, List<CarveMask> masks, ChunkPos cp, TerrainSnapshot snap,
             BlockPos.MutableBlockPos p, int x, int y, int z) {
         int n = 0;
         for (int[] d : DEBRIS_DIRS) {
-            if (the_beyond$debrisSolid(level, cp, snap, p, x + d[0], y + d[1], z + d[2])) n++;
+            if (the_beyond$debrisSolid(level, masks, cp, snap, p, x + d[0], y + d[1], z + d[2])) n++;
         }
         return n;
     }
@@ -1157,6 +1166,8 @@ public final class BeyondStructureCarver {
         int[] cLo = new int[w * d], cHi = new int[w * d];
         java.util.Arrays.fill(cLo, Integer.MAX_VALUE);
         java.util.Arrays.fill(cHi, Integer.MIN_VALUE);
+        int[] wallLo = new int[w * d];
+        java.util.Arrays.fill(wallLo, Integer.MAX_VALUE);
         IntArrayList dt3I = distributed ? new IntArrayList() : null;
         IntArrayList dt3J = distributed ? new IntArrayList() : null;
         IntArrayList dt3Y = distributed ? new IntArrayList() : null;
@@ -1179,7 +1190,7 @@ public final class BeyondStructureCarver {
                 int tsHits = -1;
                 if (piece instanceof TemplateStructurePiece tsp) {
                     tsHits = the_beyond$rasterizeTemplate(tsp.template(), tsp.placeSettings(), tsp.templatePosition(),
-                            oX, oZ, w, d, occ, gy, cLo, cHi, distributed, dt3I, dt3J, dt3Y, hasBlock, null, true);
+                            oX, oZ, w, d, occ, gy, cLo, cHi, wallLo, distributed, dt3I, dt3J, dt3Y, hasBlock, null, true);
                     if (com.thebeyond.TheBeyond.LOGGER.isDebugEnabled()
                             && BeyondGenDiagnostics.loggedMaskPieces.add("TS@" + tsp.templatePosition())) {
                         BoundingBox tb = piece.getBoundingBox();
@@ -1190,7 +1201,7 @@ public final class BeyondStructureCarver {
                                 tb.minX(), tb.minY(), tb.minZ(), tb.maxX(), tb.maxY(), tb.maxZ());
                     }
                 }
-                if (tsHits < 0) the_beyond$rasterizeBox(piece.getBoundingBox(), oX, oZ, w, d, occ, gy, cLo, cHi);
+                if (tsHits < 0) the_beyond$rasterizeBox(piece.getBoundingBox(), oX, oZ, w, d, occ, gy, cLo, cHi, wallLo);
                 continue;
             }
             StructurePoolElement el = the_beyond$unwrapPoolElement(pe.getElement());
@@ -1274,13 +1285,14 @@ public final class BeyondStructureCarver {
                                 if (wy < cLo[bit]) cLo[bit] = wy;
                                 if (wy > cHi[bit]) cHi[bit] = wy;
                                 if (wy < tmLoCol[bit]) tmLoCol[bit] = wy;
+                                if (wy < wallLo[bit] && the_beyond$placesRock(info)) wallLo[bit] = wy;
                                 if (distributed) { dt3I.add(i); dt3J.add(j); dt3Y.add(wy); hasBlock[bit] = true; }
                             }
                             tmPerBlock = true;
                         }
                     } catch (Throwable ignored) { tmPerBlock = false; }
                 }
-                if (!tmPerBlock) the_beyond$rasterizeBox(piece.getBoundingBox(), oX, oZ, w, d, occ, gy, cLo, cHi);
+                if (!tmPerBlock) the_beyond$rasterizeBox(piece.getBoundingBox(), oX, oZ, w, d, occ, gy, cLo, cHi, wallLo);
                 if (BeyondGenDiagnostics.loggedMaskPieces.add("TM@" + pe.getPosition())) {
                     BoundingBox tb = piece.getBoundingBox();
                     com.thebeyond.TheBeyond.LOGGER.debug(
@@ -1303,7 +1315,7 @@ public final class BeyondStructureCarver {
             int[] clippedBox = new int[1];
             int hits = the_beyond$rasterizeTemplate(t,
                     new StructurePlaceSettings().setRotation(pe.getRotation()), pe.getPosition(),
-                    oX, oZ, w, d, occ, gy, cLo, cHi, distributed, dt3I, dt3J, dt3Y, hasBlock, clippedBox, false);
+                    oX, oZ, w, d, occ, gy, cLo, cHi, wallLo, distributed, dt3I, dt3J, dt3Y, hasBlock, clippedBox, false);
             if (buriedThere && t != null) {
                 if (buriedInterior == null) buriedInterior = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
                 the_beyond$addPieceInterior(t, new StructurePlaceSettings().setRotation(pe.getRotation()), pe.getPosition(),
@@ -1328,7 +1340,7 @@ public final class BeyondStructureCarver {
             int clipped = clippedBox[0];
             if (!perBlock) {
                 hits = 0;
-                the_beyond$rasterizeBox(piece.getBoundingBox(), oX, oZ, w, d, occ, gy, cLo, cHi);
+                the_beyond$rasterizeBox(piece.getBoundingBox(), oX, oZ, w, d, occ, gy, cLo, cHi, wallLo);
             }
             if (baseBox != null) {
                 BoundingBox sb = piece.getBoundingBox();
@@ -1375,7 +1387,7 @@ public final class BeyondStructureCarver {
         if (!any) {
             for (int i = 0, cells = w * d; i < cells; i++) occ[i >> 6] |= (1L << (i & 63));
             gLo = env.minY(); gHi = env.maxY();
-            for (int i = 0, cells = w * d; i < cells; i++) { cLo[i] = gLo; cHi[i] = gHi; }
+            for (int i = 0, cells = w * d; i < cells; i++) { cLo[i] = gLo; cHi[i] = gHi; wallLo[i] = gLo; }
         }
         long[] filledOcc = new long[((w * d) + 63) >> 6];
         int filled = CarveMask.fillEnclosed(occ, filledOcc, w, d, cLo, cHi, gLo, gHi, CLOSE_RADIUS);
@@ -1391,20 +1403,23 @@ public final class BeyondStructureCarver {
         CarveMask built = new CarveMask(oX, oZ, w, d, occ, colLoOff, colHiOff, filledOcc, gLo, gHi, seated, distributed, layerDistributed, foundationDepth, filled,
                 dt3, dt3OX, dt3OZ, dt3W, dt3D, dt3YLo, dt3Layers, baseBox);
         built.corridorOcc = corrOcc;
+        built.wallLo = wallLo;
         built.pedLoY = pedLo;
         if (baseBox != null) {
             ForeignFit.Course course = ForeignFit.lowestCourse(start.getPieces().get(0), tm);
             if (course != null) {
-                long[] gf = new long[((w * d) + 63) >> 6], gr = new long[gf.length];
+                long[] gf = new long[((w * d) + 63) >> 6], gr = new long[gf.length], gp = new long[gf.length];
                 for (long k : course.cols()) {
                     int i = (int) (k >> 32) - oX, j = (int) k - oZ;
                     if (i < 0 || i >= w || j < 0 || j >= d) continue;
                     int bit = i + j * w;
                     gf[bit >> 6] |= 1L << (bit & 63);
                     if (course.raised().contains(k)) gr[bit >> 6] |= 1L << (bit & 63);
+                    if (course.pads().contains(k)) gp[bit >> 6] |= 1L << (bit & 63);
                 }
                 built.groundFloorY = course.y();
                 built.groundRaised = course.raised().isEmpty() ? null : gr;
+                built.groundPad = course.pads().isEmpty() ? null : gp;
                 built.groundFoot = gf;
             }
         }
@@ -1426,14 +1441,10 @@ public final class BeyondStructureCarver {
     }
 
     static final int PIECE_LAYER_BAND = 16;
-    /** Depth below its island's surface at which a piece counts as buried there, more than a house on a slope sinks. */
     static final int PIECE_SINK = 3;
-    /** How far above its own surface the island may rise to close on a buried piece's walls. */
     static final int PIECE_RISE = 3;
-    /** Courses of ground laid over a buried room's roof. One is what the biome needs to paint it as ground. */
     static final int ROOF_COVER = 1;
     private static final int ROOF_MAX_THICK = 4;
-    /** Shortest piece that can be a room: anything lower is a slab or a step, not a space to cover. */
     static final int ROOM_MIN_HEIGHT = 4;
 
     static int the_beyond$roofCapTop(CarveMask m, int x, int z, boolean base, int hi) {
@@ -1636,7 +1647,7 @@ public final class BeyondStructureCarver {
 
     private static int the_beyond$rasterizeTemplate(
             StructureTemplate t, StructurePlaceSettings settings, BlockPos origin,
-            int oX, int oZ, int w, int d, long[] occ, int[] gy, int[] cLo, int[] cHi,
+            int oX, int oZ, int w, int d, long[] occ, int[] gy, int[] cLo, int[] cHi, int[] wallLo,
             boolean distributed, IntArrayList dt3I, IntArrayList dt3J, IntArrayList dt3Y, boolean[] hasBlock,
             int[] clippedOut, boolean includeAir) {
         if (t == null) return -1;
@@ -1658,6 +1669,7 @@ public final class BeyondStructureCarver {
                 if (wy > gy[1]) gy[1] = wy;
                 if (wy < cLo[bit]) cLo[bit] = wy;
                 if (wy > cHi[bit]) cHi[bit] = wy;
+                if (wy < wallLo[bit] && the_beyond$placesRock(info)) wallLo[bit] = wy;
                 if (distributed) { dt3I.add(i); dt3J.add(j); dt3Y.add(wy); hasBlock[bit] = true; }
             }
             if (clippedOut != null) clippedOut[0] = clipped;
@@ -1673,9 +1685,7 @@ public final class BeyondStructureCarver {
     }
 
     static final int CORRIDOR_HALF_WIDTH = 2;
-    /** EndCityPieces joins pieces within 11 blocks of their parent, but the ship at 61-70, so this gap is a real detachment. */
     static final int CORRIDOR_MIN_DETACH = 24;
-    /** Bounds on the swept section, so a pathological piece box cannot open a hangar through the island. */
     static final int CORRIDOR_MAX_HALF_WIDTH = 8;
     static final double CORRIDOR_WANDER = 2.5;
     static final double CORRIDOR_BREATHE = 1.6;
@@ -1748,7 +1758,7 @@ public final class BeyondStructureCarver {
         }
         CORRIDOR_LAST_SKIP = runs == 0 ? reason : null;
         if (runs == 0 && BeyondGenDiagnostics.loggedMaskKeys.add("corridor-none@" + oX + "," + oZ)) {
-            com.thebeyond.TheBeyond.LOGGER.info("[Beyond] corridor NONE: {} pieces, {}, mask origin=[{},{}]",
+            com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] corridor NONE: {} pieces, {}, mask origin=[{},{}]",
                     boxes.size(), reason, oX, oZ);
         }
         return added;
@@ -1808,7 +1818,7 @@ public final class BeyondStructureCarver {
                 if (BeyondEndChunkGenerator.simplexNoise != null)
                     rock = the_beyond$topmostNatSolid((ax + bx) / 2, (az + bz) / 2);
             } catch (Throwable ignored) {}
-            com.thebeyond.TheBeyond.LOGGER.info(
+            com.thebeyond.TheBeyond.LOGGER.debug(
                     "[Beyond] corridor run piece#{} [{},{}] y=[{}..{}] -> anchor [{},{}] y=[{}..{}] gap={} steps={} section={}x{} clear=[{}..{}] added={} midRockTop={}",
                     idx, ax, az, det.minY(), det.maxY(), bx, bz, anc.minY(), anc.maxY(),
                     (int) Math.round(gap), steps, 2 * halfW + 1, hi - lo + 1, lo, hi, added, rock);
@@ -1817,7 +1827,7 @@ public final class BeyondStructureCarver {
     }
 
     private static void the_beyond$rasterizeBox(BoundingBox b, int oX, int oZ, int w, int d,
-            long[] occ, int[] gy, int[] cLo, int[] cHi) {
+            long[] occ, int[] gy, int[] cLo, int[] cHi, int[] wallLo) {
         if (b.minY() < gy[0]) gy[0] = b.minY();
         if (b.maxY() > gy[1]) gy[1] = b.maxY();
         for (int wz = b.minZ(); wz <= b.maxZ(); wz++) {
@@ -1828,8 +1838,19 @@ public final class BeyondStructureCarver {
                 occ[bit >> 6] |= (1L << (bit & 63));
                 if (b.minY() < cLo[bit]) cLo[bit] = b.minY();
                 if (b.maxY() > cHi[bit]) cHi[bit] = b.maxY();
+                if (b.minY() < wallLo[bit]) wallLo[bit] = b.minY();
             }
         }
+    }
+
+    /** True when the template block leaves something solid (a jigsaw counts only if its final state is a real block). */
+    static boolean the_beyond$placesRock(StructureTemplate.StructureBlockInfo info) {
+        BlockState st = info.state();
+        if (st.isAir() || st.is(Blocks.STRUCTURE_VOID)) return false;
+        if (!st.is(Blocks.JIGSAW)) return true;
+        String fin = info.nbt() == null ? "" : info.nbt().getString("final_state");
+        return !(fin.isEmpty() || fin.startsWith("minecraft:air") || fin.startsWith("minecraft:cave_air")
+                || fin.startsWith("minecraft:void_air") || fin.startsWith("minecraft:structure_void"));
     }
 
     private static int the_beyond$maskCellCount(CarveMask m) {
@@ -1996,13 +2017,32 @@ public final class BeyondStructureCarver {
                     && lastPlaced == y - 1;
         }
 
+        float liftL;
+        int liftCap = Integer.MIN_VALUE;
+        CarveMask liftOwner;
+
+        /** The island's lift only rises off a course placed right below, and never into another structure's pieces. */
+        boolean liftKeeps(int y) {
+            if (liftL <= 0f || y > liftCap || lastPlaced != y - 1) return false;
+            if (flankBoxes != null) {
+                for (int m = 0; m < flankBoxes.size(); m++) {
+                    CarveMask other = flankBoxes.get(m);
+                    if (other != liftOwner && other.insideBoxAt(globalX, y, globalZ)) return false;
+                }
+            }
+            return true;
+        }
+
         int[] planLo, planHi, planSole;
+        boolean[] planRamp;
         CarveMask[] planOwner;
         int nPlan;
 
         /** Forced before the carve, the plan is kept out of other structures' pieces, and out of its own box from the sole up. */
         private boolean planLays(int i, int y) {
             if (y < planLo[i] || y > planHi[i]) return false;
+            // The edge rests on what was really placed, so it never floats where the carve took the rock under it.
+            if (planRamp[i] && lastPlaced != y - 1) return false;
             if (y >= planSole[i] && planOwner[i].insideBoxAt(globalX, y, globalZ)) {
                 the_beyond$notePlanKeptOut(planOwner[i], globalX, y, globalZ, "its own pieces");
                 return false;
@@ -2108,6 +2148,14 @@ public final class BeyondStructureCarver {
         }
     }
 
+    private static boolean the_beyond$otherBoxAt(List<CarveMask> masks, CarveMask own, int x, int z) {
+        for (int i = 0; i < masks.size(); i++) {
+            CarveMask m = masks.get(i);
+            if (m != own && m.hasBoxAt(x, z)) return true;
+        }
+        return false;
+    }
+
     private static boolean the_beyond$deckGapColumn(CarveMask mask, int x, int z) {
         if (!mask.occupied(x, z)) return true;
         return mask.isFilled((x - mask.oX) + (z - mask.oZ) * mask.w);
@@ -2143,6 +2191,14 @@ public final class BeyondStructureCarver {
                     int sole = mask.soleAt(globalX, globalZ);
                     int keepHi = (sole != Integer.MIN_VALUE ? sole : mask.groundFloor()) - 1;
                     if (keepHi > pedHiY) pedHiY = keepHi;
+                }
+                // The plan's keep reaches past the box: the lift up to its cap, and the island beside a raised foot.
+                CityGroundPlan kept = mask.basePedestal && !mask.carveOnly ? mask.groundPlan() : null;
+                int keepTop = kept == null ? Integer.MIN_VALUE : kept.keepAt(globalX, globalZ);
+                if (keepTop != Integer.MIN_VALUE && !the_beyond$otherBoxAt(carveMasks, mask, globalX, globalZ)) {
+                    int keepLo = Math.min(mask.pedLoY, mask.groundFloor() - GROUND_KEEP);
+                    if (keepLo < pedLoY) pedLoY = keepLo;
+                    if (keepTop > pedHiY) pedHiY = keepTop;
                 }
                 boolean footActive = !mask.carveOnly
                         && the_beyond$footingActiveAt(mask.seated, mask.distributed, mask.inBaseFootprint(globalX, globalZ));
@@ -2183,8 +2239,25 @@ public final class BeyondStructureCarver {
                 } else if (mask.baseBox != null && !mask.carveOnly
                         && globalX >= mask.baseBox.minX() && globalX <= mask.baseBox.maxX()
                         && globalZ >= mask.baseBox.minZ() && globalZ <= mask.baseBox.maxZ()
+                        && !(mask.basePedestal && mask.groundPlan() != null)
                         && the_beyond$deckGapColumn(mask, globalX, globalZ)) {
                     int deck = mask.baseBox.minY();
+                    if (deck < deckY) deckY = deck;
+                }
+                // Outside the branch chain: a seated foundation must not take the deck from an arch or a filled bay of the yard.
+                if (mask.basePedestal && !mask.carveOnly && mask.baseBox != null
+                        && globalX >= mask.baseBox.minX() && globalX <= mask.baseBox.maxX()
+                        && globalZ >= mask.baseBox.minZ() && globalZ <= mask.baseBox.maxZ()
+                        && mask.groundPlan() != null && mask.courtyard(globalX, globalZ)) {
+                    int deck = mask.baseBox.minY();
+                    if (deck < deckY) deckY = deck;
+                }
+                if (mask.basePedestal && !mask.carveOnly && mask.baseBox != null
+                        && globalX >= mask.baseBox.minX() && globalX <= mask.baseBox.maxX()
+                        && globalZ >= mask.baseBox.minZ() && globalZ <= mask.baseBox.maxZ()
+                        && mask.groundPlan() != null && mask.groundPlan().deckAt(globalX, globalZ)
+                        && !the_beyond$otherBoxAt(carveMasks, mask, globalX, globalZ)) {
+                    int deck = mask.groundFloor();
                     if (deck < deckY) deckY = deck;
                 }
             }
@@ -2196,33 +2269,51 @@ public final class BeyondStructureCarver {
         // Gathered before the no-carve exit: a planned column is laid even with no piece in reach.
         int nPlan = 0;
         int[] planLo = null, planHi = null, planSole = null;
+        boolean[] planRamp = null;
         CarveMask[] planOwner = null;
+        float liftL = 0f;
+        int liftCap = Integer.MIN_VALUE;
+        CarveMask liftOwner = null;
         for (int m = 0; m < maskN; m++) {
             CarveMask mask = carveMasks.get(m);
             if (!mask.basePedestal) continue;
             CityGroundPlan plan = mask.groundPlan();
+            if (plan != null) {
+                float l = plan.liftAt(globalX, globalZ);
+                if (l > liftL) { liftL = l; liftCap = plan.liftCapAt(globalX, globalZ); liftOwner = mask; }
+            }
             int c = plan == null ? -1 : plan.index(globalX, globalZ);
-            if (c < 0 || !(plan.hasTop(c) || plan.hasBottom(c))) continue;
-            if (planLo == null) { planLo = new int[2]; planHi = new int[2]; planSole = new int[2]; planOwner = new CarveMask[2]; }
-            if (nPlan + 2 > planLo.length) {
-                planLo = java.util.Arrays.copyOf(planLo, nPlan + 2);
-                planHi = java.util.Arrays.copyOf(planHi, nPlan + 2);
-                planSole = java.util.Arrays.copyOf(planSole, nPlan + 2);
-                planOwner = java.util.Arrays.copyOf(planOwner, nPlan + 2);
+            if (c < 0 || !(plan.hasTop(c) || plan.hasBottom(c) || plan.hasRamp(c))) continue;
+            if (planLo == null) {
+                planLo = new int[3]; planHi = new int[3]; planSole = new int[3]; planRamp = new boolean[3]; planOwner = new CarveMask[3];
+            }
+            if (nPlan + 3 > planLo.length) {
+                planLo = java.util.Arrays.copyOf(planLo, nPlan + 3);
+                planHi = java.util.Arrays.copyOf(planHi, nPlan + 3);
+                planSole = java.util.Arrays.copyOf(planSole, nPlan + 3);
+                planRamp = java.util.Arrays.copyOf(planRamp, nPlan + 3);
+                planOwner = java.util.Arrays.copyOf(planOwner, nPlan + 3);
             }
             int sole = mask.soleAt(globalX, globalZ);
-            // Off the ground floor its start has no block under that floor either, unless another of its pieces reaches under it.
-            if (sole == Integer.MIN_VALUE && !mask.pieceUnderStart(globalX, globalZ)) sole = mask.groundFloor();
+            // Off the floor nothing of the start stands under the nearest foot's sole, unless another piece reaches under it.
+            if (sole == Integer.MIN_VALUE && !mask.pieceUnderStart(globalX, globalZ))
+                sole = Math.max(mask.groundFloor(), plan.nearSoleAt(globalX, globalZ));
             if (plan.hasTop(c)) { planLo[nPlan] = plan.topLo[c]; planHi[nPlan] = plan.topHi[c]; planSole[nPlan] = sole; planOwner[nPlan++] = mask; }
             if (plan.hasBottom(c)) { planLo[nPlan] = plan.botLo[c]; planHi[nPlan] = plan.botHi[c]; planSole[nPlan] = sole; planOwner[nPlan++] = mask; }
+            if (plan.hasRamp(c)) {
+                planLo[nPlan] = plan.rampLo[c]; planHi[nPlan] = plan.rampHi[c]; planSole[nPlan] = sole; planRamp[nPlan] = true;
+                planOwner[nPlan++] = mask;
+            }
         }
         final boolean hasCarve = bitN > 0;
         if (!hasCarve) {
-            if (nPlan == 0) return null;
+            if (nPlan == 0 && liftL <= 0f) return null;
             ColumnCarveState only = new ColumnCarveState(globalX, globalZ, cb, 0, 0, 0, aFndGLo, aFndNatTop, aLipNatTop,
                     aLipTop, Integer.MAX_VALUE, Integer.MIN_VALUE, false, false, Integer.MAX_VALUE, Integer.MIN_VALUE);
             only.flankBoxes = carveMasks;
-            only.planLo = planLo; only.planHi = planHi; only.planSole = planSole; only.planOwner = planOwner; only.nPlan = nPlan;
+            only.planLo = planLo; only.planHi = planHi; only.planSole = planSole; only.planRamp = planRamp; only.planOwner = planOwner;
+            only.nPlan = nPlan;
+            only.liftL = liftL; only.liftCap = liftCap; only.liftOwner = liftOwner;
             return only;
         }
         final int nBits = bitN, nFnd = fndN, nLip = lipN;
@@ -2329,7 +2420,9 @@ public final class BeyondStructureCarver {
         state.flankBoxes = boxMasks;
         state.pedLoY = pedLoY;
         state.pedHiY = pedHiY;
-        state.planLo = planLo; state.planHi = planHi; state.planSole = planSole; state.planOwner = planOwner; state.nPlan = nPlan;
+        state.planLo = planLo; state.planHi = planHi; state.planSole = planSole; state.planRamp = planRamp; state.planOwner = planOwner;
+        state.nPlan = nPlan;
+        state.liftL = liftL; state.liftCap = liftCap; state.liftOwner = liftOwner;
         return state;
     }
 }

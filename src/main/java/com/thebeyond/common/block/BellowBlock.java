@@ -49,10 +49,8 @@ public class BellowBlock extends BaseEntityBlock {
     private static final int LEVELS_PER_BLOCK = MAX_LEVEL / MAX_HEIGHT; // 3 sub-steps per block
 
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
-    /** 0 = off; 1..15 = wall-capped redstone level, synced so the client jet matches. reach = STRENGTH / 3 blocks. */
     public static final IntegerProperty STRENGTH = IntegerProperty.create("strength", 0, MAX_LEVEL);
 
-    // 10x10x16, long axis along the facing direction
     public static final VoxelShape SHAPE_Y = Block.box(3, 0, 3, 13, 16, 13);
     public static final VoxelShape SHAPE_Z = Block.box(3, 3, 0, 13, 13, 16);
     public static final VoxelShape SHAPE_X = Block.box(0, 3, 3, 16, 13, 13);
@@ -154,7 +152,7 @@ public class BellowBlock extends BaseEntityBlock {
         return direct;
     }
 
-    /** Synced level 0..15: the redstone signal capped by the open blocks ahead; 0 when off or blocked at the nozzle. */
+    /** Level 0..15: the signal capped by the open blocks ahead, 0 when off or blocked at the nozzle. */
     public static int computeLevel(Level level, BlockPos pos, BlockState state, int signal) {
         if (signal <= 0) {
             return 0;
@@ -207,7 +205,7 @@ public class BellowBlock extends BaseEntityBlock {
         }
     }
 
-    /** Client: a constant-speed smoke jet sized to the reach via the puff lifetime; no network cost. */
+    /** Client-side smoke jet sized to the reach by the puff lifetime, with no network cost. */
     public static void clientJet(Level level, BlockPos pos, BlockState state, int strength, Direction direction) {
         Direction dir = direction == null ? state.getValue(FACING) : direction;
         Vec3 visible = BeyondCompatHooks.visibleOnAnyLevel(level, pos);

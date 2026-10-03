@@ -133,7 +133,7 @@ public class BeyondItems {
         return (DeferredItem<T>) toReturn;
     }
 
-    /** The remembrances register identically save the name; keep the order — registration order drives the creative tab and datagen. */
+    /** Remembrances differ only by name, and their order drives the creative tab and datagen. */
     private static DeferredItem<Item> registerRemembrance(String name) {
         return registerItem(name, () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
     }

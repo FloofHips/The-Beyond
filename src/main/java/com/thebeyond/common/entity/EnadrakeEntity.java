@@ -173,7 +173,7 @@ public class EnadrakeEntity extends PathfinderMob {
 
             if (player != null) {
                 this.lookAt(player, 180, 180);
-                // The screech deafens the player (client audio-mute); DEAFENED on a mob is the FOV-stealth state instead.
+                // on a player the screech mutes the audio, on a mob DEAFENED is the FOV-stealth state
                 player.addEffect(new MobEffectInstance(BeyondEffects.DEAFENED, 1200));
             }
         }
@@ -592,8 +592,6 @@ public class EnadrakeEntity extends PathfinderMob {
                 }
             }
 
-            //if (mob.getNavigation().isStuck()) mob.addDeltaMovement(new Vec3(0, 0.2, 0));
-
             BlockPos blockpos = new BlockPos(this.getMoveToTarget().getX(), this.getMoveToTarget().getY(), this.getMoveToTarget().getZ());
 
             if (!blockpos.closerToCenterThan(this.mob.position(), this.acceptedDistance())) {
@@ -705,8 +703,6 @@ public class EnadrakeEntity extends PathfinderMob {
                 }
             }
 
-            //if (mob.getNavigation().isStuck()) mob.addDeltaMovement(new Vec3(0, 0.2, 0));
-
             BlockPos blockpos = new BlockPos(this.getMoveToTarget().getX(), this.getMoveToTarget().getY(), this.getMoveToTarget().getZ());
 
             if (!blockpos.closerToCenterThan(this.mob.position(), this.acceptedDistance())) {
@@ -773,8 +769,6 @@ public class EnadrakeEntity extends PathfinderMob {
                     entity.panic = 50;
                 }
             }
-
-            //if (mob.getNavigation().isStuck()) mob.addDeltaMovement(new Vec3(0, 0.2, 0));
 
             BlockPos blockpos = new BlockPos(this.getMoveToTarget().getX(), this.getMoveToTarget().getY(), this.getMoveToTarget().getZ());
 
@@ -859,9 +853,7 @@ public class EnadrakeEntity extends PathfinderMob {
             //    }
             //}
 
-            // --- POD BEHAVIOR: uncomment to reset fleeToHut when enadrake enters hut ---
-            // entity.setFleeToHut(false);
-            // ---
+            // pod behaviour: entity.setFleeToHut(false) here resets the flag when the enadrake enters the hut
 
             super.stop();
         }
@@ -983,9 +975,7 @@ public class EnadrakeEntity extends PathfinderMob {
 
         @Override
         public boolean canUse() {
-            // Gate re-planting to ~10% per tick. MoveToBlockGoal polls canUse every tick,
-            // so a higher probability combined with the ParanoiaBlock sprout cadence
-            // produces near-instant re-planting on pickup.
+            // re-planting at 10% per tick, since canUse is polled every tick and more would re-plant almost on pickup
             ItemStack itemstack = entity.getItemBySlot(EquipmentSlot.MAINHAND);
             if (itemstack.is(BeyondBlocks.OBIROOT_SPROUT.asItem()) && level().random.nextFloat() < 0.1f) return super.canUse();
             return false;

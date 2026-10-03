@@ -105,7 +105,13 @@ public final class ForeignFit {
 
     /** A piece's ground floor: its lowest course with blocks and the columns starting there or one above, x in the high word. */
     public record Course(int y, it.unimi.dsi.fastutil.longs.LongOpenHashSet cols,
-            it.unimi.dsi.fastutil.longs.LongOpenHashSet raised) {}
+            it.unimi.dsi.fastutil.longs.LongOpenHashSet raised, it.unimi.dsi.fastutil.longs.LongOpenHashSet pads) {}
+
+    /** A floor-course block with no full block on it (open, a rail, a post, a slab) reads as paving. */
+    static boolean padTop(@org.jetbrains.annotations.Nullable net.minecraft.world.level.block.state.BlockState above) {
+        return above == null || above.isAir() || above.is(net.minecraft.world.level.block.Blocks.STRUCTURE_VOID)
+                || !above.isCollisionShapeFullBlock(net.minecraft.world.level.EmptyBlockGetter.INSTANCE, net.minecraft.core.BlockPos.ZERO);
+    }
 
     /** Share of the ground floor's soles the seat keeps at or over their island top, the carve opening the bumps above. */
     static final double SEAT_SHARE = 0.75;
@@ -318,13 +324,23 @@ public final class ForeignFit {
             cols.add(e.getLongKey());
             if (e.getIntValue() > floor) raised.add(e.getLongKey());
         }
-        return new Course(floor, cols, raised);
+        it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<net.minecraft.world.level.block.state.BlockState> above =
+                new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
+        for (StructureTemplate.StructureBlockInfo info : pals.get(0).blocks()) {
+            net.minecraft.core.BlockPos wp = StructureTemplate.calculateRelativePosition(settings, info.pos()).offset(origin);
+            if (wp.getY() == floor + 1) above.put(((long) wp.getX() << 32) | (wp.getZ() & 0xFFFFFFFFL), info.state());
+        }
+        it.unimi.dsi.fastutil.longs.LongOpenHashSet pads = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+        for (long k : cols) {
+            if (sole.get(k) == floor && padTop(above.get(k))) pads.add(k);
+        }
+        return new Course(floor, cols, raised, pads);
     }
 
     public static boolean isFoundationRock(StructurePiece piece, BoundingBox start, @org.jetbrains.annotations.Nullable StructureTemplateManager tm) {
         BoundingBox b = piece.getBoundingBox();
         if (b.maxY() >= start.minY() || b.minX() < start.minX() || b.maxX() > start.maxX()
-                || b.minZ() < start.minZ() || b.maxZ() > start.maxZ()) return false;
+                || b.minZ() < start.minZ() || b.maxZ() > start.maxZ() || !coversStart(b, start)) return false;
         StructureTemplate t = templateOf(piece, tm);
         if (t == null) return false;
         List<StructureTemplate.Palette> pals = ((com.thebeyond.mixin.StructureTemplateAccessor) (Object) t).the_beyond$palettes();
@@ -332,10 +348,16 @@ public final class ForeignFit {
         int rock = 0;
         for (StructureTemplate.StructureBlockInfo info : pals.get(0).blocks()) {
             if (!placesRock(info.state())) continue;
-            if (!info.state().is(com.thebeyond.common.registry.BeyondTags.FOUNDATION_ROCK)) return false;
+            if (!StructureReadings.rock(info.state())) return false;
             rock++;
         }
         return rock > 0;
+    }
+
+    static final double FOUNDATION_COVER = 0.75;
+
+    static boolean coversStart(BoundingBox piece, BoundingBox start) {
+        return (double) piece.getXSpan() * piece.getZSpan() >= FOUNDATION_COVER * start.getXSpan() * start.getZSpan();
     }
 
     private static boolean placesRock(net.minecraft.world.level.block.state.BlockState s) {

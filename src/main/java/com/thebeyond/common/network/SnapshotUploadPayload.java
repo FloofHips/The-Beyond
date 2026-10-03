@@ -7,7 +7,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
-/** Client -> server: snapshot pixels for a request id; server applies them to a fresh item. */
+/** Client to server: the snapshot pixels for a request id, applied to a fresh item. */
 public record SnapshotUploadPayload(long requestId, int width, int height, byte[] rgb) implements CustomPacketPayload {
     public static final Type<SnapshotUploadPayload> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "snapshot_upload"));

@@ -66,7 +66,7 @@ public abstract class EndCitySeatingMixin {
 
             if (BeyondGenDiagnostics.loggedEndCitySeat.add(cp.toLong())) {
                 // top != y + need would mean the piece list was rebuilt rather than moved.
-                com.thebeyond.TheBeyond.LOGGER.info(
+                com.thebeyond.TheBeyond.LOGGER.debug(
                         "[Beyond] end_city seated y={} top={} need={} ceiling={} moved={} at {}",
                         pos.getY(), the_beyond$topOf(pieces), need, ceiling, moved, pos);
             }
@@ -92,7 +92,7 @@ public abstract class EndCitySeatingMixin {
                     PancakeScan.FOOTPRINT_SUPPORT_STRIDE, tiers[t][1], maxSeatY, (int) tiers[t][2]);
             if (spot != null) {
                 if (t > 0 && BeyondGenDiagnostics.loggedEndCityTier.add(cp.toLong())) {
-                    com.thebeyond.TheBeyond.LOGGER.info(
+                    com.thebeyond.TheBeyond.LOGGER.debug(
                             "[Beyond] end_city seated at tier {} (radius {}, {}% coverage) at {}",
                             t, (int) tiers[t][0], Math.round(tiers[t][1] * 100), cp);
                 }
@@ -121,7 +121,7 @@ public abstract class EndCitySeatingMixin {
     private static Optional<Structure.GenerationStub> the_beyond$logSkip(
             ChunkPos cp, BlockPos pos, int need, int ceiling) {
         if (BeyondGenDiagnostics.loggedEndCitySeat.add(cp.toLong())) {
-            com.thebeyond.TheBeyond.LOGGER.info(
+            com.thebeyond.TheBeyond.LOGGER.debug(
                     "[Beyond] end_city skipped at {}: needs {} blocks of headroom, ceiling {}", pos, need, ceiling);
         }
         return Optional.empty();

@@ -1,22 +1,25 @@
 package com.thebeyond.common.block;
 
 import com.mojang.serialization.MapCodec;
+import com.thebeyond.TheBeyond;
 import com.thebeyond.client.particle.PixelColorTransitionOptions;
 import com.thebeyond.common.block.blockentities.ProjectorBlockEntity;
 import com.thebeyond.util.ColorUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -33,15 +36,17 @@ import org.jetbrains.annotations.Nullable;
 import com.thebeyond.common.registry.BeyondBlockEntities;
 import org.joml.Vector3f;
 
-/** Same-group fragments forming a full picture fire a one-shot reveal; a redstone rising edge advances the carousel. */
+/** Same-group fragments forming a full picture fire a one-shot reveal, a rising redstone edge advances the carousel. */
 public class ProjectorBlock extends BaseEntityBlock {
     public static final MapCodec<ProjectorBlock> CODEC = simpleCodec(ProjectorBlock::new);
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
+    public static final BooleanProperty TRIGGERED = BlockStateProperties.TRIGGERED;
+    static boolean DIAG_LIT = true;
 
     public ProjectorBlock(Properties properties) {
         super(properties);
-        registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(POWERED, false));
+        registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(POWERED, false).setValue(TRIGGERED, false));
     }
 
     @Override
@@ -51,15 +56,24 @@ public class ProjectorBlock extends BaseEntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING, POWERED);
+        builder.add(FACING, POWERED, TRIGGERED);
     }
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        // Seed POWERED so placing into a powered cell isn't read as a rising edge later.
-        return this.defaultBlockState()
-                .setValue(FACING, context.getHorizontalDirection().getOpposite())
-                .setValue(POWERED, context.getLevel().hasNeighborSignal(context.getClickedPos()));
+        Level level = context.getLevel();
+        BlockPos pos = context.getClickedPos();
+        BlockState state = this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+        // seeded so a projector placed into a powered cell does not take that signal for a rising edge
+        return state.setValue(POWERED, isLightBlock(state, level, pos)).setValue(TRIGGERED, level.hasNeighborSignal(pos));
+    }
+
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (!level.isClientSide) {
+            logLit(level, pos, state, "placed");
+        }
     }
 
     @Override
@@ -112,7 +126,7 @@ public class ProjectorBlock extends BaseEntityBlock {
 
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        // Sneak passes through so the held item can place against the block; otherwise open the GUI.
+        // sneaking passes through so the held item can be placed, otherwise the GUI opens
         if (player.isSecondaryUseActive()) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
@@ -156,23 +170,41 @@ public class ProjectorBlock extends BaseEntityBlock {
         }
 
         boolean lightBlock = isLightBlock(state, level, pos);
-        level.setBlock(pos, state.setValue(POWERED, lightBlock), Block.UPDATE_CLIENTS);
-
         boolean signal = level.hasNeighborSignal(pos);
+        boolean rising = signal && !state.getValue(TRIGGERED);
+        BlockState next = state.setValue(POWERED, lightBlock).setValue(TRIGGERED, signal);
+        if (next != state) {
+            level.setBlock(pos, next, Block.UPDATE_CLIENTS);
+            if (lightBlock != state.getValue(POWERED)) {
+                logLit(level, pos, next, "neighbour");
+            }
+        }
 
-        if (signal && level.getBlockEntity(pos) instanceof ProjectorBlockEntity be && be.getMode() == ProjectorBlockEntity.MODE_CAROUSEL) {
+        if (rising && level.getBlockEntity(pos) instanceof ProjectorBlockEntity be && be.getMode() == ProjectorBlockEntity.MODE_CAROUSEL) {
             be.advanceCarousel();
-            for (int i = 0; i < 6; i++) {
-                makeParticle(level, pos, 1);
+            if (level instanceof ServerLevel serverLevel) {
+                for (int i = 0; i < 6; i++) {
+                    makeParticle(serverLevel, pos, 1);
+                }
             }
         }
     }
 
-    private static void makeParticle(LevelAccessor level, BlockPos pos, float alpha) {
+    private static void makeParticle(ServerLevel level, BlockPos pos, float alpha) {
         double d0 = (double)pos.getX() + (double)0.0F + level.getRandom().nextFloat();
         double d1 = (double)pos.getY() + (double)1.0F + level.getRandom().nextFloat();
         double d2 = (double)pos.getZ() + (double)0.0F + level.getRandom().nextFloat();
-        level.addParticle(new DustParticleOptions(DustParticleOptions.REDSTONE_PARTICLE_COLOR, alpha), d0, d1, d2, (double)0.0F, (double)0.0F, (double)0.0F);
+        level.sendParticles(new DustParticleOptions(DustParticleOptions.REDSTONE_PARTICLE_COLOR, alpha), d0, d1, d2, 1, 0.0, 0.0, 0.0, 0.0);
+    }
+
+    private static void logLit(Level level, BlockPos pos, BlockState state, String cause) {
+        if (!DIAG_LIT) {
+            return;
+        }
+        BlockPos behind = pos.relative(state.getValue(FACING).getOpposite());
+        BlockState behindState = level.getBlockState(behind);
+        TheBeyond.LOGGER.info("[Projector] be@{} {} lit={} (behind: {}, light {})", pos.toShortString(), cause, state.getValue(POWERED),
+                BuiltInRegistries.BLOCK.getKey(behindState.getBlock()), behindState.getLightEmission(level, behind));
     }
 
     static boolean isLightBlock(BlockState state, Level level, BlockPos pos) {

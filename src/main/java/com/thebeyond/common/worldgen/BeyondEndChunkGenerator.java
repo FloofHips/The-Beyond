@@ -50,6 +50,10 @@ import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
+import static com.thebeyond.common.worldgen.BeyondStructureCarver.BEARD_LAT_REACH;
+import static com.thebeyond.common.worldgen.BeyondStructureCarver.DT3_CAP;
+import static com.thebeyond.common.worldgen.BeyondStructureCarver.FOUNDATION_DEPTH;
+
 public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     public static final MapCodec<BeyondEndChunkGenerator> CODEC = RecordCodecBuilder.mapCodec((p_255585_) -> {
         return p_255585_.group(BiomeSource.CODEC.fieldOf("biome_source").forGetter((p_255584_) -> {
@@ -86,7 +90,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     private static final double LACUNARITY = 2.0;
     private static final double PERSISTENCE = 0.5;
     private static final int TERRAIN_Y_OFFSET = 32;
-    /** MEASURED ceiling on |normalizedNoise| (peak ≈0.979 over 50M+ samples), not analytic — never lower past the measured peak. */
+    /** Measured ceiling on |normalizedNoise| (peak about 0.979 over 50M samples), never lower it past that peak. */
     static final double MAX_NOISE = 1.20;
 
     private static final double[] OCTAVE_WRAP_FACTORS = {1.00, 0.91, 0.83, 0.77};
@@ -109,7 +113,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
     static final int WRAP_RANGE = BeyondTerrainParams.DEFAULTS.wrapRange();
 
-    /** Single source of truth for the wrap+warp transform — all density/biome/heightmap queries MUST route through this. */
+    /** The one wrap and warp transform, every density, biome and heightmap query must go through it. */
     public static long computeWrappedCoords(int globalX, int globalZ) {
         return computeWrappedCoords(globalX, globalZ, activeTerrainParams);
     }
@@ -229,7 +233,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                 if (simplexNoise == null || biomeSimplexNoise == null || warpZSimplexNoise == null || globalHOffsetNoise == null || globalVOffsetNoise == null || globalCOffsetNoise == null) {
 
                     seed = worldSeed;
-                    // Sequential worldSeed offsets, next free = +6 — never reuse a prior offset.
+                    // sequential seed offsets, the next free one is +6, never reuse one
                     RandomSource random1 = RandomSource.create(worldSeed);
                     RandomSource random2 = RandomSource.create(worldSeed + 1);
                     RandomSource random3 = RandomSource.create(worldSeed + 2);
@@ -282,7 +286,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                     registryAccess.registryOrThrow(Registries.STRUCTURE), the_beyond$carver.the_beyond$knownStarts());
         }
 
-        // Vanilla only references starts within ±8 chunks; seed the mask here so a wide carve structure's far arm doesn't cut straight.
+        // vanilla references starts only within 8 chunks, so the mask is seeded here or a far arm cuts straight
         if (BeyondTerrainState.isActive()) {
             try {
                 var structReg = registryAccess.registryOrThrow(Registries.STRUCTURE);
@@ -299,7 +303,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                             || BeyondForeignStructureProfiles.isAutoSeatedProjected(key);
                     boolean seated = !floater
                             && (distributed || profile.anchor() == StructureIntegrationProfile.Anchor.SEATED);
-                    // Built exactly as the carve builds it: the cache keeps the first mask, so a corridor left out here never comes back.
+                    // built exactly as the carve builds it, the cache keeps the first mask so nothing left out here comes back
                     CarveMask m = the_beyond$carver.the_beyond$buildMask(start, seated, distributed, layerDistributed,
                             profile.flushTolerance(), profile.connectDetached());
                     m.carveOnly = BeyondForeignStructureProfiles.isEmbedded(key);
@@ -311,10 +315,8 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                     if (distributed
                             && BeyondGenDiagnostics.loggedFootingSuppressed.add(System.identityHashCode(start))
                             && BeyondGenDiagnostics.loggedFootingSuppressed.size() <= 40) {
-                        com.thebeyond.TheBeyond.LOGGER.info(
-                                "[Beyond] {} @chunk [{},{}] DISTRIBUTED ({}) -> footing-ONLY seat CONFINED to start_platform base"
-                                + " footprint {} (organic lip OFF): minimal base seat, NO terraced welds, NO bridges under"
-                                + " cantilever houses / walkways / ship. F3 a former weld cell -> now AIR (was END_STONE, T < Threshold).",
+                        com.thebeyond.TheBeyond.LOGGER.debug(
+                                "[Beyond] {} @chunk [{},{}] DISTRIBUTED ({}): footing-only seat on the start footprint {}",
                                 key, start.getChunkPos().x, start.getChunkPos().z,
                                 layerDistributed ? "layer re-anchored" : "topmost-projected",
                                 m.baseBox == null ? "<none>" : ("[" + m.baseBox.minX() + "," + m.baseBox.minZ() + ".." + m.baseBox.maxX() + "," + m.baseBox.maxZ() + "]"));
@@ -368,8 +370,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         return 10;
     }
 
-    // Density-path callers MUST pass WRAPPED coords (mismatch causes streaks at |X| >= ~500k); BiomeSource
-    // intentionally passes grid coords — the biome field doesn't need wrapping.
+    // density callers must pass wrapped coords or streaks appear past 500k, the biome source passes grid coords
     public static double getHorizontalBaseScale(int x, int z) {
         return getHorizontalBaseScale(x, z, globalHOffsetNoise);
     }
@@ -467,8 +468,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         return envelopeLow + (envelopeHigh - envelopeLow) * ((v + 1.0) * 0.5);
     }
 
-    // Band-blend: 2-sample lerp over fixed-frequency bands instead of X*hScale(X,Z) — constant h_i removes the
-    // X*dh/dX streak term, smoothstep blend avoids band seams.
+    // band blend: a lerp over fixed-frequency bands removes the X*dh/dX streak term, the smoothstep hides seams
     private static final int BB_BAND_COUNT = 17;
     private static final double[] BB_BAND_FREQUENCIES = new double[BB_BAND_COUNT];
     private static final double BB_LOG_H_MIN;
@@ -676,8 +676,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
     static final double AIR_SENTINEL = Double.NEGATIVE_INFINITY;
 
-    /** Skips the noise evals only when max possible density (ef*cyc*MAX_NOISE) plus {@code beardCap} still can't
-     *  reach {@code threshold} — beardCap must be +INF wherever a beard/carve touches the chunk, or this isn't bit-exact. */
+    /** Skips the noise only when its peak plus beardCap misses the threshold, beardCap is +INF wherever a beard touches. */
     static double terrainDensityOrSkip(int globalY, ColumnScratch s, double cycleHeight, double threshold, double beardCap) {
         int shiftedY = globalY + TERRAIN_Y_OFFSET;
         double ef = edgeGradientFactor(shiftedY, s.dimMinY, s.dimMaxY);
@@ -918,6 +917,30 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     private static boolean the_beyond$placesStoneCore(int y, ColumnScratch s, double cycleHeight, double baseThreshold,
             double beardCap, java.util.function.IntToDoubleFunction beardAt,
             BeyondStructureCarver.ColumnCarveState carve) {
+        return the_beyond$placesStoneBase(y, s, cycleHeight, baseThreshold, beardCap, beardAt, carve)
+                || (carve != null && carve.liftKeeps(y) && the_beyond$liftedSolid(y, s, cycleHeight, baseThreshold, carve));
+    }
+
+    /** The island's density read the lift lower down, so its relief rises whole and only a hard clear removes it. */
+    private static boolean the_beyond$liftedSolid(int y, ColumnScratch s, double cycleHeight, double threshold,
+            BeyondStructureCarver.ColumnCarveState carve) {
+        double ys = y - carve.liftL;
+        int y0 = (int) Math.floor(ys);
+        double fr = ys - y0;
+        double d = (1.0 - fr) * the_beyond$islandDensity(y0, s, cycleHeight) + fr * the_beyond$islandDensity(y0 + 1, s, cycleHeight);
+        if (d <= threshold) return false;
+        return !(carve.inCarveBand(y) && !carve.pedestalBandAt(y) && carve.carvePenaltyAt(y, s) == Double.POSITIVE_INFINITY);
+    }
+
+    private static double the_beyond$islandDensity(int globalY, ColumnScratch s, double cycleHeight) {
+        int shiftedY = globalY + TERRAIN_Y_OFFSET;
+        double ef = edgeGradientFactor(shiftedY, s.dimMinY, s.dimMaxY);
+        return ef <= 0.0 ? 0.0 : noiseDensity(shiftedY, s, ef, cyclicDensity(shiftedY, cycleHeight));
+    }
+
+    private static boolean the_beyond$placesStoneBase(int y, ColumnScratch s, double cycleHeight, double baseThreshold,
+            double beardCap, java.util.function.IntToDoubleFunction beardAt,
+            BeyondStructureCarver.ColumnCarveState carve) {
         if (carve != null && carve.foundationOrLipFillAt(y)) return true;
         double density, beardDelta, baseBeardDelta;
         if (beardCap == Double.POSITIVE_INFINITY) {
@@ -951,56 +974,19 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         return true;
     }
 
-    // Re-exported from BeyondStructureCarver: aliases keep BeyondEndChunkGenerator.<CONST> resolving for the headless gates and FeatureGuardMixin.
-    public static final int CARVE_ERODE_REACH = BeyondStructureCarver.CARVE_ERODE_REACH;
-    public static final int CARVE_CEIL_REACH = BeyondStructureCarver.CARVE_CEIL_REACH;
-    static final int FLOAT_VMARGIN = BeyondStructureCarver.FLOAT_VMARGIN;
-    static final int FLOAT_HMARGIN = BeyondStructureCarver.FLOAT_HMARGIN;
-    static final int WARP_MAX = BeyondStructureCarver.WARP_MAX;
-    static final int GUARD_STUB_DEPTH = BeyondStructureCarver.GUARD_STUB_DEPTH;
-    static final int GUARD_GROWTH_UP = BeyondStructureCarver.GUARD_GROWTH_UP;
-    static final int CARVE_SCAN_REACH = BeyondStructureCarver.CARVE_SCAN_REACH;
-    static final int CLOSE_RADIUS = BeyondStructureCarver.CLOSE_RADIUS;
-    static final int FOUNDATION_DEPTH = BeyondStructureCarver.FOUNDATION_DEPTH;
-    static final int FOUNDATION_MAX_LIP = BeyondStructureCarver.FOUNDATION_MAX_LIP;
-    static final int FOUNDATION_MIN_RUN = BeyondStructureCarver.FOUNDATION_MIN_RUN;
-    static final double CARVE_AMP = BeyondStructureCarver.CARVE_AMP;
-    static final int CARVE_LAT_REACH = BeyondStructureCarver.CARVE_LAT_REACH;
-    static final int CARVE_VERT_REACH = BeyondStructureCarver.CARVE_VERT_REACH;
-    static final int CARVE_DIST_LAT_REACH = BeyondStructureCarver.CARVE_DIST_LAT_REACH;
-    static final int CARVE_DIST_VERT_REACH = BeyondStructureCarver.CARVE_DIST_VERT_REACH;
-    static final int DIST_SUPPORT_BAND = BeyondStructureCarver.DIST_SUPPORT_BAND;
-    static final int FOOTING_TOL = BeyondStructureCarver.FOOTING_TOL;
-    static final double CARVE_DIST_AMP = BeyondStructureCarver.CARVE_DIST_AMP;
-    static final double CARVE_DIST_WARP_GAIN = BeyondStructureCarver.CARVE_DIST_WARP_GAIN;
-    static final double CARVE_WARP_AMT = BeyondStructureCarver.CARVE_WARP_AMT;
-    static final int DT3_REACH = BeyondStructureCarver.DT3_REACH;
-    static final double DT3_WARP_AMP = BeyondStructureCarver.DT3_WARP_AMP;
-    static final int DT3_CAP = BeyondStructureCarver.DT3_CAP;
-    private static final double FACE_ROUGH_FREQ = BeyondStructureCarver.FACE_ROUGH_FREQ;
-    static final int FACE_ROUGH = BeyondStructureCarver.FACE_ROUGH;
-
-    /** Flattened per-column union-over-columns scratch; ThreadLocal + grown on demand so the hot loop allocates nothing after warm-up. */
+    /** Per-column union scratch, thread-local and grown on demand so the hot loop allocates nothing after warm-up. */
     static final class CarveBits {
         int[] dxz = new int[512], lo = new int[512], hi = new int[512], gLo = new int[512];
         boolean[] seat = new boolean[512], filled = new boolean[512], dist = new boolean[512], base = new boolean[512];
-        // mask = per-bit source (TRUE-3D lookup); d3 = precomputed warped distance. mask[k]==null ⇒ no 3D field.
         CarveMask[] mask = new CarveMask[512];
         int[] d3 = new int[512];
-        // baseNat: connected-island top below colLo per bit (MIN if none). baseFloor: the floor its piece stands on.
         int[] baseNat = new int[512], baseFloor = new int[512];
-        // d2 = squared Euclidean distance to the bit. dxz is Chebyshev and dilates a square into a square.
         int[] d2 = new int[512];
-        // buriedAbove: natural island sits right on the bit's roof (hi[k]+1), which drives the island-cap keep.
         int[] colX = new int[512], colZ = new int[512];
         boolean[] buriedAbove = new boolean[512];
-        // corr = column invented by the detached-part connector, not owned by any piece.
         boolean[] corr = new boolean[512];
-        // fly: a bit held off the ground, cleared by the same finite falloff as its surroundings (no binary wall).
         boolean[] fly = new boolean[512];
-        // hug = bit of a hull the island closes on: no skirt, no collar, no ceiling apron.
         boolean[] hug = new boolean[512];
-        // capTop = top of the ground laid over a buried room's roof, MIN_VALUE where the roof stays open.
         int[] capTop = new int[512];
         void ensure(int cap) {
             if (cap <= dxz.length) return;
@@ -1021,30 +1007,21 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     }
     static final ThreadLocal<CarveBits> CARVE_BITS = ThreadLocal.withInitial(CarveBits::new);
 
-    /** Per-column occupancy mask of the real lobed footprint (not the bbox), so clearing doesn't carve a rectangular cube around a sparse structure. */
+    /** Per-column occupancy of the real footprint, not the box, so clearing never cuts a cube around a sparse structure. */
     public static final class CarveMask {
         final int oX, oZ, w, d;   // footprint origin + size, in columns
-        final long[] occ;          // w*d bits; set if the column lies in some piece's footprint
+        final long[] occ;  // w*d bits, set where a piece's footprint covers the column
         final int gLo, gHi;        // overall solid Y-range across the structure's pieces (gLo = the byte Y-origin)
-        // Per-column solid Y-span as offsets from gLo, not the global range — avoids a pillar down to gLo
-        // for a column whose blocks only span a high lobe. 16-bit offset covers the full build height.
         final short[] colLoOff, colHiOff;
-        // Columns added by enclosed-hole fill — SEATED foundation skips these (not a leg needing support). Null if none filled.
         final long[] filledOcc;
         final boolean seated;
-        // distributed: re-anchored onto a lower pancake, carved like FLOATING but support kept (skirt clipped at/below base).
-        // layerDistributed: re-anchored (vs surface-projected/topmost) — gates footing + organic lip.
         final boolean distributed;
         final boolean layerDistributed;
         final int foundationDepth; // SEATED: support reach below gLo (= profile.flushTolerance)
         final int filledHoles;     // diagnostic only
-        // True-3D Chebyshev distance field (DISTRIBUTED only), saturating byte (0..DT3_CAP); lets the carve
-        // follow the structure's real 3D shape instead of a per-column ellipse.
         final byte[] dt3;
         final int dt3OX, dt3OZ, dt3W, dt3D, dt3YLo, dt3Layers;   // padded grid origin/size (all 0 when dt3 == null)
-        // Start piece's bbox: DISTRIBUTED footing/lip fire only within it, so cantilevered parts don't weld to islands they pass over.
         final BoundingBox baseBox;
-        // Embedded (crashed ships): carve-only — interior cleared, no foundation/base-beard platform.
         boolean carveOnly;
         boolean hugTerrain;
         boolean basePedestal;
@@ -1111,8 +1088,8 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             int c = i + j * w;
             return boxTop[c] != Integer.MIN_VALUE && boxBot[c] < baseBox.minY();
         }
-        // Columns the connector invented, clearing their span but never the walkway just below. Null when none.
         long[] corridorOcc;
+        int[] wallLo;
         CarveMask(int oX, int oZ, int w, int d, long[] occ, short[] colLoOff, short[] colHiOff,
                   long[] filledOcc, int gLo, int gHi, boolean seated, boolean distributed, boolean layerDistributed, int foundationDepth, int filledHoles,
                   byte[] dt3, int dt3OX, int dt3OZ, int dt3W, int dt3D, int dt3YLo, int dt3Layers, BoundingBox baseBox) {
@@ -1130,7 +1107,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             return x >= baseBox.minX() - m && x <= baseBox.maxX() + m
                 && z >= baseBox.minZ() - m && z <= baseBox.maxZ() + m;
         }
-        // Returns DT3_CAP+1 outside the padded grid or when no field exists — carve falls back to the 2.5D ellipse.
+        // DT3_CAP + 1 outside the padded grid or without a field, and the carve falls back to the 2.5D ellipse
         int dt3At(int x, int y, int z) {
             if (dt3 == null) return DT3_CAP + 1;
             int i = x - dt3OX, j = z - dt3OZ;
@@ -1146,6 +1123,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
         long[] groundFoot;
         long[] groundRaised;
+        long[] groundPad;
         int groundFloorY = Integer.MIN_VALUE;
         private volatile CityGroundPlan groundPlan;
         private volatile boolean groundPlanDone;
@@ -1158,6 +1136,14 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             if ((groundFoot[bit >> 6] & (1L << (bit & 63))) == 0) return Integer.MIN_VALUE;
             boolean up = groundRaised != null && (groundRaised[bit >> 6] & (1L << (bit & 63))) != 0;
             return groundFloor() + (up ? 1 : 0);
+        }
+
+        boolean padAt(int x, int z) {
+            if (groundPad == null) return false;
+            int i = x - oX, j = z - oZ;
+            if (i < 0 || i >= w || j < 0 || j >= d) return false;
+            int bit = i + j * w;
+            return (groundPad[bit >> 6] & (1L << (bit & 63))) != 0;
         }
 
         int groundFloor() {
@@ -1176,8 +1162,12 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                 if (!groundPlanDone) {
                     ColumnScratch probe = new ColumnScratch();
                     int[] col = { Integer.MIN_VALUE, Integer.MIN_VALUE };
-                    CityGroundPlan p = CityGroundPlan.compute(baseBox, groundFloor(),
-                            this::soleAt,
+                    // The start's box, which every chunk carving the start intersects, is the mask less its pad.
+                    int pad = BeyondStructureCarver.ENVELOPE_PAD;
+                    BoundingBox reach = new BoundingBox(oX + pad, baseBox.minY(), oZ + pad,
+                            oX + w - 1 - pad, baseBox.maxY(), oZ + d - 1 - pad);
+                    CityGroundPlan p = CityGroundPlan.compute(baseBox, reach, groundFloor(),
+                            this::soleAt, this::padAt,
                             (x, y, z) -> {
                                 if (col[0] != x || col[1] != z) {
                                     initColumnScratch(x, z, (float) Math.sqrt((double) x * x + (double) z * z), probe);
@@ -1185,13 +1175,66 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                                 }
                                 return isSolidTerrainScratch(y, probe);
                             },
-                            BeyondStructureCarver::the_beyond$padLobe);
+                            BeyondStructureCarver::the_beyond$padLobe, BeyondStructureCarver::the_beyond$liftWave);
                     groundPlan = p;
                     groundPlanDone = true;
                     BeyondStructureCarver.the_beyond$logGroundPlan(this, p);
                 }
             }
             return groundPlan;
+        }
+
+        private volatile long[] courtyardBits;
+
+        /** A column of the start box that walls close in from its edge: the only place a pedestal's deck still fills. */
+        boolean courtyard(int x, int z) {
+            long[] bits = courtyardBits;
+            if (bits == null) {
+                synchronized (this) {
+                    if (courtyardBits == null) courtyardBits = computeCourtyard();
+                    bits = courtyardBits;
+                }
+            }
+            int i = x - oX, j = z - oZ;
+            if (i < 0 || i >= w || j < 0 || j >= d) return false;
+            int bit = i + j * w;
+            return (bits[bit >> 6] & (1L << (bit & 63))) != 0;
+        }
+
+        private long[] computeCourtyard() {
+            long[] out = new long[((w * d) + 63) >> 6];
+            if (baseBox == null) return out;
+            int top = groundFloor() + 3;
+            int bx0 = baseBox.minX(), bz0 = baseBox.minZ(), bw = baseBox.getXSpan(), bd = baseBox.getZSpan();
+            boolean[] open = new boolean[bw * bd], reached = new boolean[bw * bd];
+            int[] stack = new int[bw * bd];
+            int sp = 0;
+            for (int bj = 0; bj < bd; bj++) {
+                for (int bi = 0; bi < bw; bi++) {
+                    int i = bx0 + bi - oX, j = bz0 + bj - oZ, c = bi + bj * bw;
+                    int bit = i + j * w;
+                    // An arch overhead does not close a yard: only a column standing from under floor + 3 is a wall.
+                    boolean wall = i >= 0 && i < w && j >= 0 && j < d && (occ[bit >> 6] & (1L << (bit & 63))) != 0
+                            && !isFilled(bit) && (wallLo != null ? wallLo[bit] : colLo(bit)) < top;
+                    open[c] = !wall;
+                    if (open[c] && (bi == 0 || bj == 0 || bi == bw - 1 || bj == bd - 1)) { reached[c] = true; stack[sp++] = c; }
+                }
+            }
+            while (sp > 0) {
+                int c = stack[--sp], bi = c % bw, bj = c / bw;
+                if (bi > 0 && open[c - 1] && !reached[c - 1]) { reached[c - 1] = true; stack[sp++] = c - 1; }
+                if (bi < bw - 1 && open[c + 1] && !reached[c + 1]) { reached[c + 1] = true; stack[sp++] = c + 1; }
+                if (bj > 0 && open[c - bw] && !reached[c - bw]) { reached[c - bw] = true; stack[sp++] = c - bw; }
+                if (bj < bd - 1 && open[c + bw] && !reached[c + bw]) { reached[c + bw] = true; stack[sp++] = c + bw; }
+            }
+            for (int c = 0; c < bw * bd; c++) {
+                if (!open[c] || reached[c]) continue;
+                int i = bx0 + c % bw - oX, j = bz0 + c / bw - oZ;
+                if (i < 0 || i >= w || j < 0 || j >= d) continue;
+                int bit = i + j * w;
+                out[bit >> 6] |= 1L << (bit & 63);
+            }
+            return out;
         }
 
         /** 0 unknown, 1 open, 2 island rock right over the bit's top. Races only ever write the same value. */
@@ -1288,9 +1331,9 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                 }
             }
         }
-        // 2-pass 3x3x3-stencil DT. No border source — the field must read DT3_CAP outside the seeded blocks, not 0.
+        // two-pass 3x3x3 distance transform with no border source, so outside the seeds it reads DT3_CAP, not 0
         static void chebyshevDT3(byte[] dist, int w, int d, int layers, int cap) {
-            // forward: L,z,x ascending — the 13 neighbors with (dL<0) || (dL==0 && dz<0) || (dL==0 && dz==0 && dx<0).
+            // forward pass, ascending: the 13 neighbours already visited
             for (int L = 0; L < layers; L++) {
                 for (int z = 0; z < d; z++) {
                     for (int x = 0; x < w; x++) {
@@ -1314,7 +1357,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                     }
                 }
             }
-            // backward: L,z,x descending — the mirror 13 neighbors with (dL>0) || (dL==0 && dz>0) || (dL==0 && dz==0 && dx>0).
+            // backward pass, descending: the mirrored 13 neighbours
             for (int L = layers - 1; L >= 0; L--) {
                 for (int z = d - 1; z >= 0; z--) {
                     for (int x = w - 1; x >= 0; x--) {
@@ -1343,8 +1386,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         static int fillEnclosed(long[] occ, long[] filledOcc, int w, int d, int[] cLo, int[] cHi, int gLo, int gHi, int closeR) {
             if (w <= 2 || d <= 2 || gHi < gLo) return 0;
             int n = w * d;
-            // Keeps only the longest CONTIGUOUS trapped run per column: a column trapped between two vertically-
-            // disjoint enclosures keeps just its longest run, so the open gap between them is never shafted.
+            // only the longest contiguous trapped run per column, so the gap between two enclosures is never shafted
             int[] runLo = new int[n], runHi = new int[n], bestLo = new int[n], bestHi = new int[n];
             java.util.Arrays.fill(runLo, Integer.MAX_VALUE); java.util.Arrays.fill(runHi, Integer.MIN_VALUE);
             java.util.Arrays.fill(bestLo, Integer.MAX_VALUE); java.util.Arrays.fill(bestHi, Integer.MIN_VALUE);
@@ -1357,8 +1399,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             for (int y = gLo; y <= gHi; y++) {
                 for (int c = 0; c < n; c++) { wall[c] = wallAtY(occ, cLo, cHi, c, y); dist[c] = wall[c] ? 0 : cap; }
                 chebyshevDT(dist, w, d, cap, false);
-                // Erode to the closing, then OR the raw walls back in: without it, erosion's open-border source
-                // would also erode real walls near the bbox edge and leak the flood into a sealed interior.
+                // erode to the closing, then put the raw walls back, or the open border erodes real walls and the flood leaks
                 for (int c = 0; c < n; c++) dist[c] = (dist[c] > closeR) ? 0 : cap;
                 chebyshevDT(dist, w, d, cap, true);
                 for (int c = 0; c < n; c++) inC[c] = dist[c] > closeR || wall[c];
@@ -1383,8 +1424,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                     if (z > 0)     { int nb = bit - w; if (!reached[nb] && !inC[nb]) { reached[nb] = true; stack[sp++] = nb; } }
                     if (z < d - 1) { int nb = bit + w; if (!reached[nb] && !inC[nb]) { reached[nb] = true; stack[sp++] = nb; } }
                 }
-                // A truly-unoccupied column is cleared at this height only if the flood can't reach it (trapped
-                // inside the closed silhouette); a flood-reached column drains to the exterior and stays terrain.
+                // an empty column clears here only when the flood cannot reach it, a reached one drains out and stays terrain
                 for (int bit = 0; bit < n; bit++) {
                     if ((occ[bit >> 6] & (1L << (bit & 63))) != 0) continue;
                     if (reached[bit]) continue;
@@ -1428,7 +1468,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             }
             return best;
         }
-        /** -1 if none — the column whose [colLo,colHi] a fringe cell erodes toward, so the cut face follows the LOCAL lobe height. */
+        /** The column a fringe cell erodes toward, so the cut follows the local lobe height, -1 if none. */
         int nearestOccupiedBit(int x, int z, int reach) {
             if (x < oX - reach || x > oX + w - 1 + reach || z < oZ - reach || z > oZ + d - 1 + reach) return -1;
             int i = x - oX, j = z - oZ;
@@ -1446,8 +1486,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             }
             return bestBit;
         }
-        // RING order (increasing Chebyshev r) so the MIN meets the nearest covering box first, letting the d==0
-        // break and lateral prune fire early. dXZ = r exactly; result is order-independent (min).
+        // rings of growing r meet the nearest box first, so the d == 0 break and the lateral prune fire early
         int collectOccupiedBits(int x, int z, int reach,
                                 int[] oDxz, int[] oLo, int[] oHi, int[] oGLo, boolean[] oSeat, boolean[] oFilled, boolean[] oDist,
                                 boolean[] oBase, CarveMask[] oMask, int[] oColX, int[] oColZ, int[] oD2, int n) {
@@ -1459,7 +1498,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             if (x < oX - reach || x > oX + w - 1 + reach || z < oZ - reach || z > oZ + d - 1 + reach) return n;
             for (int r = 0; r <= reach; r++) {
                 for (int dz = -r; dz <= r; dz++) {
-                    boolean fullRow = (dz == -r || dz == r);     // top/bottom rows: every dx; middle rows: only dx=±r
+                    boolean fullRow = (dz == -r || dz == r);  // top and bottom rows take every dx, middle rows only dx = ±r
                     int step = fullRow ? 1 : Math.max(1, 2 * r);
                     for (int dx = -r; dx <= r; dx += step) {
                         int xx = x + dx - oX, zz = z + dz - oZ;
@@ -1608,7 +1647,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         }
     }
 
-    /** Constants + kernel live statically on BeyondStructureCarver; the generator delegates via thin forwarders so callers stay unchanged. */
+    /** The carve constants and kernel live in BeyondStructureCarver, these thin forwarders keep callers unchanged. */
     private final BeyondStructureCarver the_beyond$carver = new BeyondStructureCarver(this);
 
     public List<CarveMask> the_beyond$collectCarveMasks(StructureManager sm, ChunkPos cp) {
@@ -1634,20 +1673,28 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     public boolean the_beyond$landmarkInForeignCavity(StructureManager sm, StructureStart self, ChunkPos decorChunk) {
         return the_beyond$carver.the_beyond$landmarkInForeignCavity(sm, self, decorChunk);
     }
-    public static int the_beyond$carveOutsideDist(List<CarveMask> masks, int x, int y, int z) {
-        return BeyondStructureCarver.the_beyond$carveOutsideDist(masks, x, y, z);
-    }
-    public static int the_beyond$guardOutsideDist(List<CarveMask> masks, int x, int y, int z) {
-        return BeyondStructureCarver.the_beyond$guardOutsideDist(masks, x, y, z);
-    }
-    public static boolean the_beyond$carveRemovedAirAt(List<CarveMask> masks, int x, int y, int z) {
-        return BeyondStructureCarver.the_beyond$carveRemovedAirAt(masks, x, y, z);
-    }
 
     public static final int STRUCT_FEATURE_MARGIN_DOWN = 6, STRUCT_FEATURE_MARGIN_UP = 2, STRUCT_FEATURE_MARGIN_LAT = 4;
+    /** Ground a gellid lake leaves between its fluid and any piece box. */
+    public static final int LAKE_PIECE_SHORE = 2;
     public static boolean the_beyond$insideAnyPieceBox(List<CarveMask> masks, int x, int y, int z) {
         for (int i = 0, n = masks.size(); i < n; i++) {
             if (masks.get(i).insideBoxAt(x, y, z)) return true;
+        }
+        return false;
+    }
+
+    /** Inside a piece box or the ground under it, widened by the lake shore with rounded corners. */
+    public static boolean the_beyond$insideAnyPieceClearance(List<CarveMask> masks, int x, int y, int z) {
+        for (int i = 0, n = masks.size(); i < n; i++) {
+            BoundingBox[] boxes = masks.get(i).pieceBoxes;
+            if (boxes == null) continue;
+            for (BoundingBox b : boxes) {
+                if (y < b.minY() - STRUCT_FEATURE_MARGIN_DOWN || y > b.maxY() + STRUCT_FEATURE_MARGIN_UP) continue;
+                int dx = Math.max(0, Math.max(b.minX() - x, x - b.maxX()));
+                int dz = Math.max(0, Math.max(b.minZ() - z, z - b.maxZ()));
+                if (dx * dx + dz * dz <= LAKE_PIECE_SHORE * LAKE_PIECE_SHORE + 1) return true;
+            }
         }
         return false;
     }
@@ -1662,80 +1709,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         }
         return false;
     }
-
-    // Thin forwarders to BeyondStructureCarver; access modifiers mirror the originals so overload resolution is identical.
-    private static int the_beyond$bandWarp(int x, int y, int z) {
-        return BeyondStructureCarver.the_beyond$bandWarp(x, y, z);
-    }
-    static double the_beyond$carvePenalty(int[] dxz, int[] lo, int[] hi, int[] gLo, boolean[] seat, boolean[] filled, boolean[] dist, int nBits, int y, double warp, int[] d3) {
-        return BeyondStructureCarver.the_beyond$carvePenalty(dxz, lo, hi, gLo, seat, filled, dist, nBits, y, warp, d3);
-    }
-    static double the_beyond$carvePenalty(int[] dxz, int[] lo, int[] hi, int[] gLo, boolean[] seat, boolean[] filled, boolean[] dist, int nBits, int y, double warp, int[] d3, boolean rockBelow) {
-        return BeyondStructureCarver.the_beyond$carvePenalty(dxz, lo, hi, gLo, seat, filled, dist, nBits, y, warp, d3, rockBelow);
-    }
-    static double the_beyond$carvePenalty(int[] dxz, int[] lo, int[] hi, int[] gLo, boolean[] seat, boolean[] filled, boolean[] dist, int nBits, int y, double warp, int[] d3, boolean rockBelow, double rough) {
-        return BeyondStructureCarver.the_beyond$carvePenalty(dxz, lo, hi, gLo, seat, filled, dist, nBits, y, warp, d3, rockBelow, rough);
-    }
-    static double the_beyond$carvePenalty(int[] dxz, int[] lo, int[] hi, int[] gLo, boolean[] seat, boolean[] filled, boolean[] dist, int nBits, int y, double warp, int[] d3, boolean rockBelow, double rough, boolean[] base) {
-        return BeyondStructureCarver.the_beyond$carvePenalty(dxz, lo, hi, gLo, seat, filled, dist, nBits, y, warp, d3, rockBelow, rough, base);
-    }
-    static double the_beyond$carvePenalty(int[] dxz, int[] lo, int[] hi, int[] gLo, boolean[] seat, boolean[] filled, boolean[] dist, int nBits, int y, double warp, int[] d3, boolean rockBelow, double rough, boolean[] base, boolean[] buriedAbove) {
-        return BeyondStructureCarver.the_beyond$carvePenalty(dxz, lo, hi, gLo, seat, filled, dist, nBits, y, warp, d3, rockBelow, rough, base, buriedAbove);
-    }
-    static double the_beyond$carvePenalty(int[] dxz, int[] lo, int[] hi, int[] gLo, boolean[] seat, boolean[] filled, boolean[] dist, int nBits, int y, double warp, int[] d3, boolean rockBelow, double rough, boolean[] base, boolean[] buriedAbove, int[] baseFloor) {
-        return BeyondStructureCarver.the_beyond$carvePenalty(dxz, lo, hi, gLo, seat, filled, dist, nBits, y, warp, d3, rockBelow, rough, base, buriedAbove, baseFloor);
-    }
-    private static double the_beyond$carveWarp(int x, int y, int z) {
-        return BeyondStructureCarver.the_beyond$carveWarp(x, y, z);
-    }
-    private static double the_beyond$faceRough(int x, int y, int z) {
-        return BeyondStructureCarver.the_beyond$faceRough(x, y, z);
-    }
-    private static int the_beyond$carveDistAt(int dXZ, int colLo, int colHi, boolean seated, boolean filled, boolean distributed, int gLo, int hWarp, boolean guard, int y) {
-        return BeyondStructureCarver.the_beyond$carveDistAt(dXZ, colLo, colHi, seated, filled, distributed, gLo, hWarp, guard, y);
-    }
-    public static int the_beyond$foundationNatTop(int gLo, int foundationDepth, java.util.function.IntPredicate naturalSolid) {
-        return BeyondStructureCarver.the_beyond$foundationNatTop(gLo, foundationDepth, naturalSolid);
-    }
-    public static int the_beyond$contiguousRockDown(int probeTop, int need, java.util.function.IntPredicate naturalSolid) {
-        return BeyondStructureCarver.the_beyond$contiguousRockDown(probeTop, need, naturalSolid);
-    }
-    public static boolean the_beyond$isFoundationFill(int y, int gLo, int natTop) {
-        return BeyondStructureCarver.the_beyond$isFoundationFill(y, gLo, natTop);
-    }
-    public static boolean the_beyond$footingActiveAt(boolean seated, boolean distributed, boolean inBaseFootprint) {
-        return BeyondStructureCarver.the_beyond$footingActiveAt(seated, distributed, inBaseFootprint);
-    }
-    public static int the_beyond$lipTop(int natTop, int anchorColLo, int anchorColHi, int dxz) {
-        return BeyondStructureCarver.the_beyond$lipTop(natTop, anchorColLo, anchorColHi, dxz);
-    }
-    public static boolean the_beyond$isLipFill(int y, int natTop, int lipTop) {
-        return BeyondStructureCarver.the_beyond$isLipFill(y, natTop, lipTop);
-    }
-    public static double the_beyond$baseBeardDelta(int natTop, int anchorColLo, int anchorColHi, int floorY, int dxz, int y) {
-        return BeyondStructureCarver.the_beyond$baseBeardDelta(natTop, anchorColLo, anchorColHi, floorY, dxz, y);
-    }
-    static double the_beyond$baseBeardDeltaAt(int[] dxz, int[] lo, int[] hi, boolean[] base, int[] baseNat, int[] baseFloor, int nBits, int y) {
-        return BeyondStructureCarver.the_beyond$baseBeardDeltaAt(dxz, lo, hi, base, baseNat, baseFloor, nBits, y);
-    }
-    static int the_beyond$groundRestNatTop(int lo, int natTop) {
-        return BeyondStructureCarver.the_beyond$groundRestNatTop(lo, natTop);
-    }
-    static int the_beyond$seatConfinedNatTop(int natTop, int seatFloor) {
-        return BeyondStructureCarver.the_beyond$seatConfinedNatTop(natTop, seatFloor);
-    }
-
-    static final boolean DISTRIBUTED_LIP = BeyondStructureCarver.DISTRIBUTED_LIP;
-    static final int BEARD_LAT_REACH = BeyondStructureCarver.BEARD_LAT_REACH;
-    static final int PLATFORM_COVER = BeyondStructureCarver.PLATFORM_COVER;
-    static final boolean DISTRIBUTED_BASE_BEARD = BeyondStructureCarver.DISTRIBUTED_BASE_BEARD;
-    static final double BASE_BEARD_AMP = BeyondStructureCarver.BASE_BEARD_AMP;
-    static final int BASE_BEARD_VFADE = BeyondStructureCarver.BASE_BEARD_VFADE;
-    static final boolean DISTRIBUTED_SUBSURFACE_BURY = BeyondStructureCarver.DISTRIBUTED_SUBSURFACE_BURY;
-    static final int SUBSURF_KEEP_REACH = BeyondStructureCarver.SUBSURF_KEEP_REACH;
-    static final boolean DISTRIBUTED_GROW_OVER_VOID = BeyondStructureCarver.DISTRIBUTED_GROW_OVER_VOID;
-    static final int BEARD_GROUND_BAND = BeyondStructureCarver.BEARD_GROUND_BAND;
-    static final int BEARD_SEAT_DROP = BeyondStructureCarver.BEARD_SEAT_DROP;
 
     private static final class BeardCtx implements DensityFunction.FunctionContext {
         int x, y, z;
@@ -1755,7 +1728,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         }
     }
 
-    /** Factoring this out of {@link #edgeGradient} changes no rounding (Java folds left-to-right) — used by the air-gap skip to bound max density. */
+    /** Split out of edgeGradient with no rounding change, so the air-gap skip can bound the peak density. */
     static double edgeGradientFactor(double y, int dimMinY, int dimMaxY) {
         final double bottomZeroY = dimMinY + 64;
         final double bottomFadeEnd = bottomZeroY + 64;
@@ -1875,8 +1848,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     public NoiseColumn getBaseColumn(int x, int z, LevelHeightAccessor height, RandomState random) {
         computeNoisesIfNotPresent(random);
         BeyondTerrainStateInternal.setDimBounds(height.getMinBuildHeight(), height.getMaxBuildHeight());
-        // Far-field terrain is Beyond's pancake fill, not the vanilla noise router — reuse the same density
-        // predicate here, or column-reading callers see phantom vanilla terrain.
+        // far-field terrain is Beyond's own density, so column readers use it too or they see phantom vanilla terrain
         double dist = Math.sqrt((double) x * x + (double) z * z);
         if (dist >= 650.0 && BeyondTerrainState.isActive()) {
             int minY = height.getMinBuildHeight();

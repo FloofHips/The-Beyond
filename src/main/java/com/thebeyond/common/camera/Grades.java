@@ -24,13 +24,10 @@ public final class Grades {
     public static final ResourceLocation SEPIA = id("sepia");
     public static final ResourceLocation BLUE = id("blue");
 
-    /** Sentinel id (NOT a registry entry): the projector defers to each photo's own grade. */
     public static final ResourceLocation AS_PHOTO = id("as_photo");
 
-    /** Passthrough, used when an id is missing or the registry is not yet available. */
     private static final Grade FALLBACK = new Grade(new int[0][], 0f);
 
-    /** A missing glass_<dye> palette resolves to passthrough, not a crash. */
     private static final Map<DyeColor, ResourceLocation> GLASS_GRADES = new EnumMap<>(DyeColor.class);
 
     static {
@@ -42,7 +39,7 @@ public final class Grades {
     private Grades() {
     }
 
-    /** Stained-glass blocks and panes both implement BeaconBeamBlock; null for anything without a dye. */
+    /** Stained glass blocks and panes are BeaconBeamBlocks, null for anything without a dye. */
     @Nullable
     public static ResourceLocation glassGradeId(BlockState state) {
         return state.getBlock() instanceof BeaconBeamBlock beam ? GLASS_GRADES.get(beam.getColor()) : null;

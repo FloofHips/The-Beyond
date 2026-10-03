@@ -67,7 +67,7 @@ public class PearlPoolFeature extends Feature<NoneFeatureConfiguration> {
     }
 
     private boolean createPool(WorldGenLevel level, RandomSource source, int radius, int test, BlockPos start) {
-        // Local to the pool, since one Feature instance serves every placement and, with parallel chunk generation, several threads.
+        // local to the pool, one Feature instance serves every placement on several threads
         Map<BlockPos, Integer> pearlPos = new HashMap<>();
         if (radius == 1) {
             for (int x = -1; x <= 0; x++) {

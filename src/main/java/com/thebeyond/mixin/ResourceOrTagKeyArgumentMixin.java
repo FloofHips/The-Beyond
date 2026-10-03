@@ -25,7 +25,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
-/** Hides undiscovered structures from {@code /locate structure} tab-complete. Server-side because clients don't have the structure registry. */
+/** Hides undiscovered structures from /locate tab-complete, on the server since clients lack the structure registry. */
 @Mixin(ResourceOrTagKeyArgument.class)
 public abstract class ResourceOrTagKeyArgumentMixin {
 

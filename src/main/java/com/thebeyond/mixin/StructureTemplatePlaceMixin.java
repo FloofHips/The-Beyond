@@ -76,7 +76,7 @@ public abstract class StructureTemplatePlaceMixin {
         }
         if (!BeyondGenDiagnostics.loggedGravitySuppressed) {
             BeyondGenDiagnostics.loggedGravitySuppressed = true;
-            com.thebeyond.TheBeyond.LOGGER.info(
+            com.thebeyond.TheBeyond.LOGGER.debug(
                     "[Beyond] terrain_matching gravity suppressed: pieces stay at their assembly Y so the carve"
                     + " cannot drop their blocks out of the world");
         }
@@ -108,9 +108,8 @@ public abstract class StructureTemplatePlaceMixin {
             }
             if (asked == 0) return;
             BeyondGenDiagnostics.placementProbesLogged++;
-            com.thebeyond.TheBeyond.LOGGER.info(
-                    "[Beyond] placement probe {} origin={} asked={} present={} clippedOut={} otherBlock={}"
-                    + " missing={} (missing>0 means blocks were lost writing, not authored away)",
+            com.thebeyond.TheBeyond.LOGGER.debug(
+                    "[Beyond] placement probe {} origin={} asked={} present={} clippedOut={} otherBlock={} missing={}",
                     id, origin, asked, present, clipped, replaced, asked - clipped - present);
         } catch (Throwable ignored) {
             // A probe must never break a placement.

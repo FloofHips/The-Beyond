@@ -86,7 +86,7 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
         return false;
     }
 
-    /** Visible center; identity outside sub-levels. */
+    /** Visible center, the same position outside sub-levels. */
     private static BlockPos anchor(Level level, BlockPos pos) {
         Vec3 v = BeyondCompatHooks.visibleOrCenter(level, pos);
         return BlockPos.containing(v);
@@ -350,8 +350,7 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
 
         Direction direction = level.getBlockState(pos).getValue(MemorFaucetBlock.FACING);
 
-        // Stationary: spawn deep in The Paths and walk up via prayerSite. On a balloon:
-        // probe for a sturdy block near storage pos and spawn on top, projected to visible.
+        // stationary spawns go deep in The Paths and walk up, on a balloon they spawn on a sturdy block near storage
         boolean inSubLevel = com.thebeyond.api.compat.BeyondCompatHooks.visibleOnly(level, pos) != null;
 
         for (int i = 0; i < i1; i++) {
@@ -373,7 +372,7 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
         }
     }
 
-    /** First sturdy-top block within hRadius/vDepth of center; spawn anchor is one above. */
+    /** First sturdy-top block within hRadius and vDepth of center, the spawn anchor is one above. */
     private static BlockPos findGroundNear(Level level, BlockPos center, int hRadius, int vDepth) {
         int dx = level.random.nextInt(hRadius * 2 + 1) - hRadius;
         int dz = level.random.nextInt(hRadius * 2 + 1) - hRadius;

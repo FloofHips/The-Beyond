@@ -55,7 +55,7 @@ public class ComponentCodecs {
             };
 
     /** Network path bounds RGB length to MAX_RGB_BYTES. */
-    private static final int MAX_RGB_BYTES = 256 * 256 * 3; // generous; real 64x64 = 12288
+    private static final int MAX_RGB_BYTES = 256 * 256 * 3;  // generous, a real 64x64 is 12288
     private static final Codec<byte[]> RGB_BYTES = Codec.BYTE_BUFFER.xmap(
             bb -> {
                 byte[] a = new byte[bb.remaining()];

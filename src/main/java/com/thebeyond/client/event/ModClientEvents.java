@@ -150,7 +150,7 @@ public class ModClientEvents {
         if (ModList.get().isLoaded("sable")) {
             BeyondSableClientCompat.registerRenderers();
         }
-        // Sodium: under its single render manager the camera's off-loop renderLevel draws no terrain; swap a spare context on.
+        // under Sodium's single render manager the off-loop renderLevel draws no terrain, so a spare context swaps in
         if (ModList.get().isLoaded("sodium")) {
             SodiumSecondaryView.install();
         }
@@ -288,10 +288,7 @@ public class ModClientEvents {
         }
     }
 
-    /**
-     * Deafening potion liquid: dark wine-purple. The potion carries no baked effects, so vanilla coloring
-     * would fall back to the base water-blue; every other potion keeps the vanilla color path.
-     */
+    /** The deafening potion is dark wine-purple, it has no baked effects so vanilla would color it water-blue. */
     @SubscribeEvent
     public static void colorSetupItem(RegisterColorHandlersEvent.Item event) {
         event.register((stack, tintIndex) -> {
@@ -337,7 +334,7 @@ public class ModClientEvents {
     public static void dimensionSpecialEffects(RegisterDimensionSpecialEffectsEvent event){
         EndSpecialEffects effects = new EndSpecialEffects();
         event.register(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"), effects);
-        // Re-register under the vanilla key (a mod may repoint the End to minecraft:the_end); priority LOW = last-writer-wins.
+        // also under the vanilla key, since a mod may repoint the End to minecraft:the_end, and LOW priority writes last
         event.register(ResourceLocation.withDefaultNamespace("the_end"), effects);
     }
 
@@ -345,8 +342,7 @@ public class ModClientEvents {
     public static void onRenderFog(ViewportEvent.RenderFog event) {
         Entity cameraEntity = event.getCamera().getEntity();
         if (cameraEntity == null) return;
-        // Gated by enableCustomFog clientside config — when disabled, the vanilla
-        // fog for the End runs unchanged. Mirrors FogRendererMixin's gate.
+        // enableCustomFog off leaves the vanilla End fog unchanged, the same gate as FogRendererMixin
         if (cameraEntity.level().dimension() == Level.END && BeyondConfig.ENABLE_CUSTOM_FOG.get()) {
             event.setCanceled(true);
             event.setFogShape(FogShape.SPHERE);
@@ -391,10 +387,7 @@ public class ModClientEvents {
         }
     }
 
-    /**
-     * The deafening potion carries no baked effects (they are applied on break, capped and radius-based),
-     * so vanilla renders "No Effects". Replace that line with the real payload so the tooltip tells the truth.
-     */
+    /** The deafening potion applies its effects on break, so its tooltip line is replaced by the real payload. */
     @SubscribeEvent
     public static void onItemTooltip(net.neoforged.neoforge.event.entity.player.ItemTooltipEvent event) {
         ItemStack stack = event.getItemStack();
@@ -429,8 +422,7 @@ public class ModClientEvents {
         }
     }
 
-    // Server-side Refuge, Totem, and gameplay handlers live in ModGameEvents.java
-    // so they register on dedicated servers (not just Dist.CLIENT).
+    // server-side Refuge, Totem and gameplay handlers live in ModGameEvents so dedicated servers register them
 
     @SubscribeEvent
     public static void onRenderNameTag(RenderNameTagEvent event) {
@@ -484,7 +476,7 @@ public class ModClientEvents {
             }
             @Override
             public ResourceLocation getStillTexture(FluidState state, BlockAndTintGetter getter, BlockPos pos) {
-                // Overlay mods (Jade) pass null pos for fluid tooltips — fall back instead of NPE.
+                // overlay mods like Jade pass a null pos for fluid tooltips
                 if (pos == null) return STILL;
                 int offset = (getVoidWaveOffset(pos.getX(), pos.getY(), pos.getZ())) % 39;
                 return ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_" + Mth.abs(offset));
@@ -590,7 +582,7 @@ public class ModClientEvents {
         }
     }
 
-    /** Hide the first-person hand while aiming; the photo's centre-crop already excludes it. */
+    /** Hides the first-person hand while aiming, the photo's centre crop already leaves it out. */
     @SubscribeEvent
     public static void onCameraHideHand(RenderHandEvent event) {
         if (aimingWithCamera()) {
@@ -713,7 +705,7 @@ public class ModClientEvents {
                 .setNormal(pose, 0F, 0F, 1F);
     }
 
-    /** Run the camera's offscreen render between frames; nesting it inside renderLevel corrupts the player's frame. */
+    /** Runs the camera's offscreen render between frames, inside renderLevel it corrupts the player's frame. */
     @SubscribeEvent
     public static void onRenderFramePre(RenderFrameEvent.Pre event) {
         BlockCameraCapture.runQueued();
@@ -751,7 +743,7 @@ public class ModClientEvents {
                 event.getPartialTick().getGameTimeDeltaPartialTick(true));
     }
 
-    // Capture the POV depth map at AFTER_SOLID_BLOCKS: binding the capture FBO flips Iris's main-bound tracking off, making it pack-safe. Decal paints at AFTER_LEVEL.
+    // depth map at AFTER_SOLID_BLOCKS, where binding the capture FBO is pack-safe, and the decal paints at AFTER_LEVEL
     @SubscribeEvent
     public static void onProjectorDepthCapture(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS) {
@@ -809,7 +801,7 @@ public class ModClientEvents {
 
         if (!(Math.sqrt(player.getX() * player.getX() + player.getZ() * player.getZ())>300)) {
 
-            // shouldCreateWorldFog() flags only Java ServerBossEvent bars, not command bossbars; fall back to any overlay entry.
+            // shouldCreateWorldFog() misses command bossbars, so any overlay entry also counts
             boolean bossActive = Minecraft.getInstance().gui.getBossOverlay().shouldCreateWorldFog();
             if (!bossActive) {
                 var overlay = Minecraft.getInstance().gui.getBossOverlay();
@@ -834,7 +826,7 @@ public class ModClientEvents {
         bufferSource.endBatch();
         poseStack.popPose();
 
-        // Sky cracks: drawn here (world pass) only under a shaderpack; no-op otherwise (vanilla uses renderSky).
+        // sky cracks are drawn in the world pass only under a shaderpack, vanilla uses renderSky
         poseStack.pushPose();
         EndSpecialEffects.renderCracksWorld(poseStack, bufferSource);
         bufferSource.endBatch();

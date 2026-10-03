@@ -19,8 +19,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.brewing.RegisterBrewingRecipesEvent;
 import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
 
-/** Brewing recipe + on-break behavior for the deafening potion, which routes all its actual
- *  effects through {@link Deafening} so the crowd cap and mob-only filtering stay centralized. */
+/** Brewing and on-break behaviour of the deafening potion, its effects all go through Deafening. */
 @EventBusSubscriber(modid = TheBeyond.MODID)
 public class BeyondDeafeningPotionEvents {
 
@@ -32,8 +31,7 @@ public class BeyondDeafeningPotionEvents {
 
     @SubscribeEvent
     public static void onRegisterBrewing(RegisterBrewingRecipesEvent event) {
-        // One mix auto-covers drinkable + splash + lingering; vanilla adds the gunpowder/dragon-breath conversions.
-        // Obiroot sprout = the plant the Enadrakes (the screech source) harvest and replant.
+        // one mix covers drinkable, splash and lingering, obiroot is the plant the screeching Enadrakes tend
         event.getBuilder().addMix(Potions.AWKWARD, BeyondBlocks.OBIROOT_SPROUT.asItem(), BeyondPotions.DEAFENING);
         TheBeyond.LOGGER.debug("[Deafening] registered brewing mix: awkward + obiroot_sprout -> deafening");
     }
@@ -53,11 +51,10 @@ public class BeyondDeafeningPotionEvents {
         int duration = lingering ? LINGER_DURATION : SPLASH_DURATION;
 
         level.playSound(null, pos.x, pos.y, pos.z, BeyondSoundEvents.ENADRAKE_SCREECH.get(), SoundSource.HOSTILE, 2.0F, 1.0F);
-        // Startle BEFORE deafening: only mobs that could still hear this burst whip toward it; mobs already
-        // deaf from an earlier burst are skipped (the deafen below still refreshes their duration).
+        // startle before deafening, so only mobs that can still hear the burst turn toward it
         Deafening.startleMobsAround(level, pos, radius + 2.0);
         int deafened = Deafening.deafenMobsAround(level, pos, radius, duration);
-        // Symmetric model: players in radius (thrower included) go deaf too — client audio-mute.
+        // players in the radius go deaf too, the thrower included
         int deafenedPlayers = Deafening.deafenPlayersAround(level, pos, radius, duration);
         LivingEntity thrower = potion.getOwner() instanceof LivingEntity le ? le : null;
         Deafening.alertWardensAround(level, pos, radius, thrower);

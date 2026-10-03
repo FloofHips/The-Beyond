@@ -28,9 +28,6 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
     private static final double CLIMB_RISE_MAX = 0.20;
     private static final double STEP_UP_EPSILON = 1.0E-6;
     private static final int RISE_SAMPLES = 8;
-    private static final double CLIMB_CONTACT = 0.02;
-    private static final double CLIMB_HEADROOM = 0.05;
-    private static final double CLIMB_TICKS_PER_QUARTER = 8.0;
     private static final double STEP_SMOOTH = 0.125;
     private static final double CLIMB_REACH = 0.10;
     private static final double CLIMB_HOLD = 0.01;
@@ -79,16 +76,6 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
         return entity.usesOrientedCollision()
                 ? entity.level().noCollision(entity, probe)
                 : entity.level().noBlockCollision(entity, probe);
-    }
-
-    private static double climbRate(final LivingBlock entity) {
-        return entity.getBaseShapeBounds().getYsize() / CLIMB_TICKS_PER_QUARTER + entity.getGravity();
-    }
-
-    private static AABB climbEntryProbe(final LivingBlock entity) {
-        AABB hull = entity.getBoundingBox();
-        return new AABB(hull.minX, hull.maxY, hull.minZ, hull.maxX, hull.maxY + CLIMB_HEADROOM, hull.maxZ)
-                .deflate(CLIMB_CONTACT, 0.0, CLIMB_CONTACT);
     }
 
     private static AABB tiltProbe(final LivingBlock entity, final AABB bounds) {

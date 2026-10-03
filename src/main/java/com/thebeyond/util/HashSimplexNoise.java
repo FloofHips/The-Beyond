@@ -3,8 +3,7 @@ package com.thebeyond.util;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 
-/** SimplexNoise with the 256-entry permutation table swapped for SplitMix64 hashing (period 2^64).
- *  Keep inputs within ~±500k or the skew/unskew math loses {@code double} precision. */
+/** SimplexNoise hashed with SplitMix64 instead of a permutation table, keep inputs within 500k for precision. */
 public class HashSimplexNoise {
     protected static final int[][] GRADIENT = new int[][]{
             {1, 1, 0},

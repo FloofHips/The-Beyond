@@ -5,12 +5,10 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
-/** Datapack-configurable knobs for the Beyond End coordinate transform, decoded from the
- *  dimension JSON's optional {@code terrain_params} field (see {@link #DEFAULTS}). */
+/** Datapack knobs of the End coordinate transform, from the dimension JSON's optional terrain_params. */
 public record BeyondTerrainParams(int wrapRange, double warpAmplitude, double warpScale) {
 
-    /** Wrap pivot outside the ~50k lore radius; low-frequency, low-magnitude warp fuzzes
-     *  the pivot reflection line without visibly distorting the interior. */
+    /** The wrap pivot sits past the 50k lore radius, and a faint warp blurs its reflection line. */
     public static final BeyondTerrainParams DEFAULTS = new BeyondTerrainParams(
             500000, 50.0, 0.001);
 
@@ -40,8 +38,7 @@ public record BeyondTerrainParams(int wrapRange, double warpAmplitude, double wa
                     "warp_scale must be in [" + MIN_WARP_SCALE + ", " + MAX_WARP_SCALE
                             + "], got " + warpScale);
         }
-        // If amplitude >= wrap_range the warp can push inputs across a full wrap
-        // cycle and the transform degenerates into pure noise. Reject early.
+        // an amplitude of wrap_range or more pushes inputs across a whole cycle and the transform turns to noise
         if (warpAmplitude >= wrapRange) {
             throw new IllegalArgumentException(
                     "warp_amplitude (" + warpAmplitude + ") must be smaller than wrap_range ("
@@ -49,11 +46,10 @@ public record BeyondTerrainParams(int wrapRange, double warpAmplitude, double wa
         }
     }
 
-    /** Unvalidated intermediate decode target; see {@link #CODEC}. */
+    /** Unvalidated decode target for CODEC. */
     private record Raw(int wrapRange, double warpAmplitude, double warpScale) {}
 
-    /** Decodes raw fields (each defaulting independently), then routes them through the compact
-     *  constructor so an {@link IllegalArgumentException} becomes a logged {@link DataResult#error}. */
+    /** Raw fields default one by one, then the compact constructor turns a bad value into a logged DataResult error. */
     public static final MapCodec<BeyondTerrainParams> CODEC = RecordCodecBuilder.<Raw>mapCodec(instance ->
             instance.group(
                     Codec.INT.optionalFieldOf("wrap_range", DEFAULTS.wrapRange())

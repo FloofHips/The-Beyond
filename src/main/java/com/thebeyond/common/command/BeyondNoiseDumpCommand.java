@@ -138,10 +138,6 @@ public final class BeyondNoiseDumpCommand {
                                                 Mode.NO_WRAP, plane))))));
     }
 
-    // ------------------------------------------------------------------
-    // Branch adapters
-    // ------------------------------------------------------------------
-
     private static int runHere(CommandContext<CommandSourceStack> ctx, int size, int stride, Mode mode, Plane plane)
             throws CommandSyntaxException {
         CommandSourceStack src = ctx.getSource();
@@ -161,10 +157,6 @@ public final class BeyondNoiseDumpCommand {
         BlockPos pos = BlockPosArgument.getBlockPos(ctx, "pos");
         return dispatch(src, pos.getX(), pos.getY(), pos.getZ(), size, stride, mode, plane);
     }
-
-    // ------------------------------------------------------------------
-    // Dump core
-    // ------------------------------------------------------------------
 
     private static int dispatch(CommandSourceStack src, int cx, int cy, int cz,
                                 int size, int stride, Mode mode, Plane plane) {
@@ -194,7 +186,7 @@ public final class BeyondNoiseDumpCommand {
         CompletableFuture.runAsync(() -> {
             try {
                 Result result = sampleAndWrite(cx, cy, cz, size, stride, effective, outFile, plane);
-                // Bounce back to the main thread; the source isn't safe to touch off-thread.
+                // back to the main thread, the source is not safe off-thread
                 server.execute(() -> src.sendSuccess(() -> Component.literal(String.format(
                         "[the_beyond noise_dump] Done → %s  density=[%.3f, %.3f]  solid=%d/%d (%.1f%%)",
                         outFile.getName(), result.minDensity, result.maxDensity,
@@ -235,8 +227,7 @@ public final class BeyondNoiseDumpCommand {
                     sampleZ = cz + (iOuter - half) * stride;
                 }
                 double density = BeyondEndChunkGenerator.getTerrainDensity(sampleX, sampleY, sampleZ, params);
-                // Wrap the coords before reading the threshold, exactly like the chunk generator does,
-                // so the solid/not-solid call here matches the real terrain.
+                // wrapped before the threshold like the chunk generator, so solid here matches the real terrain
                 long packed = BeyondEndChunkGenerator.computeWrappedCoords(sampleX, sampleZ, params);
                 int wrappedSampleX = BeyondEndChunkGenerator.unpackWrappedX(packed);
                 int wrappedSampleZ = BeyondEndChunkGenerator.unpackWrappedZ(packed);

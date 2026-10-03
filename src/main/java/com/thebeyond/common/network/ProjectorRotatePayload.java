@@ -8,7 +8,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
-/** C2S: rotate the projected image {@code steps}*90 deg in-plane; world facing unchanged. */
+/** Client to server: turns the projected image steps times 90 degrees, the block facing stays. */
 public record ProjectorRotatePayload(BlockPos pos, byte steps) implements CustomPacketPayload {
     public static final Type<ProjectorRotatePayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "projector_rotate"));
 

@@ -1,6 +1,5 @@
 package com.thebeyond.common.worldgen;
 
-import com.thebeyond.common.registry.BeyondTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
@@ -38,7 +37,7 @@ public final class BunkerKnee {
             if (n > 0) {
                 BeyondGenDiagnostics.kneeLaid.addAndGet(n);
                 if (BeyondGenDiagnostics.loggedKnees.size() < 2000 && BeyondGenDiagnostics.loggedKnees.add(cp.toLong())) {
-                    com.thebeyond.TheBeyond.LOGGER.info("[Beyond] knee at chunk [{},{}]: {} blocks laid", cp.x, cp.z, n);
+                    com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] knee at chunk [{},{}]: {} blocks laid", cp.x, cp.z, n);
                 }
             }
             return n;
@@ -174,12 +173,12 @@ public final class BunkerKnee {
         }
     }
 
-    /** Envelope columns in the rectangle as {x, z, lowest block, top, highest fill}, for structures tagged the_beyond:knee. */
+    /** Envelope columns in the rectangle as {x, z, lowest block, top, highest fill}. */
     private static List<int[]> kneeColumns(List<BeyondEndChunkGenerator.CarveMask> masks, Registry<Structure> reg,
             int x0, int z0, int x1, int z1) {
         List<int[]> out = new ArrayList<>();
         for (BeyondEndChunkGenerator.CarveMask m : masks) {
-            if (m.baseBox == null || m.floating || m.carveOnly || m.basePedestal || !m.distributed || !tagged(m, reg)) continue;
+            if (m.baseBox == null || m.floating || m.carveOnly || m.basePedestal || !m.distributed || !knee(m, reg)) continue;
             if (m.oX > x1 || m.oX + m.w - 1 < x0 || m.oZ > z1 || m.oZ + m.d - 1 < z0) continue;
             for (int j = Math.max(0, z0 - m.oZ); j <= Math.min(m.d - 1, z1 - m.oZ); j++) {
                 for (int i = Math.max(0, x0 - m.oX); i <= Math.min(m.w - 1, x1 - m.oX); i++) {
@@ -199,9 +198,9 @@ public final class BunkerKnee {
         return out;
     }
 
-    private static boolean tagged(BeyondEndChunkGenerator.CarveMask m, Registry<Structure> reg) {
-        if (m.structureKey == null) return false;
-        return reg.getHolder(ResourceKey.create(Registries.STRUCTURE, m.structureKey)).map(h -> h.is(BeyondTags.KNEE)).orElse(false);
+    private static boolean knee(BeyondEndChunkGenerator.CarveMask m, Registry<Structure> reg) {
+        return m.structureKey != null && reg.getHolder(ResourceKey.create(Registries.STRUCTURE, m.structureKey))
+                .map(StructureReadings::knee).orElse(false);
     }
 
     private static boolean roofed(boolean[] full, int x, int y, int z, int nx, int ny, int nz) {

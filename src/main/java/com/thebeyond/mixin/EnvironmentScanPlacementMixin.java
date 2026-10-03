@@ -15,8 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.stream.Stream;
 
-/** Extends {@code environment_scan}'s max_steps (cap 96) when Beyond owns the End so
- *  pancake gaps are bridged without blowing up high-count features (e.g. crying_ducts). */
+/** Raises environment_scan's max_steps (cap 96) on Beyond's End so layer gaps are bridged. */
 @Mixin(EnvironmentScanPlacement.class)
 public abstract class EnvironmentScanPlacementMixin {
     private static final int the_beyond$HARD_CAP = 96;

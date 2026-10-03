@@ -180,8 +180,7 @@ public class EnatiousTotemEntity extends Mob implements Enemy, ITeleportingEntit
         super.tick();
 
         if (tickCount > 20 && this.getTarget() == null) {
-            // false = NO_CREATIVE_OR_SPECTATOR (vanilla); the explicit guard keeps the intent readable and
-            // survives a mode switch between acquisition and this tick.
+            // the explicit guard also covers a mode switch between acquisition and this tick
             Player player = this.level().getNearestPlayer(position().x, position().y, position().z, 32, false);
             if (player != null && !player.isCreative() && !player.isSpectator()) {
                 setTarget(player);
@@ -315,8 +314,7 @@ public class EnatiousTotemEntity extends Mob implements Enemy, ITeleportingEntit
             }
 
             LivingEntity livingentity = this.mob.getTarget();
-            // Re-validate the target here too: a player who switched to creative/spectator after being
-            // acquired must not keep the attack alive (canContinueToUse delegates to canUse).
+            // a player who switched to creative or spectator after being acquired must not keep the attack alive
             if (livingentity != null && livingentity.isAlive()
                     && !(livingentity instanceof Player p && (p.isCreative() || p.isSpectator()))) {
                 this.target = livingentity;
