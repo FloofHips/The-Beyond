@@ -235,6 +235,7 @@ public class BaubleEntity extends LivingBlock {
         Item item = itemstack.getItem();
 
         if (item instanceof DyeItem) {
+            itemstack.consume(1, player);
             tame(item, player);
             return InteractionResult.SUCCESS;
         }

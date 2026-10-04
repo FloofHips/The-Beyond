@@ -141,13 +141,14 @@ public class BonfireBlock extends BaseEntityBlock {
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (level instanceof ServerLevel serverLevel) {
             Optional<BlockPos> sisterBonfire = findNearestBonfire(serverLevel, state, pos, 200);
-            BlockPos sisterStructure = serverLevel.findNearestMapStructure(BeyondTags.BONFIRE_LOCATABLE, pos, 500, true);
 
             if (sisterBonfire.isPresent()) {
                 player.displayClientMessage(Component.translatable("block.bonfire.found"),true);
                 sendBeam(level, pos, player, serverLevel, sisterBonfire.get(), false);
                 return InteractionResult.CONSUME;
             } else {
+                BlockPos sisterStructure = serverLevel.findNearestMapStructure(BeyondTags.BONFIRE_LOCATABLE, pos, 500, true);
+
                 if (sisterStructure != null) {
                     player.displayClientMessage(Component.translatable("block.bonfire.near"),true);
                     sendBeam(level, pos, player, serverLevel, sisterStructure, true);
