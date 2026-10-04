@@ -8,13 +8,17 @@ import com.thebeyond.common.entity.util.livingblock.movement.Target;
 import com.thebeyond.common.registry.BeyondEntityTypes;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.common.registry.BeyondSoundEvents;
+import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -235,6 +239,20 @@ public class BaubleEntity extends LivingBlock {
         Item item = itemstack.getItem();
 
         if (item instanceof DyeItem) {
+
+            if (player instanceof ServerPlayer serverPlayer)
+                if (serverPlayer.level().getServer() != null) {
+                    ResourceLocation recipeAdvancementId = ResourceLocation.fromNamespaceAndPath("the_beyond", "recipes/tools/ocarina");
+                    AdvancementHolder holder = serverPlayer.server.getAdvancements().get(recipeAdvancementId);
+
+                    if (holder != null) {
+                        AdvancementProgress progress = serverPlayer.getAdvancements().getOrStartProgress(holder);
+                        for (String criterion : progress.getRemainingCriteria()) {
+                            serverPlayer.getAdvancements().award(holder, criterion);
+                        }
+                    }
+                }
+
             itemstack.consume(1, player);
             tame(item, player);
             return InteractionResult.SUCCESS;

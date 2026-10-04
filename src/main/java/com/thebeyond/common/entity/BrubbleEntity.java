@@ -254,8 +254,14 @@ public class BrubbleEntity extends PathfinderMob {
         }
         this.setDeltaMovement(getDeltaMovement().add(0,0.1,0));
         setNoGravity(false);
+        this.refreshDimensions();
         this.navigation = new GroundPathNavigation(this, level());
         this.navigation.stop();
+    }
+
+    @Override
+    protected EntityDimensions getDefaultDimensions(Pose pose) {
+        return hasRocket() ? super.getDefaultDimensions(pose) : this.getType().getDimensions().scale(0.5f);
     }
 
     protected AABB getAttackBoundingBox() {

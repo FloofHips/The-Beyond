@@ -79,17 +79,25 @@ public class BeyondNetworking {
         registrar.playToClient(
                 MemoryBankPagePacket.TYPE,
                 MemoryBankPagePacket.CODEC,
-                MemoryBankPagePacket::handle);
+                MemoryBankPagePacket::handle
+        );
 
         registrar.playToServer(
                 MemoryBankMagnifyModePacket.TYPE,
                 MemoryBankMagnifyModePacket.CODEC,
-                MemoryBankMagnifyModePacket::handle);
+                MemoryBankMagnifyModePacket::handle
+        );
 
         registrar.playToClient(
                 RefugeActivatePayload.TYPE,
                 RefugeActivatePayload.STREAM_CODEC,
                 BeyondNetworking::handleActivateClient
+        );
+
+        registrar.playToClient(
+                ShowBonfireTutorialToastPacket.TYPE,
+                ShowBonfireTutorialToastPacket.STREAM_CODEC,
+                ShowBonfireTutorialToastPacket::handle
         );
 
         registrar.playToClient(

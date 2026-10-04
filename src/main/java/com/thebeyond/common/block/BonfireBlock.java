@@ -2,10 +2,14 @@ package com.thebeyond.common.block;
 
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.MapCodec;
+import com.thebeyond.TheBeyond;
 import com.thebeyond.client.particle.PixelColorTransitionOptions;
 import com.thebeyond.common.block.blockentities.BonfireBlockEntity;
 import com.thebeyond.common.item.components.Components;
+import com.thebeyond.common.network.ShowBonfireTutorialToastPacket;
 import com.thebeyond.common.registry.*;
+import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
@@ -14,6 +18,7 @@ import net.minecraft.core.particles.*;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -46,6 +51,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
@@ -122,7 +128,16 @@ public class BonfireBlock extends BaseEntityBlock {
                     } else {
                         BeyondCriteriaTriggers.OBTAIN_LIVE_FLAME.get().trigger(serverPlayer);
                     }
+
+                    ResourceLocation passTheTorch = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_beyond/pass_the_torch");
+                    AdvancementHolder holder = serverPlayer.server.getAdvancements().get(passTheTorch);
+                    boolean hasFinished = serverPlayer.getAdvancements().getOrStartProgress(holder).isDone();
+
+                    if (!hasFinished) {
+                        PacketDistributor.sendToPlayer(serverPlayer, new ShowBonfireTutorialToastPacket());
+                    }
                 }
+
                 return ItemInteractionResult.CONSUME;
             }
             return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
@@ -141,6 +156,19 @@ public class BonfireBlock extends BaseEntityBlock {
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (level instanceof ServerLevel serverLevel) {
             Optional<BlockPos> sisterBonfire = findNearestBonfire(serverLevel, state, pos, 200);
+
+            if (player instanceof ServerPlayer serverPlayer)
+                if (serverPlayer.level().getServer() != null) {
+                    ResourceLocation recipeAdvancementId = ResourceLocation.fromNamespaceAndPath("the_beyond", "recipes/misc/ectoplasm");
+                    AdvancementHolder holder = serverPlayer.server.getAdvancements().get(recipeAdvancementId);
+
+                    if (holder != null) {
+                        AdvancementProgress progress = serverPlayer.getAdvancements().getOrStartProgress(holder);
+                        for (String criterion : progress.getRemainingCriteria()) {
+                            serverPlayer.getAdvancements().award(holder, criterion);
+                        }
+                    }
+                }
 
             if (sisterBonfire.isPresent()) {
                 player.displayClientMessage(Component.translatable("block.bonfire.found"),true);
@@ -167,6 +195,7 @@ public class BonfireBlock extends BaseEntityBlock {
     private static void sendBeam(Level level, BlockPos pos, Player player, ServerLevel serverLevel, BlockPos sisterPos, boolean structure) {
 
         level.playSound(null, pos, BeyondSoundEvents.BONFIRE_SEARCH.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
+        level.playSound(null, pos, SoundEvents.SOUL_ESCAPE.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
         level.playSound(null, sisterPos, BeyondSoundEvents.BONFIRE_SEARCH.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
 
         particleBeam(serverLevel, player, pos, sisterPos, structure);

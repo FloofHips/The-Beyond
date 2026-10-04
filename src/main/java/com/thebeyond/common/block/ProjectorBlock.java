@@ -182,14 +182,13 @@ public class ProjectorBlock extends BaseEntityBlock {
         boolean rising = signal && !state.getValue(TRIGGERED);
         BlockState next = state.setValue(POWERED, lightBlock).setValue(TRIGGERED, signal);
         if (next != state) {
+            level.playSound(null, pos, BeyondSoundEvents.PROJECTOR_IDLE.value(), SoundSource.BLOCKS, 0.5f, 0.9f + level.random.nextFloat());
             level.setBlock(pos, next, Block.UPDATE_CLIENTS);
             if (lightBlock != state.getValue(POWERED)) {
                 logLit(level, pos, next, "neighbour");
                 if (lightBlock) level.playSound(null, pos, BeyondSoundEvents.PROJECTOR_ACTIVATE.value(), SoundSource.BLOCKS, 1, 0.9f + level.random.nextFloat()*0.3f);
             }
         }
-
-        level.playSound(null, pos, BeyondSoundEvents.PROJECTOR_IDLE.value(), SoundSource.BLOCKS, 0.5f, 0.9f + level.random.nextFloat());
 
         if (rising && level.getBlockEntity(pos) instanceof ProjectorBlockEntity be && be.getMode() == ProjectorBlockEntity.MODE_CAROUSEL) {
             be.advanceCarousel();

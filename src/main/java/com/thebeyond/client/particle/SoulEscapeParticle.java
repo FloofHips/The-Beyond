@@ -18,7 +18,7 @@ public class SoulEscapeParticle extends WindParticle {
 
     @Override
     protected int getLifetime(double xSpeed, double ySpeed, double zSpeed) {
-        return (int) (25 + (xSpeed + ySpeed + zSpeed) * 50);
+        return (int) (25 + (xSpeed + ySpeed + zSpeed) * 50) + level.random.nextInt(70);
     }
 
     @Override

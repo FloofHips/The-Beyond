@@ -464,7 +464,7 @@ public class ModClientEvents {
             private static final ResourceLocation STILL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_0"),
                     FLOW = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_flowing_0"),
                     OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_0"),
-                    VIEW_OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_0.png");
+                    VIEW_OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/block/gellid_void/gellid_void_0.png");
 
             @Override
             public ResourceLocation getStillTexture() {
@@ -514,14 +514,13 @@ public class ModClientEvents {
 
             @Override
             public Vector3f modifyFogColor(Camera camera, float partialTick, ClientLevel level, int renderDistance, float darkenWorldAmount, Vector3f fluidFogColor) {
-                int color = -5566465;
-                return new Vector3f((color >> 16 & 0xFF) / 255F, (color >> 8 & 0xFF) / 255F, (color & 0xFF) / 255F);
+                return new Vector3f(0.3f, 0, 0.5f);
             }
 
             @Override
             public void modifyFogRender(Camera camera, FogRenderer.FogMode mode, float renderDistance, float partialTick, float nearDistance, float farDistance, FogShape shape) {
-                nearDistance = -20F;
-                farDistance = 2f;
+                nearDistance = 0F;
+                farDistance = 3f;
 
                 if (farDistance > renderDistance) {
                     farDistance = renderDistance;

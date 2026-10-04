@@ -27,6 +27,9 @@ public class BeyondBlockLoot extends BlockLootSubProvider {
     protected void generate() {
         dropSelf(BeyondBlocks.ENGRAVED_END_STONE.get());
         dropOther(BeyondBlocks.UNSTABLE_NACRE.get(), BeyondBlocks.NACRE.get());
+        dropOther(BeyondBlocks.RAKED_NACRE.get(), BeyondBlocks.NACRE.get());
+        dropOther(BeyondBlocks.PALE_RAKED_NACRE.get(), BeyondBlocks.PALE_NACRE.get());
+        dropOther(BeyondBlocks.RICH_RAKED_NACRE.get(), BeyondBlocks.RICH_NACRE.get());
         dropOther(BeyondBlocks.BRITTLE_METAL.get(), BeyondItems.BRITTLE_METAL_SHEET.get());
 
         dropSelf(BeyondBlocks.ZYMOTE.get());

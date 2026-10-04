@@ -1,17 +1,11 @@
-package com.thebeyond.client.gui;
+package com.thebeyond.client.gui.toast;
 
 import com.thebeyond.TheBeyond;
-import net.minecraft.advancements.AdvancementHolder;
-import net.minecraft.advancements.AdvancementType;
-import net.minecraft.advancements.DisplayInfo;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.toasts.Toast;
 import net.minecraft.client.gui.components.toasts.ToastComponent;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.NotNull;
@@ -28,7 +22,7 @@ public class BrittleMetalTutorialToast implements Toast {
             ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/toast/brittle_metal_casting/pickaxe.png"),
             ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/toast/brittle_metal_casting/shovel.png"),
             ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/toast/brittle_metal_casting/hoe.png"),
-            ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/toast/brittle_metal_casting/sword.png"),
+            ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/toast/brittle_metal_casting/sword.png")
     };
 
     public Component title;

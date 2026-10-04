@@ -412,7 +412,7 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
 
     @Override
     public Iterable<ItemStack> getArmorSlots() {
-        return null;
+        return Collections.singleton(ItemStack.EMPTY);
     }
 
     @Override
@@ -427,7 +427,7 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
 
     @Override
     public HumanoidArm getMainArm() {
-        return null;
+        return HumanoidArm.RIGHT;
     }
 
     @Override

@@ -13,6 +13,10 @@ import net.minecraft.core.Holder;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.material.FluidState;
+import net.neoforged.neoforge.client.event.ViewportEvent;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.common.NeoForge;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -57,6 +61,12 @@ public class FogRendererMixin {
             RenderSystem.setShaderFogShape(FogShape.SPHERE);
             RenderSystem.setShaderFogStart(Mth.lerp(ModClientEvents.bossFog,15 * finalFog * theBeyond$fogNearAddon,0));
             RenderSystem.setShaderFogEnd(fogEnd);
+
+
+            FluidState state = camera.getEntity().level().getFluidState(camera.getBlockPosition());
+            if (camera.getPosition().y < (double) ((float) camera.getBlockPosition().getY() + state.getHeight(camera.getEntity().level(), camera.getBlockPosition())))
+                IClientFluidTypeExtensions.of(state).modifyFogRender(camera, fogMode, distance/16, partialTick, 0, 10, FogShape.SPHERE);
+
             ci.cancel();
         }
     }
