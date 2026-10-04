@@ -323,7 +323,7 @@ public class BeyondBlocks {
             () -> new MoltenMetalBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_ORANGE)
                     .strength(0.5F, 0.5F)
-                    .sound(SoundType.NETHERITE_BLOCK))
+                    .sound(BeyondSoundTypes.PLATE_BLOCK))
     );
 
     public static final DeferredBlock<Block> BRITTLE_METAL = registerBlock("brittle_metal",
@@ -355,7 +355,7 @@ public class BeyondBlocks {
             .mapColor(MapColor.TERRACOTTA_WHITE)
             .strength(1.5F)
             .noOcclusion()
-            .sound(SoundType.AMETHYST)));
+            .sound(SoundType.METAL)));
     // No item: pinhole_camera places this block.
     public static final DeferredBlock<Block> PRISMOGRAPH = registerBlockWithoutItem("prismograph", () -> new PrismographBlock(BlockBehaviour.Properties.of()
             .mapColor(MapColor.COLOR_GRAY)

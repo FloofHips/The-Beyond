@@ -1301,6 +1301,32 @@
     ],
     "subtitle": "subtitles.block.enadrake_hut.spread"
   },
+  "block.projector.idle": {
+    "sounds": [
+      "the_beyond:block/projector/idle"
+    ],
+    "subtitle": "subtitles.block.projector.idle"
+  },
+  "block.projector.switch": {
+    "sounds": [
+      "the_beyond:block/projector/switch"
+    ],
+    "subtitle": "subtitles.block.projector.switch"
+  },
+  "block.projector.activate": {
+    "sounds": [
+      "the_beyond:block/projector/activate"
+    ],
+    "subtitle": "subtitles.block.projector.activate"
+  },
+  "block.projector.murmur": {
+    "sounds": [
+      "the_beyond:block/projector/murmur1",
+      "the_beyond:block/projector/murmur2",
+      "the_beyond:block/projector/murmur3"
+    ],
+    "subtitle": "subtitles.block.projector.murmur"
+  },
   "item.magnet.success": {
     "sounds": [
       "the_beyond:item/magnet/success"
@@ -1317,6 +1343,47 @@
     "sounds": [
       "the_beyond:item/magnet/pull"
     ]
+  },
+  "item.prismograph.close": {
+    "sounds": [
+      "the_beyond:item/prismograph/close"
+    ],
+    "subtitle": "subtitles.item.prismograph.close"
+  },
+  "item.prismograph.open": {
+    "sounds": [
+      "the_beyond:item/prismograph/open"
+    ],
+    "subtitle": "subtitles.item.prismograph.open"
+  },
+  "item.prismograph.insert": {
+    "sounds": [
+      "the_beyond:item/prismograph/insert"
+    ],
+    "subtitle": "subtitles.item.prismograph.insert"
+  },
+  "item.prismograph.extract": {
+    "sounds": [
+      "the_beyond:item/prismograph/extract"
+    ],
+    "subtitle": "subtitles.item.prismograph.extract"
+  },
+  "item.prismograph.empty": {
+    "sounds": [
+      "the_beyond:item/prismograph/empty"
+    ]
+  },
+  "item.prismograph.zoom": {
+    "sounds": [
+      "the_beyond:item/prismograph/zoom"
+    ]
+  },
+  "item.prismograph.snap": {
+    "sounds": [
+      "the_beyond:item/prismograph/snap1",
+      "the_beyond:item/prismograph/snap2"
+    ],
+    "subtitle": "subtitles.item.prismograph.snap"
   },
   "item.flame.fail": {
     "sounds": [

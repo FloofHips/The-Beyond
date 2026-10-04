@@ -133,15 +133,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         Vec3 eye = Vec3.atCenterOf(be.getBlockPos()).add(forward.scale(0.5));
         Vec3 worldUp = new Vec3(0, 1, 0);
         Vec3 right = forward.cross(worldUp).normalize();
-//        if (be.isFlipped()) {
-//            right = right.scale(-1);
-//        }
         Vec3 up = right.cross(forward).normalize();
-        //for (int k = Math.floorMod(be.getRotation(), 4); k > 0; k--) {
-        //    Vec3 nr = up;
-        //    up = right.scale(-1);
-        //    right = nr;
-        //}
         return new Pinhole(eye, forward, right, up, BASE_HALF / REF_DIST);
     }
 

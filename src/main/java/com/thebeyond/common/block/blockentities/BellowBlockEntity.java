@@ -2,8 +2,10 @@ package com.thebeyond.common.block.blockentities;
 
 import com.thebeyond.common.block.BellowBlock;
 import com.thebeyond.common.registry.BeyondBlockEntities;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -19,6 +21,9 @@ public class BellowBlockEntity extends BlockEntity {
         int signal = BellowBlock.inputSignal(level, pos, state);
         int strength = BellowBlock.computeLevel(level, pos, state, signal);
         if (strength != state.getValue(BellowBlock.STRENGTH)) {
+            if (strength > 0) {
+                level.playSound(null, pos, BeyondSoundEvents.GAUSS_VENT_MIDDLE.get(), SoundSource.BLOCKS, 1, 1);
+            }
             level.setBlock(pos, state.setValue(BellowBlock.STRENGTH, strength), Block.UPDATE_CLIENTS);
         }
         if (strength > 0 && level instanceof ServerLevel serverLevel) {

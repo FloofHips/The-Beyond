@@ -212,7 +212,7 @@ public class BeyondNetworking {
             PacketDistributor.sendToPlayer(player, new CaptureRequestPayload(requestId));
             player.getCooldowns().addCooldown(camera.getItem(), 10);
             player.serverLevel().playSound(null, player.blockPosition(),
-                    SoundEvents.UI_BUTTON_CLICK.value(),
+                    BeyondSoundEvents.PRISMOGRAPH_SNAP.value(),
                     SoundSource.PLAYERS, 0.7f, 1.2f);
         });
     }

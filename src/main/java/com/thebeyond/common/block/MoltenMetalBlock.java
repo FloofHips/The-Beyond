@@ -55,11 +55,7 @@ public class MoltenMetalBlock extends Block {
 
             if (random.nextInt(100) == 0) {
                 level.addParticle(ParticleTypes.LAVA, d0, d1, d2, (double)0.0F, (double)0.0F, (double)0.0F);
-                level.playLocalSound(d0, d1, d2, SoundEvents.LAVA_POP, SoundSource.BLOCKS, 0.2F + random.nextFloat() * 0.2F, 0.9F + random.nextFloat() * 0.15F, false);
-            }
-
-            if (random.nextInt(200) == 0) {
-                level.playLocalSound((double)pos.getX(), (double)pos.getY(), (double)pos.getZ(), SoundEvents.LAVA_AMBIENT, SoundSource.BLOCKS, 0.2F + random.nextFloat() * 0.2F, 0.9F + random.nextFloat() * 0.15F, false);
+                level.playLocalSound(d0, d1, d2, SoundEvents.SOUL_ESCAPE.value(), SoundSource.BLOCKS, 0.2F + random.nextFloat() * 0.2F, 0.9F + random.nextFloat() * 0.15F, false);
             }
         }
     }

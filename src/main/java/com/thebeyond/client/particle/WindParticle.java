@@ -33,24 +33,33 @@ public class WindParticle extends TextureSheetParticle {
         this.zd=zSpeed;
         this.sprites = sprites;
         this.scale(1.5f);
-        setLifetime((int) (25 + (xSpeed + ySpeed + zSpeed)*100));
+        setLifetime(getLifetime(xSpeed, ySpeed, zSpeed));
         this.alpha = 0;
+        hasPhysics = false;
+    }
+
+    protected int getLifetime(double xSpeed, double ySpeed, double zSpeed) {
+        return (int) (25 + (xSpeed + ySpeed + zSpeed) * 100);
     }
 
     @Override
     public void tick() {
         super.tick();
         setSpriteFromAge(sprites);
-        float weatherMultiplier = level.isRaining() ? 0.05f : 0.005f;
-        this.yd = Mth.lerp(0.1, this.yd, this.yd + (random.nextBoolean() ? -weatherMultiplier : weatherMultiplier));
-        this.xd = Mth.lerp(0.1, this.xd, this.xd + (random.nextBoolean() ? -weatherMultiplier*0.5f : weatherMultiplier*0.5f));
-        this.zd = Mth.lerp(0.1, this.zd, this.zd + (random.nextBoolean() ? -weatherMultiplier*0.5f : weatherMultiplier*0.5f));
+        move();
         if (this.age < 10) {
             this.alpha += 0.1f;
         }
         if (this.age > this.lifetime - 10) {
             this.alpha = 1 - (((float)(this.age - (this.lifetime - 10)) / 10.0f));
         }
+    }
+
+    protected void move() {
+        float weatherMultiplier = level.isRaining() ? 0.05f : 0.005f;
+        this.yd = Mth.lerp(0.1, this.yd, this.yd + (random.nextBoolean() ? -weatherMultiplier : weatherMultiplier));
+        this.xd = Mth.lerp(0.1, this.xd, this.xd + (random.nextBoolean() ? -weatherMultiplier*0.5f : weatherMultiplier*0.5f));
+        this.zd = Mth.lerp(0.1, this.zd, this.zd + (random.nextBoolean() ? -weatherMultiplier*0.5f : weatherMultiplier*0.5f));
     }
 
     @Override

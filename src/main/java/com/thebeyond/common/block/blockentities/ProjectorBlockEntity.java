@@ -7,6 +7,8 @@ import com.thebeyond.common.block.ProjectorBlock;
 import com.thebeyond.common.data.BeyondDataMapTypes;
 import com.thebeyond.common.data.ProjectorTexture;
 import com.thebeyond.common.registry.BeyondBlockEntities;
+import com.thebeyond.common.registry.BeyondParticleTypes;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
@@ -32,6 +34,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+
+import static com.thebeyond.common.block.ProjectorBlock.FACING;
 
 public class ProjectorBlockEntity extends BlockEntity implements Container, MenuProvider {
     public static final int SLOTS = 4;
@@ -177,7 +181,7 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
 
     public boolean isGroupComplete(ResourceLocation group) {
         if (items.isEmpty()) return false;
-        if (items.size() != 4) return false;
+        if (items.contains(ItemStack.EMPTY)) return false;
 
         for (ItemStack stack : items) {
             if (stack.isEmpty()) {
@@ -192,13 +196,16 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
     }
 
     private void checkRevealOnChange(ResourceLocation group, boolean wasComplete) {
-        if (group != null  && isGroupComplete(group) && level != null && !level.isClientSide) {
+        if (group != null && isGroupComplete(group) && !wasComplete && level != null) {
             BlockState state = getBlockState();
             BlockPos front = ProjectorBlock.frontOrigin(getBlockPos(), state);
             Vec3 c = BeyondCompatHooks.visibleOrCenter(level, front);
-            level.playSound(null, c.x, c.y, c.z, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 0.9f, 1.2f);
-            if (level instanceof ServerLevel sl) {
-                sl.sendParticles(ParticleTypes.END_ROD, c.x, c.y + 0.5, c.z, 24, 0.4, 0.4, 0.4, 0.02);
+            if (!level.isClientSide) {
+                level.playSound(null, c.x, c.y, c.z, BeyondSoundEvents.PROJECTOR_MURMUR, SoundSource.BLOCKS, 0.9f, 0.9f + level.random.nextFloat() * 0.3f);
+            } else {
+                for (int i = 0; i < 4; i++) {
+                    level.addParticle(BeyondParticleTypes.SOUL.get(), c.x + 1 - level.random.nextFloat()*2, c.y + 1 - level.random.nextFloat()*2, c.z + 1 - level.random.nextFloat()*2, state.getValue(FACING).getStepX()*0.1f, (double) 0.01F, state.getValue(FACING).getStepZ()*0.1f);
+                }
             }
         }
     }

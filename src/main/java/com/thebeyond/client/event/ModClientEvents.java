@@ -4,6 +4,7 @@ import com.mojang.blaze3d.shaders.FogShape;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Axis;
+import com.simibubi.create.content.equipment.bell.SoulParticle;
 import com.thebeyond.BeyondConfig;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.event.specialeffects.EndSpecialEffects;
@@ -234,6 +235,9 @@ public class ModClientEvents {
         event.registerSpriteSet(BeyondParticleTypes.WIND.get(), sprites
                 -> new WindParticle.Provider(sprites));
 
+        event.registerSpriteSet(BeyondParticleTypes.SOUL.get(), sprites
+                -> new SoulEscapeParticle.Provider(sprites));
+
         event.registerSpriteSet(BeyondParticleTypes.SMOKE.get(),
                 sprites -> new SmokeParticle.Provider(sprites));
 
@@ -460,7 +464,7 @@ public class ModClientEvents {
             private static final ResourceLocation STILL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_0"),
                     FLOW = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_flowing_0"),
                     OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_0"),
-                    VIEW_OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_0");
+                    VIEW_OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_0.png");
 
             @Override
             public ResourceLocation getStillTexture() {
@@ -552,6 +556,9 @@ public class ModClientEvents {
                 || player.getOffhandItem().getItem() instanceof PrismographBlockItem);
         if (!holding) {
             CameraAim.clear();
+            Minecraft mc = Minecraft.getInstance();
+            if (mc != null && mc.player!=null)
+                mc.player.playSound(BeyondSoundEvents.PRISMOGRAPH_CLOSE.value(), 0.5f, 1);
         }
     }
 
@@ -565,6 +572,7 @@ public class ModClientEvents {
         Player player = Minecraft.getInstance().player;
         if (!Minecraft.getInstance().options.getCameraType().isFirstPerson()) {
             CameraAim.clear();
+            player.playSound(BeyondSoundEvents.PRISMOGRAPH_CLOSE.value(), 0.5f, 1);
             player.displayClientMessage(Component.translatable("screen.the_beyond.prismograph.first_person"), true);
             return false;
         };
@@ -596,6 +604,10 @@ public class ModClientEvents {
         if (aimingWithCamera() && !event.getNewScreen().isPauseScreen()) {
             event.setCanceled(true);
             CameraAim.clear();
+
+            Minecraft mc = Minecraft.getInstance();
+            if (mc != null && mc.player!=null)
+                mc.player.playSound(BeyondSoundEvents.PRISMOGRAPH_CLOSE.value(), 0.5f, 1);
         }
     }
 
@@ -605,22 +617,23 @@ public class ModClientEvents {
         if (!aimingWithCamera()) return;
         event.setCanceled(true);
         event.setSwingHand(false);
+        Minecraft mc = Minecraft.getInstance();
         if (event.isUseItem()) {
-            Minecraft mc = Minecraft.getInstance();
             InteractionHand hand = mc.player.getMainHandItem().getItem() instanceof PrismographBlockItem
                     ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
             mc.gameMode.useItem(mc.player, hand);
         }
         if (event.isAttack()) {
             CameraAim.clear();
+            mc.player.playSound(BeyondSoundEvents.PRISMOGRAPH_CLOSE.value(), 0.5f, 1);
         }
     }
 
     @SubscribeEvent
     public static void onCameraZoom(InputEvent.MouseScrollingEvent event) {
         if (aimingWithCamera()) {
-            Minecraft.getInstance().cameraEntity.playSound(SoundEvents.SPYGLASS_USE,1, 2-zoomModifier);
             zoomModifier = Math.clamp((float) (zoomModifier - event.getScrollDeltaY()*0.2f),0,1.5f);
+            Minecraft.getInstance().cameraEntity.playSound(BeyondSoundEvents.PRISMOGRAPH_ZOOM.get(),1, Math.clamp(2-zoomModifier, 1f, 2f));
             event.setCanceled(true);
         }
     }

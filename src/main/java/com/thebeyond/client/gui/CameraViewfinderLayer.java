@@ -1,6 +1,7 @@
 package com.thebeyond.client.gui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.math.Axis;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.camera.CameraAim;
 import com.thebeyond.client.event.ModClientEvents;
@@ -11,15 +12,20 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 
-/** The spyglass scope as viewfinder: it fills the captured square and black bars hide the rest, an accurate frame. */
+/** It fills the captured square and black bars hide the rest, an accurate frame. */
 public class CameraViewfinderLayer implements LayeredDraw.Layer {
     private static final ResourceLocation OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/prismograph/overlay.png");
+    private static final ResourceLocation LENS = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/prismograph/lens.png");
+    private static final ResourceLocation PANEL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/prismograph/panel.png");
 
-    private float scopeScale = 0.5F; // grows 0.5 -> 1 while aiming, like the spyglass raise
+    private float scopeScale = 3F;
+    private float panelProgress = 0F;
+    private float color = 1f;
 
     @Override
     public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
@@ -30,36 +36,78 @@ public class CameraViewfinderLayer implements LayeredDraw.Layer {
             if (player == null || !holdingCamera(player)) {
                 CameraAim.clear();
             }
-            scopeScale = 2F;
+            scopeScale = 3F;
+            panelProgress = 0F;
+            color = 1F;
             return;
         }
 
-        // Advance the raise whenever aiming, even in third person, so an F5 toggle never restarts it.//
-        // Constants verbatim from Gui#renderSpyglassOverlay.
-        scopeScale = Mth.lerp(0.5F * deltaTracker.getGameTimeDeltaTicks(), scopeScale, 1.3F);
+        // Advance the raise whenever aiming.
+        float dt = deltaTracker.getGameTimeDeltaTicks();
+        scopeScale = Mth.lerp(0.5F * dt, scopeScale, 1.3F);
+        panelProgress = Mth.lerp(0.15F * dt, panelProgress, 7F);
+        color = (float) Mth.lerp(0.1 * dt, color, 0f);
 
         // drawn only in first person, third person keeps it ticking so switching back resumes mid-raise
         if (mc.options.hideGui || !mc.options.getCameraType().isFirstPerson()) {
             return;
         }
 
-        float fMin = Math.min(guiGraphics.guiWidth(), guiGraphics.guiHeight());
-        float scale = Math.min(guiGraphics.guiWidth() / fMin, guiGraphics.guiHeight() / fMin) * scopeScale;
-        int i = Mth.floor(fMin * scale);
+        RenderSystem.enableBlend();
+        int i = renderLayer(guiGraphics, scopeScale, LENS);
+
+        renderRotatedLayer(guiGraphics, scopeScale, 90);
+        renderRotatedLayer(guiGraphics, scopeScale, -90);
+        renderRotatedLayer(guiGraphics, scopeScale, 0);
+        renderRotatedLayer(guiGraphics, scopeScale, 180);
+
+        renderLayer(guiGraphics, scopeScale, OVERLAY);
+
         int k = (guiGraphics.guiWidth() - i) / 2;
         int l = (guiGraphics.guiHeight() - i) / 2;
         int i1 = k + i;
         int j1 = l + i;
-
-        RenderSystem.enableBlend();
-        guiGraphics.blit(OVERLAY, k, l, -90, 0.0F, 0.0F, i, i, i, i);
         RenderSystem.disableBlend();
-        guiGraphics.fill(RenderType.guiOverlay(), 0, j1, guiGraphics.guiWidth(), guiGraphics.guiHeight(), -90, 0xFF000000);
-        guiGraphics.fill(RenderType.guiOverlay(), 0, 0, guiGraphics.guiWidth(), l, -90, 0xFF000000);
-        guiGraphics.fill(RenderType.guiOverlay(), 0, l, k, j1, -90, 0xFF000000);
-        guiGraphics.fill(RenderType.guiOverlay(), i1, l, guiGraphics.guiWidth(), j1, -90, 0xFF000000);
+
+        guiGraphics.fill(RenderType.gui(), 0, j1, guiGraphics.guiWidth(), guiGraphics.guiHeight(), -90, 0xFF000000);
+        guiGraphics.fill(RenderType.gui(), 0, 0, guiGraphics.guiWidth(), l, -90, 0xFF000000);
+        guiGraphics.fill(RenderType.gui(), 0, l, k, j1, -90, 0xFF000000);
+        guiGraphics.fill(RenderType.gui(), i1, l, guiGraphics.guiWidth(), j1, -90, 0xFF000000);
 
         guiGraphics.drawString(Minecraft.getInstance().font, String.valueOf(ModClientEvents.zoomModifier), 0,0,-1);
+    }
+
+    private int renderLayer(GuiGraphics guiGraphics, float baseScale, ResourceLocation texture) {
+        float fMin = Math.min(guiGraphics.guiWidth(), guiGraphics.guiHeight());
+        float scale = Math.min(guiGraphics.guiWidth() / fMin, guiGraphics.guiHeight() / fMin) * baseScale;
+
+        int i = Mth.floor(fMin * scale);
+        int k = (guiGraphics.guiWidth() - i) / 2;
+        int l = (guiGraphics.guiHeight() - i) / 2;
+
+        guiGraphics.blit(texture, k, l, -90, 0.0F, 0.0F, i, i, i, i);
+        return i;
+    }
+
+    private int renderRotatedLayer(GuiGraphics guiGraphics, float baseScale, float rotation) {
+        float fMin = Math.min(guiGraphics.guiWidth(), guiGraphics.guiHeight());
+        float scale = Math.min(guiGraphics.guiWidth() / fMin, guiGraphics.guiHeight() / fMin) * baseScale;
+
+        int i = Mth.floor(fMin * scale);
+
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(guiGraphics.guiWidth() / 2f, guiGraphics.guiHeight() / 2f, 0f);
+        guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(rotation));
+        guiGraphics.pose().translate(-i / 2f, -i / 2f, 0f);
+        guiGraphics.pose().translate(0, -22*panelProgress, 0f);
+
+        RenderSystem.setShaderColor(1-color, 1-color, 1-color, 1);
+        guiGraphics.blit(PANEL, 0, 0, -90, 0.0F, 0.0F, i, i, i, i);
+        RenderSystem.setShaderColor(1, 1, 1, 1);
+
+        guiGraphics.pose().popPose();
+
+        return i;
     }
 
     private static boolean holdingCamera(LocalPlayer player) {

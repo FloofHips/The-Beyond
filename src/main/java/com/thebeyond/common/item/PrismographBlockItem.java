@@ -2,6 +2,7 @@ package com.thebeyond.common.item;
 
 import com.thebeyond.common.network.CameraShootPayload;
 import com.thebeyond.client.camera.CameraAim;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
@@ -80,15 +81,17 @@ public class PrismographBlockItem extends BlockItem {
         if (!hasFilm(stack)) {
             if (level.isClientSide) {
                 player.displayClientMessage(Component.translatable("screen.the_beyond.prismograph.no_film"), true);
-                player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 0.5f, 0.6f);
+                player.playSound(BeyondSoundEvents.PRISMOGRAPH_EMPTY.value(), 0.5f, 0.8f + level.random.nextFloat());
             }
             return InteractionResultHolder.fail(stack);
         }
         if (level.isClientSide) {
             if (!CameraAim.isAiming()) {
                 CameraAim.set(true);
+                player.playSound(BeyondSoundEvents.PRISMOGRAPH_OPEN.value(), 0.5f, 0.8f + level.random.nextFloat());
             } else {
                 CameraAim.shoot();
+                player.playSound(BeyondSoundEvents.PRISMOGRAPH_SNAP.value(), 0.5f, 0.8f + level.random.nextFloat());
                 PacketDistributor.sendToServer(new CameraShootPayload(hand));
             }
         }
@@ -130,7 +133,7 @@ public class PrismographBlockItem extends BlockItem {
             }
             saveSlots(camera, s);
             access.set(out);
-            player.playSound(SoundEvents.ITEM_FRAME_REMOVE_ITEM, 0.8f, 1.0f);
+            player.playSound(BeyondSoundEvents.PRISMOGRAPH_EXTRACT.value(), 0.8f, 1.0f);
             return true;
         }
         int target = slotFor(carried);
@@ -139,7 +142,7 @@ public class PrismographBlockItem extends BlockItem {
         }
         if (insertFrom(s, target, carried)) {
             saveSlots(camera, s);
-            player.playSound(SoundEvents.ITEM_FRAME_ADD_ITEM, 0.8f, 1.0f);
+            player.playSound(BeyondSoundEvents.PRISMOGRAPH_INSERT.value(), 0.8f, 1.0f);
         }
         return true; // consume the click for any film/fuel cursor, even if the slot was full
     }
@@ -161,7 +164,7 @@ public class PrismographBlockItem extends BlockItem {
                 putBack(s, leftover);
             }
             saveSlots(camera, s);
-            player.playSound(SoundEvents.ITEM_FRAME_REMOVE_ITEM, 0.8f, 1.0f);
+            player.playSound(BeyondSoundEvents.PRISMOGRAPH_EXTRACT.value(), 0.8f, 1.0f);
             return true;
         }
         int target = slotFor(onSlot);
@@ -174,7 +177,7 @@ public class PrismographBlockItem extends BlockItem {
             ItemStack taken = slot.safeTake(onSlot.getCount(), cap, player);
             if (insertFrom(s, target, taken)) {
                 saveSlots(camera, s);
-                player.playSound(SoundEvents.ITEM_FRAME_ADD_ITEM, 0.8f, 1.0f);
+                player.playSound(BeyondSoundEvents.PRISMOGRAPH_INSERT.value(), 0.8f, 1.0f);
             }
             if (!taken.isEmpty()) {
                 slot.safeInsert(taken); // defensive: took exactly the capacity, normally a no-op

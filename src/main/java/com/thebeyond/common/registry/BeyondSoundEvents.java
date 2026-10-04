@@ -80,6 +80,11 @@ public class BeyondSoundEvents {
     public static final DeferredHolder<SoundEvent, SoundEvent> BRITTLE_METAL_HIT = SOUND_EVENTS.register("block.brittle_metal.hit", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> BRITTLE_METAL_FALL = SOUND_EVENTS.register("block.brittle_metal.fall", SoundEvent::createVariableRangeEvent);
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> PROJECTOR_IDLE = SOUND_EVENTS.register("block.projector.idle", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> PROJECTOR_SWITCH = SOUND_EVENTS.register("block.projector.switch", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> PROJECTOR_ACTIVATE = SOUND_EVENTS.register("block.projector.activate", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> PROJECTOR_MURMUR = SOUND_EVENTS.register("block.projector.murmur", SoundEvent::createVariableRangeEvent);
+
     public static final DeferredHolder<SoundEvent, SoundEvent> BRITTLE_METAL_DOOR_OPEN = SOUND_EVENTS.register("block.brittle_metal_door.open", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> BRITTLE_METAL_DOOR_CLOSE = SOUND_EVENTS.register("block.brittle_metal_door.close", SoundEvent::createVariableRangeEvent);
 
@@ -213,4 +218,11 @@ public class BeyondSoundEvents {
     public static final DeferredHolder<SoundEvent, SoundEvent> MACE_SMASH_GROUND = SOUND_EVENTS.register("item.anchor_leggings.smash_ground", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> MACE_SMASH_GROUND_HEAVY = SOUND_EVENTS.register("item.anchor_leggings.smash_ground_heavy", SoundEvent::createVariableRangeEvent);
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> PRISMOGRAPH_OPEN = SOUND_EVENTS.register("item.prismograph.open", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> PRISMOGRAPH_CLOSE = SOUND_EVENTS.register("item.prismograph.close", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> PRISMOGRAPH_SNAP = SOUND_EVENTS.register("item.prismograph.snap", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> PRISMOGRAPH_ZOOM = SOUND_EVENTS.register("item.prismograph.zoom", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> PRISMOGRAPH_INSERT = SOUND_EVENTS.register("item.prismograph.insert", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> PRISMOGRAPH_EXTRACT = SOUND_EVENTS.register("item.prismograph.extract", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> PRISMOGRAPH_EMPTY = SOUND_EVENTS.register("item.prismograph.empty", SoundEvent::createVariableRangeEvent);
 }

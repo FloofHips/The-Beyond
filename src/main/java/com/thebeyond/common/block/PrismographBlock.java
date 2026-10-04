@@ -7,6 +7,7 @@ import com.thebeyond.api.compat.BeyondCompatHooks;
 import com.thebeyond.common.network.BlockCameraRenderRequestPayload;
 import com.thebeyond.common.camera.Grades;
 import com.thebeyond.common.camera.SnapshotRequests;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.common.registry.BeyondTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -15,6 +16,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
@@ -36,6 +38,8 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -48,6 +52,11 @@ public class PrismographBlock extends BaseEntityBlock {
     public static final MapCodec<PrismographBlock> CODEC = simpleCodec(PrismographBlock::new);
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED; // prior signal, for rising-edge detection
+
+    protected static final VoxelShape NORTH_AABB = Block.box(2.0F, 0, 6, 14.0F, 9F, 16.0F);
+    protected static final VoxelShape SOUTH_AABB = Block.box(2.0F, 0, 0, 14.0F, 9F, 10.0F);
+    protected static final VoxelShape EAST_AABB  = Block.box(0, 0, 2.0F, 10.0F, 9F, 14.0F);
+    protected static final VoxelShape WEST_AABB  = Block.box(6, 0, 2.0F, 16.0F, 9F, 14.0F);
 
     private static final int CAPTURE_COOLDOWN = 10;
 
@@ -64,6 +73,17 @@ public class PrismographBlock extends BaseEntityBlock {
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING, POWERED);
+    }
+
+    @Override
+    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return switch (state.getValue(FACING)) {
+            case Direction.NORTH -> NORTH_AABB;
+            case Direction.SOUTH -> SOUTH_AABB;
+            case Direction.WEST -> WEST_AABB;
+            case Direction.EAST -> EAST_AABB;
+            default -> SOUTH_AABB;
+        };
     }
 
     @Override
@@ -207,7 +227,7 @@ public class PrismographBlock extends BaseEntityBlock {
             return;
         }
         if (!be.hasFilm()) {
-            level.playSound(null, pos, SoundEvents.UI_BUTTON_CLICK.value(), SoundSource.BLOCKS, 0.5f, 0.6f);
+            level.playSound(null, pos, BeyondSoundEvents.PRISMOGRAPH_EMPTY.value(), SoundSource.BLOCKS, 0.5f, 1f);
             return;
         }
         // fuel goes here once wired: return on !be.hasFuel() with a dry-fire sound, else be.consumeFuel()
@@ -226,7 +246,7 @@ public class PrismographBlock extends BaseEntityBlock {
         long requestId = SnapshotRequests.issue(client, pos, Grades.NONE);
         PacketDistributor.sendToPlayer(client,
                 new BlockCameraRenderRequestPayload(requestId, eye, forward));
-        level.playSound(null, pos, SoundEvents.UI_BUTTON_CLICK.value(), SoundSource.BLOCKS, 0.7f, 1.2f);
+        level.playSound(null, pos, BeyondSoundEvents.PRISMOGRAPH_SNAP.value(), SoundSource.BLOCKS, 0.7f, 1f);
     }
 
     private static ServerPlayer pickRenderClient(ServerLevel level, BlockPos pos, UUID owner) {
@@ -247,5 +267,4 @@ public class PrismographBlock extends BaseEntityBlock {
         }
         return nearest;
     }
-
 }

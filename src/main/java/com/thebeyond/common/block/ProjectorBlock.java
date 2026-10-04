@@ -4,12 +4,15 @@ import com.mojang.serialization.MapCodec;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.particle.PixelColorTransitionOptions;
 import com.thebeyond.common.block.blockentities.ProjectorBlockEntity;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.util.ColorUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
@@ -42,7 +45,7 @@ public class ProjectorBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
     public static final BooleanProperty TRIGGERED = BlockStateProperties.TRIGGERED;
-    static boolean DIAG_LIT = true;
+    static boolean DIAG_LIT = false;
 
     public ProjectorBlock(Properties properties) {
         super(properties);
@@ -90,6 +93,7 @@ public class ProjectorBlock extends BaseEntityBlock {
     public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
         super.animateTick(state, level, pos, random);
 
+        if(!state.getValue(POWERED)) return;
         if(random.nextBoolean()) return;
 
         Direction dir = state.getValue(FACING);
@@ -99,7 +103,9 @@ public class ProjectorBlock extends BaseEntityBlock {
                 new Vector3f(0.9f, 0.5f, 0.9f),
                 0.2f
         ), particlePos.x, particlePos.y, particlePos.z, dir.getStepX(), 0.001f, dir.getStepZ());
-    }
+
+        if(!level.getBlockState(pos.below()).is(BlockTags.DAMPENS_VIBRATIONS) && level.random.nextFloat() < 0.1)
+            level.playLocalSound(pos.getX(), pos.above().getY(), pos.getZ(), BeyondSoundEvents.PROJECTOR_IDLE.get(), SoundSource.BLOCKS, 1, 0.9f + random.nextFloat()*0.3f, false);    }
 
     @Override
     protected RenderShape getRenderShape(BlockState state) {
@@ -152,6 +158,8 @@ public class ProjectorBlock extends BaseEntityBlock {
                 if (!level.isClientSide) {
                     be.advanceCarousel();
                 }
+
+                level.playSound(null, pos, BeyondSoundEvents.PROJECTOR_SWITCH.value(), SoundSource.BLOCKS, 0.5f, 0.9f + level.random.nextFloat()*0.2f);
                 return InteractionResult.sidedSuccess(level.isClientSide);
             }
             return super.useWithoutItem(state, level, pos, player, hit);
@@ -177,11 +185,15 @@ public class ProjectorBlock extends BaseEntityBlock {
             level.setBlock(pos, next, Block.UPDATE_CLIENTS);
             if (lightBlock != state.getValue(POWERED)) {
                 logLit(level, pos, next, "neighbour");
+                if (lightBlock) level.playSound(null, pos, BeyondSoundEvents.PROJECTOR_ACTIVATE.value(), SoundSource.BLOCKS, 1, 0.9f + level.random.nextFloat()*0.3f);
             }
         }
 
+        level.playSound(null, pos, BeyondSoundEvents.PROJECTOR_IDLE.value(), SoundSource.BLOCKS, 0.5f, 0.9f + level.random.nextFloat());
+
         if (rising && level.getBlockEntity(pos) instanceof ProjectorBlockEntity be && be.getMode() == ProjectorBlockEntity.MODE_CAROUSEL) {
             be.advanceCarousel();
+            level.playSound(null, pos, BeyondSoundEvents.PROJECTOR_SWITCH.value(), SoundSource.BLOCKS, 1f, 0.9f + level.random.nextFloat()*0.3f);
             if (level instanceof ServerLevel serverLevel) {
                 for (int i = 0; i < 6; i++) {
                     makeParticle(serverLevel, pos, 1);

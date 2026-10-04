@@ -12,6 +12,8 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.particles.*;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -48,6 +50,8 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 import java.util.Optional;
+
+import static com.thebeyond.common.block.ProjectorBlock.FACING;
 
 public class BonfireBlock extends BaseEntityBlock {
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
@@ -140,13 +144,16 @@ public class BonfireBlock extends BaseEntityBlock {
             BlockPos sisterStructure = serverLevel.findNearestMapStructure(BeyondTags.BONFIRE_LOCATABLE, pos, 500, true);
 
             if (sisterBonfire.isPresent()) {
+                player.displayClientMessage(Component.translatable("block.bonfire.found"),true);
                 sendBeam(level, pos, player, serverLevel, sisterBonfire.get(), false);
                 return InteractionResult.CONSUME;
             } else {
                 if (sisterStructure != null) {
+                    player.displayClientMessage(Component.translatable("block.bonfire.near"),true);
                     sendBeam(level, pos, player, serverLevel, sisterStructure, true);
                     return InteractionResult.CONSUME;
                 } else {
+                    player.displayClientMessage(Component.translatable("block.bonfire.none"),true);
                     level.playSound(null, pos,  BeyondSoundEvents.BONFIRE_SEARCH.get(), SoundSource.BLOCKS, 1.0F, 0.8f + level.random.nextFloat()*0.3f);
                     return InteractionResult.CONSUME;
                 }
@@ -178,15 +185,31 @@ public class BonfireBlock extends BaseEntityBlock {
     }
 
     public static void particleBeam(Level level, Player player, BlockPos from, BlockPos to, boolean structure) {
-        float red = structure ? 1 : 0.1F + level.random.nextFloat() * 0.1F;
-        float green = 0.4F + level.random.nextFloat() * 0.3F;
-        float blue = 0.8F + level.random.nextFloat() * 0.2F;
-        float scale = 1F + level.random.nextFloat() * 0.3F;
-
-        if (level instanceof ServerLevel serverLevel && player instanceof ServerPlayer serverPlayer) {
+        if (player instanceof ServerPlayer serverPlayer) {
             Vec3 start = Vec3.atCenterOf(from);
             Vec3 end = Vec3.atCenterOf(to);
             Vec3 diff = end.subtract(start);
+            Vec3 dir = end.subtract(start).normalize();
+
+            if (structure) {
+                for (int j = 0; j < 10; j++) {
+                    level.addParticle(BeyondParticleTypes.SOUL.get(), start.x + 1 - level.random.nextFloat() * 2, start.y + 1 - level.random.nextFloat() * 2, start.z + 1 - level.random.nextFloat() * 2, 0.0f, (double) 0.01F, 0.0f);
+
+                    ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket(
+                            BeyondParticleTypes.SOUL.get(),
+                            false,
+                            start.x + 2 - level.random.nextFloat() * 4, start.y + level.random.nextFloat(), start.z + 2 - level.random.nextFloat() * 4,
+                            0,
+                            0.5f + level.random.nextFloat(),
+                            0,
+                            0.15F,
+                            0
+                    );
+
+                    serverPlayer.connection.send(packet);
+                }
+                return;
+            }
 
             for (int i = 0; i < diff.length(); i++) {
                 double progress = (i + level.random.nextDouble()) / diff.length();
@@ -198,10 +221,19 @@ public class BonfireBlock extends BaseEntityBlock {
                         (level.random.nextDouble() - 0.5) * 0.1
                 );
 
-                Vector3f color = new Vector3f(red, green, blue);
-                ParticleOptions options = new DustParticleOptions(color, scale);
+                float v = 0.5f + level.random.nextFloat();
+                ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket(
+                        BeyondParticleTypes.SOUL.get(),
+                        true,
+                        pos.x, pos.y + level.random.nextFloat(), pos.z,
+                        (float) dir.x * v,
+                        (float) dir.y * v,
+                        (float) dir.z * v,
+                        0.2F,
+                        0
+                );
 
-                serverLevel.sendParticles(serverPlayer, options, true, pos.x, pos.y, pos.z, 1, 0,0,0,0.000);
+                serverPlayer.connection.send(packet);
             }
         }
     }
@@ -231,6 +263,8 @@ public class BonfireBlock extends BaseEntityBlock {
                 if (d == Direction.UP || d == Direction.DOWN) continue;
                 spawnBabyFlames(level, Vec3.atCenterOf(pos).add(d.getStepX()*0.7, 0.2, d.getStepZ()*0.7), random);
             }
+
+            if (random.nextInt(10) == 0) level.addParticle(BeyondParticleTypes.SOUL.get(), pos.getX() + (1 - random.nextFloat())*2*(random.nextBoolean() ? 1 : -1), pos.getY(), pos.getZ() + (1 - random.nextFloat())*2*(random.nextBoolean() ? 1 : -1), (double) 0.001F, (double) 0.1F, (double) 0.001F);
         }
 
         super.animateTick(state, level, pos, random);

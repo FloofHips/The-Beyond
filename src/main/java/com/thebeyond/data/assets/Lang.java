@@ -223,6 +223,10 @@ public class Lang extends LanguageProvider {
         add("subtitles.block.bonfire.search", "Bonfire is searching for twin");
         add("subtitles.block.bonfire.activate", "Bonfire lights up");
 
+        add("block.bonfire.found", "Twin Bonfire found");
+        add("block.bonfire.near", "Twin Bonfire nearby");
+        add("block.bonfire.none", "This bonfire sits alone");
+
         add("subtitles.block.polar.emerge", "Enderglop emerges");
         add("subtitles.block.polar.charge", "Polar charge rises up");
         add("subtitles.block.polar.cool", "Polar charge cools down");
@@ -273,6 +277,17 @@ public class Lang extends LanguageProvider {
         add("subtitles.block.gauss_vent.start", "Gauss Erupted");
         add("subtitles.block.gauss_vent.middle", "Gauss venting");
         add("subtitles.block.gauss_vent.end", "Gauss vented");
+
+        add("subtitles.block.projector.idle", "Projector churning");
+        add("subtitles.block.projector.switch", "Slide switches");
+        add("subtitles.block.projector.switch", "Projector wakes up");
+        add("subtitles.block.projector.murmur", "Spectators murmuring");
+
+        add("subtitles.item.prismograph.close", "Prismograph closed");
+        add("subtitles.item.prismograph.open", "Prismograph opened");
+        add("subtitles.item.prismograph.insert", "Film inserted");
+        add("subtitles.item.prismograph.extract", "Film extracted");
+        add("subtitles.item.prismograph.snap", "Snapshot taken");
 
         add("subtitles.item.magnet.success", "Magnet latches on");
         add("subtitles.item.magnet.fail", "Magnet falls short");
