@@ -1,6 +1,7 @@
 package com.thebeyond.util;
 
 import com.thebeyond.common.block.blockstates.RakedProperty;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.sounds.SoundEvents;
@@ -26,8 +27,10 @@ public class BlockUtils {
 
         if (property != null) {
             BlockState newState = state.setValue(RAKE_DIRECTION, property);
+            if (newState == state) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
             level.setBlock(pos, newState, 3);
-            level.playSound(player, pos, SoundEvents.HOE_TILL, SoundSource.BLOCKS, 1.0F, 1.0F);
+            level.playSound(player, pos, BeyondSoundEvents.NACRE_RAKE.get(), SoundSource.BLOCKS, 1.0F, 0.8f + level.random.nextFloat());
+            level.playSound(player, pos, SoundEvents.HOE_TILL, SoundSource.BLOCKS, 1.0F, 0.8f + level.random.nextFloat());
             stack.hurtAndBreak(1, player, LivingEntity.getSlotForHand(hand));
 
             return ItemInteractionResult.SUCCESS;

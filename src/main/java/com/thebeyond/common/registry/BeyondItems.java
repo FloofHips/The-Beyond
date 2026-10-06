@@ -73,7 +73,14 @@ public class BeyondItems {
             tooltipComponents.add(Component.literal(" Walk on Auroracite").withStyle(ChatFormatting.DARK_AQUA));
         }
     });
-    public static final DeferredItem<Item> ECTOPLASM = registerItem("ectoplasm", () -> new AirPlaceableBlockItem(BeyondBlocks.ECTOPLASM.get(), new Item.Properties()));
+    public static final DeferredItem<Item> ECTOPLASM = registerItem("ectoplasm", () -> new AirPlaceableBlockItem(BeyondBlocks.ECTOPLASM.get(), new Item.Properties()) {
+        @Override
+        public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+            super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+            tooltipComponents.add(Component.literal("Can be placed mid-air").withStyle(ChatFormatting.GRAY));
+            tooltipComponents.add(Component.literal("Used on lit Bonfires").withStyle(ChatFormatting.DARK_AQUA));
+        }
+    });
 
     public static final DeferredItem<Item> LIVE_FLAME = registerItem("live_flame", () -> new LiveFlameItem(new Item.Properties().durability(12000)));
     public static final DeferredItem<Item> LIVID_FLAME = registerItem("livid_flame", () -> new LiveFlameItem(new Item.Properties().durability(6000).rarity(Rarity.RARE)));

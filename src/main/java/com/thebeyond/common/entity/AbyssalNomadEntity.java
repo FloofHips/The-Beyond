@@ -292,6 +292,7 @@ public class AbyssalNomadEntity extends PathfinderMob implements ITeleportingEnt
 
                 itementity.setNoPickUpDelay();
                 this.level().addFreshEntity(itementity);
+
                 itementity.setNoGravity(true);
 
                 if (level() instanceof ServerLevel serverLevel)

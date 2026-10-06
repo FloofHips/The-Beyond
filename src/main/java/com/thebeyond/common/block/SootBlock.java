@@ -6,6 +6,7 @@ import com.thebeyond.common.entity.BrubbleEntity;
 import com.thebeyond.common.entity.EnderglopEntity;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondEntityTypes;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.util.ColorUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -13,6 +14,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.item.PrimedTnt;
@@ -82,6 +84,7 @@ public class SootBlock extends FallingBlock implements Fallable {
             Vec3 newPos = pos.getCenter();
             entity.setPos(newPos.x, newPos.y, newPos.z);
             serverLevel.addFreshEntity(entity);
+            serverLevel.playSound(fallingBlock, pos, BeyondSoundEvents.BRUBBLE_APPEAR.get(), SoundSource.HOSTILE, 1, 0.7f + level.random.nextFloat());
         }
         super.onBrokenAfterFall(level, pos, fallingBlock);
     }

@@ -2,8 +2,10 @@ package com.thebeyond.common.item;
 
 import com.thebeyond.common.entity.PearlItemEntity;
 import com.thebeyond.common.registry.BeyondEntityTypes;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Position;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -21,6 +23,8 @@ public class PearlItem  extends Item implements ProjectileItem {
 
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);
+        level.playSound((Player)null, player.getX(), player.getY(), player.getZ(), BeyondSoundEvents.ITEM_THROW.get(), SoundSource.PLAYERS, 0.5F, 0.4F / (level.getRandom().nextFloat() * 0.4F + 0.8F));
+
         if (!level.isClientSide) {
             PearlItemEntity pearl = new PearlItemEntity(BeyondEntityTypes.PEARL_BEAD.get(), level);
 

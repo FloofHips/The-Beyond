@@ -104,10 +104,10 @@ public class SiblingEntity extends PathfinderMob {
     @Override
     public boolean hurt(DamageSource source, float amount) {
         if (source.getEntity() != null && source.getEntity() instanceof LivingEntity livingEntity) {
-            if (!livingEntity.hasEffect(BeyondEffects.EMPATHY)) livingEntity.addEffect(new MobEffectInstance(BeyondEffects.EMPATHY, 600,1));
+            if (!livingEntity.hasEffect(BeyondEffects.EMPATHY)) livingEntity.addEffect(new MobEffectInstance(BeyondEffects.EMPATHY, 1000,1));
             if (livingEntity instanceof Player player && player.level().isClientSide) {
                 ModClientEvents.empathy = 1;
-                player.level().playSound(player, player.getX(), player.getY(), player.getZ(), BeyondSoundEvents.ABYSSAL_NOMAD_NOD.get(), SoundSource.NEUTRAL);
+                player.level().playSound(player, player.getX(), player.getY(), player.getZ(), BeyondSoundEvents.EMPATHY.get(), SoundSource.NEUTRAL);
             }
         }
 

@@ -3,7 +3,10 @@ package com.thebeyond.common.entity;
 import com.thebeyond.client.particle.CloudColorTransitionOptions;
 import com.thebeyond.client.particle.SmokeColorTransitionOptions;
 import com.thebeyond.common.registry.BeyondItems;
+import com.thebeyond.common.registry.BeyondSoundEvents;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.Item;
@@ -39,6 +42,8 @@ public class SmokeFuseEntity extends ThrowableItemProjectile {
                     2.5f
             ), this.getX(),this.getY()+1,this.getZ(),15,1.1,1.1,1.1,0.02);
         }
+
+        level().playSound(this, BlockPos.containing(position()), BeyondSoundEvents.SMOKE_FUSE_USE.get(), SoundSource.PLAYERS, 1, 0.8f+level().random.nextFloat());
         this.discard();
     }
 

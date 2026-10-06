@@ -54,7 +54,7 @@ public class PearlChimesBlock extends Block {
         boolean raining = level.isRaining();
 
         if (state.getValue(LIT) ? random.nextFloat() > 0.2 : random.nextFloat() > 0.6) {
-            level.playLocalSound(pos.getX(), pos.above().getY(), pos.getZ(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 2, random.nextFloat() + (raining ? 1 : 0), false);
+            if (random.nextFloat() > 0.8) level.playLocalSound(pos.getX(), pos.above().getY(), pos.getZ(), BeyondSoundEvents.PEARL_CHIME.get(), SoundSource.BLOCKS, 1, random.nextFloat() + (raining ? 1 : 0.5f), false);
             spawnParticle(level, pos, random);
         }
     }

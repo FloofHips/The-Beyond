@@ -381,16 +381,12 @@ public class BeyondBlocks {
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.WARPED_WART_BLOCK)
                     .strength(2.0F, 2.0F)
-                    .sound(SoundType.GRAVEL)) {
+                    .sound(BeyondSoundTypes.NACRE)) {
 
                 @Override
                 protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-                    if (!level.isClientSide()) {
-                        if (!stack.is(ItemTags.HOES)) return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
-                        return BlockUtils.useItemOn(stack, RAKED_NACRE.get().defaultBlockState(), level, pos, player, hand, hitResult);
-                    }
-
-                    return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
+                    if (!stack.is(ItemTags.HOES)) return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
+                    return BlockUtils.useItemOn(stack, RAKED_NACRE.get().defaultBlockState(), level, pos, player, hand, hitResult);
                 }
             }
     );
@@ -398,28 +394,24 @@ public class BeyondBlocks {
             () -> new RakedNacreBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.WARPED_WART_BLOCK)
                     .strength(2.0F, 2.0F)
-                    .sound(SoundType.GRAVEL))
+                    .sound(BeyondSoundTypes.NACRE))
     );
     public static final DeferredBlock<Block> UNSTABLE_NACRE = registerBlock("unstable_nacre",
             () -> new NacreBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.WARPED_HYPHAE)
                     .strength(2.0F, 2.0F)
-                    .sound(SoundType.GRAVEL))
+                    .sound(BeyondSoundTypes.NACRE))
     );
     public static final DeferredBlock<Block> RICH_NACRE = registerBlock("rich_nacre",
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_BLACK)
                     .strength(2.0F, 2.0F)
-                    .sound(SoundType.GRAVEL)) {
+                    .sound(BeyondSoundTypes.NACRE)) {
 
                 @Override
                 protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-                    if (!level.isClientSide()) {
-                        if (!stack.is(ItemTags.HOES)) return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
-                        return BlockUtils.useItemOn(stack, RICH_RAKED_NACRE.get().defaultBlockState(), level, pos, player, hand, hitResult);
-                    }
-
-                    return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
+                    if (!stack.is(ItemTags.HOES)) return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
+                    return BlockUtils.useItemOn(stack, RICH_RAKED_NACRE.get().defaultBlockState(), level, pos, player, hand, hitResult);
                 }
             }
     );
@@ -427,22 +419,18 @@ public class BeyondBlocks {
             () -> new RakedNacreBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_BLACK)
                     .strength(2.0F, 2.0F)
-                    .sound(SoundType.GRAVEL))
+                    .sound(BeyondSoundTypes.NACRE))
     );
     public static final DeferredBlock<Block> PALE_NACRE = registerBlock("pale_nacre",
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.SNOW)
                     .strength(2.0F, 2.0F)
-                    .sound(SoundType.GRAVEL)) {
+                    .sound(BeyondSoundTypes.NACRE)) {
 
                 @Override
                 protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-                    if (!level.isClientSide()) {
-                        if (!stack.is(ItemTags.HOES)) return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
-                        return BlockUtils.useItemOn(stack, PALE_RAKED_NACRE.get().defaultBlockState(), level, pos, player, hand, hitResult);
-                    }
-
-                    return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
+                    if (!stack.is(ItemTags.HOES)) return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
+                    return BlockUtils.useItemOn(stack, PALE_RAKED_NACRE.get().defaultBlockState(), level, pos, player, hand, hitResult);
                 }
             }
     );
@@ -450,7 +438,7 @@ public class BeyondBlocks {
             () -> new RakedNacreBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.SNOW)
                     .strength(2.0F, 2.0F)
-                    .sound(SoundType.GRAVEL))
+                    .sound(BeyondSoundTypes.NACRE))
     );
     public static final DeferredBlock<Block> PEARL = registerBlock("pearl",
             () -> new WhistlingBlock(BlockBehaviour.Properties.of()

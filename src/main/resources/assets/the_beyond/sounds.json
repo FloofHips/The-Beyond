@@ -416,6 +416,56 @@
     ],
     "subtitle": "subtitles.block.generic.footsteps"
   },
+  "block.nacre.break": {
+    "sounds": [
+      "the_beyond:block/nacre/heavy1",
+      "the_beyond:block/nacre/heavy2",
+      "the_beyond:block/nacre/heavy3"
+    ],
+    "subtitle": "subtitles.block.generic.break"
+  },
+  "block.nacre.fall": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.nacre.break",
+        "type": "event"
+      }
+    ]
+  },
+  "block.nacre.hit": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.nacre.step",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.hit"
+  },
+  "block.nacre.place": {
+    "sounds": [
+      {
+        "name": "the_beyond:block.nacre.break",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.block.generic.place"
+  },
+  "block.nacre.step": {
+    "sounds": [
+      "the_beyond:block/nacre/light1",
+      "the_beyond:block/nacre/light2",
+      "the_beyond:block/nacre/light3"
+    ],
+    "subtitle": "subtitles.block.generic.footsteps"
+  },
+  "block.nacre.rake": {
+    "sounds": [
+      "the_beyond:block/nacre/rake1",
+      "the_beyond:block/nacre/rake2",
+      "the_beyond:block/nacre/rake3"
+    ],
+    "subtitle": "subtitles.block.nacre.rake"
+  },
   "block.mirror.break": {
     "sounds": [
       "the_beyond:block/pearl/break1",
@@ -433,6 +483,14 @@
       "the_beyond:block/pearl/break4"
     ],
     "subtitle": "subtitles.entity.sibling.death"
+  },
+  "entity.sibling.empathy": {
+    "sounds": [
+      "the_beyond:mob/sibling/empathy1",
+      "the_beyond:mob/sibling/empathy2",
+      "the_beyond:mob/sibling/empathy3"
+    ],
+    "subtitle": "subtitles.entity.sibling.empathy"
   },
   "entity.trinket.fill": {
     "sounds": [
@@ -1066,6 +1124,87 @@
     ],
     "subtitle": "subtitles.entity.enatious_totem.teleport"
   },
+  "entity.brubble.death": {
+    "sounds": [
+      "the_beyond:mob/brubble/death1",
+      "the_beyond:mob/brubble/death2",
+      "the_beyond:mob/brubble/death3"
+    ],
+    "subtitle": "subtitles.entity.brubble.death"
+  },
+  "entity.brubble.hurt": {
+    "sounds": [
+      "the_beyond:mob/brubble/hurt1",
+      "the_beyond:mob/brubble/hurt2",
+      "the_beyond:mob/brubble/hurt3",
+      "the_beyond:mob/brubble/hurt4",
+      "the_beyond:mob/brubble/hurt5",
+      "the_beyond:mob/brubble/hurt6"
+    ],
+    "subtitle": "subtitles.entity.brubble.hurt"
+  },
+  "entity.brubble.appear": {
+    "sounds": [
+      "the_beyond:mob/brubble/appear1",
+      "the_beyond:mob/brubble/appear2",
+      "the_beyond:mob/brubble/appear3"
+    ],
+    "subtitle": "subtitles.entity.brubble.appear"
+  },
+  "entity.brubble.attack": {
+    "sounds": [
+      "the_beyond:mob/brubble/attack1",
+      "the_beyond:mob/brubble/attack2",
+      "the_beyond:mob/brubble/attack3"
+    ],
+    "subtitle": "subtitles.entity.brubble.attack"
+  },
+  "entity.brubble.destroy": {
+    "sounds": [
+      "the_beyond:mob/brubble/destroy1",
+      "the_beyond:mob/brubble/destroy2",
+      "the_beyond:mob/brubble/destroy3"
+    ],
+    "subtitle": "subtitles.entity.brubble.destroy"
+  },
+  "entity.brubble.emily": {
+    "sounds": [
+      "the_beyond:mob/brubble/emily1",
+      "the_beyond:mob/brubble/emily2"
+    ],
+    "subtitle": "subtitles.entity.brubble.emily"
+  },
+  "entity.brubble.hover": {
+    "sounds": [
+      "the_beyond:mob/brubble/hover"
+    ],
+    "subtitle": "subtitles.entity.brubble.hover"
+  },
+  "entity.brubble.sigh": {
+    "sounds": [
+      "the_beyond:mob/brubble/sigh1",
+      "the_beyond:mob/brubble/sigh2",
+      "the_beyond:mob/brubble/sigh3"
+    ],
+    "subtitle": "subtitles.entity.brubble.sigh"
+  },
+  "entity.brubble.idle": {
+    "sounds": [
+      "the_beyond:mob/brubble/idle1",
+      "the_beyond:mob/brubble/idle2",
+      "the_beyond:mob/brubble/idle3",
+      "the_beyond:mob/brubble/idle4"
+    ],
+    "subtitle": "subtitles.entity.brubble.idle"
+  },
+  "entity.brubble.step": {
+    "sounds": [
+      "the_beyond:mob/brubble/step1",
+      "the_beyond:mob/brubble/step2",
+      "the_beyond:mob/brubble/step3"
+    ],
+    "subtitle": "subtitles.entity.brubble.step"
+  },
   "entity.seed.knockback_burst": {
     "sounds": [
       "the_beyond:mob/seed/knockback_burst1",
@@ -1138,7 +1277,8 @@
       "the_beyond:mob/enadrake/teleport2"
     ],
     "subtitle": "subtitles.entity.enadrake.teleport"
-  },"entity.stalker.hurt": {
+  },
+  "entity.stalker.hurt": {
     "sounds": [
       "the_beyond:mob/stalker/hurt1",
       "the_beyond:mob/stalker/hurt2",
@@ -1327,6 +1467,16 @@
     ],
     "subtitle": "subtitles.block.projector.murmur"
   },
+  "block.pearl_chimes.chime": {
+    "sounds": [
+      "the_beyond:block/pearl_chimes/chime1",
+      "the_beyond:block/pearl_chimes/chime2",
+      "the_beyond:block/pearl_chimes/chime3",
+      "the_beyond:block/pearl_chimes/chime4",
+      "the_beyond:block/pearl_chimes/chime5"
+    ],
+    "subtitle": "subtitles.block.pearl_chimes.chime"
+  },
   "item.magnet.success": {
     "sounds": [
       "the_beyond:item/magnet/success"
@@ -1392,6 +1542,14 @@
     ],
     "subtitle": "subtitles.item.flame.fail"
   },
+  "item.smoke_fuse.use": {
+    "sounds": [
+      "the_beyond:item/smoke_fuse/use1",
+      "the_beyond:item/smoke_fuse/use2",
+      "the_beyond:item/smoke_fuse/use3"
+    ],
+    "subtitle": "subtitles.item.smoke_fuse.use"
+  },
   "item.anchor_leggings.smash_ground": {
     "sounds": [
       "item/mace/smash_ground1",
@@ -1406,5 +1564,11 @@
       "item/mace/smash_ground_heavy"
     ],
     "subtitle": "subtitles.item.anchor_leggings.smash_ground"
+  },
+  "item.throw": {
+    "sounds": [
+      "random/bow"
+    ],
+    "subtitle": "subtitles.item.throw"
   }
 }

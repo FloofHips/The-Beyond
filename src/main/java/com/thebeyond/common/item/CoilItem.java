@@ -52,13 +52,13 @@ public class CoilItem extends Item {
 
                 Vec3 blockCenter = BeyondCompatHooks.visibleOrCenter(level, pos.offset(dir.getStepX(), dir.getStepY(), dir.getStepZ()));
                 BlockPos blockPos = BlockPos.containing(blockCenter);
+                level.playSound((Player)null, player.getX(), player.getY(), player.getZ(), BeyondSoundEvents.ITEM_THROW.get(), SoundSource.PLAYERS, 0.5F, 0.4F / (level.getRandom().nextFloat() * 0.4F + 0.8F));
 
                 if (!level.isClientSide) {
                     CoilEntity coil = new CoilEntity(BeyondEntityTypes.COILED_STALK.get(), level, dir, blockPos);
 
                     coil.setPos(player.getX(), player.getY()+1, player.getZ());
                     coil.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, 2F, 0F);
-                    level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ARROW_SHOOT, SoundSource.PLAYERS, 1.0F, 1.0F);
                     level.addFreshEntity(coil);
                 }
             }

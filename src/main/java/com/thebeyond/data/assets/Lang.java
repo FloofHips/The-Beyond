@@ -206,6 +206,18 @@ public class Lang extends LanguageProvider {
         add("subtitles.entity.stalker.retreat", "Stalker retreats");
         add("subtitles.entity.stalker.bite", "Stalker bites down");
 
+
+        add("subtitles.entity.brubble.death", "Brubble goes back");
+        add("subtitles.entity.brubble.hurt", "Brubble hurts");
+        add("subtitles.entity.brubble.sigh", "Brubble defeated");
+        add("subtitles.entity.brubble.destroy", "Brubble's rocket destroyed");
+        add("subtitles.entity.brubble.appear", "Brubble appears");
+        add("subtitles.entity.brubble.attack", "Brubble boosts");
+        add("subtitles.entity.brubble.emily", "Emily greets");
+        add("subtitles.entity.brubble.step", "Brubble's rocket clinks");
+        add("subtitles.entity.brubble.idle", "Brubble murmurs");
+        add("subtitles.entity.brubble.hover", "Brubble hovering");
+
         add("subtitles.entity.lantern.hurt", "Lantern hurts");
         add("subtitles.entity.lantern.idle", "Wind blows quietly");
         add("subtitles.entity.lantern.teleport", "Lantern teleports");
@@ -226,6 +238,8 @@ public class Lang extends LanguageProvider {
         add("block.bonfire.found", "Twin Bonfire found");
         add("block.bonfire.near", "Twin Bonfire nearby");
         add("block.bonfire.none", "This bonfire sits alone");
+
+        add("subtitles.block.pearl_chimes.chime", "Pearls chime");
 
         add("subtitles.block.polar.emerge", "Enderglop emerges");
         add("subtitles.block.polar.charge", "Polar charge rises up");
@@ -254,6 +268,7 @@ public class Lang extends LanguageProvider {
         add("subtitles.block.pearl.impact", "Pearl resonates");
         add("subtitles.block.pearl.clink", "Pearl clinks");
         add("subtitles.entity.sibling.death", "Sibling shatters");
+        add("subtitles.entity.sibling.empathy", "Empathy experiences");
 
         add("subtitles.item.trinket.fill", "Trinket secured");
         add("subtitles.item.trinket.empty", "Bucket empties");
@@ -263,6 +278,7 @@ public class Lang extends LanguageProvider {
 
         add("subtitles.item.ocarina.play", "Ocarina played");
         add("subtitles.item.ocarina.play", "Ocarina fails");
+        add("subtitles.item.throw", "Item chucked");
 
         add("subtitles.block.molten_metal.freeze", "Metal freezes rapidly");
         add("subtitles.block.brittle_metal.reform", "Brittle metal reforms");
@@ -283,6 +299,8 @@ public class Lang extends LanguageProvider {
         add("subtitles.block.projector.switch", "Projector wakes up");
         add("subtitles.block.projector.murmur", "Spectators murmuring");
 
+        add("subtitles.block.nacre.rake", "Player rakes");
+
         add("subtitles.item.prismograph.close", "Prismograph closed");
         add("subtitles.item.prismograph.open", "Prismograph opened");
         add("subtitles.item.prismograph.insert", "Film inserted");
@@ -293,6 +311,8 @@ public class Lang extends LanguageProvider {
         add("subtitles.item.magnet.fail", "Magnet falls short");
 
         add("subtitles.item.flame.fail", "Flame extinguishes");
+
+        add("subtitles.item.smoke_fuse.use", "Smoke spreads");
 
         add("subtitles.item.anchor_leggings.smash_ground", "Anchors down");
 

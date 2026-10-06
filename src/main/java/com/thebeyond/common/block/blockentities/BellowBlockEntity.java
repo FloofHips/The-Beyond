@@ -27,6 +27,8 @@ public class BellowBlockEntity extends BlockEntity {
             level.setBlock(pos, state.setValue(BellowBlock.STRENGTH, strength), Block.UPDATE_CLIENTS);
         }
         if (strength > 0 && level instanceof ServerLevel serverLevel) {
+            if (level.random.nextFloat() < 0.05f) level.playSound(null, pos, BeyondSoundEvents.GAUSS_VENT_MIDDLE.get(),
+                    SoundSource.BLOCKS, 0.05f, 1);
             BellowBlock.serverPush(serverLevel, pos, state, signal, strength, null);
         }
     }

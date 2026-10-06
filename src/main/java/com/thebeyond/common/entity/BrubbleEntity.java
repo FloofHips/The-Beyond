@@ -7,6 +7,8 @@ import com.thebeyond.client.particle.SmokeColorTransitionOptions;
 import com.thebeyond.common.entity.util.SlowRotFlyingMoveControl;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondParticleTypes;
+import com.thebeyond.common.registry.BeyondSoundEvents;
+import com.thebeyond.common.registry.BeyondSoundTypes;
 import com.thebeyond.util.AOEManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
@@ -16,6 +18,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.ItemTags;
@@ -45,6 +48,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.Tags;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 public class BrubbleEntity extends PathfinderMob {
@@ -80,6 +84,39 @@ public class BrubbleEntity extends PathfinderMob {
 
     public void setSulking(boolean i) {entityData.set(IS_SULKING, i);}
     public boolean isSulking() {return entityData.get(IS_SULKING);}
+
+    @Override
+    protected @Nullable SoundEvent getDeathSound() {
+        return BeyondSoundEvents.BRUBBLE_DEATH.get();
+    }
+
+    @Override
+    public void die(DamageSource damageSource) {
+        super.die(damageSource);
+        if (hasRocket()) playSound(BeyondSoundEvents.BRUBBLE_DESTROY.get());
+    }
+
+    @Override
+    protected @Nullable SoundEvent getAmbientSound() {
+        return (this.hasCustomName() && this.getCustomName().getString().toLowerCase().equals("emily") && level().random.nextFloat() < 0.3f) ? BeyondSoundEvents.BRUBBLE_EMILY.get() : BeyondSoundEvents.BRUBBLE_IDLE.get();
+    }
+
+    @Override
+    protected @Nullable SoundEvent getHurtSound(DamageSource damageSource) {
+        return BeyondSoundEvents.BRUBBLE_HURT.get();
+    }
+
+    @Override
+    protected void playHurtSound(DamageSource source) {
+        super.playHurtSound(source);
+        if (hasRocket()) this.playSound(BeyondSoundEvents.BRUBBLE_STEP.get(), 1, 0.7f+level().random.nextFloat());
+    }
+
+    @Override
+    protected void playStepSound(BlockPos pos, BlockState state) {
+        super.playStepSound(pos, state);
+        if (hasRocket()) this.playSound(BeyondSoundEvents.BRUBBLE_STEP.get(), 1, 0.7f+level().random.nextFloat());
+    }
 
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 10).add(Attributes.ATTACK_DAMAGE, 4).add(Attributes.ATTACK_KNOCKBACK, 2).add(Attributes.FLYING_SPEED, 0.8).add(Attributes.MOVEMENT_SPEED, 0.2f);
@@ -147,7 +184,7 @@ public class BrubbleEntity extends PathfinderMob {
                     setSulking(false);
                     setStanding(false);
                     serverLevel.sendParticles(ParticleTypes.ANGRY_VILLAGER, position().x, position().y+1, position().z, random.nextInt(2,4), 0.1, 1, 0.1, 0.01);
-                    level().playSound(this, this.blockPosition(), SoundEvents.COW_AMBIENT, SoundSource.HOSTILE, 1, 2);
+                    level().playSound(this, this.blockPosition(), BeyondSoundEvents.BRUBBLE_SIGH.get(), SoundSource.HOSTILE, 1, 1+level().random.nextFloat());
                     this.navigation.stop();
                 }
 
@@ -165,6 +202,7 @@ public class BrubbleEntity extends PathfinderMob {
                                 2f
                         ), position.x+0.5, position.y+0.5, position.z+0.5, 10,0,0,0,0.01);
                         this.setDeltaMovement(getDeltaMovement().add(getTarget().position().subtract(position).normalize()));
+                        level().playSound(this, this.blockPosition(), BeyondSoundEvents.BRUBBLE_ATTACK.get(), SoundSource.HOSTILE, 1, 1+level().random.nextFloat());
                     }
 
                     this.lookAt(getTarget(), 180, 180);
@@ -189,6 +227,8 @@ public class BrubbleEntity extends PathfinderMob {
                     sitCooldown = 40;
                 }
                 if (hasRocket() && movement > 0.15) {
+                    if (this.tickCount % 10 == 0) this.playSound(BeyondSoundEvents.BRUBBLE_HOVER.get(), 0.7f, (float) (movement/5f));
+
                     Vec3 smokePos = position.add(getLookAngle().scale(-1));
                     serverLevel.sendParticles(new BellowJetOptions(15), smokePos.x, smokePos.y + 0.5f, smokePos.z, 1, 0.1, 0.1, 0.1, 0.01);
                 }
@@ -211,7 +251,7 @@ public class BrubbleEntity extends PathfinderMob {
                     EnchantmentHelper.doPostAttackEffects(serverlevel, livingEntity, damagesource);
                 }
             }
-            this.playSound(SoundEvents.SLIME_ATTACK, 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+            this.playSound(BeyondSoundEvents.BRUBBLE_STEP.get(), 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
             this.setDeltaMovement(getDeltaMovement().add(livingEntity.position().subtract(this.position()).normalize().scale(-0.5f)));
         }
         super.playerTouch(livingEntity);
@@ -222,7 +262,6 @@ public class BrubbleEntity extends PathfinderMob {
             disable();
         }
 
-        this.playSound(SoundEvents.RAVAGER_STUNNED, 1.0F, 1.0F);
         entity.push(this);
         entity.hurtMarked = true;
         super.blockedByShield(entity);
@@ -247,7 +286,7 @@ public class BrubbleEntity extends PathfinderMob {
         setStanding(true);
         setSulking(true);
         this.resetFallDistance();
-        this.playSound(SoundEvents.BASALT_BREAK, 1.0F, ((level().random.nextFloat() - level().random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
+        this.playSound(BeyondSoundEvents.BRUBBLE_DESTROY.get(), 1, 1+level().random.nextFloat());
         if (level() instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.GAUSSANITE.get().defaultBlockState()), this.getX(), this.getY(0.6666666666666666), this.getZ(), 15, (double) (this.getBbWidth() / 4.0F), (double) (this.getBbHeight() / 4.0F), (double) (this.getBbWidth() / 4.0F), 0.05);
             serverLevel.sendParticles(ParticleTypes.POOF, this.getX(), this.getY(0.6666666666666666), this.getZ(), 5, (double) (this.getBbWidth() / 4.0F), (double) (this.getBbHeight() / 4.0F), (double) (this.getBbWidth() / 4.0F), 0.05);

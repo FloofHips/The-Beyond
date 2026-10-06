@@ -51,12 +51,8 @@ public class RakedNacreBlock extends Block {
 
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        if (!level.isClientSide()) {
-            if (!stack.is(ItemTags.HOES)) return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
-            return BlockUtils.useItemOn(stack, state, level, pos, player, hand, hitResult);
-        }
-
-        return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
+        if (!stack.is(ItemTags.HOES)) return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
+        return BlockUtils.useItemOn(stack, state, level, pos, player, hand, hitResult);
     }
 
     public static Direction getHitDirection(BlockHitResult hitResult) {
