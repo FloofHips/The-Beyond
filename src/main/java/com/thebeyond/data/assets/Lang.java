@@ -113,6 +113,7 @@ public class Lang extends LanguageProvider {
         add("container.the_beyond.projector", "Projector");
         add("screen.the_beyond.projector.rotate", "Rotate");
         add("screen.the_beyond.projector.flip", "Flip");
+        add("screen.the_beyond.projector.missing", "Missing a light source");
         add("screen.the_beyond.refuge.block", "Block %s");
         add("screen.the_beyond.prismograph.first_person", "Switch to first person to use");
         add("screen.the_beyond.prismograph.no_film", "Out of film");
@@ -286,6 +287,7 @@ public class Lang extends LanguageProvider {
         add("subtitles.block.brittle_metal.fail", "Brittle metal reverberates");
         add("subtitles.block.brittle_metal.shatter", "Brittle metal breaks");
         add("subtitles.block.brittle_metal.impact", "Brittle metal tinks");
+        add("subtitles.block.brittle_metal_block.rain", "Rain pitter patters");
 
         add("subtitles.block.brittle_metal_block.open", "Brittle door opened");
         add("subtitles.block.brittle_metal_block.close", "Brittle door closed");

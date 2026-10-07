@@ -717,6 +717,16 @@
     ],
     "subtitle": "subtitles.block.generic.footsteps"
   },
+  "block.brittle_metal.rain": {
+    "sounds": [
+      "the_beyond:block/brittle_metal_block/rain1",
+      "the_beyond:block/brittle_metal_block/rain2",
+      "the_beyond:block/brittle_metal_block/rain3",
+      "the_beyond:block/brittle_metal_block/rain4",
+      "the_beyond:block/brittle_metal_block/rain5"
+    ],
+    "subtitle": "subtitles.block.brittle_metal_block.rain"
+  },
   "block.brittle_metal_door.open": {
     "sounds": [
       "the_beyond:block/brittle_metal_block/door_open"

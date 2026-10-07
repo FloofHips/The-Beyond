@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.menu.MemoryBankMenu;
 import com.thebeyond.client.renderer.blockentities.SnapshotTextures;
+import com.thebeyond.common.block.blockentities.ProjectorBlockEntity;
 import com.thebeyond.common.camera.Grades;
 import com.thebeyond.common.item.components.Components;
 import com.thebeyond.common.network.MemoryBankChangeBankPagePacket;
@@ -41,6 +42,8 @@ public class MemoryBankScreen  extends AbstractContainerScreen<MemoryBankMenu> {
     protected int imageHeight = 198;
 
     public Button glass;
+    public Button prevButton;
+    public Button nextButton;
 
     public MemoryBankScreen(MemoryBankMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
@@ -56,19 +59,19 @@ public class MemoryBankScreen  extends AbstractContainerScreen<MemoryBankMenu> {
         this.inventoryLabelX = 181;
         this.inventoryLabelY = -13;
 
-        Button prevButton = addWidget(Button.builder(Component.literal("<"), b -> {
+        prevButton = addWidget(Button.builder(Component.literal("<"), b -> {
             PacketDistributor.sendToServer(new MemoryBankChangeBankPagePacket(menu.containerId, -1));
-            }).tooltip(Tooltip.create(Component.translatable("screen.the_beyond.memory_bank.next"))).bounds(x - 25 - 117, y - 15, 20, 18).build());
+            }).bounds(x - 25 - 117, y - 15, 20, 18).build());
 
-        Button nextButton = addWidget(Button.builder(Component.literal(">"), b -> {
+        nextButton = addWidget(Button.builder(Component.literal(">"), b -> {
             PacketDistributor.sendToServer(new MemoryBankChangeBankPagePacket(menu.containerId, 1));
-        }).tooltip(Tooltip.create(Component.translatable("screen.the_beyond.memory_bank.previous"))).bounds(x + 5 + 117, y - 15, 20, 18).build());
+        }).bounds(x + 5 + 117, y - 15, 20, 18).build());
 
         glass = addWidget(Button.builder(Component.empty(), b -> {
             boolean mag = menu.magnifyMode;
             PacketDistributor.sendToServer(new MemoryBankMagnifyModePacket(menu.containerId));
             menu.magnifyMode = !mag;
-        }).tooltip(Tooltip.create(Component.translatable("screen.the_beyond.memory_bank.magnify"))).bounds(x - 137, -25 + y + imageHeight/2, 38, 42).build());
+        }).bounds(x - 137, -25 + y + imageHeight/2, 38, 42).build());
     }
 
     @Override
@@ -86,6 +89,17 @@ public class MemoryBankScreen  extends AbstractContainerScreen<MemoryBankMenu> {
 
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         super.renderTooltip(guiGraphics, mouseX, mouseY);
+    }
+
+    @Override
+    protected void renderTooltip(GuiGraphics guiGraphics, int x, int y) {
+        super.renderTooltip(guiGraphics, x, y);
+        if (nextButton.isHovered())
+            guiGraphics.renderTooltip(this.font, Component.translatable("screen.the_beyond.memory_bank.next"), x, y);
+        if (prevButton.isHovered())
+            guiGraphics.renderTooltip(this.font, Component.translatable("screen.the_beyond.memory_bank.previous"), x, y);
+        if (glass.isHovered())
+            guiGraphics.renderTooltip(this.font, Component.translatable("screen.the_beyond.memory_bank.magnify"), x, y);
     }
 
     @Override

@@ -11,6 +11,7 @@ import com.thebeyond.common.entity.BrubbleEntity;
 import com.thebeyond.common.entity.LanternEntity;
 import com.thebeyond.common.entity.PoisonSeedEntity;
 import com.thebeyond.common.registry.BeyondRenderTypes;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;
@@ -22,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class BrubbleRenderer extends MobRenderer<BrubbleEntity, BrubbleModel<BrubbleEntity>> {
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/brubble/brubble.png");
+    private static final ResourceLocation EMILY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/brubble/emily.png");
 
     public BrubbleRenderer(EntityRendererProvider.Context context) {
         super(context,new BrubbleModel<>(context.bakeLayer(BeyondModelLayers.BRUBBLE)),0.5F);
@@ -34,6 +36,6 @@ public class BrubbleRenderer extends MobRenderer<BrubbleEntity, BrubbleModel<Bru
 
     @Override
     public ResourceLocation getTextureLocation(BrubbleEntity entity) {
-        return TEXTURE;
+        return entity.hasCustomName() && entity.getCustomName().getString().toLowerCase().equals("emily") ? EMILY : TEXTURE;
     }
 }

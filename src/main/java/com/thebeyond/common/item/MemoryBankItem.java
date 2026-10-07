@@ -9,6 +9,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.SlotAccess;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -64,6 +65,7 @@ public class MemoryBankItem extends Item {
 
         s.set(idx, taken);
         writeBack(stack, s);
+        this.playInsertSound(player);
         return true;
     }
 
@@ -82,6 +84,7 @@ public class MemoryBankItem extends Item {
         other.shrink(1);
         access.set(other);
         writeBack(stack, s);
+        this.playInsertSound(player);
         return true;
     }
 
@@ -101,6 +104,13 @@ public class MemoryBankItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
-        tooltipComponents.add(Component.literal(String.valueOf(slots(stack).stream().count())).withStyle(ChatFormatting.BLUE));
+        long count = slots(stack).stream()
+                .filter(s -> !s.isEmpty())
+                .count();
+        tooltipComponents.add(Component.literal(String.valueOf(count) + " / 120").withStyle(ChatFormatting.BLUE));
+    }
+
+    private void playInsertSound(Entity entity) {
+        entity.playSound(SoundEvents.BUNDLE_INSERT, 0.8F, 1F + entity.level().getRandom().nextFloat() * 0.5F);
     }
 }

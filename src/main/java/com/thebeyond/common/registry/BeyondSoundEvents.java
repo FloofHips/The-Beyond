@@ -83,6 +83,7 @@ public class BeyondSoundEvents {
     public static final DeferredHolder<SoundEvent, SoundEvent> BRITTLE_METAL_PLACE = SOUND_EVENTS.register("block.brittle_metal.place", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> BRITTLE_METAL_HIT = SOUND_EVENTS.register("block.brittle_metal.hit", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> BRITTLE_METAL_FALL = SOUND_EVENTS.register("block.brittle_metal.fall", SoundEvent::createVariableRangeEvent);
+    public static final DeferredHolder<SoundEvent, SoundEvent> BRITTLE_METAL_RAIN = SOUND_EVENTS.register("block.brittle_metal.rain", SoundEvent::createVariableRangeEvent);
 
     public static final DeferredHolder<SoundEvent, SoundEvent> PROJECTOR_IDLE = SOUND_EVENTS.register("block.projector.idle", SoundEvent::createVariableRangeEvent);
     public static final DeferredHolder<SoundEvent, SoundEvent> PROJECTOR_SWITCH = SOUND_EVENTS.register("block.projector.switch", SoundEvent::createVariableRangeEvent);

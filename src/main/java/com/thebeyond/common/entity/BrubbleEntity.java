@@ -227,7 +227,7 @@ public class BrubbleEntity extends PathfinderMob {
                     sitCooldown = 40;
                 }
                 if (hasRocket() && movement > 0.15) {
-                    if (this.tickCount % 10 == 0) this.playSound(BeyondSoundEvents.BRUBBLE_HOVER.get(), 0.7f, (float) (movement/5f));
+                    if (this.tickCount % 10 == 0) this.playSound(BeyondSoundEvents.BRUBBLE_HOVER.get(), 0.7f, (float) (movement));
 
                     Vec3 smokePos = position.add(getLookAngle().scale(-1));
                     serverLevel.sendParticles(new BellowJetOptions(15), smokePos.x, smokePos.y + 0.5f, smokePos.z, 1, 0.1, 0.1, 0.1, 0.01);

@@ -73,8 +73,6 @@ public class CameraViewfinderLayer implements LayeredDraw.Layer {
         guiGraphics.fill(RenderType.gui(), 0, 0, guiGraphics.guiWidth(), l, -90, 0xFF000000);
         guiGraphics.fill(RenderType.gui(), 0, l, k, j1, -90, 0xFF000000);
         guiGraphics.fill(RenderType.gui(), i1, l, guiGraphics.guiWidth(), j1, -90, 0xFF000000);
-
-        guiGraphics.drawString(Minecraft.getInstance().font, String.valueOf(ModClientEvents.zoomModifier), 0,0,-1);
     }
 
     private int renderLayer(GuiGraphics guiGraphics, float baseScale, ResourceLocation texture) {

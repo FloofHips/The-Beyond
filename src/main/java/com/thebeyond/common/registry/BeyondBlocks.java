@@ -5,7 +5,10 @@ import com.thebeyond.common.block.*;
 import com.thebeyond.common.fluid.GellidVoidBlock;
 import com.thebeyond.util.BlockUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -333,19 +336,47 @@ public class BeyondBlocks {
                     .sound(BeyondSoundTypes.BRITTLE_METAL))
     );
 
+    private static void playBrittleMetalRainSound(Level level, BlockPos pos) {
+        if (!level.isRainingAt(pos.above())) return;
+        if (level.dimension() != Level.OVERWORLD) return;
+        if (level.getBlockState(pos.offset(1,0,0)).is(BeyondTags.BRITTLE_METAL_BLOCKS) && level.random.nextBoolean()) return;
+        if (level.random.nextFloat() < 0.3f) {
+          level.playLocalSound(pos, BeyondSoundEvents.BRITTLE_METAL_RAIN.get(), SoundSource.WEATHER, 0.7f, 0.8f+ level.random.nextFloat(), true);
+        }
+    }
+
     public static final DeferredBlock<Block> BRITTLE_METAL_BLOCK = registerBlock("brittle_metal_block",
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_LIGHT_GRAY)
                     .strength(0.5F, 0.5F)
-                    .sound(BeyondSoundTypes.BRITTLE_METAL))
+                    .sound(BeyondSoundTypes.BRITTLE_METAL)) {
+                @Override
+                public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
+                    playBrittleMetalRainSound(level, pos);
+                    super.animateTick(state, level, pos, random);
+                }
+            }
     );
+
 
     public static final DeferredBlock<Block> BRITTLE_METAL_STAIRS = registerBlock("brittle_metal_stairs", () -> new StairBlock(
             BRITTLE_METAL.get().defaultBlockState(),
-            BlockBehaviour.Properties.ofFullCopy(BRITTLE_METAL.get())));
+            BlockBehaviour.Properties.ofFullCopy(BRITTLE_METAL.get())) {
+        @Override
+        public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
+            playBrittleMetalRainSound(level, pos);
+            super.animateTick(state, level, pos, random);
+        }
+    });
 
     public static final DeferredBlock<Block> BRITTLE_METAL_SLAB = registerBlock("brittle_metal_slab", () -> new SlabBlock(
-            BlockBehaviour.Properties.ofFullCopy(BRITTLE_METAL.get())));
+            BlockBehaviour.Properties.ofFullCopy(BRITTLE_METAL.get())) {
+        @Override
+        public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
+            playBrittleMetalRainSound(level, pos);
+            super.animateTick(state, level, pos, random);
+        }
+    });
 
     public static final DeferredBlock<Block> BRITTLE_METAL_DOOR = registerBlock("brittle_metal_door", () -> new WearyDoorBlock(
             BeyondBlockSetTypes.BRITTLE_METAL,

@@ -3,10 +3,12 @@ package com.thebeyond.client.gui;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.math.Axis;
 import com.thebeyond.TheBeyond;
+import com.thebeyond.client.event.ModClientEvents;
 import com.thebeyond.common.block.blockentities.ProjectorBlockEntity;
 import com.thebeyond.client.menu.ProjectorMenu;
 import com.thebeyond.common.network.ProjectorSetModePayload;
 import com.thebeyond.util.RenderUtils;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
@@ -28,16 +30,21 @@ public class ProjectorScreen extends AbstractContainerScreen<ProjectorMenu> {
     static final ResourceLocation MAGAZINE_SPRITE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/container/projector/magazine.png");
     static final ResourceLocation LIGHT_SPRITE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/container/projector/light.png");
 
+    static final ResourceLocation BULB_ON = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/container/projector/bulb_on.png");
+    static final ResourceLocation BULB_OFF = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/gui/container/projector/bulb_off.png");
+
     float rot;
     float rotTarget;
     ScreenRectangle currentMode;
     ScreenRectangle nextMode;
     ScreenRectangle previousMode;
+    int alpha;
 
     public ProjectorScreen(ProjectorMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
         this.imageHeight = 167;
+        this.alpha = 255;
     }
 
     @Override
@@ -117,5 +124,26 @@ public class ProjectorScreen extends AbstractContainerScreen<ProjectorMenu> {
 
         if(menu.isLit() == 1)
             RenderUtils.renderAdditiveQuad(guiGraphics, LIGHT_SPRITE, x+71, y+23,0,0, 34, 34, 34, 34, 0);
+
+        if (menu.isLit() != 1 && alpha > 0) {
+            alpha--;
+            float alphaF = alpha / 255f;
+
+            net.minecraft.client.gui.Font font = Minecraft.getInstance().font;
+            Component text = Component.translatable("screen.the_beyond.projector.missing");
+
+            int totalW = 9 + 4 + font.width(text);
+
+            int startX = this.leftPos + (this.imageWidth - totalW) / 2;
+
+            RenderSystem.enableBlend();
+            RenderSystem.setShaderColor(1, 1, 1, alphaF);
+
+            guiGraphics.blit((alpha / 20) % 2 == 0 ? BULB_ON : BULB_OFF, startX, this.topPos - 23, 0, 0, 9, 14, 9, 14);
+            guiGraphics.drawString(font, text, startX + 9 + 4, this.topPos - 20 + (14 - font.lineHeight) / 2, -1);
+
+            RenderSystem.setShaderColor(1, 1, 1, 1);
+            RenderSystem.disableBlend();
+        }
     }
 }
