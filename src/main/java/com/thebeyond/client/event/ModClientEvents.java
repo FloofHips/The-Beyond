@@ -285,6 +285,12 @@ public class ModClientEvents {
                     ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_projector_dist_entity"),
                     DefaultVertexFormat.NEW_ENTITY), BeyondShaders::setProjectorDistEntity);
             event.registerShader(new ShaderInstance(event.getResourceProvider(),
+                    ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_projector_dist_block_entity"),
+                    DefaultVertexFormat.NEW_ENTITY), BeyondShaders::setProjectorDistBlockEntity);
+            event.registerShader(new ShaderInstance(event.getResourceProvider(),
+                    ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_projector_dist_block_entity_peel"),
+                    DefaultVertexFormat.NEW_ENTITY), BeyondShaders::setProjectorDistBlockEntityPeel);
+            event.registerShader(new ShaderInstance(event.getResourceProvider(),
                     ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_projector_decal"),
                     DefaultVertexFormat.POSITION), BeyondShaders::setProjectorDecal);
         } catch (Exception exception) {

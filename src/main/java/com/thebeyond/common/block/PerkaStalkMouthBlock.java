@@ -1,6 +1,7 @@
 package com.thebeyond.common.block;
 
 import com.mojang.serialization.MapCodec;
+import com.thebeyond.api.compat.BeyondCompatHooks;
 import com.thebeyond.common.block.blockentities.PerkaStalkMouthBlockEntity;
 import com.thebeyond.common.entity.StalkerEntity;
 import com.thebeyond.common.registry.BeyondBlockEntities;
@@ -80,12 +81,18 @@ public class PerkaStalkMouthBlock extends BaseEntityBlock {
             StalkerEntity stalker = new StalkerEntity(BeyondEntityTypes.STALKER.get(), level);
             stalker.setPos(Vec3.atCenterOf(pos.offset(value.getStepX(), value.getStepY(), value.getStepZ())).add(0,-0.5,0));
             stalker.level().broadcastEntityEvent(stalker, StalkerEntity.SPREAD);
-            stalker.setFacing(value);
+            stalker.setFacing(visibleFacing(level, pos, value));
             stalker.base = true;
             stalker.setOriginalTarget(target);
             level.addFreshEntity(stalker); return true;
         }
         return false;
+    }
+
+    /** On a Sable sub-level the root faces where the mouth visibly points, so its neck still meets the mouth. */
+    private static Direction visibleFacing(Level level, BlockPos pos, Direction facing) {
+        Vec3 dir = BeyondCompatHooks.toVisibleDir(level, pos, Vec3.atLowerCornerOf(facing.getNormal()));
+        return dir == null ? facing : Direction.getNearest(dir);
     }
 
     @Override

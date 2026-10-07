@@ -13,6 +13,8 @@ public class BeyondShaders {
     private static ShaderInstance PROJECTOR_DIST_SHADER;
     private static ShaderInstance PROJECTOR_DIST_PEEL_SHADER;
     private static ShaderInstance PROJECTOR_DIST_ENTITY_SHADER;
+    private static ShaderInstance PROJECTOR_DIST_BLOCK_ENTITY_SHADER;
+    private static ShaderInstance PROJECTOR_DIST_BLOCK_ENTITY_PEEL_SHADER;
     private static ShaderInstance PROJECTOR_DECAL_SHADER;
 
     @Nullable
@@ -80,6 +82,25 @@ public class BeyondShaders {
 
     public static void setProjectorDistEntity(ShaderInstance instance) {
         PROJECTOR_DIST_ENTITY_SHADER = instance;
+    }
+
+    /** Block entity depth: the block encoding (entity bit off, blocks-only distance in B) from NEW_ENTITY vertices. */
+    @Nullable
+    public static ShaderInstance getProjectorDistBlockEntity() {
+        return PROJECTOR_DIST_BLOCK_ENTITY_SHADER;
+    }
+
+    public static void setProjectorDistBlockEntity(ShaderInstance instance) {
+        PROJECTOR_DIST_BLOCK_ENTITY_SHADER = instance;
+    }
+
+    @Nullable
+    public static ShaderInstance getProjectorDistBlockEntityPeel() {
+        return PROJECTOR_DIST_BLOCK_ENTITY_PEEL_SHADER;
+    }
+
+    public static void setProjectorDistBlockEntityPeel(ShaderInstance instance) {
+        PROJECTOR_DIST_BLOCK_ENTITY_PEEL_SHADER = instance;
     }
 
     @Nullable

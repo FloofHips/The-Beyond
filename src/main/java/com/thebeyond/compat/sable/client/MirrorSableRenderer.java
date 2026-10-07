@@ -22,6 +22,7 @@ import dev.ryanhcode.sable.sublevel.render.SubLevelRenderData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -95,14 +96,24 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
 
     private static boolean loggedActive;
     private static final Long2ObjectOpenHashMap<Slot> SLOTS = new Long2ObjectOpenHashMap<>();
+    // glint types get buffers of their own: an enchanted item opens its glint and its base buffer at the same time
     private static final MultiBufferSource.BufferSource FBO_BUFFER =
-            MultiBufferSource.immediate(new ByteBufferBuilder(2048));
+            MultiBufferSource.immediateWithBuffers(glintBuffers(), new ByteBufferBuilder(2048));
     private static final boolean[] TEX_SLOT_USED = new boolean[MAX_FBOS];
     private static final Object2IntOpenHashMap<Entity> LIGHT_CACHE = new Object2IntOpenHashMap<>();
     private static final java.util.IdentityHashMap<ClientSubLevel, SubTransform> SUBXF_CACHE = new java.util.IdentityHashMap<>();
     private static int losBudget;
 
     public MirrorSableRenderer(BlockEntityRendererProvider.Context ctx) {
+    }
+
+    private static java.util.SequencedMap<RenderType, ByteBufferBuilder> glintBuffers() {
+        java.util.SequencedMap<RenderType, ByteBufferBuilder> map = new java.util.LinkedHashMap<>();
+        for (RenderType type : List.of(RenderType.armorEntityGlint(), RenderType.glint(), RenderType.glintTranslucent(),
+                RenderType.entityGlint(), RenderType.entityGlintDirect())) {
+            map.put(type, new ByteBufferBuilder(type.bufferSize()));
+        }
+        return map;
     }
 
     private static final class Slot {
@@ -360,7 +371,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         slot.target.clear(Minecraft.ON_OSX);
         slot.target.bindWrite(true);
 
-        RenderSystem.setProjectionMatrix(proj, VertexSorting.DISTANCE_TO_ORIGIN);
+        RenderSystem.setProjectionMatrix(proj, VertexSorting.byDistance(MirrorReflection.mirroredEye(n, p0rel)));
         Matrix4fStack mvStack = RenderSystem.getModelViewStack();
 
         if (sf != null) {
@@ -373,29 +384,33 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         RenderSystem.applyModelViewMatrix();
         // world-frame occluders, not modelViewB, flushing their depth before the entities
         MirrorReflection.renderOccluderDepth(FBO_BUFFER, reflected, camPos, mc, n, slot.worldPoint);
+        MirrorReflection.setupLevelLighting(mc);
         disp.setRenderShadow(false);
         GL11.glFrontFace(GL11.GL_CW); // reflection flips winding
-        for (Entity e : reflected) {
-            if (e.isRemoved()) {
-                continue; // cached selection can outlive an entity by a few ticks
+        try {
+            for (Entity e : reflected) {
+                if (e.isRemoved()) {
+                    continue; // cached selection can outlive an entity by a few ticks
+                }
+                double ex = Mth.lerp(pt, e.xOld, e.getX());
+                double ey = Mth.lerp(pt, e.yOld, e.getY());
+                double ez = Mth.lerp(pt, e.zOld, e.getZ());
+                float eyaw = Mth.rotLerp(pt, e.yRotO, e.getYRot());
+                int light;
+                if (LIGHT_CACHE.containsKey(e)) {
+                    light = LIGHT_CACHE.getInt(e);
+                } else {
+                    light = disp.getPackedLightCoords(e, pt);
+                    LIGHT_CACHE.put(e, light);
+                }
+                disp.render(e, ex - camPos.x, ey - camPos.y, ez - camPos.z, eyaw, pt,
+                        new PoseStack(), FBO_BUFFER, light);
             }
-            double ex = Mth.lerp(pt, e.xOld, e.getX());
-            double ey = Mth.lerp(pt, e.yOld, e.getY());
-            double ez = Mth.lerp(pt, e.zOld, e.getZ());
-            float eyaw = Mth.rotLerp(pt, e.yRotO, e.getYRot());
-            int light;
-            if (LIGHT_CACHE.containsKey(e)) {
-                light = LIGHT_CACHE.getInt(e);
-            } else {
-                light = disp.getPackedLightCoords(e, pt);
-                LIGHT_CACHE.put(e, light);
-            }
-            disp.render(e, ex - camPos.x, ey - camPos.y, ez - camPos.z, eyaw, pt,
-                    new PoseStack(), FBO_BUFFER, light);
+        } finally {
+            FBO_BUFFER.endBatch();
+            GL11.glFrontFace(GL11.GL_CCW);
+            disp.setRenderShadow(true);
         }
-        FBO_BUFFER.endBatch();
-        GL11.glFrontFace(GL11.GL_CCW);
-        disp.setRenderShadow(true);
 
         // after the entities, so reflected bodies still occlude the shade (depth-test, no depth-write)
         if (sf != null) {

@@ -2,6 +2,7 @@ package com.thebeyond.client.renderer;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
+import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -40,6 +41,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
+import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL11;
 
@@ -405,7 +407,7 @@ public final class MirrorReflection {
         slot.target.clear(Minecraft.ON_OSX);
         slot.target.bindWrite(true);
 
-        RenderSystem.setProjectionMatrix(proj, VertexSorting.DISTANCE_TO_ORIGIN);
+        RenderSystem.setProjectionMatrix(proj, VertexSorting.byDistance(mirroredEye(n, p0rel)));
         Matrix4fStack mvStack = RenderSystem.getModelViewStack();
         mvStack.set(modelView);
         RenderSystem.applyModelViewMatrix();
@@ -414,27 +416,31 @@ public final class MirrorReflection {
 
         renderOccluderDepth(buf, reflected, camPos, mc, info.normal, info.point);
 
+        setupLevelLighting(mc);
         disp.setRenderShadow(false);
         // the reflection flips the winding, so the front face is inverted or culled parts render inside out
         GL11.glFrontFace(GL11.GL_CW);
-        for (Entity e : reflected) {
-            double ex = Mth.lerp(partialTick, e.xOld, e.getX());
-            double ey = Mth.lerp(partialTick, e.yOld, e.getY());
-            double ez = Mth.lerp(partialTick, e.zOld, e.getZ());
-            float eyaw = Mth.rotLerp(partialTick, e.yRotO, e.getYRot());
-            int light;
-            if (LIGHT_CACHE.containsKey(e)) {
-                light = LIGHT_CACHE.getInt(e);
-            } else {
-                light = disp.getPackedLightCoords(e, partialTick);
-                LIGHT_CACHE.put(e, light);
+        try {
+            for (Entity e : reflected) {
+                double ex = Mth.lerp(partialTick, e.xOld, e.getX());
+                double ey = Mth.lerp(partialTick, e.yOld, e.getY());
+                double ez = Mth.lerp(partialTick, e.zOld, e.getZ());
+                float eyaw = Mth.rotLerp(partialTick, e.yRotO, e.getYRot());
+                int light;
+                if (LIGHT_CACHE.containsKey(e)) {
+                    light = LIGHT_CACHE.getInt(e);
+                } else {
+                    light = disp.getPackedLightCoords(e, partialTick);
+                    LIGHT_CACHE.put(e, light);
+                }
+                disp.render(e, ex - camPos.x, ey - camPos.y, ez - camPos.z, eyaw, partialTick,
+                        new PoseStack(), buf, light);
             }
-            disp.render(e, ex - camPos.x, ey - camPos.y, ez - camPos.z, eyaw, partialTick,
-                    new PoseStack(), buf, light);
+        } finally {
+            buf.endBatch();
+            GL11.glFrontFace(GL11.GL_CCW);
+            disp.setRenderShadow(true);
         }
-        buf.endBatch();
-        GL11.glFrontFace(GL11.GL_CCW);
-        disp.setRenderShadow(true);
 
         // After the entities: depth-tested (VIEW_OFFSET wins coplanar) but not depth-written.
         renderOcclusionShade(buf, reflected, info.normal, info.point, camPos, mc);
@@ -1227,5 +1233,20 @@ public final class MirrorReflection {
 
     private static float sgn(float a) {
         return a > 0.0f ? 1.0f : (a < 0.0f ? -1.0f : 0.0f);
+    }
+
+    /** Translucent layers must sort from this mirrored camera, from the real one a semi-transparent hat hides its own face. */
+    public static Vector3f mirroredEye(Vec3 n, Vec3 p0rel) {
+        float k = (float) (2.0 * (n.x * p0rel.x + n.y * p0rel.y + n.z * p0rel.z));
+        return new Vector3f((float) n.x * k, (float) n.y * k, (float) n.z * k);
+    }
+
+    /** The capture runs before the level binds its entity light, so the GUI item light of the last frame would still be set. */
+    public static void setupLevelLighting(Minecraft mc) {
+        if (mc.level != null && mc.level.effects().constantAmbientLight()) {
+            Lighting.setupNetherLevel();
+        } else {
+            Lighting.setupLevel();
+        }
     }
 }

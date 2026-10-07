@@ -41,14 +41,16 @@ public class PerkaStalkMouthBlockEntity extends BlockEntity implements GameEvent
 
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        tag.putInt("cooldown", this.cooldownTicks);
-        tag.putBoolean("wasActivated", this.wasActivated);
+        if (tag.contains("cooldown")) {
+            this.cooldownTicks = tag.getInt("cooldown");
+        }
+        this.wasActivated = tag.getBoolean("wasActivated");
     }
 
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        this.cooldownTicks = tag.getInt("cooldown");
-        this.wasActivated = tag.getBoolean("wasActivated");
         super.saveAdditional(tag, registries);
+        tag.putInt("cooldown", this.cooldownTicks);
+        tag.putBoolean("wasActivated", this.wasActivated);
     }
 
     public PerkaStalkMouthBlockEntity.StalkListener getListener() {

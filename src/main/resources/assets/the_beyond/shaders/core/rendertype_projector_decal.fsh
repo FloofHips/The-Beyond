@@ -150,7 +150,7 @@ void main() {
             float s = tap.r;
             stored[si] = s;
             bbit[si] = (s <= 1.0) ? tap.g : 0.0; // clear R = 1.0039 is the only s>1.0, so s<=1.0 drops cleared rim texels
-            si++;
+            si += 1;
             // Census excludes entity taps: their B may sit on the plane while the entity still occludes.
             if (s <= 1.0 && tap.g < 0.5) {
                 float shiftG = dot(vec2(float(ox), float(oy)) * texel, rpdbG);

@@ -8,9 +8,11 @@ import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.compat.ShaderCompatLib;
+import com.thebeyond.common.block.blockentities.MirrorBlockEntity;
 import com.thebeyond.common.block.blockentities.ProjectorBlockEntity;
 import com.thebeyond.common.registry.BeyondRenderTypes;
 import com.thebeyond.common.registry.BeyondShaders;
@@ -20,15 +22,21 @@ import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.SectionPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.AABB;
@@ -45,10 +53,12 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 public final class ProjectorDepthMap {
     static final int BASE_RES = 1024;
     private static final int MAX_SLOTS = 8;
+    private static final int MAX_CONE_BLOCK_ENTITIES = 256; // a full cone spans about 340 cells, so only a packed one is trimmed
     private static final float SUB_SCALE_EPS = 0.02f; // max scale anisotropy before a contraption falls to the mesh
 
     private static Slot[] slots;
@@ -56,12 +66,17 @@ public final class ProjectorDepthMap {
     private static final java.util.Set<ProjectorBlockEntity> CAPTURED = new java.util.HashSet<>(); // render-thread only
     private static boolean loggedActive = false;
     private static final Map<BlockPos, String> DIAG_LAST = new HashMap<>();
+    private static final Map<BlockPos, String> DIAG_POST_LAST = new HashMap<>(); // its own map, else the two summaries alternate
     // a private buffer: an endBatch() on mc.renderBuffers() inside the capture corrupts Iris's entity batcher
     private static final MultiBufferSource.BufferSource CAPTURE_BUFFER =
             MultiBufferSource.immediate(new ByteBufferBuilder(4096));
     // entity passes wait for AFTER_LEVEL, mid-pipeline they collide with Iris's entity hooks and break capes
-    private record PendingEntities(TextureTarget target, Matrix4f proj, Matrix4f view,
-                                   ProjectorRenderer.Pinhole gather, Vec3 camPos, BlockPos pos) {
+    private record PendingEntities(TextureTarget target, TextureTarget targetFar, Matrix4f proj, Matrix4f view,
+                                   ProjectorRenderer.Pinhole gather, Vec3 camPos, BlockPos pos,
+                                   Matrix4f ownM, ProjectorRenderer.Pinhole ownGrid, Vec3 ownOrigin) {
+    }
+
+    private record ConeBlockEntity(BlockEntity be, int frame, Matrix4f modelView, Vec3 origin, double distSq) {
     }
 
     private static final List<PendingEntities> PENDING_ENTITIES = new ArrayList<>();
@@ -146,6 +161,14 @@ public final class ProjectorDepthMap {
         if (distPeel != null) {
             distPeel.safeGetUniform("MaxThrow").set((float) ProjectorRenderer.MAX_THROW);
         }
+        ShaderInstance distBlockEntity = BeyondShaders.getProjectorDistBlockEntity();
+        if (distBlockEntity != null) {
+            distBlockEntity.safeGetUniform("MaxThrow").set((float) ProjectorRenderer.MAX_THROW);
+        }
+        ShaderInstance distBlockEntityPeel = BeyondShaders.getProjectorDistBlockEntityPeel();
+        if (distBlockEntityPeel != null) {
+            distBlockEntityPeel.safeGetUniform("MaxThrow").set((float) ProjectorRenderer.MAX_THROW);
+        }
 
         RenderTarget main = mc.getMainRenderTarget();
         RenderSystem.backupProjectionMatrix();
@@ -213,7 +236,8 @@ public final class ProjectorDepthMap {
         int hostBlocks = emitConeBlocks(vc, mc.level, mc.level::getBlockState, ph, camPos);
         buf.endBatch();
 
-        PENDING_ENTITIES.add(new PendingEntities(slot.target, new Matrix4f(proj), new Matrix4f(view), ph, camPos, be.getBlockPos()));
+        PENDING_ENTITIES.add(new PendingEntities(slot.target, slot.targetFar, new Matrix4f(proj), new Matrix4f(view), ph, camPos,
+                be.getBlockPos(), null, null, null));
 
         CrossStats xf = captureCrossContraptions(buf, ph, view, camPos, partialTick, mc, null,
                 BeyondRenderTypes.PROJECTOR_DEPTH_BLOCK, false);
@@ -258,16 +282,36 @@ public final class ProjectorDepthMap {
         try {
             for (PendingEntities p : PENDING_ENTITIES) {
                 try {
-                    p.target().bindWrite(true);  // no clear: the blocks and depth stay, LEQUAL keeps the nearest entity
                     RenderSystem.setProjectionMatrix(p.proj(), VertexSorting.DISTANCE_TO_ORIGIN);
+                    List<ConeBlockEntity> coneBlockEntities = gatherConeBlockEntities(mc, p, partialTick);
+                    List<Entity> coneEntities = gatherConeEntities(mc.level, p.gather(), p.camPos());
+                    // the peel first, while the map still holds the block layer it is measured against
+                    p.targetFar().bindWrite(true);
+                    RenderSystem.setShaderTexture(1, p.target().getColorTextureId());
+                    renderConeBlockEntities(CAPTURE_BUFFER, coneBlockEntities, partialTick, mc,
+                            BeyondRenderTypes::projectorDepthBlockEntityPeel);
                     mvStack.set(p.view());
                     RenderSystem.applyModelViewMatrix();
-                    List<Entity> coneEntities = gatherConeEntities(mc.level, p.gather(), p.camPos());
-                    if (coneEntities.size() >= 16) {
-                        diag(p.pos(), "entity capture CAPPED at 16 (farther entities cast no shadow)");
-                    }
-                    renderConeEntities(CAPTURE_BUFFER, coneEntities, p.camPos(), partialTick, mc);
+                    // a falling block draws a block model, so it shades as a block, like the block entities
+                    List<Entity> blockLike = renderConeEntities(CAPTURE_BUFFER, coneEntities, p.camPos(), partialTick, mc,
+                            null, BeyondRenderTypes::projectorDepthBlockEntityPeel);
+                    RenderSystem.setShaderTexture(1, 0);
+                    p.targetFar().unbindWrite();
+                    // no clear (LEQUAL keeps the nearest), and block geometry goes first so B keeps it under a body like a block
+                    p.target().bindWrite(true);
+                    renderConeBlockEntities(CAPTURE_BUFFER, coneBlockEntities, partialTick, mc,
+                            BeyondRenderTypes::projectorDepthBlockEntity);
+                    mvStack.set(p.view());
+                    RenderSystem.applyModelViewMatrix();
+                    renderConeEntities(CAPTURE_BUFFER, blockLike, p.camPos(), partialTick, mc,
+                            null, BeyondRenderTypes::projectorDepthBlockEntity);
+                    renderConeEntities(CAPTURE_BUFFER, coneEntities, p.camPos(), partialTick, mc,
+                            BeyondRenderTypes::projectorDepthEntity, null);
                     p.target().unbindWrite();
+                    diag(DIAG_POST_LAST, p.pos(), "post capture: entities=" + coneEntities.size()
+                            + " blockLike=" + blockLike.size() + " blockEntities=" + coneBlockEntities.size()
+                            + (coneEntities.size() >= 16 ? " ENTITIES CAPPED" : "")
+                            + (coneBlockEntities.size() >= MAX_CONE_BLOCK_ENTITIES ? " BLOCK ENTITIES CAPPED" : ""));
                 } catch (Throwable t) {
                     if (loggedActive) TheBeyond.LOGGER.error("Projector deferred entity capture failed", t);
                 }
@@ -299,25 +343,16 @@ public final class ProjectorDepthMap {
         }
         BlockReader reader = gridReader(mc, new HashMap<>());
         Matrix4fStack mvStack = RenderSystem.getModelViewStack();
-        Vec3 eye = phWorld.eye(), forward = phWorld.forward(), up = phWorld.up(), right = phWorld.right();
         int emitted = 0;
         int used = 0;
         for (ProjectorRenderer.ContraptionFrame fr : frames) {
             if (ownM != null && fr.m().equals(ownM, 1.0e-4f)) {
                 continue; // own craft: already drawn by the grid pass
             }
-            Matrix4f minv = fr.minv();
-            Vector3f egv = minv.transformPosition(new Vector3f(
-                    (float) (eye.x - camPos.x), (float) (eye.y - camPos.y), (float) (eye.z - camPos.z)));
-            Vector3f fgv = minv.transformDirection(new Vector3f((float) forward.x, (float) forward.y, (float) forward.z)).normalize();
-            Vector3f ugv = minv.transformDirection(new Vector3f((float) up.x, (float) up.y, (float) up.z)).normalize();
-            Vector3f rgv = minv.transformDirection(new Vector3f((float) right.x, (float) right.y, (float) right.z)).normalize();
-            if (!finite(egv) || !finite(fgv) || !finite(ugv) || !finite(rgv)) {
+            ProjectorRenderer.Pinhole phInGrid = gridPinhole(phWorld, fr, camPos);
+            if (phInGrid == null) {
                 continue;
             }
-            Vec3 eyeGrid = new Vec3(egv.x + fr.rpx(), egv.y + fr.rpy(), egv.z + fr.rpz());
-            ProjectorRenderer.Pinhole phInGrid = new ProjectorRenderer.Pinhole(
-                    eyeGrid, new Vec3(fgv.x, fgv.y, fgv.z), new Vec3(rgv.x, rgv.y, rgv.z), new Vec3(ugv.x, ugv.y, ugv.z), phWorld.coneK());
             mvStack.set(new Matrix4f(view).mul(fr.m()));
             RenderSystem.applyModelViewMatrix();
             emitted += emitConeBlocks(buf.getBuffer(type), mc.level, reader,
@@ -403,7 +438,8 @@ public final class ProjectorDepthMap {
         int hostBlocks = emitConeBlocks(buf.getBuffer(BeyondRenderTypes.PROJECTOR_DEPTH_BLOCK), mc.level, mc.level::getBlockState, phVis, camPos);
         buf.endBatch();
 
-        PENDING_ENTITIES.add(new PendingEntities(slot.target, new Matrix4f(proj), new Matrix4f(view), phVis, camPos, be.getBlockPos()));
+        PENDING_ENTITIES.add(new PendingEntities(slot.target, slot.targetFar, new Matrix4f(proj), new Matrix4f(view), phVis,
+                camPos, be.getBlockPos(), new Matrix4f(m), phGrid, rpOrigin));
 
         CrossStats xf = captureCrossContraptions(buf, phVis, view, camPos, partialTick, mc, m,
                 BeyondRenderTypes.PROJECTOR_DEPTH_BLOCK, false);
@@ -449,11 +485,16 @@ public final class ProjectorDepthMap {
         return Float.isFinite(v.x) && Float.isFinite(v.y) && Float.isFinite(v.z);
     }
 
-    /** In-cone entities into the bound FBO via {@link ProjectorDistEntitySource}. PROJ/VIEW + FBO must be set already. */
-    private static void renderConeEntities(MultiBufferSource.BufferSource buf, List<Entity> coneEntities,
-                                           Vec3 camPos, float partialTick, Minecraft mc) {
-        if (BeyondShaders.getProjectorDistEntity() == null || coneEntities.isEmpty()) {
-            return;
+    /** In-cone entities into the bound FBO, returning those that drew block-model parts. PROJ/VIEW + FBO must be set already. */
+    private static List<Entity> renderConeEntities(MultiBufferSource.BufferSource buf, List<Entity> coneEntities,
+                                                   Vec3 camPos, float partialTick, Minecraft mc,
+                                                   Function<ResourceLocation, RenderType> entityType,
+                                                   Function<ResourceLocation, RenderType> blockType) {
+        List<Entity> drewBlocks = new ArrayList<>();
+        if (coneEntities.isEmpty() || entityType != null && BeyondShaders.getProjectorDistEntity() == null
+                || blockType != null && (BeyondShaders.getProjectorDistBlockEntity() == null
+                || BeyondShaders.getProjectorDistBlockEntityPeel() == null)) {
+            return drewBlocks;
         }
         EntityRenderDispatcher disp = mc.getEntityRenderDispatcher();
         disp.setRenderShadow(false);
@@ -467,18 +508,22 @@ public final class ProjectorDepthMap {
                 double ey = Mth.lerp(partialTick, e.yOld, e.getY());
                 double ez = Mth.lerp(partialTick, e.zOld, e.getZ());
                 float eyaw = Mth.rotLerp(partialTick, e.yRotO, e.getYRot());
-                ProjectorDistEntitySource forceDist = new ProjectorDistEntitySource(buf, tex);
+                ProjectorDistEntitySource forceDist = new ProjectorDistEntitySource(buf, tex, entityType, blockType);
                 try {
                     disp.render(e, ex - camPos.x, ey - camPos.y, ez - camPos.z, eyaw, partialTick,
                             new PoseStack(), forceDist, LightTexture.FULL_BRIGHT);
                 } catch (Throwable t) {
                     if (loggedActive) TheBeyond.LOGGER.error("Projector entity-depth render failed for {}", e, t);
                 }
+                if (forceDist.blockSeen) {
+                    drewBlocks.add(e);
+                }
             }
             buf.endBatch();
         } finally {
             disp.setRenderShadow(true);  // there is no getter, vanilla's default is true
         }
+        return drewBlocks;
     }
 
     /** In-cone alive entities that can occlude / catch the beam (cap 16). */
@@ -501,21 +546,141 @@ public final class ProjectorDepthMap {
         return out;
     }
 
-    /** Sends entity bodies through the entity-dist type and drops every other part (leash, glint, lines). */
+    /** Every in-cone block entity a renderer draws, in the world and on contraptions, keeping the nearest past the cap. */
+    private static List<ConeBlockEntity> gatherConeBlockEntities(Minecraft mc, PendingEntities p, float partialTick) {
+        List<ConeBlockEntity> out = new ArrayList<>();
+        collectConeBlockEntities(mc.level, p.gather(), 0, p.view(), p.camPos(), out);
+        if (p.ownM() != null) {
+            collectConeBlockEntities(mc.level, p.ownGrid(), 1, new Matrix4f(p.view()).mul(p.ownM()), p.ownOrigin(), out);
+        }
+        ProjectorRenderer.ProjectorIntersectingFramesFn ifn = ProjectorRenderer.intersectingFrames;
+        if (ifn != null) {
+            int frame = 2;
+            for (ProjectorRenderer.ContraptionFrame fr :
+                    ifn.resolve(mc.level, ProjectorRenderer.coneAABB(p.gather()), p.camPos(), partialTick)) {
+                ProjectorRenderer.Pinhole phInGrid = gridPinhole(p.gather(), fr, p.camPos());
+                if (phInGrid == null || p.ownM() != null && fr.m().equals(p.ownM(), 1.0e-4f)) {
+                    continue; // own craft: already gathered in its grid frame
+                }
+                collectConeBlockEntities(mc.level, phInGrid, frame++, new Matrix4f(p.view()).mul(fr.m()),
+                        new Vec3(fr.rpx(), fr.rpy(), fr.rpz()), out);
+            }
+        }
+        out.sort(Comparator.comparingDouble(ConeBlockEntity::distSq));
+        List<ConeBlockEntity> kept = new ArrayList<>(out.subList(0, Math.min(out.size(), MAX_CONE_BLOCK_ENTITIES)));
+        kept.sort(Comparator.comparingInt(ConeBlockEntity::frame)); // one model-view switch per frame
+        return kept;
+    }
+
+    /** Block entities in one frame's cone, projectors and mirrors left out: their renderers drive captures of their own. */
+    private static void collectConeBlockEntities(Level level, ProjectorRenderer.Pinhole ph, int frame, Matrix4f modelView,
+                                                 Vec3 origin, List<ConeBlockEntity> out) {
+        AABB bounds = ProjectorRenderer.coneAABB(ph).inflate(2.0); // a renderer may draw past its own block (beds, banners)
+        ProjectorRenderer.Plane[] planes = ProjectorRenderer.buildFrustumPlanes(
+                ph.eye(), ph.forward(), ph.right(), ph.up(), ph.coneK(), ProjectorRenderer.MAX_THROW);
+        BlockEntityRenderDispatcher dispatcher = Minecraft.getInstance().getBlockEntityRenderDispatcher();
+        for (int cx = SectionPos.blockToSectionCoord(bounds.minX); cx <= SectionPos.blockToSectionCoord(bounds.maxX); cx++) {
+            for (int cz = SectionPos.blockToSectionCoord(bounds.minZ); cz <= SectionPos.blockToSectionCoord(bounds.maxZ); cz++) {
+                // getChunk like gridReader: Sable answers plot coords there, and an unloaded chunk comes back empty
+                for (BlockEntity be : level.getChunk(cx, cz).getBlockEntities().values()) {
+                    BlockEntityRenderer<BlockEntity> renderer = dispatcher.getRenderer(be);
+                    if (renderer == null || be instanceof ProjectorBlockEntity || be instanceof MirrorBlockEntity
+                            || ProjectorRenderer.aabbOutside(renderer.getRenderBoundingBox(be), planes)) {
+                        continue;
+                    }
+                    out.add(new ConeBlockEntity(be, frame, modelView, origin,
+                            Vec3.atCenterOf(be.getBlockPos()).distanceToSqr(ph.eye())));
+                }
+            }
+        }
+    }
+
+    /** Draws the block entities through {@code depthType}, each in its own frame. PROJ and the FBO must be set already. */
+    private static void renderConeBlockEntities(MultiBufferSource.BufferSource buf, List<ConeBlockEntity> blockEntities,
+                                                float partialTick, Minecraft mc,
+                                                Function<ResourceLocation, RenderType> depthType) {
+        if (BeyondShaders.getProjectorDistBlockEntity() == null || BeyondShaders.getProjectorDistBlockEntityPeel() == null
+                || blockEntities.isEmpty()) {
+            return;
+        }
+        BlockEntityRenderDispatcher dispatcher = mc.getBlockEntityRenderDispatcher();
+        ProjectorDistEntitySource forceDist =
+                new ProjectorDistEntitySource(buf, TextureAtlas.LOCATION_BLOCKS, depthType, depthType);
+        Matrix4fStack mvStack = RenderSystem.getModelViewStack();
+        int frame = -1;
+        for (ConeBlockEntity c : blockEntities) {
+            if (c.frame() != frame) {
+                buf.endBatch();
+                frame = c.frame();
+                mvStack.set(c.modelView());
+                RenderSystem.applyModelViewMatrix();
+            }
+            BlockEntity be = c.be();
+            BlockEntityRenderer<BlockEntity> renderer = dispatcher.getRenderer(be);
+            if (renderer == null || !be.hasLevel() || !be.getType().isValid(be.getBlockState())) {
+                continue;
+            }
+            BlockPos p = be.getBlockPos();
+            PoseStack pose = new PoseStack();
+            pose.translate(p.getX() - c.origin().x, p.getY() - c.origin().y, p.getZ() - c.origin().z);
+            try {
+                // the renderer itself: the dispatcher's view-distance check reads a plot position as millions of blocks away
+                renderer.render(be, partialTick, pose, forceDist, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+            } catch (Throwable t) {
+                if (loggedActive) TheBeyond.LOGGER.error("Projector block-entity depth render failed for {}", be, t);
+            }
+        }
+        buf.endBatch();
+    }
+
+    /** The world pinhole in a contraption's grid frame, null when that basis is not finite. */
+    private static ProjectorRenderer.Pinhole gridPinhole(ProjectorRenderer.Pinhole phWorld, ProjectorRenderer.ContraptionFrame fr,
+                                                         Vec3 camPos) {
+        Matrix4f minv = fr.minv();
+        Vec3 eye = phWorld.eye(), forward = phWorld.forward(), up = phWorld.up(), right = phWorld.right();
+        Vector3f egv = minv.transformPosition(new Vector3f(
+                (float) (eye.x - camPos.x), (float) (eye.y - camPos.y), (float) (eye.z - camPos.z)));
+        Vector3f fgv = minv.transformDirection(new Vector3f((float) forward.x, (float) forward.y, (float) forward.z)).normalize();
+        Vector3f ugv = minv.transformDirection(new Vector3f((float) up.x, (float) up.y, (float) up.z)).normalize();
+        Vector3f rgv = minv.transformDirection(new Vector3f((float) right.x, (float) right.y, (float) right.z)).normalize();
+        if (!finite(egv) || !finite(fgv) || !finite(ugv) || !finite(rgv)) {
+            return null;
+        }
+        return new ProjectorRenderer.Pinhole(new Vec3(egv.x + fr.rpx(), egv.y + fr.rpy(), egv.z + fr.rpz()),
+                new Vec3(fgv.x, fgv.y, fgv.z), new Vec3(rgv.x, rgv.y, rgv.z), new Vec3(ugv.x, ugv.y, ugv.z), phWorld.coneK());
+    }
+
+    /** Entity parts go through {@code entityType}, solid block-model parts through {@code blockType}, a null type drops them. */
     private static final class ProjectorDistEntitySource implements MultiBufferSource {
         private final MultiBufferSource.BufferSource inner;
         private final ResourceLocation tex;
+        private final Function<ResourceLocation, RenderType> entityType;
+        private final Function<ResourceLocation, RenderType> blockType;
+        boolean blockSeen;
 
-        ProjectorDistEntitySource(MultiBufferSource.BufferSource inner, ResourceLocation tex) {
+        ProjectorDistEntitySource(MultiBufferSource.BufferSource inner, ResourceLocation tex,
+                                  Function<ResourceLocation, RenderType> entityType,
+                                  Function<ResourceLocation, RenderType> blockType) {
             this.inner = inner;
             this.tex = tex;
+            this.entityType = entityType;
+            this.blockType = blockType;
         }
 
         @Override
         public VertexConsumer getBuffer(RenderType type) {
-            return type.format() == DefaultVertexFormat.NEW_ENTITY
-                    ? inner.getBuffer(BeyondRenderTypes.projectorDepthEntity(typeTexture(type, tex)))
-                    : NoOpConsumer.INSTANCE;
+            VertexFormat format = type.format();
+            if (format == DefaultVertexFormat.NEW_ENTITY && entityType != null) {
+                return inner.getBuffer(entityType.apply(typeTexture(type, tex)));
+            }
+            // translucent block types are light or glass (beacon and gateway beams), never an occluder
+            if (format == DefaultVertexFormat.BLOCK && !type.sortOnUpload()) {
+                blockSeen = true;
+                if (blockType != null) {
+                    return inner.getBuffer(blockType.apply(typeTexture(type, tex)));
+                }
+            }
+            return NoOpConsumer.INSTANCE;
         }
     }
 
@@ -704,11 +869,15 @@ public final class ProjectorDepthMap {
         }
     }
 
-    /** Logs a capture summary for pos when it changes, with counts bucketed so jitter does not spam. */
     private static void diag(BlockPos pos, String summary) {
+        diag(DIAG_LAST, pos, summary);
+    }
+
+    /** Logs a capture summary for pos when it changes, with counts bucketed so jitter does not spam. */
+    private static void diag(Map<BlockPos, String> last, BlockPos pos, String summary) {
         String bucketed = BUCKET_NUM.matcher(summary).replaceAll(r -> bucket(Integer.parseInt(r.group(1))));
 
-        if (!bucketed.equals(DIAG_LAST.put(pos, bucketed)) && loggedActive) {
+        if (!bucketed.equals(last.put(pos, bucketed)) && loggedActive) {
             TheBeyond.LOGGER.info("[Projector DIAG] {}: {}", pos.toShortString(), bucketed);
         }
     }
@@ -724,5 +893,6 @@ public final class ProjectorDepthMap {
         ACTIVE.clear();
         CAPTURED.clear();
         DIAG_LAST.clear();
+        DIAG_POST_LAST.clear();
     }
 }

@@ -143,6 +143,8 @@ public class BeyondRenderTypes extends RenderType {
     static RenderStateShard.ShaderStateShard PROJECTOR_DIST_SHADER_STATE = new RenderStateShard.ShaderStateShard(BeyondShaders::getProjectorDist);
     static RenderStateShard.ShaderStateShard PROJECTOR_DIST_PEEL_SHADER_STATE = new RenderStateShard.ShaderStateShard(BeyondShaders::getProjectorDistPeel);
     static RenderStateShard.ShaderStateShard PROJECTOR_DIST_ENTITY_SHADER_STATE = new RenderStateShard.ShaderStateShard(BeyondShaders::getProjectorDistEntity);
+    static RenderStateShard.ShaderStateShard PROJECTOR_DIST_BLOCK_ENTITY_SHADER_STATE = new RenderStateShard.ShaderStateShard(BeyondShaders::getProjectorDistBlockEntity);
+    static RenderStateShard.ShaderStateShard PROJECTOR_DIST_BLOCK_ENTITY_PEEL_SHADER_STATE = new RenderStateShard.ShaderStateShard(BeyondShaders::getProjectorDistBlockEntityPeel);
 
     public static final Function<ResourceLocation, RenderType> MIRROR = Util.memoize((location) -> {
         CompositeState compositeState = CompositeState.builder()
@@ -270,6 +272,48 @@ public class BeyondRenderTypes extends RenderType {
 
     public static RenderType projectorDepthEntity(ResourceLocation location) {
         return PROJECTOR_DEPTH_ENTITY.apply(location);
+    }
+
+    // Writes like a block (G=0, B=n) so a block entity's shadow follows the block rules. Same FBO, after the block pass.
+    public static final Function<ResourceLocation, RenderType> PROJECTOR_DEPTH_BLOCK_ENTITY = Util.memoize((location) -> {
+        CompositeState compositeState = CompositeState.builder()
+                .setShaderState(PROJECTOR_DIST_BLOCK_ENTITY_SHADER_STATE)
+                .setTextureState(new TextureStateShard(location, false, false))
+                .setWriteMaskState(COLOR_DEPTH_WRITE)
+                .setDepthTestState(LEQUAL_DEPTH_TEST)
+                .setCullState(NO_CULL)
+                .createCompositeState(false);
+        return create("projector_depth_block_entity", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536, true, false, compositeState);
+    });
+
+    public static RenderType projectorDepthBlockEntity(ResourceLocation location) {
+        return PROJECTOR_DEPTH_BLOCK_ENTITY.apply(location);
+    }
+
+    // MIN blending stands in for the depth test: the peel layer keeps the nearest second surface per texel.
+    private static final TransparencyStateShard MIN_BLEND = new TransparencyStateShard("the_beyond_min_blend", () -> {
+        com.mojang.blaze3d.systems.RenderSystem.enableBlend();
+        com.mojang.blaze3d.systems.RenderSystem.blendEquation(org.lwjgl.opengl.GL14.GL_MIN);
+    }, () -> {
+        com.mojang.blaze3d.systems.RenderSystem.blendEquation(org.lwjgl.opengl.GL14.GL_FUNC_ADD);
+        com.mojang.blaze3d.systems.RenderSystem.disableBlend();
+    });
+
+    // Block entities into the peel layer, with the block-only first layer bound as Sampler1.
+    public static final Function<ResourceLocation, RenderType> PROJECTOR_DEPTH_BLOCK_ENTITY_PEEL = Util.memoize((location) -> {
+        CompositeState compositeState = CompositeState.builder()
+                .setShaderState(PROJECTOR_DIST_BLOCK_ENTITY_PEEL_SHADER_STATE)
+                .setTextureState(new TextureStateShard(location, false, false))
+                .setTransparencyState(MIN_BLEND)
+                .setWriteMaskState(COLOR_WRITE)
+                .setDepthTestState(NO_DEPTH_TEST)
+                .setCullState(NO_CULL)
+                .createCompositeState(false);
+        return create("projector_depth_block_entity_peel", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536, true, false, compositeState);
+    });
+
+    public static RenderType projectorDepthBlockEntityPeel(ResourceLocation location) {
+        return PROJECTOR_DEPTH_BLOCK_ENTITY_PEEL.apply(location);
     }
 
     // VIEW_OFFSET_Z_LAYERING lets this win LEQUAL over the coplanar occluder.
