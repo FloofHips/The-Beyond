@@ -59,7 +59,7 @@ public final class ProjectorDeferredDecal {
         }
 
         // the decal reads this copy while the cone draws into main, so it never reads what it writes
-        ensureSceneDepth(w, h);
+        ensureSceneDepth(main, w, h);
         sceneDepthCopy.copyDepthFrom(main);
         main.bindWrite(true);
 
@@ -145,13 +145,16 @@ public final class ProjectorDeferredDecal {
         BufferUploader.drawWithShader(bb.buildOrThrow());
     }
 
-    private static void ensureSceneDepth(int w, int h) {
+    private static void ensureSceneDepth(RenderTarget main, int w, int h) {
         if (sceneDepthCopy == null) {
             sceneDepthCopy = new TextureTarget(w, h, true, Minecraft.ON_OSX);
             sceneDepthCopy.setFilterMode(GL11.GL_NEAREST); // NEAREST: no depth interpolation across silhouettes
         } else if (sceneDepthCopy.width != w || sceneDepthCopy.height != h) {
             sceneDepthCopy.resize(w, h, Minecraft.ON_OSX);
             sceneDepthCopy.setFilterMode(GL11.GL_NEAREST);
+        }
+        if (main.isStencilEnabled() && !sceneDepthCopy.isStencilEnabled()) {
+            sceneDepthCopy.enableStencil();
         }
     }
 }
