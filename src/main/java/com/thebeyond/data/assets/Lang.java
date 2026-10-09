@@ -278,7 +278,7 @@ public class Lang extends LanguageProvider {
         add("subtitles.entity.pearl.death", "Pearl shatters");
 
         add("subtitles.item.ocarina.play", "Ocarina played");
-        add("subtitles.item.ocarina.play", "Ocarina fails");
+        add("subtitles.item.ocarina.fails", "Ocarina fails");
         add("subtitles.item.throw", "Item chucked");
 
         add("subtitles.block.molten_metal.freeze", "Metal freezes rapidly");
@@ -298,7 +298,7 @@ public class Lang extends LanguageProvider {
 
         add("subtitles.block.projector.idle", "Projector churning");
         add("subtitles.block.projector.switch", "Slide switches");
-        add("subtitles.block.projector.switch", "Projector wakes up");
+        add("subtitles.block.projector.activate", "Projector wakes up");
         add("subtitles.block.projector.murmur", "Spectators murmuring");
 
         add("subtitles.block.nacre.rake", "Player rakes");

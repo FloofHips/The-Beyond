@@ -1,0 +1,13 @@
+{
+  "required": false,
+  "package": "com.thebeyond.mixin.compat.betterfog",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "the_beyond.refmap.json",
+  "client": [
+    "BetterFogNightVisionMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

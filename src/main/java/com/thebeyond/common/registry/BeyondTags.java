@@ -56,6 +56,7 @@ public class BeyondTags {
     public static final TagKey<EntityType<?>> SENSES_VIA_VIBRATION = createEntity("senses_via_vibration");
 
     public static final TagKey<EntityType<?>> ENTROPIC_FORM = createEntity("entropic_form");
+    public static final TagKey<EntityType<?>> NO_IMAGE = createEntity("no_image");
 
     private static TagKey<Block> createBlock(String id) {
         return BlockTags.create(ResourceLocation.fromNamespaceAndPath(MODID, id));

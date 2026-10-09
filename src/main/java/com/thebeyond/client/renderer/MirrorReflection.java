@@ -17,6 +17,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.culling.Frustum;
@@ -129,7 +130,6 @@ public final class MirrorReflection {
         private List<Entity> reflectedCache;
         private long reflectedTick = Long.MIN_VALUE;
         private PlaneKey reflectedCacheKey;         // the plane the cache was built for (guards slot reuse)
-        private int heldBoost;
 
         private Slot(int index) {
             this.texture = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "mirror_reflection_" + index);
@@ -393,7 +393,7 @@ public final class MirrorReflection {
         // keyed by plane, so a reused slot never serves another plane's stale list
         long nowTick = mc.level.getGameTime();
         if (slot.reflectedCache == null || !key.equals(slot.reflectedCacheKey)
-                || nowTick - slot.reflectedTick >= ENTITY_REFRESH_TICKS) {
+                || Math.abs(nowTick - slot.reflectedTick) >= ENTITY_REFRESH_TICKS) {
             slot.reflectedCache = collectReflectedEntities(mc, info, partialTick);
             slot.reflectedTick = nowTick;
             slot.reflectedCacheKey = key;
@@ -401,7 +401,6 @@ public final class MirrorReflection {
             slot.reflectedCache.removeIf(Entity::isRemoved);
         }
         List<Entity> reflected = slot.reflectedCache;
-        slot.heldBoost = packPath ? heldLightBoost(reflected, info.point, partialTick) : 0;
 
         slot.target.setClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         slot.target.clear(Minecraft.ON_OSX);
@@ -418,6 +417,7 @@ public final class MirrorReflection {
 
         setupLevelLighting(mc);
         disp.setRenderShadow(false);
+        int held = packPath ? playerHeldLight(mc) : 0;
         // the reflection flips the winding, so the front face is inverted or culled parts render inside out
         GL11.glFrontFace(GL11.GL_CW);
         try {
@@ -432,6 +432,9 @@ public final class MirrorReflection {
                 } else {
                     light = disp.getPackedLightCoords(e, partialTick);
                     LIGHT_CACHE.put(e, light);
+                }
+                if (held > 0) {
+                    light = withHeldLight(light, e, mc.player, held, partialTick);
                 }
                 disp.render(e, ex - camPos.x, ey - camPos.y, ez - camPos.z, eyaw, partialTick,
                         new PoseStack(), buf, light);
@@ -923,23 +926,18 @@ public final class MirrorReflection {
         return max;
     }
 
-    /** Brightest reflected holder's light, one level less per block, since a pack's handheld light skips our lightmap. */
-    public static int heldLightBoost(List<Entity> reflected, Vec3 facePoint, float partialTick) {
-        int boost = 0;
-        for (Entity e : reflected) {
-            int em = heldLightEmission(e);
-            if (em <= 0) {
-                continue;
-            }
-            double ex = Mth.lerp(partialTick, e.xOld, e.getX());
-            double ey = Mth.lerp(partialTick, e.yOld, e.getY());
-            double ez = Mth.lerp(partialTick, e.zOld, e.getZ());
-            int contrib = em - (int) Math.floor(Math.sqrt(facePoint.distanceToSqr(ex, ey, ez)));
-            if (contrib > boost) {
-                boost = contrib;
-            }
-        }
-        return boost;
+    /** The local player's held light, the only handheld light a shader pack draws. */
+    public static int playerHeldLight(Minecraft mc) {
+        return mc.player == null ? 0 : heldLightEmission(mc.player);
+    }
+
+    public static int withHeldLight(int packedLight, Entity body, Entity holder, int emission, float partialTick) {
+        int lit = emission - (int) Math.floor(Math.sqrt(center(body, partialTick).distanceToSqr(center(holder, partialTick))));
+        return lit > LightTexture.block(packedLight) ? LightTexture.pack(lit, LightTexture.sky(packedLight)) : packedLight;
+    }
+
+    private static Vec3 center(Entity e, float partialTick) {
+        return e.getPosition(partialTick).add(0.0, e.getBbHeight() * 0.5, 0.0);
     }
 
     /** Line of sight matters: the FBO has no world geometry, so an entity behind a wall would show through. */
@@ -948,7 +946,7 @@ public final class MirrorReflection {
         AABB box = new AABB(info.point.x - r, info.point.y - r, info.point.z - r,
                 info.point.x + r, info.point.y + r, info.point.z + r);
         List<Entity> front = new ArrayList<>();
-        for (Entity e : mc.level.getEntities((Entity) null, box, ent -> !ent.isSpectator())) {
+        for (Entity e : mc.level.getEntities((Entity) null, box, ent -> !ent.isSpectator() && MirrorBlock.showsInImages(ent))) {
             // Eye, not feet: a body on a floor mirror sits exactly on the plane (dot == 0) and would be excluded.
             if (e.getEyePosition(partialTick).subtract(info.point).dot(info.normal) <= 0.0) {
                 continue;
@@ -1099,11 +1097,8 @@ public final class MirrorReflection {
 
                 if (slot.packPath()) {
                     VertexConsumer vc = buf.getBuffer(BeyondRenderTypes.mirrorPack(slot.texture()));
-                    // The FBO holds only unlit albedo under a pack, so light the face with the world light in front of it.
+                    // The pack relights this face over the lit FBO, so it takes the light in front of it.
                     int ambient = LevelRenderer.getLightColor(mc.level, bp.relative(facing));
-                    if (slot.heldBoost > 0) {
-                        ambient = (Math.max((ambient >> 4) & 0xF, slot.heldBoost) << 4) | (((ambient >> 20) & 0xF) << 20);
-                    }
                     Matrix4f vp = slot.sampleVP();
                     int n = chooseSubdiv(vp, bp, corners, rt.width, rt.height);
                     for (int i = 0; i < n; i++) {

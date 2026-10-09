@@ -639,14 +639,14 @@
       "the_beyond:block/brittle_metal/step1",
       "the_beyond:block/brittle_metal/step2"
     ],
-    "subtitle": "subtitles.block.brittle_metal.step"
+    "subtitle": "subtitles.block.brittle_metal.impact"
   },
   "block.brittle_metal.shatter": {
     "sounds": [
       "the_beyond:block/brittle_metal/break1",
       "the_beyond:block/brittle_metal/break2"
     ],
-    "subtitle": "subtitles.block.brittle_metal.break"
+    "subtitle": "subtitles.block.brittle_metal.shatter"
   },
   "block.brittle_metal.fail": {
     "sounds": [

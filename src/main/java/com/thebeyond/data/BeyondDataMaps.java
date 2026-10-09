@@ -3,12 +3,14 @@ package com.thebeyond.data;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.data.BeyondDataMapTypes;
 import com.thebeyond.common.data.ProjectorTexture;
+import com.thebeyond.common.registry.BeyondEntityTypes;
 import com.thebeyond.common.registry.BeyondItems;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.common.data.DataMapProvider;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -62,6 +64,9 @@ public class BeyondDataMaps extends DataMapProvider {
                         new ProjectorTexture(tex("lace_remembrance"), new ProjectorTexture.Region(0f, 0f, 1f, 1f), Optional.of(history), 1f), false)
                 .add(BeyondItems.REMEMBRANCE_SPIKE.getKey(),
                         new ProjectorTexture(tex("spike_remembrance"), new ProjectorTexture.Region(0f, 0f, 1f, 1f), Optional.of(history), 1f), false);
+
+        builder(BeyondDataMapTypes.NO_IMAGE_NAMES)
+                .add(BeyondEntityTypes.ENADRAKE.getKey(), List.of("Enadracula"), false);
     }
 
     private static ResourceLocation tex(String name) {

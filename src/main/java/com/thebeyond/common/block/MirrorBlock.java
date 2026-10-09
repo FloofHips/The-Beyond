@@ -3,9 +3,11 @@ package com.thebeyond.common.block;
 import com.mojang.serialization.MapCodec;
 import com.thebeyond.client.particle.SmokeColorTransitionOptions;
 import com.thebeyond.common.block.blockentities.MirrorBlockEntity;
+import com.thebeyond.common.data.BeyondDataMapTypes;
 import com.thebeyond.common.entity.AbyssalNomadEntity;
 import com.thebeyond.common.entity.BaubleEntity;
 import com.thebeyond.common.registry.*;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -15,6 +17,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.AxeItem;
@@ -98,6 +101,17 @@ public class MirrorBlock extends BaseEntityBlock {
             }
             return List.copyOf(faces);
         });
+    }
+
+    /** False for tagged types and for an entity named in the data map for its type. */
+    public static boolean showsInImages(Entity entity) {
+        if (entity.getType().is(BeyondTags.NO_IMAGE)) {
+            return false;
+        }
+        List<String> names = entity.getType().builtInRegistryHolder().getData(BeyondDataMapTypes.NO_IMAGE_NAMES);
+        // read like vanilla's Dinnerbone: a player by account, anything else only by a custom name
+        return names == null || !(entity instanceof Player || entity.hasCustomName())
+                || !names.contains(ChatFormatting.stripFormatting(entity.getName().getString()));
     }
 
     @Override

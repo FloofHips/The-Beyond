@@ -132,7 +132,6 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         boolean packPath;
         final Matrix4f sampleVP = new Matrix4f(); // main proj·view·(−camPos): world point → screen UV
         int texIndex = -1;
-        int heldBoost;        // brightest handheld-light level among holders
 
         Slot(ResourceLocation texture) {
             this.texture = texture;
@@ -220,11 +219,9 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
             float[][] corners = faceQuad(facing, FACE_OUTSET);
             if (slot.packPath) {
                 VertexConsumer vc = buf.getBuffer(BeyondRenderTypes.mirrorPack(slot.texture));
-                // under a pack the FBO is unlit, and the face cell reads sky, so the light comes from the front cell
-                int ambient = LevelRenderer.getLightColor(mc.level, be.getBlockPos().relative(facing));
-                if (slot.heldBoost > 0) {
-                    ambient = (Math.max((ambient >> 4) & 0xF, slot.heldBoost) << 4) | (((ambient >> 20) & 0xF) << 20);
-                }
+                // the world cell in front of the face, be.getBlockPos() is the sub-level's plot far away under open sky
+                int ambient = LevelRenderer.getLightColor(mc.level, BlockPos.containing(camPos.x + p.x + nf.x / nlen * 0.5,
+                        camPos.y + p.y + nf.y / nlen * 0.5, camPos.z + p.z + nf.z / nlen * 0.5));
                 // always max-subdivide: per-corner affine UVs diverge from projective at grazing angles and tear
                 int subdiv = MAX_SUBDIV;
                 for (int i = 0; i < subdiv; i++) {
@@ -353,7 +350,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         // first/empty selection bypasses the per-frame budget, else an empty list latches as the budget moves on
         boolean trulyFirst = slot.reflected == null;
         boolean latchedEmpty = !trulyFirst && slot.reflected.isEmpty();
-        boolean dueByTick = now - slot.reflectedTick >= ENTITY_REFRESH_TICKS;
+        boolean dueByTick = Math.abs(now - slot.reflectedTick) >= ENTITY_REFRESH_TICKS;
         boolean recompute = trulyFirst || (latchedEmpty && dueByTick) || (dueByTick && losBudget > 0);
         if (recompute) {
             slot.reflected = collectReflectedEntities(mc, camPos.add(p0rel), n, pt);
@@ -363,8 +360,6 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
             }
         }
         List<Entity> reflected = slot.reflected != null ? slot.reflected : List.of();
-        slot.heldBoost = slot.packPath ? MirrorReflection.heldLightBoost(reflected, slot.worldPoint, pt) : 0;
-
         SubBlockFrame sf = resolveSubFrame(st, slot, reflected, camPos, modelView);
 
         slot.target.setClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -386,6 +381,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         MirrorReflection.renderOccluderDepth(FBO_BUFFER, reflected, camPos, mc, n, slot.worldPoint);
         MirrorReflection.setupLevelLighting(mc);
         disp.setRenderShadow(false);
+        int held = slot.packPath ? MirrorReflection.playerHeldLight(mc) : 0;
         GL11.glFrontFace(GL11.GL_CW); // reflection flips winding
         try {
             for (Entity e : reflected) {
@@ -402,6 +398,9 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
                 } else {
                     light = disp.getPackedLightCoords(e, pt);
                     LIGHT_CACHE.put(e, light);
+                }
+                if (held > 0) {
+                    light = MirrorReflection.withHeldLight(light, e, mc.player, held, pt);
                 }
                 disp.render(e, ex - camPos.x, ey - camPos.y, ez - camPos.z, eyaw, pt,
                         new PoseStack(), FBO_BUFFER, light);
@@ -481,7 +480,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         double r = RENDER_DIST;
         AABB box = new AABB(point.x - r, point.y - r, point.z - r, point.x + r, point.y + r, point.z + r);
         List<Entity> front = new ArrayList<>();
-        for (Entity e : mc.level.getEntities((Entity) null, box, ent -> !ent.isSpectator())) {
+        for (Entity e : mc.level.getEntities((Entity) null, box, ent -> !ent.isSpectator() && MirrorBlock.showsInImages(ent))) {
             if (e.getEyePosition(pt).subtract(point).dot(normal) <= 0.0) {
                 continue;
             }

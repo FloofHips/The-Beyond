@@ -6,7 +6,6 @@ import java.lang.reflect.Method;
 
 public class ShaderCompatLib {
     private static Boolean cachedShaderResult = null;
-    private static Boolean cachedRendererResult = null;
 
     // Cache Method refs only, never results: pack state flips on toggle.
     private static volatile boolean irisReflectionInitialized = false;
@@ -75,15 +74,5 @@ public class ShaderCompatLib {
     public static boolean isIrisProper() {
         initIrisReflection();
         return irisProperNamespace;
-    }
-
-    /** Gates fog/lightmap clamping: these renderers tint the End green without it. */
-    public static boolean isModdedRendererLoaded() {
-        if (cachedRendererResult == null) {
-            boolean sodium = ModList.get().isLoaded("sodium");
-            boolean embeddium = ModList.get().isLoaded("embeddium");
-            cachedRendererResult = sodium || embeddium || isShaderModLoaded();
-        }
-        return cachedRendererResult;
     }
 }
