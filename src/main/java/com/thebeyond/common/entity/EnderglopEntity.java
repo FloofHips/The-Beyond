@@ -1,6 +1,7 @@
 package com.thebeyond.common.entity;
 
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondItems;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.core.particles.BlockParticleOption;
@@ -37,6 +38,7 @@ import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
@@ -387,6 +389,12 @@ public class EnderglopEntity extends Mob implements Enemy {
         }
 
         super.onSyncedDataUpdated(key);
+    }
+
+    @Override
+    protected void dropCustomDeathLoot(ServerLevel level, DamageSource damageSource, boolean recentlyHit) {
+        super.dropCustomDeathLoot(level, damageSource, recentlyHit);
+        if (getIsArmored() && recentlyHit) this.spawnAtLocation(new ItemStack(BeyondItems.FERROPETAL.get(), 1 + level.random.nextInt(3)));
     }
 
     public void remove(Entity.RemovalReason reason) {

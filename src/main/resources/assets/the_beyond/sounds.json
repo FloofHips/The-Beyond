@@ -546,7 +546,7 @@
     "sounds": [
       "the_beyond:item/ocarina/fail"
     ],
-    "subtitle": "subtitles.item.ocarina.fails"
+    "subtitle": "subtitles.item.ocarina.fail"
   },
   "entity.pearl.hurt": {
     "sounds": [

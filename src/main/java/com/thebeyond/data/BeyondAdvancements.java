@@ -35,19 +35,6 @@ public class BeyondAdvancements extends AdvancementProvider {
         @Override
         public void generate(HolderLookup.Provider provider, Consumer<AdvancementHolder> consumer, ExistingFileHelper existingFileHelper) {
 
-            // Root advancement - tab icon only, granted immediately
-            //AdvancementHolder root = Advancement.Builder.advancement()
-            //        .display(
-            //                new ItemStack(BeyondItems.VOID_CRYSTAL.get()),
-            //                Component.translatable("advancements.the_beyond.root.title"),
-            //                Component.translatable("advancements.the_beyond.root.description"),
-            //                ResourceLocation.withDefaultNamespace("textures/block/end_stone.png"),
-            //                AdvancementType.TASK,
-            //                false, false, true
-            //        )
-            //        .addCriterion("tick", PlayerTrigger.TriggerInstance.tick())
-            //        .save(consumer, "the_beyond:the_beyond/root");
-
             AdvancementHolder root = new AdvancementHolder(
                      ResourceLocation.parse("minecraft:end/enter_end_gateway"),
                     null
@@ -269,7 +256,7 @@ public class BeyondAdvancements extends AdvancementProvider {
                     .save(consumer, "the_beyond:the_beyond/gift_rare_enadrake");
 
             AdvancementHolder completeRefuge = Advancement.Builder.advancement()
-                    .parent(giftEnadrake)
+                    .parent(giftRareEnadrake)
                     .display(
                             new ItemStack(BeyondBlocks.REFUGE.asItem()),
                             Component.translatable("advancements.the_beyond.complete_refuge.title"),
@@ -298,6 +285,9 @@ public class BeyondAdvancements extends AdvancementProvider {
                             BeyondCriteriaTriggers.FULL_POWER_MAGNET.get().createCriterion(
                                     new PlayerTrigger.TriggerInstance(Optional.empty())))
                     .save(consumer, "the_beyond:the_beyond/full_power_magnet");
+
+            // === FUMAROLE UPLANDS ===
+
 
         }
     }

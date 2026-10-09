@@ -360,7 +360,7 @@
   "subtitles.item.flame.fail": "Flame extinguishes",
   "subtitles.item.magnet.fail": "Magnet falls short",
   "subtitles.item.magnet.success": "Magnet latches on",
-  "subtitles.item.ocarina.fails": "Ocarina fails",
+  "subtitles.item.ocarina.fail": "Ocarina fails",
   "subtitles.item.ocarina.play": "Ocarina played",
   "subtitles.item.prismograph.close": "Prismograph closed",
   "subtitles.item.prismograph.extract": "Film extracted",

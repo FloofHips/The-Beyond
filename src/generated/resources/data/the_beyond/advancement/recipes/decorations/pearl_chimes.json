@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "the_beyond:chiseled_memor"
+        "recipe": "the_beyond:pearl_chimes"
       },
       "trigger": "minecraft:recipe_unlocked"
     }
@@ -26,7 +26,7 @@
   ],
   "rewards": {
     "recipes": [
-      "the_beyond:chiseled_memor"
+      "the_beyond:pearl_chimes"
     ]
   }
 }

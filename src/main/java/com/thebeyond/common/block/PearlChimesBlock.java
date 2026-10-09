@@ -13,20 +13,22 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import org.joml.Vector3f;
 
 public class PearlChimesBlock extends Block {
+
+    protected static final VoxelShape AABB = Block.box((double)2.0F, (double)2.0F, (double)2.0F, (double)14.0F, (double)16.0F, (double)14.0F);
+
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
     public PearlChimesBlock(Properties properties) {
         super(properties);
@@ -44,8 +46,21 @@ public class PearlChimesBlock extends Block {
     }
 
     @Override
+    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return AABB;
+    }
+
+    @Override
+    protected boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
+        return level.getBlockState(pos.above()).isFaceSturdy(level, pos.above(), Direction.DOWN) && super.canSurvive(state, level, pos);
+    }
+
+    @Override
     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        if (!state.getValue(LIT) && level.isRaining()) level.setBlock(pos, state.setValue(LIT, true) ,3);
+        if (!state.getValue(LIT) && level.isRaining()) {
+            level.playLocalSound(pos, BeyondSoundEvents.PEARL_CHIME.get(), SoundSource.BLOCKS, 1,0.5f + random.nextFloat(), false);
+            level.setBlock(pos, state.setValue(LIT, true), 3);
+        }
         if (state.getValue(LIT) && !level.isRaining()) level.setBlock(pos, state.setValue(LIT, false),3);
     }
 
@@ -53,7 +68,7 @@ public class PearlChimesBlock extends Block {
     public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
         boolean raining = level.isRaining();
 
-        if (state.getValue(LIT) ? random.nextFloat() > 0.2 : random.nextFloat() > 0.6) {
+        if (!state.getValue(LIT) && random.nextBoolean()) {
             if (random.nextFloat() > 0.8) level.playLocalSound(pos.getX(), pos.above().getY(), pos.getZ(), BeyondSoundEvents.PEARL_CHIME.get(), SoundSource.BLOCKS, 1, random.nextFloat() + (raining ? 1 : 0.5f), false);
             spawnParticle(level, pos, random);
         }

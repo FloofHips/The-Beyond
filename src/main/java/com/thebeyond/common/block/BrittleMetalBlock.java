@@ -15,6 +15,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -30,20 +31,76 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.loading.FMLEnvironment;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class BrittleMetalBlock extends Block {
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
 
-    final String  sword = "010010010";
-    final String  shovel = "010000000";
-    final String  pickaxe = "111010010";
+    private static final String SWORD_BASE   = "010010010";
+    private static final String SHOVEL_BASE  = "010000000";
+    private static final String PICKAXE_BASE = "111010010";
+    private static final String AXE_BASE     = "011011010";
+    private static final String HOE_BASE     = "011010010";
+    private static final String AXE_BASE_M   = "110110010";
+    private static final String HOE_BASE_M   = "110010010";
 
-    final String  axe = "011011010";
-    final String  axe_2 = "110110010";
+    private static final Map<String, String> PATTERN_TO_ITEM = new HashMap<>();
 
-    final String  hoe = "011010010";
-    final String  hoe_2 = "110010010";
+    static {
+        register(SWORD_BASE, "brittle_sword");
+        register(SHOVEL_BASE, "brittle_shovel");
+        register(PICKAXE_BASE, "brittle_pickaxe");
+        register(AXE_BASE, "brittle_axe");
+        register(HOE_BASE, "brittle_hoe");
+        register(AXE_BASE_M, "brittle_axe");
+        register(HOE_BASE_M, "brittle_hoe");
+    }
+
+    private static void register(String base, String item) {
+        for (String r : rotations(base)) {
+            PATTERN_TO_ITEM.put(r, item);
+        }
+    }
+
+    private static String[] rotations(String base) {
+        String r0 = base;
+        String r1 = rotate90(r0);
+        String r2 = rotate90(r1);
+        String r3 = rotate90(r2);
+        return new String[]{r0, r1, r2, r3};
+    }
+
+    private static String rotate90(String s) {
+        char[] out = new char[9];
+
+        out[0] = s.charAt(6);
+        out[1] = s.charAt(3);
+        out[2] = s.charAt(0);
+        out[3] = s.charAt(7);
+        out[4] = s.charAt(4);
+        out[5] = s.charAt(1);
+        out[6] = s.charAt(8);
+        out[7] = s.charAt(5);
+        out[8] = s.charAt(2);
+
+        return new String(out);
+    }
+
+    public static ItemStack getToolForPattern(String pattern) {
+        String item = PATTERN_TO_ITEM.get(pattern);
+
+        switch (item) {
+            case "brittle_sword": return new ItemStack(BeyondItems.BRITTLE_SWORD.get());
+            case "brittle_pickaxe": return new ItemStack(BeyondItems.BRITTLE_PICKAXE.get());
+            case "brittle_axe": return new ItemStack(BeyondItems.BRITTLE_AXE.get());
+            case "brittle_shovel": return new ItemStack(BeyondItems.BRITTLE_SHOVEL.get());
+            case "brittle_hoe": return new ItemStack(BeyondItems.BRITTLE_HOE.get());
+        }
+
+        return null;
+    }
 
     public BrittleMetalBlock(Properties properties) {
         super(properties);
@@ -83,7 +140,7 @@ public class BrittleMetalBlock extends Block {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        ItemStack itemStack = determineTool(level, pos, Direction.fromYRot(player.getNearestViewDirection().toYRot()));
+        ItemStack itemStack = determineTool(level, pos);
 
         if (level instanceof ServerLevel serverLevel) {
 
@@ -136,58 +193,26 @@ public class BrittleMetalBlock extends Block {
         return state.getValue(POWERED) ? 6 : 0;
     }
 
-    public ItemStack determineTool(BlockGetter level, BlockPos pos, Direction dir) {
+    public ItemStack determineTool(BlockGetter level, BlockPos pos) {
         StringBuilder pattern = new StringBuilder();
         List<BlockPos> toBreak = new ArrayList<>();
-        Direction left = dir.getClockWise();
-        Direction forward = dir;
 
         for (int row = -1; row <= 1; row++) {
             for (int col = -1; col <= 1; col++) {
-                BlockPos checkPos = pos.relative(forward, -row).relative(left, col);
+                BlockPos checkPos = pos.offset(row, 0, col);
                 boolean isMetal = level.getBlockState(checkPos).is(BeyondBlocks.BRITTLE_METAL.get());
                 boolean isMoltenMetal = level.getBlockState(checkPos).is(BeyondBlocks.MOLTEN_METAL.get());
-
-                if (isMoltenMetal) {
-                    pattern.append("0");
-                    if (col == 0) toBreak.add(checkPos);
-                    continue;
-                }
 
                 if (!isMetal && !isMoltenMetal) return ItemStack.EMPTY;
 
                 boolean isPowered = level.getBlockState(checkPos).getValue(POWERED);
                 pattern.append(isPowered ? "0" : "1");
-                if (!isPowered || col==0) toBreak.add(checkPos);
+                if (!isPowered) toBreak.add(checkPos);
             }
         }
-
-        ItemStack stack = ItemStack.EMPTY;
 
         String current = pattern.toString();
-
-        switch (current) {
-            case pickaxe: {
-                stack = new ItemStack(BeyondItems.BRITTLE_PICKAXE.get());
-                break;
-            }
-            case axe, axe_2: {
-                stack = new ItemStack(BeyondItems.BRITTLE_AXE.get());
-                break;
-            }
-            case hoe, hoe_2: {
-                stack = new ItemStack(BeyondItems.BRITTLE_HOE.get());
-                break;
-            }
-            case shovel: {
-                stack = new ItemStack(BeyondItems.BRITTLE_SHOVEL.get());
-                break;
-            }
-            case sword: {
-                stack = new ItemStack(BeyondItems.BRITTLE_SWORD.get());
-                break;
-            }
-        }
+        ItemStack stack = getToolForPattern(current);
 
         if (!stack.isEmpty() && !toBreak.isEmpty()) {
             for (BlockPos position : toBreak) {
