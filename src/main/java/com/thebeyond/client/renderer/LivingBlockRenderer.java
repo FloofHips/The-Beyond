@@ -35,7 +35,7 @@ public class LivingBlockRenderer extends EntityRenderer<LivingBlock> {
     private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
 
     private static final String DEFAULT_TEXTURE = "pearl";
-    private static final float SHADOW_RADIUS = 0.4F;
+    private static final float SHADOW_RADIUS = 0.1F;
 
     private final Quaternionf rotation = new Quaternionf();
     protected final Map<List<AABB>, List<LivingBlockMeshBaker.MeshQuad>> meshCache = new WeakHashMap<>();
