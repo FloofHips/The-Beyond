@@ -1,12 +1,14 @@
 package com.thebeyond.common.block;
 
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondCriteriaTriggers;
 import com.thebeyond.common.registry.BeyondItems;
 import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
@@ -15,6 +17,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -81,7 +84,13 @@ public class MoltenMetalBlock extends Block {
                 ItemEntity metalSheet = new ItemEntity(serverLevel, pos.getX() + 0.5f, pos.getY() + 1, pos.getZ() + 0.5f, new ItemStack(BeyondItems.BRITTLE_METAL_SHEET.get(), ((ServerLevel) level).random.nextInt(1,4)));
 
                 level.addFreshEntity(prismuth);
-                if (((ServerLevel) level).random.nextBoolean()) level.addFreshEntity(metalSheet);
+
+                Player player = serverLevel.getNearestPlayer(pos.getX(), pos.getY(), pos.getZ(), 32, true);
+                if (player != null && player instanceof ServerPlayer serverPlayer) {
+                    BeyondCriteriaTriggers.FREEZE.get().trigger(serverPlayer);
+                }
+
+                if (serverLevel.random.nextBoolean()) level.addFreshEntity(metalSheet);
             }
         }
         return super.updateShape(state, direction, neighborState, level, pos, neighborPos);

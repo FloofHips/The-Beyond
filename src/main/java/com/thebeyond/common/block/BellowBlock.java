@@ -5,11 +5,13 @@ import com.thebeyond.api.compat.BeyondCompatHooks;
 import com.thebeyond.client.particle.BellowJetOptions;
 import com.thebeyond.common.block.blockentities.BellowBlockEntity;
 import com.thebeyond.common.registry.BeyondBlockEntities;
+import com.thebeyond.common.registry.BeyondCriteriaTriggers;
 import com.thebeyond.common.registry.BeyondEffects;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -201,6 +203,9 @@ public class BellowBlock extends BaseEntityBlock {
                 if (dir == Direction.UP) {
                     e.resetFallDistance(); // an updraft shouldn't bank fall damage
                 }
+            }
+            if (strength == 40 && e instanceof ServerPlayer serverPlayer) {
+                BeyondCriteriaTriggers.GEYSER.get().trigger(serverPlayer);
             }
         }
     }

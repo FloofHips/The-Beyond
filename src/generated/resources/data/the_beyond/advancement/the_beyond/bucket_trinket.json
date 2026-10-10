@@ -1,0 +1,26 @@
+{
+  "parent": "the_beyond:the_beyond/tame_bauble",
+  "criteria": {
+    "bucket_trinket": {
+      "trigger": "the_beyond:bucket_trinket"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.the_beyond.bucket_trinket.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "the_beyond:trinket_bucket"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.bucket_trinket.title"
+    }
+  },
+  "requirements": [
+    [
+      "bucket_trinket"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

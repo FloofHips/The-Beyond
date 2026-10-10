@@ -411,7 +411,7 @@ public class BeyondBlocks {
     public static final DeferredBlock<Block> NACRE = registerBlock("nacre",
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.WARPED_WART_BLOCK)
-                    .strength(2.0F, 2.0F)
+                    .strength(1.0F, 2.0F)
                     .sound(BeyondSoundTypes.NACRE)) {
 
                 @Override
@@ -424,19 +424,19 @@ public class BeyondBlocks {
     public static final DeferredBlock<Block> RAKED_NACRE = registerBlock("raked_nacre",
             () -> new RakedNacreBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.WARPED_WART_BLOCK)
-                    .strength(2.0F, 2.0F)
+                    .strength(1.0F, 2.0F)
                     .sound(BeyondSoundTypes.NACRE))
     );
     public static final DeferredBlock<Block> UNSTABLE_NACRE = registerBlock("unstable_nacre",
             () -> new NacreBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.WARPED_HYPHAE)
-                    .strength(2.0F, 2.0F)
+                    .strength(1.5F, 2.0F)
                     .sound(BeyondSoundTypes.NACRE))
     );
     public static final DeferredBlock<Block> RICH_NACRE = registerBlock("rich_nacre",
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_BLACK)
-                    .strength(2.0F, 2.0F)
+                    .strength(1.0F, 2.0F)
                     .sound(BeyondSoundTypes.NACRE)) {
 
                 @Override
@@ -449,13 +449,13 @@ public class BeyondBlocks {
     public static final DeferredBlock<Block> RICH_RAKED_NACRE = registerBlock("rich_raked_nacre",
             () -> new RakedNacreBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_BLACK)
-                    .strength(2.0F, 2.0F)
+                    .strength(1.0F, 2.0F)
                     .sound(BeyondSoundTypes.NACRE))
     );
     public static final DeferredBlock<Block> PALE_NACRE = registerBlock("pale_nacre",
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.SNOW)
-                    .strength(2.0F, 2.0F)
+                    .strength(1.0F, 2.0F)
                     .sound(BeyondSoundTypes.NACRE)) {
 
                 @Override
@@ -506,7 +506,7 @@ public class BeyondBlocks {
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.TERRACOTTA_WHITE)
                     .strength(0.6F, 0.1F)
-                    .sound(BeyondSoundTypes.PEARL)));
+                    .sound(BeyondSoundTypes.PEARL_HIGH)));
     public static final DeferredBlock<Block> COBBLED_PEARL_BRICK_STAIRS = registerBlock("cobbled_pearl_brick_stairs", () -> new StairBlock(
             COBBLED_PEARL_BRICKS.get().defaultBlockState(),
             BlockBehaviour.Properties.ofFullCopy(COBBLED_PEARL_BRICKS.get())));
@@ -530,7 +530,7 @@ public class BeyondBlocks {
     public static final DeferredBlock<Block> PEARL_CHIMES = registerBlock("pearl_chimes",
             () -> new PearlChimesBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_LIGHT_GRAY)
-                    .sound(BeyondSoundTypes.PEARL)
+                    .sound(BeyondSoundTypes.PEARL_HIGH)
                     .noCollission()
                     .strength(1.0F, 0.1F)
                     .noOcclusion()));

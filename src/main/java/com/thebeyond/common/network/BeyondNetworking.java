@@ -29,9 +29,12 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -98,6 +101,12 @@ public class BeyondNetworking {
                 ShowBonfireTutorialToastPacket.TYPE,
                 ShowBonfireTutorialToastPacket.STREAM_CODEC,
                 ShowBonfireTutorialToastPacket::handle
+        );
+
+        registrar.playToClient(
+                ShowCastingTutorialToastPacket.TYPE,
+                ShowCastingTutorialToastPacket.STREAM_CODEC,
+                ShowCastingTutorialToastPacket::handle
         );
 
         registrar.playToClient(
@@ -219,10 +228,29 @@ public class BeyondNetworking {
                     CameraGrade.get(camera));
             PacketDistributor.sendToPlayer(player, new CaptureRequestPayload(requestId));
             player.getCooldowns().addCooldown(camera.getItem(), 10);
-            player.serverLevel().playSound(null, player.blockPosition(),
-                    BeyondSoundEvents.PRISMOGRAPH_SNAP.value(),
-                    SoundSource.PLAYERS, 0.7f, 1.2f);
+            player.serverLevel().playSound(null, player.blockPosition(), BeyondSoundEvents.PRISMOGRAPH_SNAP.value(), SoundSource.PLAYERS, 0.7f, 1.2f);
+            BeyondCriteriaTriggers.SNAPSHOT.get().trigger(player);
         });
+    }
+
+    private static void rayCastFromPrismograph(Player player) {
+        double range = 32;
+        Vec3 eyePos = player.getEyePosition();
+        Vec3 endPos = eyePos.add(player.getLookAngle().scale(range));
+
+        ClipContext clipContext = new ClipContext(
+                eyePos,
+                endPos,
+                ClipContext.Block.OUTLINE,
+                ClipContext.Fluid.NONE,
+                player
+        );
+
+        BlockHitResult hit = player.level().clip(clipContext);
+        if (hit.getType() != HitResult.Type.MISS) {
+            BlockPos pos = hit.getBlockPos();
+
+        }
     }
 
     private static ProjectorBlockEntity projectorInReach(IPayloadContext context, BlockPos pos) {

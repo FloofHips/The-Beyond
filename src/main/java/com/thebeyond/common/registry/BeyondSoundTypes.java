@@ -69,6 +69,14 @@ public class BeyondSoundTypes {
             BeyondSoundEvents.PEARL_FALL
     );
 
+    public static SoundType PEARL_HIGH = new DeferredSoundType(1.0F, 2.0F,
+            BeyondSoundEvents.PEARL_BREAK,
+            BeyondSoundEvents.PEARL_STEP,
+            BeyondSoundEvents.PEARL_PLACE,
+            BeyondSoundEvents.PEARL_HIT,
+            BeyondSoundEvents.PEARL_FALL
+    );
+
     public static SoundType MIRROR_PEARL = new DeferredSoundType(1.0F, 1.0F,
             BeyondSoundEvents.MIRROR_BREAK,
             BeyondSoundEvents.PEARL_STEP,

@@ -1,11 +1,11 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_pearl": {
+    "has_polar_antenna": {
       "conditions": {
         "items": [
           {
-            "items": "the_beyond:pearl"
+            "items": "the_beyond:polar_antenna"
           }
         ]
       },
@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "the_beyond:mirror"
+        "recipe": "the_beyond:plated_end_stone"
       },
       "trigger": "minecraft:recipe_unlocked"
     }
@@ -21,12 +21,12 @@
   "requirements": [
     [
       "has_the_recipe",
-      "has_pearl"
+      "has_polar_antenna"
     ]
   ],
   "rewards": {
     "recipes": [
-      "the_beyond:mirror"
+      "the_beyond:plated_end_stone"
     ]
   }
 }

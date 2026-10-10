@@ -4,6 +4,7 @@ import com.thebeyond.client.gui.OcarinaOverlay;
 import com.thebeyond.common.entity.TrinketEntity;
 import com.thebeyond.common.entity.util.livingblock.movement.Target;
 import com.thebeyond.common.registry.BeyondComponents;
+import com.thebeyond.common.registry.BeyondCriteriaTriggers;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.util.OcarinaMode;
@@ -181,8 +182,12 @@ public class OcarinaItem extends Item {
         player.displayClientMessage(Component.translatable("screen.the_beyond.ocarina.trinkets_selected", linkedTrinkets.size()), true);
         if (linkedTrinkets.isEmpty())
             player.playSound(BeyondSoundEvents.OCARINA_FAIL.get(), 1f,1+level.random.nextFloat());
-        else
-            player.playSound(getSoundEvent(OcarinaMode.SELECT),1f,1+level.random.nextFloat()*0.1f);
+        else {
+            if (player instanceof ServerPlayer serverPlayer) {
+                BeyondCriteriaTriggers.SELECT_TRINKET.get().trigger(serverPlayer);
+            }
+            player.playSound(getSoundEvent(OcarinaMode.SELECT), 1f, 1 + level.random.nextFloat() * 0.1f);
+        }
     }
 
     private void follow(Player player) {

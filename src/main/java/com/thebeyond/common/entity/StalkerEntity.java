@@ -2,39 +2,32 @@ package com.thebeyond.common.entity;
 
 import com.thebeyond.client.particle.CircleColorTransitionOptions;
 import com.thebeyond.client.particle.PixelColorTransitionOptions;
+import com.thebeyond.common.registry.BeyondCriteriaTriggers;
 import com.thebeyond.common.registry.BeyondEntityTypes;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.common.registry.BeyondSoundEvents;
-import com.thebeyond.util.ColorUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
-import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
-import net.minecraft.world.entity.animal.Sheep;
+import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.monster.Monster;
-import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -293,6 +286,10 @@ public class StalkerEntity extends LivingEntity implements OwnableEntity {
         for (LivingEntity entity : entities) {
             if (entity instanceof StalkerEntity) continue;
             entity.hurt(this.damageSources().mobAttack(this), 8f);
+
+            if (entity instanceof ServerPlayer serverPlayer) {
+                BeyondCriteriaTriggers.ENCOUNTER_STALKER.get().trigger(serverPlayer);
+            }
         }
 
         if (level() instanceof ServerLevel serverLevel) {

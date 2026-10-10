@@ -7,8 +7,10 @@ import com.thebeyond.common.block.ProjectorBlock;
 import com.thebeyond.common.data.BeyondDataMapTypes;
 import com.thebeyond.common.data.ProjectorTexture;
 import com.thebeyond.common.registry.BeyondBlockEntities;
+import com.thebeyond.common.registry.BeyondCriteriaTriggers;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.common.registry.BeyondSoundEvents;
+import com.thebeyond.data.BeyondDataMaps;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
@@ -18,6 +20,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Container;
@@ -62,6 +65,7 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
     public static final int MODE_CAROUSEL = 1;
     public static final int MODE_LINE = 2;
     public static final int MODE_QUADRANT = 3;
+
     // button labels in MODE order, raw strings so this class still loads on the server
     public static final String[] MODE_NAMES = {"Mix-up", "Carousel", "Line", "Quadrant"};
 
@@ -71,12 +75,6 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
 
     private int mode = MODE_MIXUP;
     private int carouselIndex = 0;
-    //private boolean carouselAuto = false;
-    //private int carouselPeriod = 40; // ticks
-    //private boolean flipped = false;
-    //private int rotation = 0;         // quarter-turns 0..3, independent of world facing
-
-    private int tickCounter;
 
     private final ContainerData dataAccess = new ContainerData() {
         @Override
@@ -109,15 +107,6 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
 
     public NonNullList<ItemStack> getItems() {
         return items;
-    }
-
-    public int lastOccupiedSlot() {
-        for (int i = SLOTS - 1; i >= 0; i--) {
-            if (!items.get(i).isEmpty()) {
-                return i;
-            }
-        }
-        return -1;
     }
 
     /** Slot order is a contract: the renderer's mode math indexes into this. */
@@ -166,14 +155,6 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
         setChanged();
     }
 
-    public void setMode(int mode, boolean cycle) {
-        if (!cycle) {
-            this.mode = Math.floorMod(mode, 4);
-        } else {
-            this.mode = mode%4;
-        }
-    }
-
     public void stepCarousel(int delta) {
         this.carouselIndex += delta;
         setChanged();
@@ -200,6 +181,22 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
             BlockState state = getBlockState();
             BlockPos front = ProjectorBlock.frontOrigin(getBlockPos(), state);
             Vec3 c = BeyondCompatHooks.visibleOrCenter(level, front);
+
+            if (level instanceof ServerLevel serverLevel) {
+                for (ServerPlayer player : serverLevel.getPlayers(p -> p.distanceToSqr(getBlockPos().getCenter()) < 8 * 8)) {
+                    BeyondCriteriaTriggers.DISCOVER_PROJECTION.get().trigger(player);
+                    if (group.equals(BeyondDataMaps.HISTORY)) {
+                        BeyondCriteriaTriggers.DISCOVER_ALL_PROJECTION_0.get().trigger(player);
+                    } else if (group.equals(BeyondDataMaps.KEY)) {
+                        BeyondCriteriaTriggers.DISCOVER_ALL_PROJECTION_1.get().trigger(player);
+                    } else if (group.equals(BeyondDataMaps.PRISON)) {
+                        BeyondCriteriaTriggers.DISCOVER_ALL_PROJECTION_2.get().trigger(player);
+                    } else if (group.equals(BeyondDataMaps.PUNISHMENT)) {
+                        BeyondCriteriaTriggers.DISCOVER_ALL_PROJECTION_3.get().trigger(player);
+                    }
+                }
+            }
+
             if (!level.isClientSide) {
                 level.playSound(null, c.x, c.y, c.z, BeyondSoundEvents.PROJECTOR_MURMUR, SoundSource.BLOCKS, 0.9f, 0.9f + level.random.nextFloat() * 0.3f);
             } else {
@@ -217,12 +214,7 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
     }
 
     public static void serverTick(net.minecraft.world.level.Level level, BlockPos pos, BlockState state, ProjectorBlockEntity be) {
-        //if (!be.carouselAuto || be.mode != MODE_CAROUSEL || be.carouselPeriod <= 0) {
-        //    return;
-        //}
-        //if (++be.tickCounter % be.carouselPeriod == 0) {
-        //    be.advanceCarousel();
-        //}
+
     }
 
     @Override
@@ -270,6 +262,13 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
         boolean wasComplete = group != null && isGroupComplete(group);
         items.set(slot, stack);
         stack.limitSize(getMaxStackSize(stack));
+
+        if (level instanceof ServerLevel serverLevel) {
+            for (ServerPlayer player : serverLevel.getPlayers(p -> p.distanceToSqr(getBlockPos().getCenter()) < 4 * 4)) {
+                BeyondCriteriaTriggers.FILL_PROJECTOR.get().trigger(player);
+            }
+        }
+
         setChanged();
         checkRevealOnChange(group, wasComplete);
     }
@@ -311,10 +310,6 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
         ContainerHelper.loadAllItems(tag, items, registries);
         mode = tag.getInt("Mode");
         carouselIndex = tag.getInt("CarouselIndex");
-        //carouselAuto = tag.getBoolean("CarouselAuto");
-        //carouselPeriod = tag.contains("CarouselPeriod") ? tag.getInt("CarouselPeriod") : 40;
-        //flipped = tag.getBoolean("Flipped");
-        //rotation = Math.floorMod(tag.getInt("Rotation"), 4);
     }
 
     @Override
@@ -323,10 +318,6 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
         ContainerHelper.saveAllItems(tag, items, registries);
         tag.putInt("Mode", mode);
         tag.putInt("CarouselIndex", carouselIndex);
-        //tag.putBoolean("CarouselAuto", carouselAuto);
-        //tag.putInt("CarouselPeriod", carouselPeriod);
-        //tag.putBoolean("Flipped", flipped);
-        //tag.putInt("Rotation", rotation);
     }
 
     @Override

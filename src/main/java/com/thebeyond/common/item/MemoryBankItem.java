@@ -1,24 +1,24 @@
 package com.thebeyond.common.item;
 
 import com.thebeyond.client.menu.MemoryBankMenu;
+import com.thebeyond.common.registry.BeyondCriteriaTriggers;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.SlotAccess;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ClickAction;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.Level;
 
@@ -64,9 +64,21 @@ public class MemoryBankItem extends Item {
         if (taken.isEmpty()) return false;
 
         s.set(idx, taken);
+        added(stack, player, s);
+        return true;
+    }
+
+    private void added(ItemStack stack, Player player, NonNullList<ItemStack> s) {
         writeBack(stack, s);
         this.playInsertSound(player);
-        return true;
+    }
+
+    @Override
+    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
+        super.inventoryTick(stack, level, entity, slotId, isSelected);
+        if (entity.tickCount%100 == 0 && getCount(stack) == CAPACITY && entity instanceof ServerPlayer serverPlayer) {
+            BeyondCriteriaTriggers.MEMORY_FULL.get().trigger(serverPlayer);
+        }
     }
 
     @Override
@@ -83,8 +95,7 @@ public class MemoryBankItem extends Item {
         s.set(idx, other.copyWithCount(1));
         other.shrink(1);
         access.set(other);
-        writeBack(stack, s);
-        this.playInsertSound(player);
+        added(stack, player, s);
         return true;
     }
 
@@ -104,10 +115,14 @@ public class MemoryBankItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
-        long count = slots(stack).stream()
+        long count = getCount(stack);
+        tooltipComponents.add(Component.literal(String.valueOf(count) + " / 120").withStyle(ChatFormatting.BLUE));
+    }
+
+    private static long getCount(ItemStack stack) {
+        return slots(stack).stream()
                 .filter(s -> !s.isEmpty())
                 .count();
-        tooltipComponents.add(Component.literal(String.valueOf(count) + " / 120").withStyle(ChatFormatting.BLUE));
     }
 
     private void playInsertSound(Entity entity) {

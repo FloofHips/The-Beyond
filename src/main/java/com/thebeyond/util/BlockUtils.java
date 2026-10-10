@@ -1,9 +1,11 @@
 package com.thebeyond.util;
 
 import com.thebeyond.common.block.blockstates.RakedProperty;
+import com.thebeyond.common.registry.BeyondCriteriaTriggers;
 import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.ItemTags;
@@ -28,6 +30,11 @@ public class BlockUtils {
         if (property != null) {
             BlockState newState = state.setValue(RAKE_DIRECTION, property);
             if (newState == state) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+
+            if (player instanceof ServerPlayer serverPlayer) {
+                BeyondCriteriaTriggers.RAKE_NACRE.get().trigger(serverPlayer);
+            }
+
             level.setBlock(pos, newState, 3);
             level.playSound(player, pos, BeyondSoundEvents.NACRE_RAKE.get(), SoundSource.BLOCKS, 1.0F, 0.8f + level.random.nextFloat());
             level.playSound(player, pos, SoundEvents.HOE_TILL, SoundSource.BLOCKS, 1.0F, 0.8f + level.random.nextFloat());

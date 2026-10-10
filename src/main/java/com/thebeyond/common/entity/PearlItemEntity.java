@@ -1,13 +1,12 @@
 package com.thebeyond.common.entity;
 
-import com.thebeyond.common.registry.BeyondEntityTypes;
-import com.thebeyond.common.registry.BeyondFluids;
-import com.thebeyond.common.registry.BeyondItems;
-import com.thebeyond.common.registry.BeyondSoundEvents;
+import com.thebeyond.common.registry.*;
+import com.thebeyond.data.BeyondDataMaps;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.FluidTags;
@@ -16,10 +15,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.Leashable;
-import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
@@ -28,13 +24,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.EntityHitResult;
-import net.minecraft.world.phys.HitResult;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.*;
 import net.neoforged.neoforge.event.EventHooks;
 import net.neoforged.neoforge.fluids.FluidType;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 public class PearlItemEntity extends ThrowableItemProjectile {
     public PearlItemEntity(EntityType<? extends ThrowableItemProjectile> entityType, Level level) {
@@ -57,6 +52,16 @@ public class PearlItemEntity extends ThrowableItemProjectile {
                     if (this.isInFluidType()) {
                         this.playSound(BeyondSoundEvents.PEARL_CLINK.get(), 0.8F, 1 + level().random.nextFloat());
                         ServerLevel serverlevel = (ServerLevel)this.level();
+
+                        AABB attackBox = new AABB(this.blockPosition()).inflate(10f);
+                        List<Player> entities = level().getEntitiesOfClass(Player.class, attackBox);
+
+                        for (Player entity : entities) {
+                            if (entity instanceof ServerPlayer serverPlayer) {
+                                BeyondCriteriaTriggers.CLINAMEN.get().trigger(serverPlayer);
+                            }
+                        }
+
                         serverlevel.sendParticles(ParticleTypes.SPLASH, getX(), getY(), getZ(), 4 + this.random.nextInt(10), 0.1F, 0.0, 0.1F, 0.0);
 
                     } else {
@@ -119,6 +124,13 @@ public class PearlItemEntity extends ThrowableItemProjectile {
                 bauble.setPos(this.position());
                 bauble.setDeltaMovement(new Vec3(0.1f - random.nextFloat()*0.2, random.nextFloat()*0.2f, 0.1f - random.nextFloat()*0.2));
                 level().addFreshEntity(bauble);
+
+                if (this.level() instanceof ServerLevel serverLevel) {
+                    for (ServerPlayer player : serverLevel.getPlayers(p -> p.distanceToSqr(this.getOnPos().getCenter()) < 8 * 8)) {
+                        BeyondCriteriaTriggers.CREATE_BAUBLE.get().trigger(player);
+                    }
+                }
+
                 this.discard();
             }
         }
@@ -211,6 +223,11 @@ public class PearlItemEntity extends ThrowableItemProjectile {
         ItemStack pearl = this.getItem();
         player.addItem(pearl);
         player.playSound(SoundEvents.ITEM_PICKUP, 0.2F, ((level().random.nextFloat() - level().random.nextFloat()) * 0.7F + 1.0F) * 2.0F);
+
+        if (player instanceof ServerPlayer serverPlayer) {
+            BeyondCriteriaTriggers.COLLECT_PEARL.get().trigger(serverPlayer);
+        }
+
         this.discard();
         return InteractionResult.SUCCESS;
     }

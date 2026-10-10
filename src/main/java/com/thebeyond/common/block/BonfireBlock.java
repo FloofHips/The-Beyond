@@ -128,14 +128,6 @@ public class BonfireBlock extends BaseEntityBlock {
                     } else {
                         BeyondCriteriaTriggers.OBTAIN_LIVE_FLAME.get().trigger(serverPlayer);
                     }
-//
-//                    ResourceLocation passTheTorch = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_beyond/pass_the_torch");
-//                    AdvancementHolder holder = serverPlayer.server.getAdvancements().get(passTheTorch);
-//                    boolean hasFinished = serverPlayer.getAdvancements().getOrStartProgress(holder).isDone();
-//
-//                    if (!hasFinished) {
-//                        PacketDistributor.sendToPlayer(serverPlayer, new ShowBonfireTutorialToastPacket());
-//                    }
                 }
 
                 return ItemInteractionResult.CONSUME;

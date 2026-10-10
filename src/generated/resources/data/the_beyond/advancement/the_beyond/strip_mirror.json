@@ -1,0 +1,26 @@
+{
+  "parent": "the_beyond:the_beyond/collect_pearl",
+  "criteria": {
+    "strip_mirror": {
+      "trigger": "the_beyond:strip_mirror"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.the_beyond.strip_mirror.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "the_beyond:mirror"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.strip_mirror.title"
+    }
+  },
+  "requirements": [
+    [
+      "strip_mirror"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

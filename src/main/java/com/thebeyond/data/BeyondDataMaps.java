@@ -15,6 +15,12 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public class BeyondDataMaps extends DataMapProvider {
+
+    public static ResourceLocation PUNISHMENT = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "memory/punishment");
+    public static ResourceLocation PRISON = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "memory/prison");
+    public static ResourceLocation KEY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "memory/key");
+    public static ResourceLocation HISTORY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "memory/history");
+
     protected BeyondDataMaps(PackOutput packOutput, CompletableFuture<HolderLookup.Provider> lookupProvider) {
         super(packOutput, lookupProvider);
     }
@@ -22,10 +28,10 @@ public class BeyondDataMaps extends DataMapProvider {
     @Override
     protected void gather(HolderLookup.Provider provider) {
         // ornament and hand are the left and right halves of one image, tiled by the regions
-        ResourceLocation punishment = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "memory/punishment");
-        ResourceLocation prison = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "memory/prison");
-        ResourceLocation key = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "memory/key");
-        ResourceLocation history = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "memory/history");
+        ResourceLocation punishment = PUNISHMENT;
+        ResourceLocation prison     = PRISON;
+        ResourceLocation key        = KEY;
+        ResourceLocation history    = HISTORY;
 
         builder(BeyondDataMapTypes.PROJECTOR_TEXTURE)
 

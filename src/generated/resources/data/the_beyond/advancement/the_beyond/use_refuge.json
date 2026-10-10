@@ -1,0 +1,27 @@
+{
+  "parent": "the_beyond:the_beyond/complete_refuge",
+  "criteria": {
+    "use_refuge": {
+      "trigger": "the_beyond:use_refuge"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.the_beyond.use_refuge.description"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "minecraft:iron_ingot"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.use_refuge.title"
+    }
+  },
+  "requirements": [
+    [
+      "use_refuge"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

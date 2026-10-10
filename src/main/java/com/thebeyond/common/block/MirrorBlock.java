@@ -12,6 +12,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -143,10 +144,26 @@ public class MirrorBlock extends BaseEntityBlock {
         level.playSound(player, pos, BeyondSoundEvents.PEARL_SCRAPE.get(), SoundSource.BLOCKS, 1, 1);
         if (!level.isClientSide) {
             level.setBlock(pos, state.cycle(face), Block.UPDATE_ALL);
-            if (level instanceof ServerLevel serverLevel) serverLevel.sendParticles(ParticleTypes.WAX_OFF, pos.getX()+0.5, pos.getY()+0.5, pos.getZ()+0.5, 10, 0.5, 0.5, 0.5, 0.01);
+
+            if (level instanceof ServerLevel serverLevel) {
+                if (hasAllMirrorFace(level.getBlockState(pos)) && player instanceof ServerPlayer serverPlayer) {
+                    BeyondCriteriaTriggers.STRIP_MIRROR.get().trigger(serverPlayer);
+                }
+
+                serverLevel.sendParticles(ParticleTypes.WAX_OFF, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 10, 0.5, 0.5, 0.5, 0.01);
+            }
             stack.hurtAndBreak(1, player, LivingEntity.getSlotForHand(hand));
         }
         return ItemInteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    public boolean hasAllMirrorFace(BlockState state) {
+        for (Direction d : Direction.values()) {
+            if (!state.getValue(FACE_PROPERTIES.get(d))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

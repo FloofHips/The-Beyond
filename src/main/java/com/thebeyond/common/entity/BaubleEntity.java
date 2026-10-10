@@ -5,6 +5,7 @@ import com.thebeyond.client.particle.CloudColorTransitionOptions;
 import com.thebeyond.client.particle.SmokeColorTransitionOptions;
 import com.thebeyond.common.entity.util.livingblock.LivingBlock;
 import com.thebeyond.common.entity.util.livingblock.movement.Target;
+import com.thebeyond.common.registry.BeyondCriteriaTriggers;
 import com.thebeyond.common.registry.BeyondEntityTypes;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.common.registry.BeyondSoundEvents;
@@ -251,6 +252,8 @@ public class BaubleEntity extends LivingBlock {
                             serverPlayer.getAdvancements().award(holder, criterion);
                         }
                     }
+
+                    BeyondCriteriaTriggers.TAME_BAUBLE.get().trigger(serverPlayer);
                 }
 
             itemstack.consume(1, player);

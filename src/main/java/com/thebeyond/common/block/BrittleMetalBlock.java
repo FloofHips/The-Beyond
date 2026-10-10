@@ -1,14 +1,21 @@
 package com.thebeyond.common.block;
 
+import com.thebeyond.TheBeyond;
 import com.thebeyond.client.gui.toast.ToastManager;
+import com.thebeyond.common.network.ShowBonfireTutorialToastPacket;
+import com.thebeyond.common.network.ShowCastingTutorialToastPacket;
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondCriteriaTriggers;
 import com.thebeyond.common.registry.BeyondItems;
 import com.thebeyond.common.registry.BeyondSoundEvents;
+import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionResult;
@@ -29,6 +36,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -145,17 +153,33 @@ public class BrittleMetalBlock extends Block {
         if (level instanceof ServerLevel serverLevel) {
 
             serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.BRITTLE_METAL.get().defaultBlockState()), pos.getX()+0.5f, pos.getY()+1.2f, pos.getZ()+0.5f, 5, 0.5F, 0.5F, 0.5F, 0.0F);
-            if (itemStack.isEmpty()) return super.useWithoutItem(state, level, pos, player, hitResult);
+            if (itemStack.isEmpty()) {
+                if (player instanceof ServerPlayer serverPlayer) {ResourceLocation casting = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_beyond/casting");
+                    AdvancementHolder holder = serverPlayer.server.getAdvancements().get(casting);
+                    boolean hasFinished = serverPlayer.getAdvancements().getOrStartProgress(holder).isDone();
+
+                    if (!hasFinished) {
+                        PacketDistributor.sendToPlayer(serverPlayer, new ShowCastingTutorialToastPacket());
+                    }
+                }
+
+                return super.useWithoutItem(state, level, pos, player, hitResult);
+            }
 
             level.playSound(null, pos, BeyondSoundEvents.BRITTLE_METAL_SUCCESS.get(), SoundSource.BLOCKS, 1, 1);
             ItemEntity entity = new ItemEntity(level, pos.getX() + 0.5f, pos.getY() + 1, pos.getZ() + 0.5f, itemStack);
             level.addFreshEntity(entity);
             entity.setDeltaMovement(entity.getDeltaMovement().add(0,0.1,0));
             serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE, pos.getX()+0.5f, pos.getY()+1.2f, pos.getZ()+0.5f, 5, 1, 0.5F, 1, 0.01F);
-        } else {
-            if (player.level().isClientSide && FMLEnvironment.dist == Dist.CLIENT && itemStack.isEmpty()) {
-                ToastManager.showBrittleMetalTutorialToast();
+
+            if (player instanceof ServerPlayer serverPlayer) {
+                BeyondCriteriaTriggers.CASTING.get().trigger(serverPlayer);
             }
+
+        } else {
+            //if (player.level().isClientSide && FMLEnvironment.dist == Dist.CLIENT && itemStack.isEmpty()) {
+            //    ToastManager.showBrittleMetalTutorialToast();
+            //}
             if (itemStack.isEmpty()) {
                 level.playSound(player, pos, BeyondSoundEvents.BRITTLE_METAL_FAIL.get(), SoundSource.BLOCKS, 1, 0.8f + level.random.nextFloat());
                 return super.useWithoutItem(state, level, pos, player, hitResult);
@@ -204,6 +228,11 @@ public class BrittleMetalBlock extends Block {
                 boolean isMoltenMetal = level.getBlockState(checkPos).is(BeyondBlocks.MOLTEN_METAL.get());
 
                 if (!isMetal && !isMoltenMetal) return ItemStack.EMPTY;
+
+                if (isMoltenMetal) {
+                    pattern.append("0");
+                    continue;
+                }
 
                 boolean isPowered = level.getBlockState(checkPos).getValue(POWERED);
                 pattern.append(isPowered ? "0" : "1");

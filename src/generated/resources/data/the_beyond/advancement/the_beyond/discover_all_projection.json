@@ -1,0 +1,46 @@
+{
+  "parent": "the_beyond:the_beyond/discover_projection",
+  "criteria": {
+    "discover_all_projection_0": {
+      "trigger": "the_beyond:discover_projection_0"
+    },
+    "discover_all_projection_1": {
+      "trigger": "the_beyond:discover_projection_1"
+    },
+    "discover_all_projection_2": {
+      "trigger": "the_beyond:discover_projection_2"
+    },
+    "discover_all_projection_3": {
+      "trigger": "the_beyond:discover_projection_3"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.the_beyond.discover_all_projection.description"
+    },
+    "frame": "challenge",
+    "hidden": true,
+    "icon": {
+      "count": 1,
+      "id": "the_beyond:cloth_remembrance"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.discover_all_projection.title"
+    }
+  },
+  "requirements": [
+    [
+      "discover_all_projection_0"
+    ],
+    [
+      "discover_all_projection_1"
+    ],
+    [
+      "discover_all_projection_2"
+    ],
+    [
+      "discover_all_projection_3"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

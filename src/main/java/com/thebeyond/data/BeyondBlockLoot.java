@@ -77,7 +77,6 @@ public class BeyondBlockLoot extends BlockLootSubProvider {
         dropSelf(BeyondBlocks.GAUSSANITE.get());
         dropSelf(BeyondBlocks.GAUSS_VENT.get());
         dropSelf(BeyondBlocks.BELLOW.get());
-        dropSelf(BeyondBlocks.SOOT_BLOCK.get());
         dropSelf(BeyondBlocks.BRITTLE_METAL_BLOCK.get());
         dropSelf(BeyondBlocks.BRITTLE_METAL_STAIRS.get());
         dropSelf(BeyondBlocks.PROJECTOR.get());
@@ -102,11 +101,15 @@ public class BeyondBlockLoot extends BlockLootSubProvider {
         add(BeyondBlocks.ENADRAKE_HUT.get(), createSilkTouchOnlyTable(BeyondBlocks.ENADRAKE_HUT.asItem()));
         add(BeyondBlocks.MAGNOLILLY.get(), createOreDrop(BeyondBlocks.MAGNOLILLY.get(), BeyondItems.FERROPETAL.get()));
 
-        add(BeyondBlocks.OBIROOT.get(), block -> createSilkTouchDispatchTable(
+        add(BeyondBlocks.POLAR_BULB.get(), block -> createSilkTouchDispatchTable(
+                block,
+                LootItem.lootTableItem(BeyondBlocks.POLAR_PILLAR.get())
+        ));
+        add(BeyondBlocks.OBIROOT.get(), block -> createSilkTouchOrShearsDispatchTable(
                 block,
                 LootItem.lootTableItem(BeyondBlocks.XYLEM.get())
         ));
-        add(BeyondBlocks.PEEPING_OBIROOT.get(), block -> createSilkTouchDispatchTable(
+        add(BeyondBlocks.PEEPING_OBIROOT.get(), block -> createSilkTouchOrShearsDispatchTable(
                 block,
                 LootItem.lootTableItem(BeyondBlocks.XYLEM.get())
         ));

@@ -4,6 +4,7 @@ import com.thebeyond.client.menu.RefugeMenu;
 import com.thebeyond.client.particle.CrosshairColorTransitionOptions;
 import com.thebeyond.common.block.RefugeBlock;
 import com.thebeyond.common.registry.*;
+import com.thebeyond.data.BeyondDataMaps;
 import com.thebeyond.util.ColorUtils;
 import com.thebeyond.util.RefugeChunkData;
 import net.minecraft.core.BlockPos;
@@ -357,7 +358,14 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
             be.level.playSound(null, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), BeyondSoundEvents.REFUGE_ACTIVATE, SoundSource.BLOCKS, 1.5f,1);
         }
         if (!be.hasBeenUsed) hasBeenUsed = true;
+
+        if (level instanceof ServerLevel serverLevel) {
+            for (ServerPlayer player : serverLevel.getPlayers(p -> p.distanceToSqr(getBlockPos().getCenter()) < 8 * 8)) {
+                BeyondCriteriaTriggers.USE_REFUGE.get().trigger(player);
+            }
+        }
     }
+
     public byte getMode() {
         return currentMode;
     }
@@ -424,8 +432,6 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
 
         BlockPos p = new BlockPos(chunkX*16, -47, chunkZ*16);
 
-        //level.setBlock(p, Blocks.GLOWSTONE.defaultBlockState(), 3);
-
         for (int dx = -chunkRadius; dx <= chunkRadius; dx++) {
             for (int dz = -chunkRadius; dz <= chunkRadius; dz++) {
 
@@ -436,8 +442,6 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
 
                     ChunkPos chunkPos = new ChunkPos(chunkX + dx, chunkZ + dz);
                     affectedChunks.add(chunkPos);
-                    //level.setBlock(chunkPos.getMiddleBlockPosition(-52), Blocks.LIME_CONCRETE.defaultBlockState(), 3);
-
                 }
             }
         }

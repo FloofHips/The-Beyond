@@ -1,0 +1,26 @@
+{
+  "parent": "the_beyond:the_beyond/encounter_stalker",
+  "criteria": {
+    "walk_the_rope": {
+      "trigger": "the_beyond:walk_the_rope"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.the_beyond.walk_the_rope.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "the_beyond:coiled_stalk"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.walk_the_rope.title"
+    }
+  },
+  "requirements": [
+    [
+      "walk_the_rope"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

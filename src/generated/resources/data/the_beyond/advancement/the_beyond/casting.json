@@ -1,0 +1,26 @@
+{
+  "parent": "the_beyond:the_beyond/geyser",
+  "criteria": {
+    "casting": {
+      "trigger": "the_beyond:casting"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.the_beyond.casting.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "the_beyond:brittle_pickaxe"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.casting.title"
+    }
+  },
+  "requirements": [
+    [
+      "casting"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

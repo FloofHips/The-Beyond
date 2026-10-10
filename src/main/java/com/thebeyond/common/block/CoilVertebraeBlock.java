@@ -2,9 +2,11 @@ package com.thebeyond.common.block;
 
 
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondCriteriaTriggers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -34,6 +36,14 @@ public class CoilVertebraeBlock extends RotatedPillarBlock {
     }
 
     @Override
+    public void stepOn(Level level, BlockPos pos, BlockState state, Entity entity) {
+        super.stepOn(level, pos, state, entity);
+        if (entity instanceof ServerPlayer serverPlayer) {
+            BeyondCriteriaTriggers.WALKING_THE_ROPE.get().trigger(serverPlayer);
+        }
+    }
+
+    @Override
     public boolean isLadder(BlockState state, LevelReader level, BlockPos pos, LivingEntity entity) {
         if (state.getValue(AXIS) == Y) return true;
         return false;
@@ -42,6 +52,9 @@ public class CoilVertebraeBlock extends RotatedPillarBlock {
     @Override
     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
         super.entityInside(state, level, pos, entity);
+        if (entity instanceof ServerPlayer serverPlayer) {
+            BeyondCriteriaTriggers.WALKING_THE_ROPE.get().trigger(serverPlayer);
+        }
     }
 
     @Override

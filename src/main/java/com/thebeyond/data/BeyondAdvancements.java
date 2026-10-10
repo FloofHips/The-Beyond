@@ -6,14 +6,10 @@ import com.thebeyond.common.registry.BeyondItems;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementType;
-import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.advancements.critereon.PlayerTrigger;
-import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -270,6 +266,21 @@ public class BeyondAdvancements extends AdvancementProvider {
                                     new PlayerTrigger.TriggerInstance(Optional.empty())))
                     .save(consumer, "the_beyond:the_beyond/complete_refuge");
 
+            AdvancementHolder use_refuge = Advancement.Builder.advancement()
+                    .parent(completeRefuge)
+                    .display(
+                            new ItemStack(Items.IRON_INGOT.asItem()),
+                            Component.translatable("advancements.the_beyond.use_refuge.title"),
+                            Component.translatable("advancements.the_beyond.use_refuge.description"),
+                            null,
+                            AdvancementType.GOAL,
+                            true, true, false
+                    )
+                    .addCriterion("use_refuge",
+                            BeyondCriteriaTriggers.USE_REFUGE.get().createCriterion(
+                                    new PlayerTrigger.TriggerInstance(Optional.empty())))
+                    .save(consumer, "the_beyond:the_beyond/use_refuge");
+
             // === MAGNET ===
             AdvancementHolder fullPowerMagnet = Advancement.Builder.advancement()
                     .parent(root)
@@ -287,6 +298,318 @@ public class BeyondAdvancements extends AdvancementProvider {
                     .save(consumer, "the_beyond:the_beyond/full_power_magnet");
 
             // === FUMAROLE UPLANDS ===
+            AdvancementHolder geyser = Advancement.Builder.advancement()
+                    .parent(root)
+                    .display(
+                            new ItemStack(BeyondBlocks.GAUSS_VENT.get()),
+                            Component.translatable("advancements.the_beyond.geyser.title"),
+                            Component.translatable("advancements.the_beyond.geyser.description"),
+                            null,
+                            AdvancementType.TASK,
+                            true, true, false
+                    )
+                    .addCriterion("geyser",
+                            BeyondCriteriaTriggers.GEYSER.get().createCriterion(
+                                    new PlayerTrigger.TriggerInstance(Optional.empty())))
+                    .save(consumer, "the_beyond:the_beyond/geyser");
+
+            AdvancementHolder casting = Advancement.Builder.advancement()
+                    .parent(geyser)
+                    .display(
+                            new ItemStack(BeyondItems.BRITTLE_PICKAXE.get()),
+                            Component.translatable("advancements.the_beyond.casting.title"),
+                            Component.translatable("advancements.the_beyond.casting.description"),
+                            null,
+                            AdvancementType.TASK,
+                            true, true, false
+                    )
+                    .addCriterion("casting",
+                            BeyondCriteriaTriggers.CASTING.get().createCriterion(
+                                    new PlayerTrigger.TriggerInstance(Optional.empty())))
+                    .save(consumer, "the_beyond:the_beyond/casting");
+
+            AdvancementHolder freeze = Advancement.Builder.advancement()
+                    .parent(casting)
+                    .display(
+                            new ItemStack(BeyondBlocks.MOLTEN_METAL.get()),
+                            Component.translatable("advancements.the_beyond.freeze.title"),
+                            Component.translatable("advancements.the_beyond.freeze.description"),
+                            null,
+                            AdvancementType.TASK,
+                            true, false, false
+                    )
+                    .addCriterion("freeze",
+                            BeyondCriteriaTriggers.FREEZE.get().createCriterion(
+                                    new PlayerTrigger.TriggerInstance(Optional.empty())))
+                    .save(consumer, "the_beyond:the_beyond/freeze");
+
+//            AdvancementHolder brittle_rain = Advancement.Builder.advancement()
+//                    .parent(casting)
+//                    .display(
+//                            new ItemStack(BeyondBlocks.BRITTLE_METAL_BLOCK.get()),
+//                            Component.translatable("advancements.the_beyond.brittle_rain.title"),
+//                            Component.translatable("advancements.the_beyond.brittle_rain.description"),
+//                            null,
+//                            AdvancementType.TASK,
+//                            true, false, false
+//                    )
+//                    .addCriterion("brittle_rain",
+//                            BeyondCriteriaTriggers.BRITTLE_RAIN.get().createCriterion(
+//                                    new PlayerTrigger.TriggerInstance(Optional.empty())))
+//                    .save(consumer, "the_beyond:the_beyond/brittle_rain");
+
+
+            AdvancementHolder snapshot = Advancement.Builder.advancement()
+                    .parent(freeze)
+                    .display(
+                            new ItemStack(BeyondItems.SNAPSHOT.get()),
+                            Component.translatable("advancements.the_beyond.snapshot.title"),
+                            Component.translatable("advancements.the_beyond.snapshot.description"),
+                            null,
+                            AdvancementType.TASK,
+                            true, true, false
+                    )
+                    .addCriterion("snapshot",
+                            BeyondCriteriaTriggers.SNAPSHOT.get().createCriterion(
+                                    new PlayerTrigger.TriggerInstance(Optional.empty())))
+                    .save(consumer, "the_beyond:the_beyond/snapshot");
+
+            AdvancementHolder memory_full = Advancement.Builder.advancement()
+                    .parent(snapshot)
+                    .display(
+                            new ItemStack(BeyondItems.MEMORY_BANK.get()),
+                            Component.translatable("advancements.the_beyond.memory_full.title"),
+                            Component.translatable("advancements.the_beyond.memory_full.description"),
+                            null,
+                            AdvancementType.TASK,
+                            true, false, false
+                    )
+                    .addCriterion("memory_full",
+                            BeyondCriteriaTriggers.MEMORY_FULL.get().createCriterion(
+                                    new PlayerTrigger.TriggerInstance(Optional.empty())))
+                    .save(consumer, "the_beyond:the_beyond/memory_full");
+
+            AdvancementHolder fill_projector = Advancement.Builder.advancement()
+                    .parent(snapshot)
+                    .display(
+                            new ItemStack(BeyondBlocks.PROJECTOR.get()),
+                            Component.translatable("advancements.the_beyond.fill_projector.title"),
+                            Component.translatable("advancements.the_beyond.fill_projector.description"),
+                            null,
+                            AdvancementType.TASK,
+                            true, false, false
+                    )
+                    .addCriterion("fill_projector",
+                            BeyondCriteriaTriggers.FILL_PROJECTOR.get().createCriterion(
+                                    new PlayerTrigger.TriggerInstance(Optional.empty())))
+                    .save(consumer, "the_beyond:the_beyond/fill_projector");
+
+            AdvancementHolder discover_projection = Advancement.Builder.advancement()
+                    .parent(fill_projector)
+                    .display(
+                            new ItemStack(BeyondItems.REMEMBRANCE_BEADS.get()),
+                            Component.translatable("advancements.the_beyond.discover_projection.title"),
+                            Component.translatable("advancements.the_beyond.discover_projection.description"),
+                            null,
+                            AdvancementType.GOAL,
+                            true, true, true
+                    )
+                    .addCriterion("discover_projection",
+                            BeyondCriteriaTriggers.DISCOVER_PROJECTION.get().createCriterion(
+                                    new PlayerTrigger.TriggerInstance(Optional.empty())))
+                    .save(consumer, "the_beyond:the_beyond/discover_projection");
+
+            AdvancementHolder discover_all_projection = Advancement.Builder.advancement()
+                                .parent(discover_projection)
+                                .display(
+                                        new ItemStack(BeyondItems.REMEMBRANCE_CLOTH.get()),
+                                        Component.translatable("advancements.the_beyond.discover_all_projection.title"),
+                                        Component.translatable("advancements.the_beyond.discover_all_projection.description"),
+                                        null,
+                                        AdvancementType.CHALLENGE,
+                                        true, true, true
+                                )
+                                .addCriterion("discover_all_projection_0",
+                                        BeyondCriteriaTriggers.DISCOVER_ALL_PROJECTION_0.get().createCriterion(
+                                                new PlayerTrigger.TriggerInstance(Optional.empty())))
+                                .addCriterion("discover_all_projection_1",
+                                        BeyondCriteriaTriggers.DISCOVER_ALL_PROJECTION_1.get().createCriterion(
+                                                new PlayerTrigger.TriggerInstance(Optional.empty())))
+                                .addCriterion("discover_all_projection_2",
+                                        BeyondCriteriaTriggers.DISCOVER_ALL_PROJECTION_2.get().createCriterion(
+                                                new PlayerTrigger.TriggerInstance(Optional.empty())))
+                                .addCriterion("discover_all_projection_3",
+                                        BeyondCriteriaTriggers.DISCOVER_ALL_PROJECTION_3.get().createCriterion(
+                                                new PlayerTrigger.TriggerInstance(Optional.empty())))
+                                .save(consumer, "the_beyond:the_beyond/discover_all_projection");
+
+            // === CHESTRAL HOLLOWS ===
+            AdvancementHolder encounter_stalker = Advancement.Builder.advancement()
+                    .parent(root)
+                    .display(
+                            new ItemStack(BeyondItems.STALKER_SEGMENT.get()),
+                            Component.translatable("advancements.the_beyond.encounter_stalker.title"),
+                            Component.translatable("advancements.the_beyond.encounter_stalker.description"),
+                            null,
+                            AdvancementType.TASK,
+                            true, false, false
+                    )
+                    .addCriterion("encounter_stalker",
+                            BeyondCriteriaTriggers.ENCOUNTER_STALKER.get().createCriterion(
+                                    new PlayerTrigger.TriggerInstance(Optional.empty())))
+                    .save(consumer, "the_beyond:the_beyond/encounter_stalker");
+
+            AdvancementHolder walk_the_rope = Advancement.Builder.advancement()
+                    .parent(encounter_stalker)
+                    .display(
+                            new ItemStack(BeyondItems.COILED_STALK.get()),
+                            Component.translatable("advancements.the_beyond.walk_the_rope.title"),
+                            Component.translatable("advancements.the_beyond.walk_the_rope.description"),
+                            null,
+                            AdvancementType.TASK,
+                            true, true, false
+                    )
+                    .addCriterion("walk_the_rope",
+                            BeyondCriteriaTriggers.WALKING_THE_ROPE.get().createCriterion(
+                                    new PlayerTrigger.TriggerInstance(Optional.empty())))
+                    .save(consumer, "the_beyond:the_beyond/walk_the_rope");
+
+
+            // === LUSTROUS ECHOES ===
+            AdvancementHolder collect_pearl = Advancement.Builder.advancement()
+                    .parent(root)
+                    .display(
+                            new ItemStack(BeyondBlocks.BEDAZZLED_END_STONE.get()),
+                            Component.translatable("advancements.the_beyond.collect_pearl.title"),
+                            Component.translatable("advancements.the_beyond.collect_pearl.description"),
+                            null,
+                            AdvancementType.TASK,
+                            true, false, false
+                    )
+                    .addCriterion("collect_pearl",
+                            BeyondCriteriaTriggers.COLLECT_PEARL.get().createCriterion(
+                                    new PlayerTrigger.TriggerInstance(Optional.empty())))
+                    .save(consumer, "the_beyond:the_beyond/collect_pearl");
+
+            AdvancementHolder strip_mirror = Advancement.Builder.advancement()
+                    .parent(collect_pearl)
+                    .display(
+                            new ItemStack(BeyondBlocks.MIRROR.get()),
+                            Component.translatable("advancements.the_beyond.strip_mirror.title"),
+                            Component.translatable("advancements.the_beyond.strip_mirror.description"),
+                            null,
+                            AdvancementType.TASK,
+                            true, true, false
+                    )
+                    .addCriterion("strip_mirror",
+                            BeyondCriteriaTriggers.STRIP_MIRROR.get().createCriterion(
+                                    new PlayerTrigger.TriggerInstance(Optional.empty())))
+                    .save(consumer, "the_beyond:the_beyond/strip_mirror");
+
+            AdvancementHolder tame_bauble = Advancement.Builder.advancement()
+                    .parent(collect_pearl)
+                    .display(
+                            new ItemStack(Items.CYAN_DYE),
+                            Component.translatable("advancements.the_beyond.tame_bauble.title"),
+                            Component.translatable("advancements.the_beyond.tame_bauble.description"),
+                            null,
+                            AdvancementType.TASK,
+                            true, true, false
+                    )
+                    .addCriterion("tame_bauble",
+                            BeyondCriteriaTriggers.TAME_BAUBLE.get().createCriterion(
+                                    new PlayerTrigger.TriggerInstance(Optional.empty())))
+                    .save(consumer, "the_beyond:the_beyond/tame_bauble");
+
+            AdvancementHolder bucket_trinket = Advancement.Builder.advancement()
+                    .parent(tame_bauble)
+                    .display(
+                            new ItemStack(BeyondItems.TRINKET_BUCKET.get()),
+                            Component.translatable("advancements.the_beyond.bucket_trinket.title"),
+                            Component.translatable("advancements.the_beyond.bucket_trinket.description"),
+                            null,
+                            AdvancementType.TASK,
+                            true, true, false
+                    )
+                    .addCriterion("bucket_trinket",
+                            BeyondCriteriaTriggers.BUCKET_TRINKET.get().createCriterion(
+                                    new PlayerTrigger.TriggerInstance(Optional.empty())))
+                    .save(consumer, "the_beyond:the_beyond/bucket_trinket");
+
+            AdvancementHolder select_trinket = Advancement.Builder.advancement()
+                    .parent(bucket_trinket)
+                    .display(
+                            new ItemStack(BeyondItems.OCARINA.get()),
+                            Component.translatable("advancements.the_beyond.select_trinket.title"),
+                            Component.translatable("advancements.the_beyond.select_trinket.description"),
+                            null,
+                            AdvancementType.GOAL,
+                            true, true, false
+                    )
+                    .addCriterion("select_trinket",
+                            BeyondCriteriaTriggers.SELECT_TRINKET.get().createCriterion(
+                                    new PlayerTrigger.TriggerInstance(Optional.empty())))
+                    .save(consumer, "the_beyond:the_beyond/select_trinket");
+
+            AdvancementHolder wax_trinket = Advancement.Builder.advancement()
+                    .parent(tame_bauble)
+                    .display(
+                            new ItemStack(Items.HONEYCOMB),
+                            Component.translatable("advancements.the_beyond.wax_trinket.title"),
+                            Component.translatable("advancements.the_beyond.wax_trinket.description"),
+                            null,
+                            AdvancementType.TASK,
+                            true, true, false
+                    )
+                    .addCriterion("wax_trinket",
+                            BeyondCriteriaTriggers.WAX_TRINKET.get().createCriterion(
+                                    new PlayerTrigger.TriggerInstance(Optional.empty())))
+                    .save(consumer, "the_beyond:the_beyond/wax_trinket");
+
+            AdvancementHolder rake_nacre = Advancement.Builder.advancement()
+                    .parent(collect_pearl)
+                    .display(
+                            new ItemStack(Items.DIAMOND_HOE),
+                            Component.translatable("advancements.the_beyond.rake_nacre.title"),
+                            Component.translatable("advancements.the_beyond.rake_nacre.description"),
+                            null,
+                            AdvancementType.TASK,
+                            true, false, false
+                    )
+                    .addCriterion("rake_nacre",
+                            BeyondCriteriaTriggers.RAKE_NACRE.get().createCriterion(
+                                    new PlayerTrigger.TriggerInstance(Optional.empty())))
+                    .save(consumer, "the_beyond:the_beyond/rake_nacre");
+
+            AdvancementHolder clinamen = Advancement.Builder.advancement()
+                    .parent(collect_pearl)
+                    .display(
+                            new ItemStack(BeyondItems.PEARL_BEAD.get()),
+                            Component.translatable("advancements.the_beyond.clinamen.title"),
+                            Component.translatable("advancements.the_beyond.clinamen.description"),
+                            null,
+                            AdvancementType.GOAL,
+                            true, true, false
+                    )
+                    .addCriterion("clinamen",
+                            BeyondCriteriaTriggers.CLINAMEN.get().createCriterion(
+                                    new PlayerTrigger.TriggerInstance(Optional.empty())))
+                    .save(consumer, "the_beyond:the_beyond/clinamen");
+
+            AdvancementHolder create_bauble = Advancement.Builder.advancement()
+                    .parent(clinamen)
+                    .display(
+                            new ItemStack(BeyondItems.BAUBLE_SPAWN_EGG.get()),
+                            Component.translatable("advancements.the_beyond.create_bauble.title"),
+                            Component.translatable("advancements.the_beyond.create_bauble.description"),
+                            null,
+                            AdvancementType.GOAL,
+                            true, true, false
+                    )
+                    .addCriterion("create_bauble",
+                            BeyondCriteriaTriggers.CREATE_BAUBLE.get().createCriterion(
+                                    new PlayerTrigger.TriggerInstance(Optional.empty())))
+                    .save(consumer, "the_beyond:the_beyond/create_bauble");
 
 
         }

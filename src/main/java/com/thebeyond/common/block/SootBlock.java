@@ -1,32 +1,28 @@
 package com.thebeyond.common.block;
 
 import com.mojang.serialization.MapCodec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.thebeyond.common.entity.BrubbleEntity;
-import com.thebeyond.common.entity.EnderglopEntity;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondEntityTypes;
 import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.util.ColorUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.item.FallingBlockEntity;
-import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.*;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.List;
 import java.util.Optional;
-import java.util.function.BiConsumer;
 
 public class SootBlock extends FallingBlock implements Fallable {
     public static final MapCodec<SootBlock> CODEC =  simpleCodec(SootBlock::new);
@@ -79,14 +75,18 @@ public class SootBlock extends FallingBlock implements Fallable {
 
     @Override
     public void onBrokenAfterFall(Level level, BlockPos pos, FallingBlockEntity fallingBlock) {
+        spawnBrubble(level, pos);
+        super.onBrokenAfterFall(level, pos, fallingBlock);
+    }
+
+    private static void spawnBrubble(Level level, BlockPos pos) {
         if (level instanceof ServerLevel serverLevel) {
             BrubbleEntity entity = new BrubbleEntity(BeyondEntityTypes.BRUBBLE.get(), level);
             Vec3 newPos = pos.getCenter();
             entity.setPos(newPos.x, newPos.y, newPos.z);
             serverLevel.addFreshEntity(entity);
-            serverLevel.playSound(fallingBlock, pos, BeyondSoundEvents.BRUBBLE_APPEAR.get(), SoundSource.HOSTILE, 1, 0.7f + level.random.nextFloat());
+            serverLevel.playSound(entity, pos, BeyondSoundEvents.BRUBBLE_APPEAR.get(), SoundSource.HOSTILE, 1, 0.7f + level.random.nextFloat());
         }
-        super.onBrokenAfterFall(level, pos, fallingBlock);
     }
 
     @Override
@@ -96,6 +96,26 @@ public class SootBlock extends FallingBlock implements Fallable {
             serverLevel.sendParticles(ColorUtils.blackOptions, pos.getX(), pos.getY(), pos.getZ(), 10, 0.5, 0.5,0.5, 0.01);
         }
         super.wasExploded(level, pos, explosion);
+    }
+
+    @Override
+    protected void spawnAfterBreak(BlockState state, ServerLevel level, BlockPos pos, ItemStack stack, boolean dropExperience) {
+        RandomSource random = level.random;
+        float rd = random.nextFloat();
+
+        if (rd < 0.05F) {
+            spawnBrubble(level, pos);
+        } else if (rd < 0.2F) {
+            Block.popResource(level, pos, new ItemStack(Items.GUNPOWDER, 1 + random.nextInt(2)));
+        } else {
+            Block.popResource(level, pos, new ItemStack(BeyondBlocks.SOOT_BLOCK));
+            super.spawnAfterBreak(state, level, pos, stack, dropExperience);
+        }
+    }
+
+    @Override
+    protected List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
+        return super.getDrops(state, params);
     }
 
     static {

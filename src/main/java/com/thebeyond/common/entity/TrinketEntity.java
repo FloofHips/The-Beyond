@@ -3,6 +3,7 @@ package com.thebeyond.common.entity;
 import com.thebeyond.common.entity.util.livingblock.LivingBlockOrientation;
 import com.thebeyond.common.entity.util.livingblock.TrinketGrowth;
 import com.thebeyond.common.item.OcarinaItem;
+import com.thebeyond.common.registry.BeyondCriteriaTriggers;
 import com.thebeyond.common.registry.BeyondItems;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.common.registry.BeyondSoundEvents;
@@ -217,6 +218,9 @@ public class TrinketEntity extends BaubleEntity implements Bucketable, OwnableEn
                 setWaxed(true);
                 playSound(SoundEvents.HONEYCOMB_WAX_ON);
                 if (level() instanceof ServerLevel serverLevel) {
+                    if (player instanceof ServerPlayer serverPlayer) {
+                        BeyondCriteriaTriggers.WAX_TRINKET.get().trigger(serverPlayer);
+                    }
                     serverLevel.sendParticles(ParticleTypes.WAX_ON, this.getX(), this.getY(), this.getZ(), getDepth() + getWidth(), getDepth()/16f, getHeight()/16f, getWidth()/16f, 0.01);
                 }
                 itemstack.consume(1, player);
@@ -450,6 +454,9 @@ public class TrinketEntity extends BaubleEntity implements Bucketable, OwnableEn
             Level level = entity.level();
             if (!level.isClientSide) {
                 CriteriaTriggers.FILLED_BUCKET.trigger((ServerPlayer)player, itemstack1);
+                if (player instanceof ServerPlayer serverPlayer) {
+                    BeyondCriteriaTriggers.BUCKET_TRINKET.get().trigger(serverPlayer);
+                }
             }
 
             entity.discard();
