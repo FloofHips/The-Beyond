@@ -17,11 +17,11 @@ public class BeyondConfig {
     public static ModConfigSpec.BooleanValue ENABLE_MAIN_ISLAND_CLOUDS;
 
     public static ModConfigSpec.BooleanValue MIRROR_OCCLUSION_MODEL_BASED;
-
     public static ModConfigSpec.BooleanValue HIDE_UNDISCOVERED_CONTENT;
 
     public static ModConfigSpec.EnumValue<AwarenessMode> AWARENESS_MODE;
-
+    public static ModConfigSpec.EnumValue<PrismographResolution> PRISMOGRAPH_RESOLUTION;
+    public static ModConfigSpec.IntValue PRISMOGRAPH_POSTERIZATION;
     public static ModConfigSpec.BooleanValue DROP_TOTEM_OF_RESPITE;
 
     public static ModConfigSpec.BooleanValue DEAFENING_DISENGAGE;
@@ -31,6 +31,14 @@ public class BeyondConfig {
     public static ModConfigSpec.IntValue WARDEN_SMELL_RADIUS;
 
     public static ModConfigSpec.IntValue VOID_SEA_OFFSET;
+
+    public enum PrismographResolution {
+        x16(16), x32(32), x64(64), x128(128), x256(256);
+
+        private final int size;
+        PrismographResolution(int size) { this.size = size; }
+        public int toInt() { return size; }
+    }
 
     static {
 
@@ -98,6 +106,16 @@ public class BeyondConfig {
                 .comment("The totem of respite allows you to get your items back after death. Some mods will conflict with this",
                         "The config stops the totem from being obtained during the Bonfire ritual")
                 .define("DropTotemOfRespite", true);
+
+        PRISMOGRAPH_RESOLUTION = COMMON_BUILDER
+                .comment("The resolution at which the prismograph takes snapshots.",
+                        "Higher values look sharper but cost more memory and bandwidth")
+                .defineEnum("PrismographResolution", PrismographResolution.x64);
+
+        PRISMOGRAPH_POSTERIZATION = COMMON_BUILDER
+                .comment("Posterization quant step: 1 = full color, higher = coarser bands (~10 reads retro).",
+                        "Changing this is costless, it is purely to taste")
+                .defineInRange("PrismographPosterization", 10, 1, 20);
         COMMON_BUILDER.pop();
 
         COMMON_CONFIG = COMMON_BUILDER.build();

@@ -251,7 +251,8 @@ public class EnderglopEntity extends Mob implements Enemy {
                             serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.PLATE_BLOCK.get().defaultBlockState()), this.getX(), this.getY(), this.getZ(), 30, 1.0F, 1.0F, 1.0F, 0.2F);
                         }
                         this.level().playSound(null, this.blockPosition(), BeyondSoundEvents.ENDERGLOP_ARMOR_BREAK.get(), SoundSource.HOSTILE, 1.0F, 1.0F);
-                        setIsArmored(false);
+                        if (this.getHealth() > 2)
+                            setIsArmored(false);
                     }
                     if (level() instanceof ServerLevel serverLevel) {
                         serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.FERROJELLY_BLOCK.get().defaultBlockState()), this.getX(), this.getY(), this.getZ(), 15, 1.0F, 1.0F, 1.0F, 0.2F);
@@ -394,7 +395,8 @@ public class EnderglopEntity extends Mob implements Enemy {
     @Override
     protected void dropCustomDeathLoot(ServerLevel level, DamageSource damageSource, boolean recentlyHit) {
         super.dropCustomDeathLoot(level, damageSource, recentlyHit);
-        if (getIsArmored() && recentlyHit) this.spawnAtLocation(new ItemStack(BeyondItems.FERROPETAL.get(), 1 + level.random.nextInt(3)));
+        if (getIsArmored())
+            this.spawnAtLocation(new ItemStack(BeyondItems.FERROPETAL.get(), 1 + level.random.nextInt(3)));
     }
 
     public void remove(Entity.RemovalReason reason) {

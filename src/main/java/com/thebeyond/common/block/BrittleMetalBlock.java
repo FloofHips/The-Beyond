@@ -98,16 +98,16 @@ public class BrittleMetalBlock extends Block {
 
     public static ItemStack getToolForPattern(String pattern) {
         String item = PATTERN_TO_ITEM.get(pattern);
+        if (item == null) return ItemStack.EMPTY;
 
-        switch (item) {
-            case "brittle_sword": return new ItemStack(BeyondItems.BRITTLE_SWORD.get());
-            case "brittle_pickaxe": return new ItemStack(BeyondItems.BRITTLE_PICKAXE.get());
-            case "brittle_axe": return new ItemStack(BeyondItems.BRITTLE_AXE.get());
-            case "brittle_shovel": return new ItemStack(BeyondItems.BRITTLE_SHOVEL.get());
-            case "brittle_hoe": return new ItemStack(BeyondItems.BRITTLE_HOE.get());
-        }
-
-        return null;
+        return switch (item) {
+            case "brittle_sword" -> new ItemStack(BeyondItems.BRITTLE_SWORD.get());
+            case "brittle_pickaxe" -> new ItemStack(BeyondItems.BRITTLE_PICKAXE.get());
+            case "brittle_axe" -> new ItemStack(BeyondItems.BRITTLE_AXE.get());
+            case "brittle_shovel" -> new ItemStack(BeyondItems.BRITTLE_SHOVEL.get());
+            case "brittle_hoe" -> new ItemStack(BeyondItems.BRITTLE_HOE.get());
+            default -> ItemStack.EMPTY;
+        };
     }
 
     public BrittleMetalBlock(Properties properties) {

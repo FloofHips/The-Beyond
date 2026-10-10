@@ -426,6 +426,7 @@ public class Lang extends LanguageProvider {
         //CONFIG
         add("the_beyond.configuration.visuals", "Visual config");
         add("the_beyond.configuration.mirror", "Mirror config");
+        add("the_beyond.configuration.gameplay", "Gameplay");
 
         add("the_beyond.configuration.deafening", "Deafening effect config");
         add("the_beyond.configuration.aeronautics", "Aeronautics config");
@@ -436,7 +437,10 @@ public class Lang extends LanguageProvider {
         add("the_beyond.configuration.wardenEnrageAnger", "Warden enrage anger");
         add("the_beyond.configuration.wardenSmellRadius", "Warden smell radius");
         add("the_beyond.configuration.voidSeaOffsetAboveFloor", "Void Sea offset above floor");
+
         add("the_beyond.configuration.DropTotemOfRespite", "Totem of Respite drops");
+        add("the_beyond.configuration.PrismographResolution", "Prismograph resolution");
+        add("the_beyond.configuration.PrismographPosterization", "Prismograph posterization");
 
         add("the_beyond.config.enable_custom_fog", "Custom fog");
         add("the_beyond.config.clamp_lightmap", "Clamp lightmap");
