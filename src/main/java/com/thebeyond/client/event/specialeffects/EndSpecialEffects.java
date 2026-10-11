@@ -130,9 +130,9 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
             result = biomeFogColor.subtract(0, 0.3 * level.getRainLevel(0), 0);
         } else {
             result = biomeFogColor.multiply(
-                    Mth.lerp(bossFog, 1, 0.3F),
                     Mth.lerp(bossFog, 1, 0.2F),
-                    Mth.lerp(bossFog, 1, 0.5F)
+                    Mth.lerp(bossFog, 1, 0.1F),
+                    Mth.lerp(bossFog, 1, 0.3F)
             );
         }
 
@@ -203,10 +203,11 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         }
             ////i think the skylight is being fucked with by thunderstorms... or ambient light
 
+        //0.22983016
         colors.set(
-                Mth.lerp(bossFog, colors.x() * 0.9f, colors.x() * 0.3 + 0.22983016),
-                Mth.lerp(bossFog, Mth.clamp(colors.y() * 1.1f, 0, 1), colors.y() * 0.4),
-                Mth.lerp(bossFog, colors.z() * 0.9f, colors.z() * 0.4 + 0.22983016)
+                Mth.lerp(bossFog, colors.x() * 0.9f, colors.x()),
+                Mth.lerp(bossFog, Mth.clamp(colors.y() * 1.1f, 0, 1), colors.y()*0.6),
+                Mth.lerp(bossFog, colors.z() * 0.9f, colors.z())
         );
 
 

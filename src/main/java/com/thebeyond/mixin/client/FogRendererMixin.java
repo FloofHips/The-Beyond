@@ -73,7 +73,7 @@ public class FogRendererMixin {
 
             RenderSystem.setShaderFogShape(FogShape.SPHERE);
             RenderSystem.setShaderFogStart(Mth.lerp(ModClientEvents.bossFog,15 * finalFog * theBeyond$fogNearAddon,0));
-            RenderSystem.setShaderFogEnd(fogEnd);
+            RenderSystem.setShaderFogEnd(Mth.lerp(ModClientEvents.bossFog,fogEnd,90));
 
 
             FluidState state = camera.getEntity().level().getFluidState(camera.getBlockPosition());
