@@ -55,7 +55,7 @@ public class CoilEntity extends ThrowableItemProjectile {
     private void placeVerterbrae() {
         BlockPos offset = pos.offset(direction.getStepX() * counter, direction.getStepY() * counter, direction.getStepZ() * counter);
 
-        if (level().isEmptyBlock(offset)) {
+        if (level().isEmptyBlock(offset) || level().getBlockState(offset).canBeReplaced()) {
             level().playSound(null, offset, SoundEvents.BONE_BLOCK_PLACE, SoundSource.BLOCKS, 1,1);
             level().setBlock(offset, BeyondBlocks.COIL_VERTEBRAE.get().defaultBlockState().setValue(RotatedPillarBlock.AXIS, direction.getAxis()),3);
             counter++;

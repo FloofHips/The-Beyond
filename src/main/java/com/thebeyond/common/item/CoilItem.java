@@ -101,6 +101,7 @@ public class CoilItem extends Item {
         BlockHitResult hit = level.clip(clipContext);
 
         if (hit.getType() != HitResult.Type.MISS) {
+            if (level.getBlockState(hit.getBlockPos()).is(BeyondBlocks.AURORACITE)) return null;
             return hit;
         }
 

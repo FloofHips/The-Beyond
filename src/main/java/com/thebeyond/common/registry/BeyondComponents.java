@@ -34,6 +34,13 @@ public class BeyondComponents {
                     .networkSynchronized(ByteBufCodecs.VAR_INT)
     );
 
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> ALERT = COMPONENTS.registerComponentType(
+            "alert",
+            builder -> builder
+                    .persistent(Codec.BOOL)
+                    .networkSynchronized(ByteBufCodecs.BOOL)
+    );
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Component>> SNAPSHOT_DATE = COMPONENTS.registerComponentType(
             "snapshot_date",
             builder -> builder

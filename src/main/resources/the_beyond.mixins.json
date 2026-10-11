@@ -53,6 +53,7 @@
   ],
   "client": [
     "ItemFrameRendererMixin",
+    "client.ItemEntityMixin",
     "client.BossHealthOverlayAccessor",
     "client.LevelRendererWeatherSuppressMixin"
   ],
