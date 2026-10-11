@@ -1,0 +1,13 @@
+{
+  "vertex": "the_beyond:rendertype_projector_decal",
+  "fragment": "the_beyond:rendertype_projector_depth_merge",
+  "attributes": [
+    "Position"
+  ],
+  "samplers": [
+    { "name": "Sampler0" }
+  ],
+  "uniforms": [
+    { "name": "ScreenSize", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] }
+  ]
+}

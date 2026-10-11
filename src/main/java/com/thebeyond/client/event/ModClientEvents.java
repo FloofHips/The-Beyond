@@ -293,6 +293,9 @@ public class ModClientEvents {
             event.registerShader(new ShaderInstance(event.getResourceProvider(),
                     ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_projector_decal"),
                     DefaultVertexFormat.POSITION), BeyondShaders::setProjectorDecal);
+            event.registerShader(new ShaderInstance(event.getResourceProvider(),
+                    ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_projector_depth_merge"),
+                    DefaultVertexFormat.POSITION), BeyondShaders::setProjectorDepthMerge);
         } catch (Exception exception) {
             TheBeyond.LOGGER.error("The Beyond could not register internal shaders! :(", exception);
         }

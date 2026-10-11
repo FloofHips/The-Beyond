@@ -14,6 +14,7 @@ import net.minecraft.resources.ResourceLocation;
 import com.thebeyond.common.data.ProjectorTexture;
 import com.thebeyond.common.registry.BeyondShaders;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.ItemStack;
@@ -29,12 +30,57 @@ public final class ProjectorDeferredDecal {
     private static final float TEXEL = 1.0f / ProjectorDepthMap.BASE_RES; // PCF tap spacing
 
     private static TextureTarget sceneDepthCopy;
+    private static boolean fabulousSnapshot;
 
     private ProjectorDeferredDecal() {
     }
 
+    /** Fabulous keeps each layer's depth in its own target and main loses them at the composite, so merge them first. */
+    public static void snapshotFabulousDepth(LevelRenderer lr) {
+        RenderTarget translucent = lr.getTranslucentTarget();
+        if (translucent == null || ProjectorBlockEntity.LOADED.isEmpty() || !ProjectorRenderer.deferredAvailable()) {
+            return;
+        }
+        // the translucent target starts as a copy of main's depth, so it already holds opaques and entities
+        ensureSceneDepth(translucent, translucent.width, translucent.height);
+        sceneDepthCopy.copyDepthFrom(translucent);
+        fabulousSnapshot = true;
+        ShaderInstance merge = BeyondShaders.getProjectorDepthMerge();
+        if (merge == null) {
+            return;
+        }
+        ShaderInstance prevShader = RenderSystem.getShader();
+        sceneDepthCopy.bindWrite(true);
+        RenderSystem.colorMask(false, false, false, false);
+        RenderSystem.disableBlend();
+        RenderSystem.disableCull();
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthFunc(GL11.GL_LESS);
+        RenderSystem.depthMask(true);
+        RenderSystem.setShader(() -> merge);
+        try {
+            merge.safeGetUniform("ScreenSize").set((float) sceneDepthCopy.width, (float) sceneDepthCopy.height);
+            for (RenderTarget layer : new RenderTarget[] {lr.getItemEntityTarget(), lr.getParticlesTarget(),
+                    lr.getCloudsTarget(), lr.getWeatherTarget()}) {
+                if (layer != null && layer.width == sceneDepthCopy.width && layer.height == sceneDepthCopy.height) {
+                    RenderSystem.setShaderTexture(0, layer.getDepthTextureId());
+                    drawFullscreen();
+                }
+            }
+        } finally {
+            RenderSystem.setShaderTexture(0, 0);
+            RenderSystem.depthFunc(GL11.GL_LEQUAL);
+            RenderSystem.colorMask(true, true, true, true);
+            RenderSystem.enableCull();
+            RenderSystem.setShader(() -> prevShader);
+            Minecraft.getInstance().getMainRenderTarget().bindWrite(false);
+        }
+    }
+
     /** postFinal under an Iris pack: the main target holds the final image and full depth, so the hand cutoff applies. */
     public static void draw(Matrix4f projIn, Matrix4f viewIn, boolean postFinal) {
+        boolean snapshot = fabulousSnapshot;
+        fabulousSnapshot = false;
         if (ShaderCompatLib.isShadowPass()) {
             return;
         }
@@ -59,8 +105,10 @@ public final class ProjectorDeferredDecal {
         }
 
         // the decal reads this copy while the cone draws into main, so it never reads what it writes
-        ensureSceneDepth(main, w, h);
-        sceneDepthCopy.copyDepthFrom(main);
+        if (!snapshot || sceneDepthCopy.width != w || sceneDepthCopy.height != h) {
+            ensureSceneDepth(main, w, h);
+            sceneDepthCopy.copyDepthFrom(main);
+        }
         main.bindWrite(true);
 
         Matrix4f invVP = new Matrix4f(projIn).mul(viewIn).invert();
@@ -145,7 +193,12 @@ public final class ProjectorDeferredDecal {
         BufferUploader.drawWithShader(bb.buildOrThrow());
     }
 
-    private static void ensureSceneDepth(RenderTarget main, int w, int h) {
+    private static void ensureSceneDepth(RenderTarget src, int w, int h) {
+        // a depth blit needs matching formats, and stencil can't be turned off on a target
+        if (sceneDepthCopy != null && sceneDepthCopy.isStencilEnabled() && !src.isStencilEnabled()) {
+            sceneDepthCopy.destroyBuffers();
+            sceneDepthCopy = null;
+        }
         if (sceneDepthCopy == null) {
             sceneDepthCopy = new TextureTarget(w, h, true, Minecraft.ON_OSX);
             sceneDepthCopy.setFilterMode(GL11.GL_NEAREST); // NEAREST: no depth interpolation across silhouettes
@@ -153,7 +206,7 @@ public final class ProjectorDeferredDecal {
             sceneDepthCopy.resize(w, h, Minecraft.ON_OSX);
             sceneDepthCopy.setFilterMode(GL11.GL_NEAREST);
         }
-        if (main.isStencilEnabled() && !sceneDepthCopy.isStencilEnabled()) {
+        if (src.isStencilEnabled() && !sceneDepthCopy.isStencilEnabled()) {
             sceneDepthCopy.enableStencil();
         }
     }

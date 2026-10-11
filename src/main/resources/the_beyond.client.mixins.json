@@ -13,6 +13,7 @@
     "FogRendererMixin",
     "ItemRendererMixin",
     "LevelRendererPhotoHideMixin",
+    "LevelRendererFabulousDepthMixin",
     "MinecraftMainTargetAccessor",
     "ResourceOrTagArgumentMixin",
     "ResourceOrTagArgumentParseMixin",

@@ -16,6 +16,8 @@ public class BeyondShaders {
     private static ShaderInstance PROJECTOR_DIST_BLOCK_ENTITY_SHADER;
     private static ShaderInstance PROJECTOR_DIST_BLOCK_ENTITY_PEEL_SHADER;
     private static ShaderInstance PROJECTOR_DECAL_SHADER;
+    @Nullable
+    private static ShaderInstance PROJECTOR_DEPTH_MERGE_SHADER;
 
     @Nullable
     public static ShaderInstance getRenderTypeDepthOverlay() {
@@ -110,5 +112,14 @@ public class BeyondShaders {
 
     public static void setProjectorDecal(ShaderInstance instance) {
         PROJECTOR_DECAL_SHADER = instance;
+    }
+
+    @Nullable
+    public static ShaderInstance getProjectorDepthMerge() {
+        return PROJECTOR_DEPTH_MERGE_SHADER;
+    }
+
+    public static void setProjectorDepthMerge(ShaderInstance instance) {
+        PROJECTOR_DEPTH_MERGE_SHADER = instance;
     }
 }
