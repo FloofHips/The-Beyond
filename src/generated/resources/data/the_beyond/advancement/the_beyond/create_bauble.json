@@ -1,0 +1,27 @@
+{
+  "parent": "the_beyond:the_beyond/clinamen",
+  "criteria": {
+    "create_bauble": {
+      "trigger": "the_beyond:create_bauble"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.the_beyond.create_bauble.description"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "the_beyond:bauble_spawn_egg"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.create_bauble.title"
+    }
+  },
+  "requirements": [
+    [
+      "create_bauble"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

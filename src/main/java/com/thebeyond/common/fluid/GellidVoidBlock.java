@@ -1,8 +1,10 @@
 package com.thebeyond.common.fluid;
 
 import com.thebeyond.common.entity.EnderglopEntity;
+import com.thebeyond.common.entity.PearlItemEntity;
 import com.thebeyond.common.registry.BeyondEffects;
 import com.thebeyond.common.registry.BeyondParticleTypes;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.util.ColorUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -45,8 +47,6 @@ public class GellidVoidBlock extends LiquidBlock {
 
     @Override
     protected BlockState updateShape(BlockState state, Direction facing, BlockState facingState, LevelAccessor level, BlockPos currentPos, BlockPos facingPos) {
-        //if(state.getValue(LEVEL) == 8 && level.getBlockState(currentPos.above()).isAir())
-        //    level.setBlock(currentPos.above(), BeyondBlocks.VOID_FLAME.get().defaultBlockState(), 3);
         return super.updateShape(state, facing, facingState, level, currentPos, facingPos);
     }
 
@@ -72,7 +72,9 @@ public class GellidVoidBlock extends LiquidBlock {
     @Override
     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
         super.entityInside(state, level, pos, entity);
-        entity.setDeltaMovement(entity.getDeltaMovement().add(0, .1, 0));
+        if (!(entity instanceof Player player && player.isShiftKeyDown())) {
+            if (!(entity instanceof PearlItemEntity)) entity.setDeltaMovement(entity.getDeltaMovement().add(0, .05, 0));
+        }
 
         if (entity.tickCount % (200 + level.random.nextInt(0, 100)) == 0 && level instanceof ServerLevel serverLevel && entity instanceof LivingEntity livingEntity) {
             if (livingEntity.hasEffect(BeyondEffects.WEIGHTLESS)) {
@@ -99,7 +101,7 @@ public class GellidVoidBlock extends LiquidBlock {
         super.randomTick(pState, pLevel, pPos, pRandom);
 
         if (pLevel.isRaining() && pRandom.nextInt(10) == 0){
-            pLevel.playSound(null, pPos, SoundEvents.ALLAY_DEATH, SoundSource.AMBIENT);
+            pLevel.playSound(null, pPos, BeyondSoundEvents.VOID_BURST.get(), SoundSource.AMBIENT);
 
             if(pLevel.getBlockState(pPos.relative(Direction.UP)).isAir())
                 pLevel.sendParticles(ColorUtils.voidOptions, pPos.getX() + 0.5, pPos.getY() + 1.5, pPos.getZ() + 0.5, 15, 0.25, 0.15, 0.25, 0.05);

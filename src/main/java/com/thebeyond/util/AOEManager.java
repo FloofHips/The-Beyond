@@ -1,6 +1,7 @@
 package com.thebeyond.util;
 
 import com.thebeyond.common.entity.AbyssalNomadEntity;
+import com.thebeyond.common.entity.BrubbleEntity;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -35,9 +36,34 @@ public class AOEManager {
         });
     }
 
+    public static void brubbleKnockback(Level level, Entity entity) {
+        level.levelEvent(2013, entity.getOnPos(), 750);
+        level.getEntitiesOfClass(LivingEntity.class, entity.getBoundingBox().inflate((double)6), brubblePredicate()).forEach((p_347296_) -> {
+            Vec3 vec3 = p_347296_.position().subtract(entity.position());
+            double d0 = getEntityKnockbackPower(p_347296_, vec3)*0.1f;
+            Vec3 vec31 = vec3.normalize().scale(d0);
+
+            if (d0 > (double)0.0F) {
+                p_347296_.push(vec31.x, (double)0.7F, vec31.z);
+                if (p_347296_ instanceof ServerPlayer) {
+                    ServerPlayer serverplayer = (ServerPlayer)p_347296_;
+                    serverplayer.connection.send(new ClientboundSetEntityMotionPacket(serverplayer));
+                }
+            }
+
+        });
+    }
+
+    private static Predicate<? super LivingEntity> brubblePredicate() {
+        return (entity) -> {
+            boolean b = entity instanceof BrubbleEntity;
+            return !b;
+        };
+    }
+
     private static Predicate<? super LivingEntity> nomadPredicate() {
-        return (p_344407_) -> {
-            boolean b = p_344407_ instanceof AbyssalNomadEntity;
+        return (entity) -> {
+            boolean b = entity instanceof AbyssalNomadEntity;
             return !b;
         };
     }

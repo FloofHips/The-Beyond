@@ -1,0 +1,10 @@
+{
+    "variants": {
+        "powered=false": {
+            "model": "the_beyond:block/unstable_nacre"
+        },
+        "powered=true": {
+            "model": "the_beyond:block/unstable_nacre_flat"
+        }
+    }
+}

@@ -11,8 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Fires during {@code SurfaceRuleMerger.mergeSurfaceRules}; contributed rules land before
- *  foreign whole-settings blobs whose terminators would otherwise short-circuit them. */
+/** Fires while Isleweaver merges the End surface rules, contributions land before the foreign settings' terminators. */
 @ApiStatus.Experimental
 public class BeyondSurfaceRuleContributionEvent extends Event {
     private final MinecraftServer server;
@@ -32,8 +31,7 @@ public class BeyondSurfaceRuleContributionEvent extends Event {
     public RegistryAccess getRegistryAccess() { return registryAccess; }
     public BiomeSource getEndBiomeSource() { return endBiomeSource; }
 
-    /** Adds a rule to the merge sequence. Caller is responsible for wrapping in
-     *  {@code SurfaceRules.ifTrue(SurfaceRules.isBiome(...), …)} when biome-specific. */
+    /** Adds a rule to the merge, a biome-specific one must come wrapped in its own isBiome condition. */
     public void contribute(SurfaceRules.RuleSource rule) {
         contributions.add(rule);
     }

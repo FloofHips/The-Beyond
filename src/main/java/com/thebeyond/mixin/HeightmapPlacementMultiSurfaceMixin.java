@@ -1,6 +1,6 @@
 package com.thebeyond.mixin;
 
-import com.thebeyond.api.worldgen.BeyondTerrainState;
+import com.thebeyond.common.worldgen.BeyondEndChunkGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -19,8 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-/** Emits one position per pancake top when Beyond owns the End; single-surface columns
- *  fall through to vanilla so other mods' {@code getPositions} mixins still execute. */
+/** One position per layer top on Beyond's End, single-surface columns fall through so other mods' mixins run. */
 @Mixin(HeightmapPlacement.class)
 public abstract class HeightmapPlacementMultiSurfaceMixin {
     @Shadow @Final private Heightmap.Types heightmap;
@@ -33,7 +32,7 @@ public abstract class HeightmapPlacementMultiSurfaceMixin {
     private void the_beyond$multiSurfaceScan(
             PlacementContext ctx, RandomSource random, BlockPos origin,
             CallbackInfoReturnable<Stream<BlockPos>> cir) {
-        if (!BeyondTerrainState.isActive()) return;
+        if (!(ctx.generator() instanceof BeyondEndChunkGenerator)) return;
 
         int x = origin.getX();
         int z = origin.getZ();
@@ -54,8 +53,7 @@ public abstract class HeightmapPlacementMultiSurfaceMixin {
             cache.put(chunkKey, columnKey, cached);
         }
 
-        // Single-surface column: vanilla behaviour. Skip the override so other mods'
-        // mixins on getPositions (and vanilla logic) execute normally.
+        // Single-surface column: fall through so other mods' getPositions mixins still run.
         if (cached.length <= 1) return;
 
         List<BlockPos> positions = new ArrayList<>(cached.length);
@@ -65,14 +63,13 @@ public abstract class HeightmapPlacementMultiSurfaceMixin {
 
     private static int[] scanColumn(PlacementContext ctx, int x, int z, int minY, int topY) {
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, minY, z);
-        // Pre-size assumes ≤8 pancakes per column; grow if needed.
         int[] tmp = new int[8];
         int n = 0;
         boolean wasSolid = false;
         for (int y = minY; y <= topY; y++) {
             pos.setY(y);
             boolean isSolid = !ctx.getBlockState(pos).isAir();
-            // Surface = first air block above a solid one. Place feature here.
+            // Surface = first air block above a solid one (a pancake top).
             if (wasSolid && !isSolid) {
                 if (n == tmp.length) {
                     int[] grown = new int[tmp.length * 2];
@@ -89,10 +86,7 @@ public abstract class HeightmapPlacementMultiSurfaceMixin {
         return result;
     }
 
-    /**
-     * Single-chunk LRU: invalidates entries when the active chunk changes.
-     * Chunks are decorated sequentially per thread, so a one-chunk window is enough.
-     */
+    /** One-chunk cache, enough since each thread decorates chunks one at a time. */
     private static final class ChunkColumnCache {
         long currentChunk = Long.MIN_VALUE;
         Map<Long, int[]> columns = new HashMap<>();

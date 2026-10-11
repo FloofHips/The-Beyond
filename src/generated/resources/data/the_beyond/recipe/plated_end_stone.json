@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "the_beyond:polar_antenna"
+    },
+    {
+      "item": "minecraft:end_stone"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "the_beyond:plated_end_stone"
+  }
+}

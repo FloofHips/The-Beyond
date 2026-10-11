@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "the_beyond:pale_nacre"
+    }
+  ],
+  "result": {
+    "count": 4,
+    "id": "minecraft:white_dye"
+  }
+}

@@ -249,31 +249,5 @@ public class EndSkyBox {
         poseStack.popPose();
     }
 
-    //private static void drawCelestialObjects(ClientLevel level, float ticks, float partialTick, PoseStack poseStack) {
-    //    // Draw sun/moon/stars similar to vanilla
-    //    float sunAngle = level.getTimeOfDay(partialTick);
-    //    float sunX = (float)Math.cos(sunAngle * Math.PI * 2.0) * 20.0F;
-    //    float sunY = (float)Math.sin(sunAngle * Math.PI * 2.0) * 20.0F;
-    //    float sunZ = -10.0F;
-////
-    //    RenderSystem.setShaderTexture(0, SUN_TEXTURE);
-    //    RenderSystem.setShader(GameRenderer::getPositionTexShader);
-////
-    //    poseStack.pushPose();
-    //    poseStack.mulPose(Axis.YP.rotationDegrees(sunAngle * 360.0F));
-    //    poseStack.translate(sunX, sunY, sunZ);
-////
-    //    Matrix4f matrix = poseStack.last().pose();
-    //    BufferBuilder bufferBuilder = Tesselator.getInstance().getBuilder();
-    //    bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-////
-    //    bufferBuilder.vertex(matrix, -5.0F, -5.0F, 0.0F).uv(0.0F, 0.0F).endVertex();
-    //    bufferBuilder.vertex(matrix, 5.0F, -5.0F, 0.0F).uv(1.0F, 0.0F).endVertex();
-    //    bufferBuilder.vertex(matrix, 5.0F, 5.0F, 0.0F).uv(1.0F, 1.0F).endVertex();
-    //    bufferBuilder.vertex(matrix, -5.0F, 5.0F, 0.0F).uv(0.0F, 1.0F).endVertex();
-////
-    //    BufferUploader.drawWithShader(bufferBuilder.end());
-    //    poseStack.popPose();
-    //}
 }
 

@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:ore",
+  "config": {
+    "discard_chance_on_air_exposure": 0,
+    "size": 17,
+    "targets": [
+      {
+        "state": {
+          "Name": "the_beyond:bedazzled_end_stone"
+        },
+        "target": {
+          "predicate_type": "minecraft:block_match",
+          "block": "minecraft:end_stone"
+        }
+      }
+    ]
+  }
+}

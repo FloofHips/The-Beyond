@@ -11,39 +11,37 @@ import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import net.minecraft.world.level.levelgen.synth.SimplexNoise;
 
-/** 2-layer auroracite floor at {@code level.getMinBuildHeight()}, gated by
- *  {@code SimplexNoise(x*0.1, z*0.1) > 0} for organic patches (~50% coverage). Y tracks
- *  the active dim_type's min_y so the layer follows combo-mode floors. */
+/** Two-layer auroracite floor at the dimension's min_y, in noise patches covering about half. */
 public class AuroraciteLayerFeature extends Feature<NoneFeatureConfiguration> {
 
-    private static volatile SimplexNoise noise;
+    private record SeededNoise(long seed, SimplexNoise noise) {}
 
-    // Diagnostic: logs the first minY seen per world load to record which dim_type won.
-    // Integer.MIN_VALUE is a safe sentinel (-128 < minY < 320 by worldgen convention).
+    private static volatile SeededNoise floorNoise;
+
+    // logs the first minY of each world load, to show which dimension type won
     private static volatile int loggedMinY = Integer.MIN_VALUE;
 
     public AuroraciteLayerFeature(Codec<NoneFeatureConfiguration> codec) {
         super(codec);
     }
 
-    private static SimplexNoise getNoise(RandomSource random) {
-        if (noise == null) {
-            synchronized (AuroraciteLayerFeature.class) {
-                if (noise == null) {
-                    noise = new SimplexNoise(random);
-                }
+    /** One floor pattern for both features and the fill, from the world seed alone so chunk order never changes it. */
+    public static SimplexNoise noiseFor(long seed) {
+        SeededNoise n = floorNoise;
+        if (n != null && n.seed() == seed) return n.noise();
+        synchronized (AuroraciteLayerFeature.class) {
+            n = floorNoise;
+            if (n == null || n.seed() != seed) {
+                n = new SeededNoise(seed, new SimplexNoise(RandomSource.create(seed)));
+                floorNoise = n;
+                TheBeyond.LOGGER.debug("[AuroraciteLayerFeature] floor noise built from world seed {}", seed);
             }
+            return n.noise();
         }
-        return noise;
-    }
-
-    /** Returns the noise instance, or {@code null} if not yet initialized. */
-    public static SimplexNoise getNoiseInstance() {
-        return noise;
     }
 
     public static void resetNoise() {
-        noise = null;
+        floorNoise = null;
         loggedMinY = Integer.MIN_VALUE;
     }
 
@@ -51,13 +49,12 @@ public class AuroraciteLayerFeature extends Feature<NoneFeatureConfiguration> {
     public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
         WorldGenLevel level = context.level();
         BlockPos origin = context.origin();
-        RandomSource random = context.random();
-        SimplexNoise simplex = getNoise(random);
+        SimplexNoise simplex = noiseFor(level.getSeed());
 
         int minY = level.getMinBuildHeight();
         if (loggedMinY != minY) {
             loggedMinY = minY;
-            TheBeyond.LOGGER.info("[AuroraciteLayerFeature] placing at minY={} (level.getMinBuildHeight())", minY);
+            TheBeyond.LOGGER.debug("[AuroraciteLayerFeature] placing at minY={}", minY);
         }
         int chunkX = origin.getX() & ~15; // align to chunk
         int chunkZ = origin.getZ() & ~15;

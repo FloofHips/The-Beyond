@@ -1,6 +1,7 @@
 package com.thebeyond.common.item;
 
 import com.thebeyond.client.model.equipment.MultipartArmorModel;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.util.AOEManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
@@ -29,8 +30,7 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 public class AnchorLeggingsItem extends ModelArmorItem {
-    /** Accumulated fall distance for creative players: their {@code causeFallDamage}
-     *  short-circuits before {@code LivingFallEvent}, so we integrate velocity. */
+    /** Fall distance for creative players, integrated from velocity since their fall damage skips LivingFallEvent. */
     private static final Map<UUID, Float> creativeFallDistance = new HashMap<>();
 
     public AnchorLeggingsItem(Holder<ArmorMaterial> material, Type type, Properties properties, Supplier<MultipartArmorModel> modelSupplier) {
@@ -56,16 +56,14 @@ public class AnchorLeggingsItem extends ModelArmorItem {
             Holder<Enchantment> powerHolder = enchantmentRegistry.getHolderOrThrow(Enchantments.POWER);
             int powerLevel = EnchantmentHelper.getItemEnchantmentLevel(powerHolder, stack);
 
-            // Downward boost only while airborne: on ground the constant push + hurtMarked
-            // micro-falls every tick, looping landing sounds.
+            // push down only while airborne, on the ground it micro-falls every tick and loops the landing sound
             if (player.isShiftKeyDown() && !player.onGround()) {
                 player.stopFallFlying();
                 player.setDeltaMovement(player.getDeltaMovement().subtract(0, 0.08 * (1 + 0.5 * powerLevel), 0));
                 player.hurtMarked = true;
             }
 
-            // Creative-mode slam: causeFallDamage() returns early when mayfly, so LivingFallEvent
-            // never fires. Track fall distance from downward velocity, trigger slam on landing.
+            // creative slam: with mayfly LivingFallEvent never fires, so the fall is tracked from velocity
             if (!level.isClientSide && player instanceof ServerPlayer serverPlayer
                     && player.getAbilities().mayfly) {
                 UUID uuid = player.getUUID();
@@ -76,7 +74,6 @@ public class AnchorLeggingsItem extends ModelArmorItem {
                     tracked += (float) (-player.getDeltaMovement().y);
                     creativeFallDistance.put(uuid, tracked);
                 } else if (player.onGround() && tracked > 1.5f && player.isShiftKeyDown()) {
-                    // Landed with enough fall distance while crouching — trigger slam
                     performSlam(serverPlayer, tracked, powerLevel);
                     creativeFallDistance.put(uuid, 0f);
                 } else {
@@ -87,16 +84,13 @@ public class AnchorLeggingsItem extends ModelArmorItem {
         super.inventoryTick(stack, level, entity, slotId, isSelected);
     }
 
-    /**
-     * Performs the Anchor Leggings slam effect. Used by both the {@code LivingFallEvent}
-     * handler (survival) and the creative-mode tick tracker above.
-     */
+    /** The slam, shared by the survival LivingFallEvent handler and the creative tick tracker. */
     public static void performSlam(ServerPlayer player, float fallDistance, int powerLevel) {
         if (!(player.level() instanceof ServerLevel serverLevel)) return;
 
         player.setSpawnExtraParticlesOnFall(true);
         SoundEvent sound = fallDistance > 5.0F
-                ? SoundEvents.MACE_SMASH_GROUND_HEAVY : SoundEvents.MACE_SMASH_GROUND;
+                ? BeyondSoundEvents.MACE_SMASH_GROUND_HEAVY.get() : BeyondSoundEvents.MACE_SMASH_GROUND.get();
         serverLevel.playSound(null, player.getX(), player.getY(), player.getZ(),
                 sound, player.getSoundSource(), 1.0F, 1.0F);
 

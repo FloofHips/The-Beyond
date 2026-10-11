@@ -6,16 +6,14 @@ import org.jetbrains.annotations.ApiStatus;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-/** Pool-excluded biome registry: biomes in {@code allBiomes} (so {@code /locate} works)
- *  but never rolled in the Voronoi pool — a {@link MacroRegionOverride} supplies them. */
+/** Biomes kept out of the Voronoi pool but listed for /locate, a MacroRegionOverride places them. */
 @ApiStatus.Experimental
 public final class BeyondBiomeRegistration {
     private static final Set<ResourceLocation> POOL_EXCLUDED = new CopyOnWriteArraySet<>();
 
     private BeyondBiomeRegistration() {}
 
-    /** Marks {@code biomeId} overlay-only. Must be paired with a registered
-     *  {@link MacroRegionOverride} that supplies it, or the biome never appears. */
+    /** Marks biomeId overlay-only, it needs a registered MacroRegionOverride or it never appears. */
     public static void addPoolExcludedBiome(ResourceLocation biomeId) {
         POOL_EXCLUDED.add(biomeId);
     }

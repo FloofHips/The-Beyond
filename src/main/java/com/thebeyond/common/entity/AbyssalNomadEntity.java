@@ -251,9 +251,7 @@ public class AbyssalNomadEntity extends PathfinderMob implements ITeleportingEnt
         handlePray();
         handleLook();
 
-        // Only search for prayer sites in the End dimension. In non-End dimensions
-        // (e.g. player riding nomad through a portal), the structure tag doesn't exist
-        // and findNearestMapStructure would waste CPU returning null every tick.
+        // prayer sites exist only in the End, elsewhere the search would waste a lookup every tick
         if (isPraying() && prayerSite == null && level().dimension() == Level.END
                 && level() instanceof ServerLevel serverLevel)
             prayerSite = serverLevel.getLevel().findNearestMapStructure(BeyondTags.NOMAD_PRAYER_SITE, this.getOnPos(), 200, false);
@@ -286,14 +284,16 @@ public class AbyssalNomadEntity extends PathfinderMob implements ITeleportingEnt
 
             if (dropCounter == 30) {
 
-                ItemStack stack = new ItemStack(BeyondItems.ABYSSAL_SHROUD.get(),1+random.nextInt(0, 2));
+                ItemStack stack = new ItemStack(BeyondItems.ABYSSAL_SHROUD.get(),1+random.nextInt(1, 3));
                 Components.DynamicColorComponent colors = new Components.DynamicColorComponent(1, 1, 1, 1, 0, 0, 0, 0, 0xF000F0);
                 stack.set(BeyondComponents.COLOR_COMPONENT, colors);
+                stack.set(BeyondComponents.ALERT, true);
 
                 ItemEntity itementity = new ItemEntity(this.level(), this.getX(), this.getEyeY(), this.getZ(), stack);
 
                 itementity.setNoPickUpDelay();
                 this.level().addFreshEntity(itementity);
+
                 itementity.setNoGravity(true);
 
                 if (level() instanceof ServerLevel serverLevel)
@@ -435,6 +435,7 @@ public class AbyssalNomadEntity extends PathfinderMob implements ITeleportingEnt
             level().broadcastEntityEvent(this, STAND_UP);
             setSitting(false);
             player.startRiding(this);
+            player.addEffect(new MobEffectInstance(BeyondEffects.NOMADS_BLESSING, 6000));
             if (player instanceof ServerPlayer serverPlayer) {
                 BeyondCriteriaTriggers.RIDE_NOMAD.get().trigger(serverPlayer);
             }
@@ -527,9 +528,7 @@ public class AbyssalNomadEntity extends PathfinderMob implements ITeleportingEnt
         @Override
         public void start() {
             super.start();
-            // Only search for prayer site structures in the End dimension. In other
-            // dimensions prayerSite stays null and the goal will stop gracefully via
-            // canContinueToUse()'s null check.
+            // End only, elsewhere prayerSite stays null and the goal stops through canContinueToUse()
             if (nomad.level().dimension() == Level.END && nomad.level() instanceof ServerLevel serverLevel)
                 nomad.prayerSite = serverLevel.getLevel().findNearestMapStructure(BeyondTags.NOMAD_PRAYER_SITE, this.nomad.getOnPos(), 200, false);
         }

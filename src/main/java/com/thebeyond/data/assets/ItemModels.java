@@ -9,6 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.SpawnEggItem;
+import net.minecraft.world.level.block.WallBlock;
 import net.neoforged.neoforge.client.model.generators.ItemModelProvider;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 
@@ -40,22 +41,58 @@ public class ItemModels extends ItemModelProvider {
         items.remove(BeyondBlocks.CREEPING_ZYMOTE.asItem());
 
         items.remove(BeyondBlocks.REACHING_ZYMOTE.asItem());
+        items.remove(BeyondBlocks.VILE_GROWTH.asItem());
         items.remove(BeyondBlocks.PORTELAIN_DOOR.asItem());
+        items.remove(BeyondBlocks.BRITTLE_METAL_DOOR.asItem());
         items.remove(BeyondBlocks.OBIROOT_SPROUT.asItem());
+        items.remove(BeyondBlocks.BLEEDING_THORN.asItem());
+        items.remove(BeyondBlocks.BLINDING_THORN.asItem());
+        items.remove(BeyondBlocks.PEARL_CHIMES.asItem());
         items.remove(BeyondBlocks.AMPHORA.asItem());
+        items.remove(BeyondItems.PRISMOGRAPH.asItem());
+
+        items.remove(BeyondItems.BRITTLE_SWORD.asItem());
+        items.remove(BeyondItems.BRITTLE_SHOVEL.asItem());
+        items.remove(BeyondItems.BRITTLE_AXE.asItem());
+        items.remove(BeyondItems.BRITTLE_HOE.asItem());
+        items.remove(BeyondItems.BRITTLE_PICKAXE.asItem());
+        items.remove(BeyondItems.SMOKE_FUSE.asItem());
+        items.remove(BeyondItems.COILED_STALK.asItem());
+
+        items.remove(BeyondItems.MEMORY_BANK.asItem());
+        items.remove(BeyondBlocks.ORNATE_MIRROR.asItem());
+        items.remove(BeyondBlocks.MIRROR.asItem());
+
+        handheldItem(BeyondItems.BRITTLE_SWORD.asItem());
+        handheldItem(BeyondItems.BRITTLE_SHOVEL.asItem());
+        handheldItem(BeyondItems.BRITTLE_AXE.asItem());
+        handheldItem(BeyondItems.BRITTLE_HOE.asItem());
+        handheldItem(BeyondItems.BRITTLE_PICKAXE.asItem());
+        handheldItem(BeyondItems.COILED_STALK.asItem());
 
         itemGeneratedModel(BeyondBlocks.VOID_CRYSTAL.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/void_crystal"));
         itemGeneratedModel(BeyondBlocks.OBIROOT_ARM.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/obiroot_arm"));
-        //itemGeneratedModel(BeyondBlocks.VOID_FLAME.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/void_flame"));
         itemGeneratedModel(BeyondBlocks.OBIROOT_SPROUT.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/obiroot_sprout"));
         itemGeneratedModel(BeyondBlocks.CREEPING_ZYMOTE.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/creeping_zymote"));
         itemGeneratedModel(BeyondBlocks.REACHING_ZYMOTE.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/reaching_zymote"));
+        itemGeneratedModel(BeyondBlocks.VILE_GROWTH.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/vile_growth"));
         itemGeneratedModel(BeyondBlocks.PORTELAIN_DOOR.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/portelain_door"));
+        itemGeneratedModel(BeyondBlocks.BRITTLE_METAL_DOOR.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/brittle_metal_door"));
+        itemGeneratedModel(BeyondItems.PRISMOGRAPH.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/prismograph"));
+        itemGeneratedModel(BeyondBlocks.BLEEDING_THORN.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/bleeding_thorn"));
+        itemGeneratedModel(BeyondBlocks.BLINDING_THORN.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/blinding_thorn"));
+        itemGeneratedModel(BeyondBlocks.PEARL_CHIMES.asItem(), ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"item/pearl_chimes"));
+        items.removeIf(i -> i instanceof BlockItem item && item.getBlock() instanceof WallBlock);
 
         takeAll(items, i -> i instanceof BlockItem).forEach(item -> blockBasedModel(item, ""));
         takeAll(items, i -> i instanceof SpawnEggItem).forEach(this::spawnEggGeneratedModel);
 
         items.forEach(item -> itemGeneratedModel(item, resourceItem(itemName(item))));
+
+        wallInventory(BeyondBlocks.PORTELAIN_WALL.asItem().getDescriptionId().split("\\.")[2], ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/portelain_inv"));
+        wallInventory(BeyondBlocks.PEARL_WALL.asItem().getDescriptionId().split("\\.")[2], ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/pearl"));
+        wallInventory(BeyondBlocks.PEARL_BRICK_WALL.asItem().getDescriptionId().split("\\.")[2], ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/pearl_bricks"));
+        wallInventory(BeyondBlocks.COBBLED_PEARL_BRICK_WALL.asItem().getDescriptionId().split("\\.")[2], ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/cobbled_pearl_bricks"));
     }
     public void spawnEggGeneratedModel(Item item) {
         withExistingParent(itemName(item), "item/template_spawn_egg");

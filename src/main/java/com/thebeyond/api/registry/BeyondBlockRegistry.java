@@ -7,8 +7,7 @@ import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
-/** Thin lookup over Beyond's block registry (avoids leaking the internal
- *  {@code BeyondBlocks}). Call from {@code FMLCommonSetupEvent} onwards. */
+/** Lookup over Beyond's blocks without exposing BeyondBlocks, usable from common setup on. */
 @ApiStatus.Experimental
 public final class BeyondBlockRegistry {
     private BeyondBlockRegistry() {}

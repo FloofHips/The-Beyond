@@ -8,8 +8,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Tail-injects the End's {@code advanceWeatherCycle} to mirror rain/thunder levels from
- *  shared levelData (DerivedLevelData → overworld). Vanilla skips non-skylight dims. */
+/** Mirrors the overworld's rain and thunder into the End, which vanilla skips for having no skylight. */
 @Mixin(ServerLevel.class)
 public class EndWeatherSyncMixin {
 

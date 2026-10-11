@@ -9,6 +9,7 @@ import com.thebeyond.common.block.blockstates.PillarHeightProperty;
 import com.thebeyond.common.fluid.GellidVoidBlock;
 import com.thebeyond.common.registry.BeyondBlockEntities;
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -108,8 +109,7 @@ public class EnadrakeHutBlock extends BaseEntityBlock {
             return;
         }
 
-        // Skip exit during contraption assembly (Create or Sable/Aeronautics) — the BE NBT
-        // travels with the assembly; ejecting would duplicate the enadrake.
+        // no exit while a contraption assembles, the block data travels along and ejecting would duplicate the enadrake
         if (!com.thebeyond.compat.create.ContraptionAssemblyDetector.isAssembling()) {
             BlockEntity baseBE = level.getBlockEntity(pos);
             if (baseBE instanceof EnadrakeHutBlockEntity hutblockentity) {
@@ -121,7 +121,7 @@ public class EnadrakeHutBlock extends BaseEntityBlock {
     }
 
     public static void fillHut(ItemStack stack, Level level, BlockPos pos, LivingEntity entity, EnadrakeHutBlockEntity hutblockentity, ItemStack itemstack1) {
-        // Cap at maxStackSize; the ItemStack codec rejects saves past 99.
+        // capped at maxStackSize, the ItemStack codec rejects saves past 99
         if (!hutblockentity.isEmpty() && itemstack1.getCount() >= itemstack1.getMaxStackSize()) return;
 
         ItemStack itemstack = stack.consumeAndReturn(1, entity);
@@ -135,7 +135,7 @@ public class EnadrakeHutBlock extends BaseEntityBlock {
         }
 
         Vec3 anchor = com.thebeyond.api.compat.BeyondCompatHooks.visibleOrCenter(level, pos);
-        level.playSound(null, BlockPos.containing(anchor), SoundEvents.DECORATED_POT_INSERT, SoundSource.BLOCKS, 1.0F, 0.7F + 0.5F * f);
+        level.playSound(null, BlockPos.containing(anchor), BeyondSoundEvents.ENADRAKE_HUT_POP.get(), SoundSource.BLOCKS, 1.0F, 0.5f + level.random.nextFloat());
         if (level instanceof ServerLevel serverlevel) {
             serverlevel.sendParticles(
                     ParticleTypes.DUST_PLUME,

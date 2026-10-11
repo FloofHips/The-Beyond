@@ -2,6 +2,8 @@ package com.thebeyond.common.registry;
 
 import com.thebeyond.TheBeyond;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.Tier;
+import net.minecraft.world.item.Tiers;
 import net.neoforged.fml.common.asm.enumextension.EnumProxy;
 import net.minecraft.network.chat.Style;
 

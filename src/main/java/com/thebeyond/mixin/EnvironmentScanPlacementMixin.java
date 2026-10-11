@@ -1,6 +1,6 @@
 package com.thebeyond.mixin;
 
-import com.thebeyond.api.worldgen.BeyondTerrainState;
+import com.thebeyond.common.worldgen.BeyondEndChunkGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.levelgen.blockpredicates.BlockPredicate;
@@ -15,8 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.stream.Stream;
 
-/** Extends {@code environment_scan}'s max_steps (cap 96) when Beyond owns the End so
- *  pancake gaps are bridged without blowing up high-count features (e.g. crying_ducts). */
+/** Raises environment_scan's max_steps (cap 96) on Beyond's End so layer gaps are bridged. */
 @Mixin(EnvironmentScanPlacement.class)
 public abstract class EnvironmentScanPlacementMixin {
     private static final int the_beyond$HARD_CAP = 96;
@@ -30,7 +29,7 @@ public abstract class EnvironmentScanPlacementMixin {
     private void the_beyond$boundedExtendedScan(
             PlacementContext ctx, RandomSource random, BlockPos origin,
             CallbackInfoReturnable<Stream<BlockPos>> cir) {
-        if (!BeyondTerrainState.isActive()) return;
+        if (!(ctx.generator() instanceof BeyondEndChunkGenerator)) return;
 
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos().set(origin);
         int dy = directionOfSearch.getStepY();

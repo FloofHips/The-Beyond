@@ -1,0 +1,27 @@
+{
+  "variants": {
+    "rake_direction=ns": {
+      "model": "the_beyond:block/rich_raked_nacre"
+    },
+    "rake_direction=ew": {
+      "model": "the_beyond:block/rich_raked_nacre",
+      "y": 90
+    },
+
+    "rake_direction=nw": {
+      "model": "the_beyond:block/rich_raked_nacre_bend"
+    },
+    "rake_direction=ne": {
+      "model": "the_beyond:block/rich_raked_nacre_bend",
+      "y": 90
+    },
+    "rake_direction=se": {
+      "model": "the_beyond:block/rich_raked_nacre_bend",
+      "y": 180
+    },
+    "rake_direction=sw": {
+      "model": "the_beyond:block/rich_raked_nacre_bend",
+      "y": 270
+    }
+  }
+}

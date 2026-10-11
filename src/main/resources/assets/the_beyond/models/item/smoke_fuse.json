@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "the_beyond:item/smoke_fuse_paper",
+    "layer1": "the_beyond:item/smoke_fuse_base"
+  }
+}

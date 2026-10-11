@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "N": {
+      "item": "the_beyond:polar_antenna"
+    }
+  },
+  "pattern": [
+    " NN",
+    " NN",
+    " NN"
+  ],
+  "result": {
+    "count": 1,
+    "id": "the_beyond:plate_block"
+  }
+}

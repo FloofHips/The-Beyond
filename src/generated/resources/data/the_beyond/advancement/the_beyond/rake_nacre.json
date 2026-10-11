@@ -1,0 +1,27 @@
+{
+  "parent": "the_beyond:the_beyond/collect_pearl",
+  "criteria": {
+    "rake_nacre": {
+      "trigger": "the_beyond:rake_nacre"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancements.the_beyond.rake_nacre.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:diamond_hoe"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.rake_nacre.title"
+    }
+  },
+  "requirements": [
+    [
+      "rake_nacre"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

@@ -138,9 +138,7 @@ public class PolarAntennaBlock extends Block implements IMagneticReceiver {
             if (RandomUtils.nextFloat() <= STOP_CHANCE) return;
 
             affectedList.forEach((affectedPos) -> {
-                // Cache the block state once per position; repeated level.getBlockState calls
-                // each pay a chunk section + paletted container lookup, which dominates
-                // cascade runtime at the 12.5% STOP_CHANCE.
+                // read once per position, each getBlockState pays a section lookup that dominates the cascade
                 BlockState affectedState = level.getBlockState(affectedPos);
                 if (affectedState.getBlock() instanceof IMagneticReceiver receiver) {
                     Block affectedBlock = affectedState.getBlock();

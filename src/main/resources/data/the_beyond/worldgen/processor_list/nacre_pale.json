@@ -1,0 +1,8 @@
+{
+  "processors": [
+    {
+      "processor_type": "the_beyond:nacre_type",
+      "nacre_type": "pale"
+    }
+  ]
+}

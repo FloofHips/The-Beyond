@@ -8,8 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/** Registry of {@link MacroRegionOverride}s that the Beyond End biome source queries
- *  on every solid-pool sample. First non-null wins; register in mod-load. */
+/** MacroRegionOverrides the End biome source asks on every solid sample, the first non-null wins. */
 @ApiStatus.Experimental
 public final class BeyondMacroRegions {
     private static final List<MacroRegionOverride> OVERRIDES = new CopyOnWriteArrayList<>();
@@ -20,7 +19,7 @@ public final class BeyondMacroRegions {
         OVERRIDES.add(override);
     }
 
-    /** Queries overrides in registration order; returns the first non-null result. */
+    /** Asks the overrides in registration order and returns the first non-null. */
     @Nullable
     public static Holder<Biome> queryAt(int blockX, int blockZ) {
         for (MacroRegionOverride o : OVERRIDES) {

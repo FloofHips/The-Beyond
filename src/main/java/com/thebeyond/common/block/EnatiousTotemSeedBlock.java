@@ -54,7 +54,7 @@ public class EnatiousTotemSeedBlock extends Block {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        activate(state, level, pos, player);
+        //activate(state, level, pos, player);
         return super.useWithoutItem(state, level, pos, player, hitResult);
     }
 

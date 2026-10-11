@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:stonecutting",
+  "ingredient": {
+    "item": "the_beyond:pearl"
+  },
+  "result": {
+    "count": 2,
+    "id": "the_beyond:pearl_brick_slab"
+  }
+}

@@ -5,8 +5,13 @@ import com.thebeyond.client.model.equipment.AnchorLeggingsModel;
 import com.thebeyond.client.model.equipment.EtherCloakModel;
 import com.thebeyond.common.item.*;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.*;
+import net.minecraft.world.item.component.DyedItemColor;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -68,39 +73,76 @@ public class BeyondItems {
             tooltipComponents.add(Component.literal(" Walk on Auroracite").withStyle(ChatFormatting.DARK_AQUA));
         }
     });
-    public static final DeferredItem<Item> ECTOPLASM = registerItem("ectoplasm", () -> new AirPlaceableBlockItem(BeyondBlocks.ECTOPLASM.get(), new Item.Properties()));
+    public static final DeferredItem<Item> ECTOPLASM = registerItem("ectoplasm", () -> new AirPlaceableBlockItem(BeyondBlocks.ECTOPLASM.get(), new Item.Properties()) {
+        @Override
+        public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+            super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+            tooltipComponents.add(Component.literal("Can be placed mid-air").withStyle(ChatFormatting.GRAY));
+            tooltipComponents.add(Component.literal("Used on lit Bonfires").withStyle(ChatFormatting.DARK_AQUA));
+        }
+    });
 
     public static final DeferredItem<Item> LIVE_FLAME = registerItem("live_flame", () -> new LiveFlameItem(new Item.Properties().durability(12000)));
     public static final DeferredItem<Item> LIVID_FLAME = registerItem("livid_flame", () -> new LiveFlameItem(new Item.Properties().durability(6000).rarity(Rarity.RARE)));
 
-    public static final DeferredItem<SpawnEggItem> LANTERN_SPAWN_EGG  = ITEMS.register("lantern_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.LANTERN.get(),15136255, 16777215,new Item.Properties()));
+    public static final DeferredItem<SpawnEggItem> LANTERN_SPAWN_EGG        = ITEMS.register("lantern_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.LANTERN.get(),15136255, 16777215,new Item.Properties()));
     public static final DeferredItem<SpawnEggItem> ABYSSAL_NOMAD_SPAWN_EGG  = ITEMS.register("abyssal_nomad_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ABYSSAL_NOMAD.get(),-7693156, -13703706,new Item.Properties()));
-    public static final DeferredItem<SpawnEggItem> ENDERGLOP_SPAWN_EGG  = ITEMS.register("enderglop_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENDERGLOP.get(),0x7127f8, -297995,new Item.Properties()));
-    public static final DeferredItem<SpawnEggItem> ENADRAKE_SPAWN_EGG  = ITEMS.register("enadrake_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENADRAKE.get(),-13213601, -297995,new Item.Properties()));
-    public static final DeferredItem<SpawnEggItem> ENATIOUS_TOTEM_SPAWN_EGG  = ITEMS.register("enatious_totem_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENATIOUS_TOTEM.get(),-13213601, -2169180,new Item.Properties()));
+    public static final DeferredItem<SpawnEggItem> ENDERGLOP_SPAWN_EGG      = ITEMS.register("enderglop_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENDERGLOP.get(),0x7127f8, -297995,new Item.Properties()));
+    public static final DeferredItem<SpawnEggItem> ENADRAKE_SPAWN_EGG       = ITEMS.register("enadrake_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENADRAKE.get(),-13213601, -297995,new Item.Properties()));
+    public static final DeferredItem<SpawnEggItem> ENATIOUS_TOTEM_SPAWN_EGG = ITEMS.register("enatious_totem_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.ENATIOUS_TOTEM.get(),-13213601, -2169180,new Item.Properties()));
+    public static final DeferredItem<SpawnEggItem> BRUBBLE_SPAWN_EGG        = ITEMS.register("brubble_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.BRUBBLE.get(),-9792612, -11016715,new Item.Properties()));
+    public static final DeferredItem<SpawnEggItem> BAUBLE_SPAWN_EGG         = ITEMS.register("bauble_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.BAUBLE.get(),-530959, -1,new Item.Properties()));
+    public static final DeferredItem<SpawnEggItem> TRINKET_SPAWN_EGG        = ITEMS.register("trinket_spawn_egg", () -> new SpawnEggItem(BeyondEntityTypes.TRINKET.get(),-2955531, -11091229,new Item.Properties()));
 
-    public static final DeferredItem<Item> REMEMBRANCE_BEADS    = registerItem("beads_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_IDOL     = registerItem("idol_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_BRACE    = registerItem("brace_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_RING     = registerItem("ring_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_MEMORY   = registerItem("memory_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_HORN     = registerItem("horn_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_LACE     = registerItem("lace_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_BROCHE   = registerItem("broche_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_LIFE     = registerItem("life_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_HOME     = registerItem("home_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_EYE      = registerItem("eye_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_SPIKE    = registerItem("spike_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_ORNAMENT = registerItem("ornament_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_MOUNT    = registerItem("mount_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_HAND     = registerItem("hand_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
-    public static final DeferredItem<Item> REMEMBRANCE_CLOTH    = registerItem("cloth_remembrance", () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
+    public static final DeferredItem<Item> REMEMBRANCE_BEADS    = registerRemembrance("beads_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_IDOL     = registerRemembrance("idol_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_BRACE    = registerRemembrance("brace_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_RING     = registerRemembrance("ring_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_MEMORY   = registerRemembrance("memory_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_HORN     = registerRemembrance("horn_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_LACE     = registerRemembrance("lace_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_BROCHE   = registerRemembrance("broche_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_LIFE     = registerRemembrance("life_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_HOME     = registerRemembrance("home_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_EYE      = registerRemembrance("eye_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_SPIKE    = registerRemembrance("spike_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_ORNAMENT = registerRemembrance("ornament_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_MOUNT    = registerRemembrance("mount_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_HAND     = registerRemembrance("hand_remembrance");
+    public static final DeferredItem<Item> REMEMBRANCE_CLOTH    = registerRemembrance("cloth_remembrance");
+
+    public static final DeferredItem<Item> BRITTLE_METAL_SHEET = registerItem("brittle_metal_sheet", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> PRISMUTH = registerItem("prismuth", () -> new Item(new Item.Properties()));
+
+    public static final DeferredItem<Item> BRITTLE_SWORD = registerItem("brittle_sword", () -> new SwordItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(SwordItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 3, -2.0F))));
+    public static final DeferredItem<Item> BRITTLE_SHOVEL = registerItem("brittle_shovel", () -> new ShovelItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(ShovelItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 1.5F, -2.5F))));
+    public static final DeferredItem<Item> BRITTLE_PICKAXE = registerItem("brittle_pickaxe", () -> new PickaxeItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(PickaxeItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 1.0F, -2.1F))));
+    public static final DeferredItem<Item> BRITTLE_AXE = registerItem("brittle_axe", () -> new AxeItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(AxeItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 6.0F, -2.5F))));
+    public static final DeferredItem<Item> BRITTLE_HOE = registerItem("brittle_hoe", () -> new HoeItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(HoeItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 0.0F, -2.2F))));
+    // Block-click places the camera block; in-air or sneaking shoots it handheld.
+    public static final DeferredItem<Item> PRISMOGRAPH = registerItem("prismograph", () -> new PrismographBlockItem(BeyondBlocks.PRISMOGRAPH.get(), new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> SNAPSHOT = registerItem("snapshot", () -> new SnapshotItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> MEMORY_BANK = registerItem("memory_bank", () -> new MemoryBankItem(new Item.Properties().stacksTo(1).component(DataComponents.DYED_COLOR, new DyedItemColor(-10659444, false))));
+
+    public static final DeferredItem<Item> PEARL_BEAD = registerItem("pearl_bead", () -> new PearlItem(new Item.Properties()));
+    public static final DeferredItem<Item> OCARINA = registerItem("ocarina", () -> new OcarinaItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> TRINKET_BUCKET = registerItem("trinket_bucket", () -> new NoFluidMobBucketItem(BeyondEntityTypes.TRINKET.get(), Fluids.EMPTY, BeyondSoundEvents.TRINKET_BUCKET_EMPTY.get(), (new Item.Properties()).stacksTo(1).component(DataComponents.BUCKET_ENTITY_DATA, CustomData.EMPTY)));
+    public static final DeferredItem<Item> STALKER_SEGMENT = registerItem("stalker_segment", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> SMOKE_FUSE = registerItem("smoke_fuse", () -> new SmokeFuseItem(new Item.Properties().component(DataComponents.DYED_COLOR, new DyedItemColor(DyeColor.BLACK.getFireworkColor(), true))));
+    public static final DeferredItem<Item> COILED_STALK = registerItem("coiled_stalk", () -> new CoilItem(new Item.Properties()));
+
+    public static final DeferredItem<Item> CATEGORY = registerItem("category", () -> new CoilItem(new Item.Properties()));
 
     @SuppressWarnings("unchecked")
     public static <T extends Item> DeferredItem<T> registerItem(final String name, final Supplier<? extends Item> item) {
         DeferredItem<Item> toReturn = ITEMS.register(name, item);
         CREATIVE_TAB_ITEMS.add(toReturn);
         return (DeferredItem<T>) toReturn;
+    }
+
+    /** Remembrances differ only by name, and their order drives the creative tab and datagen. */
+    private static DeferredItem<Item> registerRemembrance(String name) {
+        return registerItem(name, () -> new Item(new Item.Properties().rarity(BeyondEnums.REMEMBRANCE.getValue())));
     }
 
 }

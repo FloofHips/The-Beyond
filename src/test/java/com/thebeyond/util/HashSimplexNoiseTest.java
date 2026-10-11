@@ -9,14 +9,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Contract tests for {@link HashSimplexNoise}.
- *
- * <p>These tests focus on properties the Beyond terrain generator relies on:
- * determinism per seed, finite output everywhere (no NaN/Infinity even at
- * wrap-boundary coordinates), and stability of the SplitMix64-based
- * permutation hash. They do NOT assert exact output values against vanilla
- * SimplexNoise — this class intentionally produces a different sampling of
- * the infinite noise field (see class javadoc).
+ * Contract tests for {@link HashSimplexNoise}: per-seed determinism, finite output everywhere, and
+ * permutation stability. Does not assert exact values against vanilla SimplexNoise, which samples differently.
  */
 class HashSimplexNoiseTest {
 
@@ -52,9 +46,7 @@ class HashSimplexNoiseTest {
     void differentSeedsDifferentOutputs() {
         HashSimplexNoise a = new HashSimplexNoise(RandomSource.create(1L));
         HashSimplexNoise b = new HashSimplexNoise(RandomSource.create(2L));
-        // Sample enough points that IDENTICAL output streams across seeds
-        // are astronomically unlikely. Checking a single point is fragile;
-        // a handful is overwhelmingly robust.
+        // Sample enough points that identical streams across seeds are astronomically unlikely.
         int differences = 0;
         for (int i = 0; i < 50; i++) {
             if (a.getValue(i * 0.1, i * 0.2) != b.getValue(i * 0.1, i * 0.2)) {
@@ -106,12 +98,8 @@ class HashSimplexNoiseTest {
     // ---------- output range ----------
 
     /**
-     * Canonical Simplex output stays within roughly [-1, 1]. Because we mirror
-     * vanilla SimplexNoise's {@code * 70.0} / {@code * 32.0} scaling constants
-     * the exact bound can drift slightly, but values outside [-1.5, 1.5] would
-     * indicate the permutation hash is producing gradients outside the
-     * expected 12-entry table. Use a generous bound so this test fails LOUDLY
-     * only on real regressions, not on normal simplex wobble.
+     * Generous [-1.5, 1.5] bound (vs. canonical Simplex's ~[-1, 1]) so this only fails on real
+     * regressions — like gradients escaping the expected 12-entry table — not normal wobble.
      */
     @Test
     void outputStaysWithinReasonableRange() {
@@ -133,40 +121,13 @@ class HashSimplexNoiseTest {
 
     // ---------- period sanity ----------
 
-    /**
-     * Vanilla SimplexNoise has a 256-unit permutation period — spaced samples
-     * at 0 and 256 would be correlated. {@link HashSimplexNoise}'s hash-based
-     * permutation should NOT produce that correlation. Sampling across a
-     * neighborhood at 0 and at {@code step} (including 65 536, the old
-     * wide-table period) should give independent values somewhere. Not a
-     * tight statistical test — just smokes out a regression where someone
-     * reintroduces a 256-entry table.
-     *
-     * <h2>Why we sample a neighborhood instead of a single integer point</h2>
-     * A single-point comparison like {@code getValue(0,0) vs getValue(step,0)}
-     * is FRAGILE on integer-aligned coordinates. Canonical Simplex returns
-     * exactly 0 at every lattice point: the {@code (x-floor(...))*G2} skew/
-     * unskew round-trip lands on the cell origin, and {@code dot(gradient, 0,
-     * 0, 0) = 0} for every gradient. Additionally, at large integer inputs
-     * the skewed fractional offsets drift outside the simplex radial cutoff
-     * (because the cumulative rounding in {@code (i+j)*G2} drifts a whole
-     * simplex cell away), which also produces exactly 0 through the
-     * {@code max(0, 0.5 - r²)⁴} falloff. Both endpoints being 0 at specific
-     * {@code step} values (empirically: 65 536 and 100 000 with seed 4242)
-     * gave a spurious "period detected" result that had nothing to do with
-     * the permutation function. By sampling several non-integer offsets in
-     * each neighborhood and asking for ANY pair to differ, we ask the exact
-     * question the test name promises — "is there a visible period?" —
-     * without letting simplex's grid-point degeneracy answer for us.
-     */
+    /** Checks the hash permutation doesn't repeat at {@code step}, using non-integer offsets since
+     *  Simplex returns exactly 0 on lattice points and would otherwise look falsely periodic. */
     @ParameterizedTest
     @ValueSource(ints = {256, 1024, 65536, 100000})
     void noVisiblePeriodAtVanillaBoundaries(int step) {
         HashSimplexNoise n = new HashSimplexNoise(RandomSource.create(4242L));
-        // Non-integer offsets chosen to avoid any special alignment with the
-        // skewed simplex grid (F2, G2 irrational → no finite-decimal offset
-        // lands on a grid boundary, but mix a few to be robust to any single
-        // accidental alignment).
+        // Several non-integer offsets, robust against any single accidental grid alignment.
         double[] offsets = {0.1, 0.37, 0.73, 1.23};
         boolean anyDiffers = false;
         for (double ox : offsets) {

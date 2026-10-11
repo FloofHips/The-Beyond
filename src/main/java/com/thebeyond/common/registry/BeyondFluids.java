@@ -16,10 +16,10 @@ public class BeyondFluids {
     public static final DeferredHolder<FluidType, FluidType> GELLID_VOID_TYPE = FLUID_TYPES.register("gellid_void", () -> new FluidType(FluidType.Properties.create()
           .supportsBoating(true)
           .canHydrate(true)));
-    public static final DeferredHolder<Fluid, Fluid> GELLID_VOID = FLUIDS.register("gellid_void", () -> new GellidVoid.Source(AcidFluidProperties()));
-    public static final DeferredHolder<Fluid, FlowingFluid> GELLID_VOID_FLOWING = FLUIDS.register("gellid_void_flowing", () -> new GellidVoid.Flowing(AcidFluidProperties()));
+    public static final DeferredHolder<Fluid, Fluid> GELLID_VOID = FLUIDS.register("gellid_void", () -> new GellidVoid.Source(fluidProperties()));
+    public static final DeferredHolder<Fluid, FlowingFluid> GELLID_VOID_FLOWING = FLUIDS.register("gellid_void_flowing", () -> new GellidVoid.Flowing(fluidProperties()));
 
-    public static BaseFlowingFluid.Properties AcidFluidProperties() {
+    public static BaseFlowingFluid.Properties fluidProperties() {
         return new GellidVoid.Properties(GELLID_VOID_TYPE, GELLID_VOID, GELLID_VOID_FLOWING)
                 .block(BeyondBlocks.GELLID_VOID)
                 .bucket(BeyondItems.GELLID_VOID_BUCKET)

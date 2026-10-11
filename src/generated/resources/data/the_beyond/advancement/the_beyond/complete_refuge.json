@@ -1,5 +1,5 @@
 {
-  "parent": "the_beyond:the_beyond/gift_enadrake",
+  "parent": "the_beyond:the_beyond/gift_rare_enadrake",
   "criteria": {
     "complete_refuge": {
       "trigger": "the_beyond:complete_refuge"

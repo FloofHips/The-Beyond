@@ -7,12 +7,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Contract tests for {@link BeyondEndChunkGenerator#pingPongWrap(int, int, int)}.
- *
- * <p>These tests pin down the properties the terrain generator relies on:
- * (a) output stays within [min, max], (b) the wrap is continuous at the
- * pivot (no seam), (c) it's periodic with period 2*(max-min), and (d) for
- * a symmetric range, the wrap is symmetric around the origin.
+ * Contract tests for {@link BeyondEndChunkGenerator#pingPongWrap(int, int, int)}: bounded output,
+ * no seam at the pivot, period {@code 2*(max-min)}, and symmetry around the origin for symmetric ranges.
  */
 class PingPongWrapTest {
 
@@ -36,9 +32,8 @@ class PingPongWrapTest {
     }
 
     /**
-     * No-seam property: crossing the pivot at ±R must yield adjacent output
-     * values. A modulo wrap would jump from +R to -R here, producing a visible
-     * reflection line in terrain. Regression test for that seam.
+     * Crossing the pivot at ±R must yield adjacent output values — a modulo wrap would jump
+     * from +R to -R, producing a visible reflection line in terrain.
      */
     @Test
     void continuityAcrossPivot() {
@@ -51,12 +46,8 @@ class PingPongWrapTest {
     }
 
     /**
-     * Period is {@code 2 * (max - min)} — shifting input by that much must be
-     * a no-op. For the symmetric range {@code [-R, R]}, range length is
-     * {@code L = 2R} and the full triangle-wave period is {@code 2L = 4R}
-     * (up-slope from -R→R takes L, then down-slope R→-R takes another L).
-     * Shifting by just {@code 2R} would land on the mirrored half of the
-     * triangle, not the same value.
+     * Full triangle-wave period is {@code 2*(max-min)}, i.e. {@code 4R} for range {@code [-R,R]}
+     * (up-slope and down-slope each take {@code 2R}) — shifting by only {@code 2R} hits the mirrored half.
      */
     @ParameterizedTest
     @ValueSource(ints = {0, 1, 42, -17, 100000, -250000, 249999})

@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "I": {
+      "tag": "c:nuggets/iron"
+    },
+    "N": {
+      "item": "the_beyond:pale_nacre"
+    }
+  },
+  "pattern": [
+    "NNN",
+    "NIN",
+    "NNN"
+  ],
+  "result": {
+    "count": 8,
+    "id": "the_beyond:nacre"
+  }
+}

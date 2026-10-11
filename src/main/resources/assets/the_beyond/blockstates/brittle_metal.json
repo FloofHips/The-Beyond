@@ -1,0 +1,10 @@
+{
+    "variants": {
+        "powered=false": {
+            "model": "the_beyond:block/brittle_metal"
+        },
+        "powered=true": {
+            "model": "the_beyond:block/brittle_metal_flat"
+        }
+    }
+}

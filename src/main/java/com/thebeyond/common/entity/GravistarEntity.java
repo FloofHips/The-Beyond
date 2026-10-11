@@ -4,6 +4,7 @@ import com.thebeyond.client.particle.PixelColorTransitionOptions;
 import com.thebeyond.client.particle.SmokeColorTransitionOptions;
 import com.thebeyond.common.registry.BeyondEffects;
 import com.thebeyond.common.registry.BeyondItems;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.data.assets.BlockStates;
 import com.thebeyond.util.ColorUtils;
 import net.minecraft.core.particles.ItemParticleOption;
@@ -32,16 +33,16 @@ public class GravistarEntity extends ThrowableItemProjectile {
     @Override
     protected void onHitBlock(BlockHitResult result) {
         super.onHitBlock(result);
-        BlockState b = this.level().getBlockState(result.getBlockPos());
-        int col = b.getMapColor(this.level(), result.getBlockPos()).col;
+        BlockState block = this.level().getBlockState(result.getBlockPos());
+        int col = block.getMapColor(this.level(), result.getBlockPos()).col;
         float r = ((col >> 16) & 0xFF) / 255f;
         float g = ((col >> 8) & 0xFF) / 255f;
-        float bl = (col & 0xFF) / 255f;
+        float b = (col & 0xFF) / 255f;
 
         if (level() instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(new PixelColorTransitionOptions(
-                    new Vector3f(r, g, bl),
-                    new Vector3f(r, g, bl),
+                    new Vector3f(r, g, b),
+                    new Vector3f(r, g, b),
                     2f
             ), this.getX() + 0.5, this.getY(), this.getZ() + 0.5, level().random.nextInt(10, 20), 0.2,0.2,0.2,0.05);
         }
@@ -59,7 +60,6 @@ public class GravistarEntity extends ThrowableItemProjectile {
                 }
                 livingentity.addEffect(new MobEffectInstance(BeyondEffects.WEIGHTLESS, i+600, 1));
             }
-            this.discard();
             for(int i = 0; (float)i < 16.0F; ++i) {
                 float f2 = this.random.nextFloat() * ((float)Math.PI * 2F);
                 float f3 = this.random.nextFloat() * 0.5F + 0.5F;
@@ -67,10 +67,11 @@ public class GravistarEntity extends ThrowableItemProjectile {
                 float f5 = Mth.cos(f2) * f3;
                 this.level().addParticle(new ItemParticleOption(ParticleTypes.ITEM, BeyondItems.GRAVISTAR.toStack()), this.getX() + (double)f4, this.getY(), this.getZ() + (double)f5, (double)0.0F, (double)0.0F, (double)0.0F);
             }
-            this.playSound(SoundEvents.GLASS_BREAK, 1.0F, 1.0F);
+            this.playSound(BeyondSoundEvents.VOID_CRYSTAL_SHATTER.get(), 1.0F, 1.0F);
             if (level() instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(ColorUtils.voidOptions, this.getX() + 0.5, this.getY(), this.getZ() + 0.5, level().random.nextInt(10, 20), 0.2,0.2,0.2,0.05);
             }
+            this.discard();
         }
     }
 

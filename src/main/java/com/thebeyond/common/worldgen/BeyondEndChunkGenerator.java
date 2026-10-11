@@ -1,12 +1,15 @@
 package com.thebeyond.common.worldgen;
 
+import com.thebeyond.api.worldgen.BeyondForeignStructureProfiles;
 import com.thebeyond.api.worldgen.BeyondTerrainState;
+import com.thebeyond.api.worldgen.StructureIntegrationProfile;
 import com.thebeyond.internal.worldgen.BeyondTerrainStateInternal;
 import com.google.common.annotations.VisibleForTesting;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.thebeyond.util.HashSimplexNoise;
 import com.thebeyond.util.WorldSeedHolder;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectListIterator;
@@ -27,10 +30,14 @@ import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
 import net.minecraft.world.level.levelgen.*;
 import net.minecraft.world.level.levelgen.Beardifier;
 import net.minecraft.world.level.levelgen.DensityFunction;
-import net.minecraft.world.level.levelgen.structure.TerrainAdjustment;
 import net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
+import net.minecraft.world.level.levelgen.structure.pools.SinglePoolElement;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import com.thebeyond.mixin.SinglePoolElementAccessor;
+import com.thebeyond.mixin.StructureTemplateAccessor;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.world.level.levelgen.blending.Blender;
 import net.minecraft.world.level.levelgen.structure.*;
@@ -43,6 +50,10 @@ import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
+import static com.thebeyond.common.worldgen.BeyondStructureCarver.BEARD_LAT_REACH;
+import static com.thebeyond.common.worldgen.BeyondStructureCarver.DT3_CAP;
+import static com.thebeyond.common.worldgen.BeyondStructureCarver.FOUNDATION_DEPTH;
+
 public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     public static final MapCodec<BeyondEndChunkGenerator> CODEC = RecordCodecBuilder.mapCodec((p_255585_) -> {
         return p_255585_.group(BiomeSource.CODEC.fieldOf("biome_source").forGetter((p_255584_) -> {
@@ -53,11 +64,8 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     });
 
     private final Holder<NoiseGeneratorSettings> settings;
-    /** Terrain density field. Sampled by {@link #getTerrainDensity} octaves. */
     public static volatile HashSimplexNoise simplexNoise;
-    /** Biome-selection noise; decoupled from {@link #simplexNoise} so density tuning doesn't reshuffle biomes. */
     public static volatile HashSimplexNoise biomeSimplexNoise;
-    /** Z-channel warp noise; independently seeded so warpX and warpZ don't collapse on the x=z diagonal. */
     public static volatile HashSimplexNoise warpZSimplexNoise;
     public static volatile PerlinSimplexNoise globalHOffsetNoise;
     public static volatile PerlinSimplexNoise globalVOffsetNoise;
@@ -66,12 +74,10 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     private double buffer = 700.0;
     public static long seed = 1;
 
-    /** Baseline worldHeight (dim range 256). Always read via {@link #getWorldHeight()} to scale with enlarged dims. */
     static final double DEFAULT_WORLD_HEIGHT = 192;
 
     private static final int BASELINE_DIM_RANGE = 256;
 
-    /** Effective worldHeight for the active dim; scales with dim range beyond 256. */
     public static double getWorldHeight() {
         int dimMinY = BeyondTerrainState.getDimMinY();
         int dimMaxY = BeyondTerrainState.getDimMaxY();
@@ -84,11 +90,11 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     private static final double LACUNARITY = 2.0;
     private static final double PERSISTENCE = 0.5;
     private static final int TERRAIN_Y_OFFSET = 32;
+    /** Measured ceiling on |normalizedNoise| (peak about 0.979 over 50M samples), never lower it past that peak. */
+    static final double MAX_NOISE = 1.20;
 
-    /** Per-octave wrap-range factors for mirror-seam decorrelation. */
     private static final double[] OCTAVE_WRAP_FACTORS = {1.00, 0.91, 0.83, 0.77};
 
-    /** Triangle-wave wrap between min/max. External callers go through {@link #computeWrappedCoords}. */
     static int pingPongWrap(int input, int min, int max) {
         int range = max - min;
         int wrap = range * 2;
@@ -103,28 +109,21 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         return x + min;
     }
 
-    /** Runtime terrain-transform params from dim JSON; falls back to {@link BeyondTerrainParams#DEFAULTS}. */
     public static volatile BeyondTerrainParams activeTerrainParams = BeyondTerrainParams.DEFAULTS;
 
-    /** Default wrap range — test reference only; production uses {@link #activeTerrainParams}. */
     static final int WRAP_RANGE = BeyondTerrainParams.DEFAULTS.wrapRange();
 
-    /** Single source of truth for the wrap+warp transform; packs wrappedX:wrappedZ as
-     *  high:low 32b. All density/biome/heightmap queries MUST route through this. */
+    /** The one wrap and warp transform, every density, biome and heightmap query must go through it. */
     public static long computeWrappedCoords(int globalX, int globalZ) {
         return computeWrappedCoords(globalX, globalZ, activeTerrainParams);
     }
 
-    /** Parameterized overload for diagnostic tools that need a non-live params snapshot. */
     public static long computeWrappedCoords(int globalX, int globalZ, BeyondTerrainParams params) {
         int wrapRange = params.wrapRange();
 
         HashSimplexNoise snoise = simplexNoise;
         HashSimplexNoise zsnoise = warpZSimplexNoise;
         if (snoise == null || zsnoise == null) {
-            // Noise not yet initialized (can happen on cold queries before the
-            // first computeNoisesIfNotPresent). Fall through to a raw wrap so
-            // callers still get deterministic integers instead of NPE.
             int rawX = pingPongWrap(globalX, -wrapRange, wrapRange);
             int rawZ = pingPongWrap(globalZ, -wrapRange, wrapRange);
             return ((long) rawX << 32) | ((long) rawZ & 0xFFFFFFFFL);
@@ -132,7 +131,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         int warpedInputX;
         int warpedInputZ;
         if (warpDisabled) {
-            // Test-only: skip warp entirely.
             warpedInputX = globalX;
             warpedInputZ = globalZ;
         } else {
@@ -140,7 +138,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             double warpAmplitude = params.warpAmplitude();
             double warpInX = globalX * warpScale;
             double warpInZ = globalZ * warpScale;
-            // warpX/warpZ use independent noises so the channels don't collapse on x=z.
             double warpX = snoise.getValue(warpInX, warpInZ) * warpAmplitude;
             double warpZ = zsnoise.getValue(warpInX, warpInZ) * warpAmplitude;
             warpedInputX = (int) (globalX + warpX);
@@ -161,8 +158,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     public static int unpackWrappedX(long packed) { return (int) (packed >> 32); }
     public static int unpackWrappedZ(long packed) { return (int) packed; }
 
-    /** Fills per-octave wrap+scale arrays (length {@link #NUM_OCTAVES}); coords and scales
-     *  MUST be paired index-wise or the anti-cancellation invariant breaks. */
+    /** Coords and scales MUST be paired index-wise or the octave anti-cancellation invariant breaks. */
     private static void computeOctaveFields(
             int globalX, int globalZ,
             BeyondTerrainParams params,
@@ -173,7 +169,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         double warpScale = params.warpScale();
         double warpAmplitude = params.warpAmplitude();
 
-        // Warp is (globalX, globalZ)-only — compute once, reuse across octaves.
         HashSimplexNoise snoise = simplexNoise;
         HashSimplexNoise zsnoise = warpZSimplexNoise;
         int warpedInputX;
@@ -192,8 +187,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
         double frequency = 1.0;
         for (int k = 0; k < NUM_OCTAVES; k++) {
-            // Floor at MIN_WRAP_RANGE: defends against datapacks pushing wrap_range
-            // to its minimum where factor 0.77 would fall below the validation floor.
+            // Floor at MIN_WRAP_RANGE: guards a datapack's minimal wrap_range × 0.77 falling below the validation floor.
             int wrapRange_k = Math.max(
                     BeyondTerrainParams.MIN_WRAP_RANGE,
                     (int) (baseWrapRange * OCTAVE_WRAP_FACTORS[k]));
@@ -228,11 +222,8 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
     public void computeNoisesIfNotPresent(RandomState randomState) {
         if (simplexNoise == null || biomeSimplexNoise == null || warpZSimplexNoise == null || globalHOffsetNoise == null || globalVOffsetNoise == null || globalCOffsetNoise == null) {
-            if (seed == 1) {
-                WorldSeedHolder holder = (WorldSeedHolder) (Object) randomState;
-                seed = holder.the_Beyond$getWorldSeed();
-            }
-            computeNoisesIfNotPresent(seed);
+            long worldSeed = ((WorldSeedHolder) (Object) randomState).the_Beyond$getWorldSeed();
+            computeNoisesIfNotPresent(worldSeed);
         }
     }
 
@@ -240,8 +231,9 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         if (simplexNoise == null || biomeSimplexNoise == null || warpZSimplexNoise == null || globalHOffsetNoise == null || globalVOffsetNoise == null || globalCOffsetNoise == null) {
             synchronized (BeyondEndChunkGenerator.class) {
                 if (simplexNoise == null || biomeSimplexNoise == null || warpZSimplexNoise == null || globalHOffsetNoise == null || globalVOffsetNoise == null || globalCOffsetNoise == null) {
-                    // Seed chain: sequential offsets from worldSeed (next free = +6).
-                    // Never reuse a prior offset — separating concerns was intentional.
+
+                    seed = worldSeed;
+                    // sequential seed offsets, the next free one is +6, never reuse one
                     RandomSource random1 = RandomSource.create(worldSeed);
                     RandomSource random2 = RandomSource.create(worldSeed + 1);
                     RandomSource random3 = RandomSource.create(worldSeed + 2);
@@ -260,7 +252,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         }
     }
 
-    /** Resets static noises + params. Call on server stop to prevent cross-world leakage. */
     public static void resetNoises() {
         synchronized (BeyondEndChunkGenerator.class) {
             simplexNoise = null;
@@ -270,21 +261,76 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             globalVOffsetNoise = null;
             globalCOffsetNoise = null;
             activeTerrainParams = BeyondTerrainParams.DEFAULTS;
+            seed = 1;
         }
     }
+
+    /** Falls back to piece bboxes (fail-soft) if absent in a rare disk-loaded window. */
+    static volatile StructureTemplateManager the_beyond$templateManager;
 
     @Override
     public void createStructures(RegistryAccess registryAccess, ChunkGeneratorStructureState structureState, StructureManager structureManager, ChunkAccess chunk, StructureTemplateManager structureTemplateManager) {
         computeNoisesIfNotPresent(structureState.getLevelSeed());
         BeyondTerrainStateInternal.setDimBounds(chunk.getMinBuildHeight(), chunk.getMaxBuildHeight());
+        the_beyond$templateManager = structureTemplateManager;
         super.createStructures(registryAccess, structureState, structureManager, chunk, structureTemplateManager);
+
+        if (BeyondTerrainState.isActive()) {
+            var startReg = registryAccess.registryOrThrow(Registries.STRUCTURE);
+            for (var e : chunk.getAllStarts().entrySet()) {
+                if (e.getValue() != null && e.getValue().isValid()) {
+                    BeyondForeignStructureProfiles.markSessionStart(startReg.getKey(e.getKey()), e.getValue().getChunkPos().toLong());
+                }
+            }
+            BeyondStructureArbiter.arbitrate(chunk, structureManager,
+                    registryAccess.registryOrThrow(Registries.STRUCTURE), the_beyond$carver.the_beyond$knownStarts());
+        }
+
+        // vanilla references starts only within 8 chunks, so the mask is seeded here or a far arm cuts straight
+        if (BeyondTerrainState.isActive()) {
+            try {
+                var structReg = registryAccess.registryOrThrow(Registries.STRUCTURE);
+                for (StructureStart start : chunk.getAllStarts().values()) {
+                    if (start == null || !start.isValid()) continue;
+                    if (the_beyond$carver.the_beyond$maskCache.containsKey(start)) continue;   // already seeded
+                    ResourceLocation key = structReg.getKey(start.getStructure());
+                    StructureIntegrationProfile profile = BeyondForeignStructureProfiles.resolve(start.getStructure(), key);
+                    if (profile == null || !profile.carve()) continue;      // only carve structures need far reach
+                    boolean layerDistributed = AutoHostWarmUp.layerDistributed(key, start, getBiomeSource().possibleBiomes());
+                    boolean floater = profile.anchor() == StructureIntegrationProfile.Anchor.FLOATING
+                            || BeyondForeignStructureProfiles.isAutoFloatCarved(key);
+                    boolean distributed = layerDistributed
+                            || BeyondForeignStructureProfiles.isAutoSeatedProjected(key);
+                    boolean seated = !floater
+                            && (distributed || profile.anchor() == StructureIntegrationProfile.Anchor.SEATED);
+                    // built exactly as the carve builds it, the cache keeps the first mask so nothing left out here comes back
+                    CarveMask m = the_beyond$carver.the_beyond$buildMask(start, seated, distributed, layerDistributed,
+                            profile.flushTolerance(), profile.connectDetached());
+                    m.carveOnly = BeyondForeignStructureProfiles.isEmbedded(key);
+                    m.hugTerrain = BeyondForeignStructureProfiles.isHugTerrain(key);
+                    m.basePedestal = BeyondStructureCarver.the_beyond$pedestal(profile, key, structReg, start);
+                    m.floating = floater;
+                    m.structureKey = key;
+                    the_beyond$carver.the_beyond$maskCache.put(start, m);
+                    if (distributed
+                            && BeyondGenDiagnostics.loggedFootingSuppressed.add(System.identityHashCode(start))
+                            && BeyondGenDiagnostics.loggedFootingSuppressed.size() <= 40) {
+                        com.thebeyond.TheBeyond.LOGGER.debug(
+                                "[Beyond] {} @chunk [{},{}] DISTRIBUTED ({}): footing-only seat on the start footprint {}",
+                                key, start.getChunkPos().x, start.getChunkPos().z,
+                                layerDistributed ? "layer re-anchored" : "topmost-projected",
+                                m.baseBox == null ? "<none>" : ("[" + m.baseBox.minX() + "," + m.baseBox.minZ() + ".." + m.baseBox.maxX() + "," + m.baseBox.maxZ() + "]"));
+                    }
+                }
+            } catch (Throwable ignored) {
+                // fail-soft: a seed miss only reverts to the reference-based (near-chunk) discovery
+            }
+        }
     }
 
     @Override
     public CompletableFuture<ChunkAccess> createBiomes(RandomState randomState, Blender blender, StructureManager structureManager, ChunkAccess chunk) {
         computeNoisesIfNotPresent(randomState);
-        // Publish dim bounds before super triggers biome sampling (BeyondEndBiomeSource consumes
-        // them to anchor the bottom_biome band and scale worldHeight).
         BeyondTerrainStateInternal.setDimBounds(chunk.getMinBuildHeight(), chunk.getMaxBuildHeight());
         return super.createBiomes(randomState, blender, structureManager, chunk);
     }
@@ -300,12 +346,11 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         BeyondTerrainStateInternal.setDimBounds(level.getMinBuildHeight(), level.getMaxBuildHeight());
         float distanceFromOrigin = (float) Math.sqrt((double) x * x + (double) z * z);
 
-        // Hoist column-invariant state into thread-local scratch — eliminates the 4-array
-        // alloc that the 3-arg getTerrainDensity cold path otherwise makes per Y iteration.
         ColumnScratch scratch = SCRATCH.get();
         initColumnScratch(x, z, distanceFromOrigin, scratch);
 
-        int scanTop = (int) (getWorldHeight() - 60);
+        // scanTop must track generateEndTerrain's fill range (dimMaxY-33): a pancake can sit anywhere below it.
+        int scanTop = level.getMaxBuildHeight() - 33;
         for (int y = scanTop; y >= level.getMinBuildHeight(); y--) {
             if (isSolidTerrainScratch(y, scratch)) {
                 return y;
@@ -325,10 +370,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         return 10;
     }
 
-    // Column-invariant scale helpers. Density-path callers MUST pass WRAPPED coords
-    // (mismatch with sampler coords causes streaks at |X| ≥ ~500k). BiomeSource
-    // intentionally passes grid coords — biome field doesn't need wrapping.
-
+    // density callers must pass wrapped coords or streaks appear past 500k, the biome source passes grid coords
     public static double getHorizontalBaseScale(int x, int z) {
         return getHorizontalBaseScale(x, z, globalHOffsetNoise);
     }
@@ -347,7 +389,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                 double v = hashNoise.getValue(nx, nz);
                 return 0.005 + (0.015 - 0.005) * ((v + 1.0) * 0.5);
             }
-            // Pre-init: fall through to PerlinSimplex.
         }
         if (hScaleBlur3x3) {
             return globalNoiseOffsetBlur3x3(0.005, 0.015, nx, nz, noise);
@@ -365,80 +406,59 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         return globalNoiseOffset(0.005, 0.015, x * 0.00001, z * 0.00001, noise);
     }
 
-    /** Test-only: when non-null, {@link #getCycleHeight} returns this constant. */
     @VisibleForTesting
     static volatile Double cycleHeightOverride = null;
 
-    /** Test-only cycleHeight frequency multiplier (1.0 = production 1 M-block period). */
     @VisibleForTesting
     static volatile double cycleHeightFrequencyMultiplier = 1.0;
 
-    /** Test-only: when {@code true}, skips {@link #pingPongWrap} so raw globals feed the sampler. */
     @VisibleForTesting
     static volatile boolean wrapDisabled = false;
 
-    /** Test-only: when {@code true}, skips the domain-warp noise; raw (x,z) feeds the wrap. */
     @VisibleForTesting
     static volatile boolean warpDisabled = false;
 
-    /** Test-only: when non-null, forces {@code hScales[k]} to this constant (frequency still baked in). */
     @VisibleForTesting
     static volatile Double hScaleOverride = null;
 
-    /** Test-only: same mechanism as {@link #hScaleOverride} for {@code vScales[k]}. */
     @VisibleForTesting
     static volatile Double vScaleOverride = null;
 
-    /** Prototype: averages hScale at 4 90° rotations to cancel lattice directional bias. */
     @VisibleForTesting
     static volatile boolean hScaleMultirotation = false;
 
-    /** Prototype: hScale via HashSimplexNoise instead of PerlinSimplexNoise. */
     @VisibleForTesting
     static volatile boolean hScaleUseHashNoise = false;
 
-    /** Prototype: 3x3 blur of hScale noise to smear cell-local gradient bias. */
     @VisibleForTesting
     static volatile boolean hScaleBlur3x3 = false;
 
-    /** Reference radius for distance-adaptive hScale (full amplitude inside, 1/r outside). */
     @VisibleForTesting
     static final double HSCALE_REF_RADIUS = 100_000.0;
 
-    /** Prototype: 1/r amplitude attenuation of hScale beyond {@link #HSCALE_REF_RADIUS}. */
     @VisibleForTesting
     static volatile boolean hScaleDistanceAdaptive = false;
 
-    /** Local-wrap range for hScale (ping-pong every 100 k blocks). */
     @VisibleForTesting
     static final int HSCALE_LOCAL_WRAP_RANGE = 50_000;
 
-    /** Prototype knob: bounds the H-scale noise input via local wrap so streak width
-     *  stays small at any distance (amplitude unchanged, no 1/r decay). */
     @VisibleForTesting
     static volatile boolean hScaleLocalWrap = false;
 
-    // Flag-gated alt sampler: constant hScale + amplitude envelope (band-blend preferred).
-
-    /** Forces constant hScale + amplitude envelope. Mutually exclusive with {@link #useBandBlend}. */
     @VisibleForTesting
     static volatile boolean useIslandEnvelope = false;
 
-    /** Constant hScale when {@link #useIslandEnvelope} is active (midpoint of [0.005, 0.015]). */
     @VisibleForTesting
     static volatile double islandEnvelopeHScale = 0.010;
 
-    /** Envelope output range; symmetric around 1.0 keeps average density unchanged. */
     @VisibleForTesting
     static volatile double envelopeLow  = 0.5;
     @VisibleForTesting
     static volatile double envelopeHigh = 1.5;
 
-    /** Envelope spatial scale; 5e-7 ≈ 2 M-block wavelength (constant per plot). */
     @VisibleForTesting
     static volatile double envelopeScale = 5e-7;
 
-    /** Envelope sampled at WORLD (x,z); returns scalar in [envelopeLow, envelopeHigh]. */
     public static double getIslandEnvelope(int x, int z) {
         PerlinSimplexNoise noise = globalHOffsetNoise;
         if (noise == null) return 1.0;
@@ -448,11 +468,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         return envelopeLow + (envelopeHigh - envelopeLow) * ((v + 1.0) * 0.5);
     }
 
-    // Band-blend sampler: 2-sample lerp over fixed-frequency bands instead of
-    // X*hScale(X,Z); constant h_i removes the X*∂h/∂X streak term, smoothstep
-    // blend avoids band seams. Column-invariant state (bbLoIdx, bbT) is hoisted.
-
-    /** K=17 log-spaced band frequencies spanning [0.005, 0.015]. O(1) indexed by {@link #computeBBState}. */
+    // band blend: a lerp over fixed-frequency bands removes the X*dh/dX streak term, the smoothstep hides seams
     private static final int BB_BAND_COUNT = 17;
     private static final double[] BB_BAND_FREQUENCIES = new double[BB_BAND_COUNT];
     private static final double BB_LOG_H_MIN;
@@ -469,20 +485,14 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         }
     }
 
-    /** Band-blend terrain sampler. Mutually exclusive with {@link #useIslandEnvelope}. */
     @VisibleForTesting
     static volatile boolean useBandBlend = true;
 
-    /** Column-invariant BB state: fills band index + blend weight per octave. Call once
-     *  per column so the y-loop is just two simplex samples and a lerp. */
     static void computeBBState(double[] hScales, int[] bbLoIdx, double[] bbT) {
         double frequencyMult = 1.0;
         for (int k = 0; k < NUM_OCTAVES; k++) {
-            // Recover octave k's own hBase — hScales[k] = hBase_k × LACUNARITY^k.
             double hBaseTarget = hScales[k] / frequencyMult;
 
-            // Closed-form log-space index. Clamped to [0, BB_BAND_COUNT − 1] so
-            // the subsequent 2-sample blend always picks a valid pair (lo, lo+1).
             double fIdx = (Math.log(hBaseTarget) - BB_LOG_H_MIN) * BB_INV_LOG_STEP;
             int lo;
             double t;
@@ -498,9 +508,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             }
 
             bbLoIdx[k] = lo;
-            // Smoothstep: C¹ partition-of-unity weight. Bakes the polynomial
-            // once per column so the y-loop is just a lerp.
-            bbT[k] = t * t * (3.0 - 2.0 * t);
+            bbT[k] = t * t * (3.0 - 2.0 * t);   // smoothstep
 
             frequencyMult *= LACUNARITY;
         }
@@ -514,17 +522,12 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     public static double getCycleHeight(int x, int z, PerlinSimplexNoise noise) {
         Double override = cycleHeightOverride;
         if (override != null) return override;
-        // Period 1 M blocks: keeps in-view cycleHeight variation under one divisor
-        // step so cyclicDensity's divisor discontinuities don't pile up in a scene.
+        // Period 1M blocks keeps cyclicDensity's divisor discontinuities from piling up in one scene.
         double freq = 0.00005 * cycleHeightFrequencyMultiplier;
         return globalNoiseOffset(5, 100, x * freq, z * freq, noise);
     }
 
 
-    /**
-     * Base threshold for density vs void. Pass WRAPPED (x,z) to align with the
-     * density sampler; {@code distanceFromOrigin} stays global (island taper).
-     */
     public static double getThreshold(int x, int z, float distanceFromOrigin) {
         double baseThreshold = globalNoiseOffset(0.01, 0.6, x * 0.0002, z * 0.0002, globalCOffsetNoise);
 
@@ -546,12 +549,10 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         }
     }
 
-    /** Cold-path entry (heightmap / biome source / F3 debug). Allocates; hot path uses the array overload below. */
     public static double getTerrainDensity(int globalX, int globalY, int globalZ) {
         return getTerrainDensity(globalX, globalY, globalZ, activeTerrainParams);
     }
 
-    /** Cold-path entry with caller-supplied params (diagnostic tools). */
     public static double getTerrainDensity(int globalX, int globalY, int globalZ, BeyondTerrainParams paramsOverride) {
         PerlinSimplexNoise hNoise = globalHOffsetNoise;
         PerlinSimplexNoise vNoise = globalVOffsetNoise;
@@ -564,7 +565,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         computeOctaveFields(globalX, globalZ, paramsOverride,
                 hScales, vScales, wrappedXs, wrappedZs, hNoise, vNoise);
 
-        // Island-envelope: overwrite hScales with constant (frequency-ramped per octave).
         if (useIslandEnvelope) {
             double h = islandEnvelopeHScale;
             double freq = 1.0;
@@ -574,12 +574,10 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             }
         }
 
-        // cycleHeight sampled at octave-0's wrap (consistent with getThreshold).
         double cycleHeight = getCycleHeight(wrappedXs[0], wrappedZs[0], cNoise);
 
         double density = getTerrainDensity(globalY, hScales, vScales, cycleHeight, wrappedXs, wrappedZs);
 
-        // Island-envelope: multiply by slowly-varying envelope sampled at WORLD coords.
         if (useIslandEnvelope) {
             density *= getIslandEnvelope(globalX, globalZ);
         }
@@ -607,7 +605,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                 wrappedXs, wrappedZs, null, null, dimMinY, dimMaxY);
     }
 
-    /** Hot-path sampler. Caller hoists BB state ({@code bbLoIdx}/{@code bbT}, or {@code null}) and dim bounds. */
     public static double getTerrainDensity(
             int globalY,
             double[] hScales,
@@ -620,6 +617,14 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             int dimMinY,
             int dimMaxY) {
         int shiftedY = globalY + TERRAIN_Y_OFFSET;
+        double normalizedNoise = computeNormalizedNoise(shiftedY, hScales, vScales, wrappedXs, wrappedZs, bbLoIdx, bbT);
+        double densityModifier = cyclicDensity(shiftedY, cycleHeight);
+        return edgeGradient(shiftedY, normalizedNoise * densityModifier, dimMinY, dimMaxY);
+    }
+
+    /** Factored out so the hot-loop air-gap skip can avoid the 8 (band-blend) / 4 simplex evals entirely. */
+    static double computeNormalizedNoise(int shiftedY, double[] hScales, double[] vScales,
+            int[] wrappedXs, int[] wrappedZs, int[] bbLoIdx, double[] bbT) {
         HashSimplexNoise noise = simplexNoise;
 
         double noiseValue = 0.0;
@@ -627,8 +632,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         double maxAmplitude = 0.0;
 
         if (useBandBlend) {
-            // Band-blend: 2-sample lerp across adjacent fixed-frequency bands.
-            // h_i * frequencyMult is a constant → no X·∂h/∂X streak term.
             double frequencyMult = 1.0;
 
             for (int octave = 0; octave < NUM_OCTAVES; octave++) {
@@ -668,15 +671,27 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             }
         }
 
-        noiseValue /= maxAmplitude;
-        double densityModifier = cyclicDensity(shiftedY, cycleHeight);
-        noiseValue *= densityModifier;
-
-        return edgeGradient(shiftedY, noiseValue, dimMinY, dimMaxY);
+        return noiseValue / maxAmplitude;
     }
 
-    /** Per-column scratch reused across the Y-loop; init once per (x,z) via
-     *  {@link #initColumnScratch} then sample {@link #isSolidTerrainScratch}. */
+    static final double AIR_SENTINEL = Double.NEGATIVE_INFINITY;
+
+    /** Skips the noise only when its peak plus beardCap misses the threshold, beardCap is +INF wherever a beard touches. */
+    static double terrainDensityOrSkip(int globalY, ColumnScratch s, double cycleHeight, double threshold, double beardCap) {
+        int shiftedY = globalY + TERRAIN_Y_OFFSET;
+        double ef = edgeGradientFactor(shiftedY, s.dimMinY, s.dimMaxY);
+        if (ef <= 0.0) return AIR_SENTINEL;
+        double cyc = cyclicDensity(shiftedY, cycleHeight);
+        if (ef * cyc * MAX_NOISE + beardCap <= threshold) return AIR_SENTINEL;
+        return noiseDensity(shiftedY, s, ef, cyc);
+    }
+
+    private static double noiseDensity(int shiftedY, ColumnScratch s, double ef, double cyc) {
+        double nv = computeNormalizedNoise(shiftedY, s.hScales, s.vScales, s.wrappedXs, s.wrappedZs,
+                useBandBlend ? s.bbLoIdx : null, useBandBlend ? s.bbT : null);
+        return ef * (nv * cyc);
+    }
+
     public static final class ColumnScratch {
         public final double[] hScales = new double[NUM_OCTAVES];
         public final double[] vScales = new double[NUM_OCTAVES];
@@ -691,19 +706,18 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         public int dimMaxY;
     }
 
-    private static final ThreadLocal<ColumnScratch> SCRATCH =
+    static final ThreadLocal<ColumnScratch> SCRATCH =
             ThreadLocal.withInitial(ColumnScratch::new);
-    /** Per-worker reused cursor — chunk fill is single-threaded per worker; set() overwrites
-     *  all coords before each setBlockState and the pos isn't retained. */
+    /** Kept distinct from {@link #SCRATCH} so a roof probe never clobbers the hot loop's own column state. */
+    static final ThreadLocal<ColumnScratch> PROBE_SCRATCH =
+            ThreadLocal.withInitial(ColumnScratch::new);
     private static final ThreadLocal<BlockPos.MutableBlockPos> MUTABLE =
             ThreadLocal.withInitial(BlockPos.MutableBlockPos::new);
 
-    /** Returns the per-thread scratch instance — caller must init via {@link #initColumnScratch}. */
     public static ColumnScratch getColumnScratch() {
         return SCRATCH.get();
     }
 
-    /** Populate {@code scratch} with column-invariant state for (x, z); call before the Y-loop. */
     public static void initColumnScratch(int globalX, int globalZ, float distanceFromOrigin, ColumnScratch s) {
         PerlinSimplexNoise hNoise = globalHOffsetNoise;
         PerlinSimplexNoise vNoise = globalVOffsetNoise;
@@ -732,7 +746,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         s.dimMaxY = BeyondTerrainState.getDimMaxY();
     }
 
-    /** Per-Y density with no allocation. Caller hoists {@code scratch} via {@link #initColumnScratch}. */
     public static double getTerrainDensityScratch(int globalY, ColumnScratch s) {
         double density = getTerrainDensity(globalY, s.hScales, s.vScales, s.cycleHeight,
                 s.wrappedXs, s.wrappedZs, useBandBlend ? s.bbLoIdx : null,
@@ -740,13 +753,15 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         return density * s.islandEnvelope;
     }
 
-    /** Per-Y solid check with no allocation. Mirrors {@link #isSolidTerrain} semantics. */
     public static boolean isSolidTerrainScratch(int globalY, ColumnScratch s) {
+        // The air-gap skip's bound: where even the noise's peak cannot reach the threshold, the noise is not sampled.
+        int shiftedY = globalY + TERRAIN_Y_OFFSET;
+        double ef = edgeGradientFactor(shiftedY, s.dimMinY, s.dimMaxY);
+        if (ef <= 0.0 || ef * cyclicDensity(shiftedY, s.cycleHeight) * MAX_NOISE * s.islandEnvelope <= s.threshold) return false;
         return getTerrainDensityScratch(globalY, s) > s.threshold;
     }
 
     public static boolean isSolidTerrain(int globalX, int globalY, int globalZ, float distanceFromOrigin) {
-        // Wrap before threshold to match generateEndTerrain's phase alignment.
         long packed = computeWrappedCoords(globalX, globalZ);
         int wrappedX = unpackWrappedX(packed);
         int wrappedZ = unpackWrappedZ(packed);
@@ -754,6 +769,20 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         double density = getTerrainDensity(globalX, globalY, globalZ);
 
         return density > threshold;
+    }
+
+    private static final ThreadLocal<Boolean> BUILDING_BEARD = ThreadLocal.withInitial(() -> Boolean.FALSE);
+
+    public static boolean buildingBeard() {
+        return BUILDING_BEARD.get();
+    }
+
+    static boolean the_beyond$onlySubtractive(List<CarveMask> masks) {
+        for (int mi = 0; mi < masks.size(); mi++) {
+            CarveMask cm = masks.get(mi);
+            if (!cm.carveOnly || cm.basePedestal) return false;
+        }
+        return true;
     }
 
     @Override
@@ -765,25 +794,29 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             int startX = chunkPos.getMinBlockX();
             int startZ = chunkPos.getMinBlockZ();
 
-            // Snapshot valid structure starts once per chunk (skips ~40k redundant
-            // Map.values() iterations and isValid() checks from the y-loop below).
-            List<StructureStart> validStarts = null;
-            for (StructureStart start : chunk.getAllStarts().values()) {
-                if (start.isValid()) {
-                    if (validStarts == null) validStarts = new ArrayList<>(4);
-                    validStarts.add(start);
-                }
+            Beardifier beard;
+            BUILDING_BEARD.set(Boolean.TRUE);
+            try {
+                beard = Beardifier.forStructuresInChunk(structureManager, chunkPos);
+            } finally {
+                BUILDING_BEARD.set(Boolean.FALSE);
             }
-            if (validStarts == null) validStarts = Collections.emptyList();
+            List<CarveMask> carveMasks = the_beyond$collectCarveMasks(structureManager, chunkPos);
 
-            Beardifier beard = Beardifier.forStructuresInChunk(structureManager, chunkPos);
+            // A Beardifier lift or carve mask can make a gap cell solid, so each cell bounds the noise by its own lifts.
+            double chunkBeardCap = Double.POSITIVE_INFINITY;
+            if (the_beyond$onlySubtractive(carveMasks)
+                    && !structureManager.startsForStructure(chunkPos,
+                            p -> p.terrainAdaptation() != TerrainAdjustment.NONE).iterator().hasNext()) {
+                chunkBeardCap = 0.0;
+            }
 
+            long t0 = carveMasks.isEmpty() ? 0L : System.nanoTime();
             for (int x = 0; x < 16; x++) {
                 for (int z = 0; z < 16; z++) {
                     int globalX = startX + x;
                     int globalZ = startZ + z;
 
-                    // Auroracite floor: placed by AuroraciteLayerFeature, not here.
                     float distanceFromOrigin = (float) Math.sqrt((double) globalX * globalX + (double) globalZ * globalZ);
 
                     if (distanceFromOrigin <= islandRadius + 50) {
@@ -791,10 +824,11 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                     }
 
                     else if (distanceFromOrigin >= 650) {
-                      generateEndTerrain(chunk, globalX, globalZ, distanceFromOrigin, validStarts, beard);
+                      generateEndTerrain(chunk, globalX, globalZ, distanceFromOrigin, beard, carveMasks, chunkBeardCap);
                     }
                 }
             }
+            if (!carveMasks.isEmpty()) BeyondGenDiagnostics.carveChunkDone(System.nanoTime() - t0);
 
             return chunk;
         });
@@ -829,9 +863,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
     }
 
-    private void generateEndTerrain(ChunkAccess chunk, int globalX, int globalZ, float distanceFromOrigin, List<StructureStart> validStarts, Beardifier beard) {
-        // Column-invariant scratch: computeOctaveFields warp + cycle/threshold + band state
-        // (shared with getBaseHeight; same args ⇒ identical values).
+    private void generateEndTerrain(ChunkAccess chunk, int globalX, int globalZ, float distanceFromOrigin, Beardifier beard, List<CarveMask> carveMasks, double beardCap) {
         ColumnScratch s = SCRATCH.get();
         initColumnScratch(globalX, globalZ, distanceFromOrigin, s);
         double cycleHeight = s.cycleHeight;
@@ -841,35 +873,843 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
         final int dimMinY = BeyondTerrainState.getDimMinY();
         final int dimMaxY = BeyondTerrainState.getDimMaxY();
-        // useBandBlend is constant during a column — hoist to drop the per-Y volatile read+branch.
         final boolean bb = useBandBlend;
         final int[] bbLo = bb ? s.bbLoIdx : null;
         final double[] bbT = bb ? s.bbT : null;
-        // Reused per-column context (Beardifier.compute reads only blockX/Y/Z) — no per-Y alloc.
         final BeardCtx bc = new BeardCtx();
         bc.x = globalX;
         bc.z = globalZ;
-        // Skip the 32-block edgeGradient zero bands at top/bottom — density is forced 0 there.
+        long tb = carveMasks.isEmpty() ? 0L : System.nanoTime();
+        final BeyondStructureCarver.ColumnCarveState carve =
+                BeyondStructureCarver.beginColumn(carveMasks, globalX, globalZ, s);
+        if (!carveMasks.isEmpty()) BeyondGenDiagnostics.BEGIN_NANOS.add(System.nanoTime() - tb);
+        BeyondStructureCarver.the_beyond$logCeilApron();
+        BeyondStructureCarver.the_beyond$logCarveBranches();
+        BeyondStructureCarver.the_beyond$logRim();
+        // Embedded (crashed ships): no beard_thin lift over the hull, so the island buries it instead of raising a platform.
+        boolean suppressBeard = false;
+        for (int mi = 0; mi < carveMasks.size(); mi++) {
+            CarveMask m = carveMasks.get(mi);
+            if (m.carveOnly && globalX >= m.oX - 16 && globalX < m.oX + m.w + 16
+                    && globalZ >= m.oZ - 16 && globalZ < m.oZ + m.d + 16) { suppressBeard = true; break; }
+        }
+        // loopStart/loopEnd skip the 32-block edgeGradient zero bands at top/bottom, where density is forced 0.
         final int loopStart = dimMinY + 33;
         final int loopEnd = dimMaxY - 32;
+        // Beard lift clamped non-negative: its gouging half is dropped, since the carve below handles clearing.
+        final boolean noBeard = suppressBeard;
+        final java.util.function.IntToDoubleFunction beardAt =
+                yy -> { if (noBeard) return 0.0; bc.y = yy; return Math.max(0.0, beard.compute(bc)); };
         for (int y = loopStart; y < loopEnd; y++) {
-            double density = getTerrainDensity(y, s.hScales, s.vScales, cycleHeight,
-                    s.wrappedXs, s.wrappedZs, bbLo, bbT, dimMinY, dimMaxY);
-
-            // Vanilla beardification (additive): solidify columns under structure pieces
-            // with terrain_adaptation != none, alongside Beyond's pancake stamp.
-            bc.y = y;
-            double beardDelta = beard.compute(bc);
-            double finalDensity = density + beardDelta;
-
-            if (finalDensity > baseThreshold) {
+            if (the_beyond$placesStoneAt(y, s, cycleHeight, baseThreshold, beardCap, beardAt, carve))
                 chunk.setBlockState(mutable.set(globalX, y, globalZ), Blocks.END_STONE.defaultBlockState(), false);
-            }
         }
     }
 
-    /** Mutable {@link DensityFunction.FunctionContext} reused down a column; Beardifier.compute
-     *  reads only blockX/Y/Z so a per-Y allocation is unnecessary. */
+    static boolean the_beyond$placesStoneAt(int y, ColumnScratch s, double cycleHeight, double baseThreshold,
+            double beardCap, java.util.function.IntToDoubleFunction beardAt,
+            BeyondStructureCarver.ColumnCarveState carve) {
+        boolean placed = the_beyond$placesStoneCore(y, s, cycleHeight, baseThreshold, beardCap, beardAt, carve);
+        if (placed && carve != null) carve.notePlaced(y);
+        return placed;
+    }
+
+    private static boolean the_beyond$placesStoneCore(int y, ColumnScratch s, double cycleHeight, double baseThreshold,
+            double beardCap, java.util.function.IntToDoubleFunction beardAt,
+            BeyondStructureCarver.ColumnCarveState carve) {
+        return the_beyond$placesStoneBase(y, s, cycleHeight, baseThreshold, beardCap, beardAt, carve)
+                || (carve != null && carve.liftKeeps(y) && the_beyond$liftedSolid(y, s, cycleHeight, baseThreshold, carve));
+    }
+
+    /** The island's density read the lift lower down, so its relief rises whole and only a hard clear removes it. */
+    private static boolean the_beyond$liftedSolid(int y, ColumnScratch s, double cycleHeight, double threshold,
+            BeyondStructureCarver.ColumnCarveState carve) {
+        double ys = y - carve.liftL;
+        int y0 = (int) Math.floor(ys);
+        double fr = ys - y0;
+        double d = (1.0 - fr) * the_beyond$islandDensity(y0, s, cycleHeight) + fr * the_beyond$islandDensity(y0 + 1, s, cycleHeight);
+        if (d <= threshold) return false;
+        return !(carve.inCarveBand(y) && !carve.pedestalBandAt(y) && carve.carvePenaltyAt(y, s) == Double.POSITIVE_INFINITY);
+    }
+
+    private static double the_beyond$islandDensity(int globalY, ColumnScratch s, double cycleHeight) {
+        int shiftedY = globalY + TERRAIN_Y_OFFSET;
+        double ef = edgeGradientFactor(shiftedY, s.dimMinY, s.dimMaxY);
+        return ef <= 0.0 ? 0.0 : noiseDensity(shiftedY, s, ef, cyclicDensity(shiftedY, cycleHeight));
+    }
+
+    private static boolean the_beyond$placesStoneBase(int y, ColumnScratch s, double cycleHeight, double baseThreshold,
+            double beardCap, java.util.function.IntToDoubleFunction beardAt,
+            BeyondStructureCarver.ColumnCarveState carve) {
+        if (carve != null && carve.foundationOrLipFillAt(y)) return true;
+        double density, beardDelta, baseBeardDelta;
+        if (beardCap == Double.POSITIVE_INFINITY) {
+            int shiftedY = y + TERRAIN_Y_OFFSET;
+            double ef = edgeGradientFactor(shiftedY, s.dimMinY, s.dimMaxY);
+            if (ef <= 0.0) return false;
+            beardDelta = beardAt.applyAsDouble(y);
+            baseBeardDelta = carve != null ? carve.baseBeardDeltaAt(y) : 0.0;
+            double cyc = cyclicDensity(shiftedY, cycleHeight);
+            // Summed in the order of the density below, so rounding cannot pass a cell this bound skips.
+            if (ef * cyc * MAX_NOISE + beardDelta + baseBeardDelta <= baseThreshold) return false;
+            density = noiseDensity(shiftedY, s, ef, cyc);
+        } else {
+            density = terrainDensityOrSkip(y, s, cycleHeight, baseThreshold, beardCap);
+            if (density == AIR_SENTINEL) return false;
+            beardDelta = beardAt.applyAsDouble(y);
+            baseBeardDelta = carve != null ? carve.baseBeardDeltaAt(y) : 0.0;
+        }
+        double finalDensity = density + beardDelta + baseBeardDelta;
+        if (finalDensity <= baseThreshold) return false;
+
+        if (carve != null && carve.inCarveBand(y) && !carve.pedestalBandAt(y)) {
+            double penalty = carve.carvePenaltyAt(y, s);
+            if (penalty == Double.POSITIVE_INFINITY) return false;
+            // Skirt never cuts a cell any beard fills, or it would carve holes into a beard-lifted ground connection.
+            if (penalty > 0.0 && baseBeardDelta <= 0.0 && beardDelta <= 0.0) {
+                finalDensity -= penalty;
+                return finalDensity > baseThreshold;
+            }
+        }
+        return true;
+    }
+
+    /** Per-column union scratch, thread-local and grown on demand so the hot loop allocates nothing after warm-up. */
+    static final class CarveBits {
+        int[] dxz = new int[512], lo = new int[512], hi = new int[512], gLo = new int[512];
+        boolean[] seat = new boolean[512], filled = new boolean[512], dist = new boolean[512], base = new boolean[512];
+        CarveMask[] mask = new CarveMask[512];
+        int[] d3 = new int[512];
+        int[] baseNat = new int[512], baseFloor = new int[512];
+        int[] d2 = new int[512];
+        int[] colX = new int[512], colZ = new int[512];
+        boolean[] buriedAbove = new boolean[512];
+        boolean[] corr = new boolean[512];
+        boolean[] fly = new boolean[512];
+        boolean[] hug = new boolean[512];
+        int[] capTop = new int[512];
+        void ensure(int cap) {
+            if (cap <= dxz.length) return;
+            int c = Math.max(cap, dxz.length * 2);
+            dxz = java.util.Arrays.copyOf(dxz, c); lo = java.util.Arrays.copyOf(lo, c); hi = java.util.Arrays.copyOf(hi, c);
+            gLo = java.util.Arrays.copyOf(gLo, c); seat = java.util.Arrays.copyOf(seat, c); filled = java.util.Arrays.copyOf(filled, c);
+            dist = java.util.Arrays.copyOf(dist, c); base = java.util.Arrays.copyOf(base, c);
+            mask = java.util.Arrays.copyOf(mask, c); d3 = java.util.Arrays.copyOf(d3, c);
+            baseNat = java.util.Arrays.copyOf(baseNat, c); baseFloor = java.util.Arrays.copyOf(baseFloor, c);
+            d2 = java.util.Arrays.copyOf(d2, c);
+            colX = java.util.Arrays.copyOf(colX, c); colZ = java.util.Arrays.copyOf(colZ, c);
+            buriedAbove = java.util.Arrays.copyOf(buriedAbove, c);
+            corr = java.util.Arrays.copyOf(corr, c);
+            fly = java.util.Arrays.copyOf(fly, c);
+            hug = java.util.Arrays.copyOf(hug, c);
+            capTop = java.util.Arrays.copyOf(capTop, c);
+        }
+    }
+    static final ThreadLocal<CarveBits> CARVE_BITS = ThreadLocal.withInitial(CarveBits::new);
+
+    /** Per-column occupancy of the real footprint, not the box, so clearing never cuts a cube around a sparse structure. */
+    public static final class CarveMask {
+        final int oX, oZ, w, d;   // footprint origin + size, in columns
+        final long[] occ;  // w*d bits, set where a piece's footprint covers the column
+        final int gLo, gHi;        // overall solid Y-range across the structure's pieces (gLo = the byte Y-origin)
+        final short[] colLoOff, colHiOff;
+        final long[] filledOcc;
+        final boolean seated;
+        final boolean distributed;
+        final boolean layerDistributed;
+        final int foundationDepth; // SEATED: support reach below gLo (= profile.flushTolerance)
+        final int filledHoles;     // diagnostic only
+        final byte[] dt3;
+        final int dt3OX, dt3OZ, dt3W, dt3D, dt3YLo, dt3Layers;   // padded grid origin/size (all 0 when dt3 == null)
+        final BoundingBox baseBox;
+        boolean carveOnly;
+        boolean hugTerrain;
+        boolean basePedestal;
+        @org.jetbrains.annotations.Nullable ResourceLocation structureKey;
+        volatile boolean planKeptOutLogged;
+        boolean floating;
+        int pedLoY = Integer.MAX_VALUE;
+        int[] boxTop;
+        int[] boxBot;
+        boolean hasBoxAt(int x, int z) {
+            if (boxTop == null) return false;
+            int i = x - oX, j = z - oZ;
+            if (i < 0 || i >= w || j < 0 || j >= d) return false;
+            return boxTop[i + j * w] != Integer.MIN_VALUE;
+        }
+        /** Per column, 1 + the floor's height above gLo when its piece does not stand on the start piece's floor, else 0. */
+        short[] floorOff;
+        int floorFor(int x, int z, boolean base) {
+            int seat = baseBox.minY();
+            if (base || hugTerrain || floorOff == null) return seat;
+            int i = x - oX, j = z - oZ;
+            if (i < 0 || i >= w || j < 0 || j >= d) return seat;
+            int f = floorOff[i + j * w];
+            return f == 0 ? seat : gLo + f - 1;
+        }
+        boolean hasOwnFloor(int x, int z) {
+            if (hugTerrain || floorOff == null) return false;
+            int i = x - oX, j = z - oZ;
+            return i >= 0 && i < w && j >= 0 && j < d && floorOff[i + j * w] != 0;
+        }
+        int[] roomRoof;
+        int roomRoofAt(int x, int z) {
+            if (roomRoof == null) return Integer.MIN_VALUE;
+            int i = x - oX, j = z - oZ;
+            return i >= 0 && i < w && j >= 0 && j < d ? roomRoof[i + j * w] : Integer.MIN_VALUE;
+        }
+        /** The piece boxes the lift keeps out of: a buried piece's box is left out, its margin being ground. */
+        int[] liftBoxTop, liftBoxBot;
+        boolean insideLiftBoxAt(int x, int y, int z) {
+            if (liftBoxTop == null) return insideBoxAt(x, y, z);
+            int i = x - oX, j = z - oZ;
+            if (i < 0 || i >= w || j < 0 || j >= d) return false;
+            int c = i + j * w;
+            return liftBoxTop[c] != Integer.MIN_VALUE && y >= liftBoxBot[c] && y <= liftBoxTop[c];
+        }
+        it.unimi.dsi.fastutil.longs.LongOpenHashSet buriedInterior;
+        boolean inBuriedInterior(int x, int y, int z) {
+            return buriedInterior != null && buriedInterior.contains(net.minecraft.core.BlockPos.asLong(x, y, z));
+        }
+        /** Every piece's own box. The per-column spans merge boxes stacked on different islands into one pillar. */
+        BoundingBox[] pieceBoxes;
+        boolean insideBoxAt(int x, int y, int z) {
+            if (boxTop == null) return false;
+            int i = x - oX, j = z - oZ;
+            if (i < 0 || i >= w || j < 0 || j >= d) return false;
+            int c = i + j * w;
+            return boxTop[c] != Integer.MIN_VALUE && y >= boxBot[c] && y <= boxTop[c];
+        }
+
+        boolean pieceUnderStart(int x, int z) {
+            if (boxBot == null || baseBox == null) return true;
+            int i = x - oX, j = z - oZ;
+            if (i < 0 || i >= w || j < 0 || j >= d) return false;
+            int c = i + j * w;
+            return boxTop[c] != Integer.MIN_VALUE && boxBot[c] < baseBox.minY();
+        }
+        long[] corridorOcc;
+        int[] wallLo;
+        CarveMask(int oX, int oZ, int w, int d, long[] occ, short[] colLoOff, short[] colHiOff,
+                  long[] filledOcc, int gLo, int gHi, boolean seated, boolean distributed, boolean layerDistributed, int foundationDepth, int filledHoles,
+                  byte[] dt3, int dt3OX, int dt3OZ, int dt3W, int dt3D, int dt3YLo, int dt3Layers, BoundingBox baseBox) {
+            this.oX = oX; this.oZ = oZ; this.w = w; this.d = d; this.occ = occ;
+            this.colLoOff = colLoOff; this.colHiOff = colHiOff; this.filledOcc = filledOcc;
+            this.gLo = gLo; this.gHi = gHi; this.seated = seated; this.distributed = distributed; this.layerDistributed = layerDistributed; this.foundationDepth = foundationDepth;
+            this.filledHoles = filledHoles;
+            this.dt3 = dt3; this.dt3OX = dt3OX; this.dt3OZ = dt3OZ; this.dt3W = dt3W; this.dt3D = dt3D; this.dt3YLo = dt3YLo; this.dt3Layers = dt3Layers;
+            this.baseBox = baseBox;
+        }
+        // False when baseBox is null.
+        boolean inBaseFootprint(int x, int z) {
+            if (baseBox == null) return false;
+            int m = BEARD_LAT_REACH;
+            return x >= baseBox.minX() - m && x <= baseBox.maxX() + m
+                && z >= baseBox.minZ() - m && z <= baseBox.maxZ() + m;
+        }
+        // DT3_CAP + 1 outside the padded grid or without a field, and the carve falls back to the 2.5D ellipse
+        int dt3At(int x, int y, int z) {
+            if (dt3 == null) return DT3_CAP + 1;
+            int i = x - dt3OX, j = z - dt3OZ;
+            if (i < 0 || i >= dt3W || j < 0 || j >= dt3D) return DT3_CAP + 1;
+            int L = y - dt3YLo;
+            if (L < 0 || L >= dt3Layers) return DT3_CAP + 1;
+            return dt3[(L * dt3D + j) * dt3W + i] & 0xFF;
+        }
+        boolean isFilled(int bit) { return filledOcc != null && (filledOcc[bit >> 6] & (1L << (bit & 63))) != 0; }
+        boolean isCorridor(int bit) { return corridorOcc != null && (corridorOcc[bit >> 6] & (1L << (bit & 63))) != 0; }
+        int colLo(int bit) { return gLo + (colLoOff[bit] & 0xFFFF); }
+        int colHi(int bit) { return gLo + (colHiOff[bit] & 0xFFFF); }
+
+        long[] groundFoot;
+        long[] groundRaised;
+        long[] groundPad;
+        int groundFloorY = Integer.MIN_VALUE;
+        private volatile CityGroundPlan groundPlan;
+        private volatile boolean groundPlanDone;
+
+        int soleAt(int x, int z) {
+            if (groundFoot == null) return Integer.MIN_VALUE;
+            int i = x - oX, j = z - oZ;
+            if (i < 0 || i >= w || j < 0 || j >= d) return Integer.MIN_VALUE;
+            int bit = i + j * w;
+            if ((groundFoot[bit >> 6] & (1L << (bit & 63))) == 0) return Integer.MIN_VALUE;
+            boolean up = groundRaised != null && (groundRaised[bit >> 6] & (1L << (bit & 63))) != 0;
+            return groundFloor() + (up ? 1 : 0);
+        }
+
+        boolean padAt(int x, int z) {
+            if (groundPad == null) return false;
+            int i = x - oX, j = z - oZ;
+            if (i < 0 || i >= w || j < 0 || j >= d) return false;
+            int bit = i + j * w;
+            return (groundPad[bit >> 6] & (1L << (bit & 63))) != 0;
+        }
+
+        int groundFloor() {
+            return groundFoot != null && groundFloorY != Integer.MIN_VALUE ? groundFloorY : baseBox.minY();
+        }
+
+        @org.jetbrains.annotations.Nullable
+        CityGroundPlan groundPlan() {
+            if (!basePedestal || baseBox == null || floating) return null;
+            if (groundPlanDone) return groundPlan;
+            synchronized (this) {
+                if (!groundPlanDone && groundFoot == null) {
+                    groundPlanDone = true;
+                    BeyondStructureCarver.the_beyond$logNoGroundFoot(this);
+                }
+                if (!groundPlanDone) {
+                    ColumnScratch probe = new ColumnScratch();
+                    int[] col = { Integer.MIN_VALUE, Integer.MIN_VALUE };
+                    // The start's box, which every chunk carving the start intersects, is the mask less its pad.
+                    int pad = BeyondStructureCarver.ENVELOPE_PAD;
+                    BoundingBox reach = new BoundingBox(oX + pad, baseBox.minY(), oZ + pad,
+                            oX + w - 1 - pad, baseBox.maxY(), oZ + d - 1 - pad);
+                    CityGroundPlan p = CityGroundPlan.compute(baseBox, reach, groundFloor(),
+                            this::soleAt, this::padAt,
+                            (x, y, z) -> {
+                                if (col[0] != x || col[1] != z) {
+                                    initColumnScratch(x, z, (float) Math.sqrt((double) x * x + (double) z * z), probe);
+                                    col[0] = x; col[1] = z;
+                                }
+                                return isSolidTerrainScratch(y, probe);
+                            },
+                            BeyondStructureCarver::the_beyond$padLobe, BeyondStructureCarver::the_beyond$liftWave);
+                    groundPlan = p;
+                    groundPlanDone = true;
+                    BeyondStructureCarver.the_beyond$logGroundPlan(this, p);
+                }
+            }
+            return groundPlan;
+        }
+
+        private volatile long[] courtyardBits;
+
+        /** A column of the start box that walls close in from its edge: the only place a pedestal's deck still fills. */
+        boolean courtyard(int x, int z) {
+            long[] bits = courtyardBits;
+            if (bits == null) {
+                synchronized (this) {
+                    if (courtyardBits == null) courtyardBits = computeCourtyard();
+                    bits = courtyardBits;
+                }
+            }
+            int i = x - oX, j = z - oZ;
+            if (i < 0 || i >= w || j < 0 || j >= d) return false;
+            int bit = i + j * w;
+            return (bits[bit >> 6] & (1L << (bit & 63))) != 0;
+        }
+
+        private long[] computeCourtyard() {
+            long[] out = new long[((w * d) + 63) >> 6];
+            if (baseBox == null) return out;
+            int top = groundFloor() + 3;
+            int bx0 = baseBox.minX(), bz0 = baseBox.minZ(), bw = baseBox.getXSpan(), bd = baseBox.getZSpan();
+            boolean[] open = new boolean[bw * bd], reached = new boolean[bw * bd];
+            int[] stack = new int[bw * bd];
+            int sp = 0;
+            for (int bj = 0; bj < bd; bj++) {
+                for (int bi = 0; bi < bw; bi++) {
+                    int i = bx0 + bi - oX, j = bz0 + bj - oZ, c = bi + bj * bw;
+                    int bit = i + j * w;
+                    // An arch overhead does not close a yard: only a column standing from under floor + 3 is a wall.
+                    boolean wall = i >= 0 && i < w && j >= 0 && j < d && (occ[bit >> 6] & (1L << (bit & 63))) != 0
+                            && !isFilled(bit) && (wallLo != null ? wallLo[bit] : colLo(bit)) < top;
+                    open[c] = !wall;
+                    if (open[c] && (bi == 0 || bj == 0 || bi == bw - 1 || bj == bd - 1)) { reached[c] = true; stack[sp++] = c; }
+                }
+            }
+            while (sp > 0) {
+                int c = stack[--sp], bi = c % bw, bj = c / bw;
+                if (bi > 0 && open[c - 1] && !reached[c - 1]) { reached[c - 1] = true; stack[sp++] = c - 1; }
+                if (bi < bw - 1 && open[c + 1] && !reached[c + 1]) { reached[c + 1] = true; stack[sp++] = c + 1; }
+                if (bj > 0 && open[c - bw] && !reached[c - bw]) { reached[c - bw] = true; stack[sp++] = c - bw; }
+                if (bj < bd - 1 && open[c + bw] && !reached[c + bw]) { reached[c + bw] = true; stack[sp++] = c + bw; }
+            }
+            for (int c = 0; c < bw * bd; c++) {
+                if (!open[c] || reached[c]) continue;
+                int i = bx0 + c % bw - oX, j = bz0 + c / bw - oZ;
+                if (i < 0 || i >= w || j < 0 || j >= d) continue;
+                int bit = i + j * w;
+                out[bit >> 6] |= 1L << (bit & 63);
+            }
+            return out;
+        }
+
+        /** 0 unknown, 1 open, 2 island rock right over the bit's top. Races only ever write the same value. */
+        private byte[] rockOverTopMemo;
+
+        boolean rockOverTop(int x, int z, ColumnScratch probe) {
+            int bit = (x - oX) + (z - oZ) * w;
+            byte[] memo = rockOverTopMemo;
+            if (memo == null) rockOverTopMemo = memo = new byte[w * d];
+            byte v = memo[bit];
+            if (v != 0) return v == 2;
+            initColumnScratch(x, z, (float) Math.sqrt((double) x * x + (double) z * z), probe);
+            boolean solid = isSolidTerrainScratch(colHi(bit) + 1, probe);
+            memo[bit] = (byte) (solid ? 2 : 1);
+            return solid;
+        }
+        // 16-bit offset covers the full build height: a tower stacked >255 above gLo won't clamp and go un-carved.
+        static void encodeColumnSpans(long[] occ, int[] cLo, int[] cHi, int gLo, short[] colLoOff, short[] colHiOff, int n) {
+            for (int bit = 0; bit < n; bit++) {
+                if ((occ[bit >> 6] & (1L << (bit & 63))) == 0) continue;
+                int lo = cLo[bit] - gLo, hi = cHi[bit] - gLo;
+                if (lo < 0) lo = 0;
+                if (lo > 0xFFFF) lo = 0xFFFF;
+                if (hi > 0xFFFF) hi = 0xFFFF;
+                if (hi < lo) hi = lo;
+                colLoOff[bit] = (short) lo;
+                colHiOff[bit] = (short) hi;
+            }
+        }
+        static byte[] buildDt3(int w, int d, int gLo, int gHi, int dt3W, int dt3D, int dt3YLo, int dt3Layers,
+                               IntArrayList blockI, IntArrayList blockJ, IntArrayList blockY,
+                               long[] occ, int[] cLo, int[] cHi, boolean[] hasBlock) {
+            if (dt3W <= 0 || dt3D <= 0 || dt3Layers <= 0 || gHi < gLo) return null;
+            byte[] occ3 = new byte[dt3W * dt3D * dt3Layers];
+            java.util.Arrays.fill(occ3, (byte) DT3_CAP);
+            boolean seeded = false;
+            if (blockI != null) {
+                for (int k = 0, m = blockI.size(); k < m; k++) {
+                    int i = blockI.getInt(k) + DT3_CAP, j = blockJ.getInt(k) + DT3_CAP, L = blockY.getInt(k) - dt3YLo;
+                    if (i < 0 || i >= dt3W || j < 0 || j >= dt3D || L < 0 || L >= dt3Layers) continue;
+                    occ3[(L * dt3D + j) * dt3W + i] = 0;
+                    seeded = true;
+                }
+            }
+            // Occupied columns with no captured block: seed the whole slab to match the 2.5D model.
+            int n = w * d;
+            for (int bit = 0; bit < n; bit++) {
+                if ((occ[bit >> 6] & (1L << (bit & 63))) == 0) continue;
+                if (hasBlock != null && hasBlock[bit]) continue;   // already seeded by its real blocks
+                int i = (bit % w) + DT3_CAP, j = (bit / w) + DT3_CAP;
+                int yLo = cLo[bit], yHi = cHi[bit];
+                if (yHi < yLo) continue;
+                for (int y = yLo; y <= yHi; y++) {
+                    int L = y - dt3YLo;
+                    if (L < 0 || L >= dt3Layers) continue;
+                    occ3[(L * dt3D + j) * dt3W + i] = 0;
+                    seeded = true;
+                }
+            }
+            if (!seeded) return null;
+            chebyshevDT3(occ3, dt3W, dt3D, dt3Layers, DT3_CAP);
+            return occ3;
+        }
+        // An occupied column whose solid span doesn't reach y is transparent at y (flood passes through).
+        private static boolean wallAtY(long[] occ, int[] cLo, int[] cHi, int bit, int y) {
+            if ((occ[bit >> 6] & (1L << (bit & 63))) == 0) return false;
+            return cLo[bit] <= y && y <= cHi[bit];
+        }
+        // borderSource=true treats out-of-grid as a distance-0 source, so the erosion step never seals the exterior.
+        static void chebyshevDT(int[] dist, int w, int d, int cap, boolean borderSource) {
+            for (int z = 0; z < d; z++) {
+                for (int x = 0; x < w; x++) {
+                    int c = x + z * w, best = dist[c];
+                    if (best == 0) continue;
+                    if (x > 0)              { int v = dist[c - 1] + 1;     if (v < best) best = v; }
+                    if (z > 0)              { int v = dist[c - w] + 1;     if (v < best) best = v; }
+                    if (z > 0 && x > 0)     { int v = dist[c - w - 1] + 1; if (v < best) best = v; }
+                    if (z > 0 && x < w - 1) { int v = dist[c - w + 1] + 1; if (v < best) best = v; }
+                    if (borderSource && (x == 0 || z == 0) && best > 1) best = 1;
+                    if (best > cap) best = cap;
+                    dist[c] = best;
+                }
+            }
+            for (int z = d - 1; z >= 0; z--) {
+                for (int x = w - 1; x >= 0; x--) {
+                    int c = x + z * w, best = dist[c];
+                    if (best == 0) continue;
+                    if (x < w - 1)              { int v = dist[c + 1] + 1;     if (v < best) best = v; }
+                    if (z < d - 1)              { int v = dist[c + w] + 1;     if (v < best) best = v; }
+                    if (z < d - 1 && x < w - 1) { int v = dist[c + w + 1] + 1; if (v < best) best = v; }
+                    if (z < d - 1 && x > 0)     { int v = dist[c + w - 1] + 1; if (v < best) best = v; }
+                    if (borderSource && (x == w - 1 || z == d - 1) && best > 1) best = 1;
+                    dist[c] = best;
+                }
+            }
+        }
+        // two-pass 3x3x3 distance transform with no border source, so outside the seeds it reads DT3_CAP, not 0
+        static void chebyshevDT3(byte[] dist, int w, int d, int layers, int cap) {
+            // forward pass, ascending: the 13 neighbours already visited
+            for (int L = 0; L < layers; L++) {
+                for (int z = 0; z < d; z++) {
+                    for (int x = 0; x < w; x++) {
+                        int c = (L * d + z) * w + x, best = dist[c] & 0xFF;
+                        if (best == 0) continue;
+                        for (int dL = -1; dL <= 0; dL++) {
+                            int lz = L + dL; if (lz < 0) continue;
+                            int dzMax = (dL == 0) ? 0 : 1;
+                            for (int dz = -1; dz <= dzMax; dz++) {
+                                int zz = z + dz; if (zz < 0 || zz >= d) continue;
+                                int dxMax = (dL == 0 && dz == 0) ? -1 : 1;   // dL==0,dz==0 → only dx=-1 (the in-row predecessor)
+                                for (int dx = -1; dx <= dxMax; dx++) {
+                                    int xx = x + dx; if (xx < 0 || xx >= w) continue;
+                                    int v = (dist[(lz * d + zz) * w + xx] & 0xFF) + 1;
+                                    if (v < best) best = v;
+                                }
+                            }
+                        }
+                        if (best > cap) best = cap;
+                        dist[c] = (byte) best;
+                    }
+                }
+            }
+            // backward pass, descending: the mirrored 13 neighbours
+            for (int L = layers - 1; L >= 0; L--) {
+                for (int z = d - 1; z >= 0; z--) {
+                    for (int x = w - 1; x >= 0; x--) {
+                        int c = (L * d + z) * w + x, best = dist[c] & 0xFF;
+                        if (best == 0) continue;
+                        for (int dL = 0; dL <= 1; dL++) {
+                            int lz = L + dL; if (lz >= layers) continue;
+                            int dzMin = (dL == 0) ? 0 : -1;
+                            for (int dz = dzMin; dz <= 1; dz++) {
+                                int zz = z + dz; if (zz < 0 || zz >= d) continue;
+                                int dxMin = (dL == 0 && dz == 0) ? 1 : -1;   // dL==0,dz==0 → only dx=+1 (the in-row successor)
+                                for (int dx = dxMin; dx <= 1; dx++) {
+                                    int xx = x + dx; if (xx < 0 || xx >= w) continue;
+                                    int v = (dist[(lz * d + zz) * w + xx] & 0xFF) + 1;
+                                    if (v < best) best = v;
+                                }
+                            }
+                        }
+                        if (best > cap) best = cap;
+                        dist[c] = (byte) best;
+                    }
+                }
+            }
+        }
+        /** Clears enclosed interior void per Y so islands can't form inside, bays wider than closeR stay terrain. */
+        static int fillEnclosed(long[] occ, long[] filledOcc, int w, int d, int[] cLo, int[] cHi, int gLo, int gHi, int closeR) {
+            if (w <= 2 || d <= 2 || gHi < gLo) return 0;
+            int n = w * d;
+            // only the longest contiguous trapped run per column, so the gap between two enclosures is never shafted
+            int[] runLo = new int[n], runHi = new int[n], bestLo = new int[n], bestHi = new int[n];
+            java.util.Arrays.fill(runLo, Integer.MAX_VALUE); java.util.Arrays.fill(runHi, Integer.MIN_VALUE);
+            java.util.Arrays.fill(bestLo, Integer.MAX_VALUE); java.util.Arrays.fill(bestHi, Integer.MIN_VALUE);
+            int cap = closeR + 1;
+            int[] dist = new int[n];
+            boolean[] wall = new boolean[n];
+            boolean[] inC = new boolean[n];   // morphological closing of the wall set at this y
+            boolean[] reached = new boolean[n];
+            int[] stack = new int[n];
+            for (int y = gLo; y <= gHi; y++) {
+                for (int c = 0; c < n; c++) { wall[c] = wallAtY(occ, cLo, cHi, c, y); dist[c] = wall[c] ? 0 : cap; }
+                chebyshevDT(dist, w, d, cap, false);
+                // erode to the closing, then put the raw walls back, or the open border erodes real walls and the flood leaks
+                for (int c = 0; c < n; c++) dist[c] = (dist[c] > closeR) ? 0 : cap;
+                chebyshevDT(dist, w, d, cap, true);
+                for (int c = 0; c < n; c++) inC[c] = dist[c] > closeR || wall[c];
+                // Flood the open space (complement of the closed set) from the envelope border, 4-conn.
+                java.util.Arrays.fill(reached, false);
+                int sp = 0;
+                for (int x = 0; x < w; x++) {
+                    int top = x, bot = x + (d - 1) * w;
+                    if (!inC[top] && !reached[top]) { reached[top] = true; stack[sp++] = top; }
+                    if (!inC[bot] && !reached[bot]) { reached[bot] = true; stack[sp++] = bot; }
+                }
+                for (int z = 0; z < d; z++) {
+                    int left = z * w, right = (w - 1) + z * w;
+                    if (!inC[left] && !reached[left]) { reached[left] = true; stack[sp++] = left; }
+                    if (!inC[right] && !reached[right]) { reached[right] = true; stack[sp++] = right; }
+                }
+                while (sp > 0) {
+                    int bit = stack[--sp];
+                    int x = bit % w, z = bit / w;
+                    if (x > 0)     { int nb = bit - 1; if (!reached[nb] && !inC[nb]) { reached[nb] = true; stack[sp++] = nb; } }
+                    if (x < w - 1) { int nb = bit + 1; if (!reached[nb] && !inC[nb]) { reached[nb] = true; stack[sp++] = nb; } }
+                    if (z > 0)     { int nb = bit - w; if (!reached[nb] && !inC[nb]) { reached[nb] = true; stack[sp++] = nb; } }
+                    if (z < d - 1) { int nb = bit + w; if (!reached[nb] && !inC[nb]) { reached[nb] = true; stack[sp++] = nb; } }
+                }
+                // an empty column clears here only when the flood cannot reach it, a reached one drains out and stays terrain
+                for (int bit = 0; bit < n; bit++) {
+                    if ((occ[bit >> 6] & (1L << (bit & 63))) != 0) continue;
+                    if (reached[bit]) continue;
+                    if (runHi[bit] == y - 1) { runHi[bit] = y; continue; }
+                    if (runHi[bit] >= runLo[bit] && (bestHi[bit] < bestLo[bit]
+                            || runHi[bit] - runLo[bit] > bestHi[bit] - bestLo[bit])) {
+                        bestLo[bit] = runLo[bit]; bestHi[bit] = runHi[bit];
+                    }
+                    runLo[bit] = y; runHi[bit] = y;
+                }
+            }
+            int filled = 0;
+            for (int bit = 0; bit < n; bit++) {
+                if (runHi[bit] >= runLo[bit] && (bestHi[bit] < bestLo[bit]
+                        || runHi[bit] - runLo[bit] > bestHi[bit] - bestLo[bit])) {
+                    bestLo[bit] = runLo[bit]; bestHi[bit] = runHi[bit];
+                }
+                if (bestHi[bit] < bestLo[bit]) continue;
+                occ[bit >> 6] |= (1L << (bit & 63));
+                filledOcc[bit >> 6] |= (1L << (bit & 63));
+                cLo[bit] = bestLo[bit]; cHi[bit] = bestHi[bit];
+                filled++;
+            }
+            return filled;
+        }
+        boolean occupied(int x, int z) {
+            int i = x - oX, j = z - oZ;
+            if (i < 0 || i >= w || j < 0 || j >= d) return false;
+            int bit = i + j * w;
+            return (occ[bit >> 6] & (1L << (bit & 63))) != 0;
+        }
+        int nearestOccupiedDist(int x, int z, int reach) {
+            if (occupied(x, z)) return 0;
+            int best = reach + 1;
+            for (int dz = -reach; dz <= reach; dz++) {
+                for (int dx = -reach; dx <= reach; dx++) {
+                    int c = Math.max(Math.abs(dx), Math.abs(dz));
+                    if (c >= best) continue;
+                    if (occupied(x + dx, z + dz)) best = c;
+                }
+            }
+            return best;
+        }
+        /** The column a fringe cell erodes toward, so the cut follows the local lobe height, -1 if none. */
+        int nearestOccupiedBit(int x, int z, int reach) {
+            if (x < oX - reach || x > oX + w - 1 + reach || z < oZ - reach || z > oZ + d - 1 + reach) return -1;
+            int i = x - oX, j = z - oZ;
+            if (i >= 0 && i < w && j >= 0 && j < d) {
+                int bit = i + j * w;
+                if ((occ[bit >> 6] & (1L << (bit & 63))) != 0) return bit;   // occupied at (x,z)
+            }
+            int best = reach + 1, bestBit = -1;
+            for (int dz = -reach; dz <= reach; dz++) {
+                for (int dx = -reach; dx <= reach; dx++) {
+                    int c = Math.max(Math.abs(dx), Math.abs(dz));
+                    if (c >= best) continue;
+                    if (occupied(x + dx, z + dz)) { best = c; bestBit = (x + dx - oX) + (z + dz - oZ) * w; }
+                }
+            }
+            return bestBit;
+        }
+        // rings of growing r meet the nearest box first, so the d == 0 break and the lateral prune fire early
+        int collectOccupiedBits(int x, int z, int reach,
+                                int[] oDxz, int[] oLo, int[] oHi, int[] oGLo, boolean[] oSeat, boolean[] oFilled, boolean[] oDist,
+                                boolean[] oBase, CarveMask[] oMask, int[] oColX, int[] oColZ, int[] oD2, int n) {
+            return collectOccupiedBits(x, z, reach, oDxz, oLo, oHi, oGLo, oSeat, oFilled, oDist, oBase, oMask, oColX, oColZ, oD2, null, n);
+        }
+        int collectOccupiedBits(int x, int z, int reach,
+                                int[] oDxz, int[] oLo, int[] oHi, int[] oGLo, boolean[] oSeat, boolean[] oFilled, boolean[] oDist,
+                                boolean[] oBase, CarveMask[] oMask, int[] oColX, int[] oColZ, int[] oD2, boolean[] oCorr, int n) {
+            if (x < oX - reach || x > oX + w - 1 + reach || z < oZ - reach || z > oZ + d - 1 + reach) return n;
+            for (int r = 0; r <= reach; r++) {
+                for (int dz = -r; dz <= r; dz++) {
+                    boolean fullRow = (dz == -r || dz == r);  // top and bottom rows take every dx, middle rows only dx = ±r
+                    int step = fullRow ? 1 : Math.max(1, 2 * r);
+                    for (int dx = -r; dx <= r; dx += step) {
+                        int xx = x + dx - oX, zz = z + dz - oZ;
+                        if (xx < 0 || xx >= w || zz < 0 || zz >= d) continue;
+                        int bit = xx + zz * w;
+                        if ((occ[bit >> 6] & (1L << (bit & 63))) == 0) continue;
+                        oDxz[n] = r;
+                        oD2[n] = dx * dx + dz * dz;
+                        oLo[n] = colLo(bit); oHi[n] = colHi(bit); oGLo[n] = gLo; oSeat[n] = seated; oFilled[n] = isFilled(bit); oDist[n] = distributed;
+                        // distributed-gated so FLOATING/pure-SEATED stay base=false.
+                        oBase[n] = distributed && inBaseFootprint(x + dx, z + dz);
+                        oMask[n] = this;   // null dt3 ⇒ dt3At returns DT3_CAP+1
+                        oColX[n] = x + dx; oColZ[n] = z + dz;
+                        if (oCorr != null) oCorr[n] = isCorridor(bit);
+                        n++;
+                    }
+                }
+            }
+            return n;
+        }
+        public static CarveMask fromBlocks(int[][] entries, int[][] solid, BoundingBox baseBox,
+                                           boolean seated, int closeR, boolean distributed, boolean layerDistributed) {
+            int oX = Integer.MAX_VALUE, oZ = Integer.MAX_VALUE, mX = Integer.MIN_VALUE, mZ = Integer.MIN_VALUE;
+            int gLo = Integer.MAX_VALUE, gHi = Integer.MIN_VALUE;
+            for (int[] e : entries) {
+                oX = Math.min(oX, e[0]); oZ = Math.min(oZ, e[2]);
+                mX = Math.max(mX, e[0]); mZ = Math.max(mZ, e[2]);
+                gLo = Math.min(gLo, e[1]); gHi = Math.max(gHi, e[1]);
+            }
+            final int envPad = BeyondStructureCarver.ENVELOPE_PAD;
+            int w = mX - oX + 1 + 2 * envPad, d = mZ - oZ + 1 + 2 * envPad;
+            oX -= envPad; oZ -= envPad;
+            long[] occ = new long[((w * d) + 63) >> 6];
+            int[] cLo = new int[w * d], cHi = new int[w * d];
+            java.util.Arrays.fill(cLo, Integer.MAX_VALUE);
+            java.util.Arrays.fill(cHi, Integer.MIN_VALUE);
+            for (int[] e : entries) {
+                int bit = (e[0] - oX) + (e[2] - oZ) * w;
+                occ[bit >> 6] |= (1L << (bit & 63));
+                if (e[1] < cLo[bit]) cLo[bit] = e[1];
+                if (e[1] > cHi[bit]) cHi[bit] = e[1];
+            }
+            IntArrayList bI = null, bJ = null, bY = null;
+            boolean[] hasBlock = null;
+            if (distributed) {
+                bI = new IntArrayList(); bJ = new IntArrayList(); bY = new IntArrayList();
+                hasBlock = new boolean[w * d];
+                for (int[] q : solid) {
+                    int i = q[0] - oX, j = q[2] - oZ;
+                    if (i < 0 || i >= w || j < 0 || j >= d) continue;
+                    hasBlock[i + j * w] = true;
+                    bI.add(i); bJ.add(j); bY.add(q[1]);
+                }
+            }
+            long[] filledOcc = new long[((w * d) + 63) >> 6];
+            int filled = fillEnclosed(occ, filledOcc, w, d, cLo, cHi, gLo, gHi, closeR);
+            short[] colLoOff = new short[w * d], colHiOff = new short[w * d];
+            encodeColumnSpans(occ, cLo, cHi, gLo, colLoOff, colHiOff, w * d);
+            byte[] dt3 = null; int dt3OX = 0, dt3OZ = 0, dt3W = 0, dt3D = 0, dt3YLo = 0, dt3Layers = 0;
+            if (distributed) {
+                dt3OX = oX - DT3_CAP; dt3OZ = oZ - DT3_CAP; dt3W = w + 2 * DT3_CAP; dt3D = d + 2 * DT3_CAP;
+                dt3YLo = gLo - DT3_CAP; dt3Layers = (gHi - gLo) + 1 + 2 * DT3_CAP;
+                dt3 = buildDt3(w, d, gLo, gHi, dt3W, dt3D, dt3YLo, dt3Layers, bI, bJ, bY, occ, cLo, cHi, hasBlock);
+                if (dt3 == null) { dt3OX = 0; dt3OZ = 0; dt3W = 0; dt3D = 0; dt3YLo = 0; dt3Layers = 0; }
+            }
+            return new CarveMask(oX, oZ, w, d, occ, colLoOff, colHiOff, filledOcc, gLo, gHi, seated, distributed,
+                    layerDistributed, FOUNDATION_DEPTH, filled, dt3, dt3OX, dt3OZ, dt3W, dt3D, dt3YLo, dt3Layers,
+                    baseBox);
+        }
+
+        public static CarveMask fromBoxes(List<BoundingBox> boxes, boolean seated) {
+            return fromBoxes(boxes, seated, 0);
+        }
+        public static CarveMask fromBoxes(List<BoundingBox> boxes, boolean seated, int closeR) {
+            return fromBoxes(boxes, seated, closeR, false);
+        }
+        public static CarveMask fromBoxes(List<BoundingBox> boxes, boolean seated, int closeR, boolean distributed) {
+            return fromBoxes(boxes, seated, closeR, distributed, distributed);
+        }
+        public static CarveMask fromBoxes(List<BoundingBox> boxes, boolean seated, int closeR, boolean distributed, boolean layerDistributed) {
+            return fromBoxes(boxes, seated, closeR, distributed, layerDistributed, false);
+        }
+        /** {@code connectDetached} runs the real connector in buildMask's order, so its columns reach colLo/colHi and dt3. */
+        public static CarveMask fromBoxes(List<BoundingBox> boxes, boolean seated, int closeR, boolean distributed, boolean layerDistributed, boolean connectDetached) {
+            int oX = Integer.MAX_VALUE, oZ = Integer.MAX_VALUE, mX = Integer.MIN_VALUE, mZ = Integer.MIN_VALUE;
+            int gLo = Integer.MAX_VALUE, gHi = Integer.MIN_VALUE;
+            for (BoundingBox b : boxes) {
+                oX = Math.min(oX, b.minX()); oZ = Math.min(oZ, b.minZ());
+                mX = Math.max(mX, b.maxX()); mZ = Math.max(mZ, b.maxZ());
+                gLo = Math.min(gLo, b.minY()); gHi = Math.max(gHi, b.maxY());
+            }
+            final int envPad = BeyondStructureCarver.ENVELOPE_PAD;
+            int w = mX - oX + 1 + 2 * envPad, d = mZ - oZ + 1 + 2 * envPad;
+            oX -= envPad; oZ -= envPad;
+            long[] occ = new long[((w * d) + 63) >> 6];
+            int[] cLo = new int[w * d], cHi = new int[w * d];
+            java.util.Arrays.fill(cLo, Integer.MAX_VALUE);
+            java.util.Arrays.fill(cHi, Integer.MIN_VALUE);
+            for (BoundingBox b : boxes) {
+                for (int wz = b.minZ(); wz <= b.maxZ(); wz++) {
+                    for (int wx = b.minX(); wx <= b.maxX(); wx++) {
+                        int bit = (wx - oX) + (wz - oZ) * w;
+                        occ[bit >> 6] |= (1L << (bit & 63));
+                        if (b.minY() < cLo[bit]) cLo[bit] = b.minY();
+                        if (b.maxY() > cHi[bit]) cHi[bit] = b.maxY();
+                    }
+                }
+            }
+            long[] corrOcc = null;
+            if (connectDetached) {
+                int[] gy = { gLo, gHi };
+                corrOcc = new long[((w * d) + 63) >> 6];
+                BeyondStructureCarver.the_beyond$connectDetached(boxes, occ, cLo, cHi, w, d, gy, oX, oZ, corrOcc);
+                gLo = gy[0]; gHi = gy[1];
+            }
+            // Real-block seeds, so a lateral air gap between boxes stays far in true 3D instead of bridged by a column.
+            IntArrayList bI = null, bJ = null, bY = null; boolean[] hasBlock = null;
+            if (distributed) {
+                bI = new IntArrayList(); bJ = new IntArrayList(); bY = new IntArrayList();
+                hasBlock = new boolean[w * d];
+                for (BoundingBox b : boxes) {
+                    for (int wz = b.minZ(); wz <= b.maxZ(); wz++) {
+                        for (int wx = b.minX(); wx <= b.maxX(); wx++) {
+                            int i = wx - oX, j = wz - oZ;
+                            hasBlock[i + j * w] = true;
+                            for (int wy = b.minY(); wy <= b.maxY(); wy++) { bI.add(i); bJ.add(j); bY.add(wy); }
+                        }
+                    }
+                }
+            }
+            long[] filledOcc = new long[((w * d) + 63) >> 6];
+            int filled = fillEnclosed(occ, filledOcc, w, d, cLo, cHi, gLo, gHi, closeR);
+            short[] colLoOff = new short[w * d], colHiOff = new short[w * d];
+            encodeColumnSpans(occ, cLo, cHi, gLo, colLoOff, colHiOff, w * d);
+            byte[] dt3 = null; int dt3OX = 0, dt3OZ = 0, dt3W = 0, dt3D = 0, dt3YLo = 0, dt3Layers = 0;
+            if (distributed) {
+                dt3OX = oX - DT3_CAP; dt3OZ = oZ - DT3_CAP; dt3W = w + 2 * DT3_CAP; dt3D = d + 2 * DT3_CAP;
+                dt3YLo = gLo - DT3_CAP; dt3Layers = (gHi - gLo) + 1 + 2 * DT3_CAP;
+                dt3 = buildDt3(w, d, gLo, gHi, dt3W, dt3D, dt3YLo, dt3Layers, bI, bJ, bY, occ, cLo, cHi, hasBlock);
+                if (dt3 == null) { dt3OX = 0; dt3OZ = 0; dt3W = 0; dt3D = 0; dt3YLo = 0; dt3Layers = 0; }
+            }
+            CarveMask built = new CarveMask(oX, oZ, w, d, occ, colLoOff, colHiOff, filledOcc, gLo, gHi, seated, distributed, layerDistributed, FOUNDATION_DEPTH, filled,
+                    dt3, dt3OX, dt3OZ, dt3W, dt3D, dt3YLo, dt3Layers, boxes.isEmpty() ? null : boxes.get(0));
+            built.corridorOcc = corrOcc;
+            return built;
+        }
+    }
+
+    /** The carve constants and kernel live in BeyondStructureCarver, these thin forwarders keep callers unchanged. */
+    private final BeyondStructureCarver the_beyond$carver = new BeyondStructureCarver(this);
+
+    public List<CarveMask> the_beyond$collectCarveMasks(StructureManager sm, ChunkPos cp) {
+        return the_beyond$carver.the_beyond$collectCarveMasks(sm, cp);
+    }
+
+    public java.util.Collection<net.minecraft.world.level.levelgen.structure.StructureStart> the_beyond$knownStarts() {
+        return the_beyond$carver.the_beyond$knownStarts();
+    }
+
+    public BeyondStructureCarver.TerrainSnapshot the_beyond$snapshotCarveTerrain(ChunkAccess chunk, List<CarveMask> masks) {
+        return the_beyond$carver.the_beyond$snapshotCarveTerrain(chunk, masks);
+    }
+
+    public int the_beyond$dropCarveDebris(WorldGenLevel level, ChunkAccess chunk, List<CarveMask> masks,
+            BeyondStructureCarver.TerrainSnapshot snap) {
+        return the_beyond$carver.the_beyond$dropCarveDebris(level, chunk, masks, snap);
+    }
+    public void the_beyond$placeUnreferencedCarveStructures(net.minecraft.world.level.WorldGenLevel level,
+            StructureManager sm, ChunkAccess chunk) {
+        the_beyond$carver.the_beyond$placeUnreferencedCarveStructures(level, sm, chunk);
+    }
+    public boolean the_beyond$landmarkInForeignCavity(StructureManager sm, StructureStart self, ChunkPos decorChunk) {
+        return the_beyond$carver.the_beyond$landmarkInForeignCavity(sm, self, decorChunk);
+    }
+
+    public static final int STRUCT_FEATURE_MARGIN_DOWN = 6, STRUCT_FEATURE_MARGIN_UP = 2, STRUCT_FEATURE_MARGIN_LAT = 4;
+    /** Ground a gellid lake leaves between its fluid and any piece box. */
+    public static final int LAKE_PIECE_SHORE = 2;
+    public static boolean the_beyond$insideAnyPieceBox(List<CarveMask> masks, int x, int y, int z) {
+        for (int i = 0, n = masks.size(); i < n; i++) {
+            if (masks.get(i).insideBoxAt(x, y, z)) return true;
+        }
+        return false;
+    }
+
+    /** Inside a piece box or the ground under it, widened by the lake shore with rounded corners. */
+    public static boolean the_beyond$insideAnyPieceClearance(List<CarveMask> masks, int x, int y, int z) {
+        for (int i = 0, n = masks.size(); i < n; i++) {
+            BoundingBox[] boxes = masks.get(i).pieceBoxes;
+            if (boxes == null) continue;
+            for (BoundingBox b : boxes) {
+                if (y < b.minY() - STRUCT_FEATURE_MARGIN_DOWN || y > b.maxY() + STRUCT_FEATURE_MARGIN_UP) continue;
+                int dx = Math.max(0, Math.max(b.minX() - x, x - b.maxX()));
+                int dz = Math.max(0, Math.max(b.minZ() - z, z - b.maxZ()));
+                if (dx * dx + dz * dz <= LAKE_PIECE_SHORE * LAKE_PIECE_SHORE + 1) return true;
+            }
+        }
+        return false;
+    }
+
+    /** Uses the bbox, not occupancy: the gellid-void pool sits in the open interior an occupancy test would miss. */
+    public static boolean the_beyond$insideAnyStructureFootprint(List<CarveMask> masks, int x, int y, int z) {
+        for (int i = 0, n = masks.size(); i < n; i++) {
+            CarveMask m = masks.get(i);
+            if (x < m.oX - STRUCT_FEATURE_MARGIN_LAT || x >= m.oX + m.w + STRUCT_FEATURE_MARGIN_LAT
+                    || z < m.oZ - STRUCT_FEATURE_MARGIN_LAT || z >= m.oZ + m.d + STRUCT_FEATURE_MARGIN_LAT) continue;
+            if (y >= m.gLo - STRUCT_FEATURE_MARGIN_DOWN && y <= m.gHi + STRUCT_FEATURE_MARGIN_UP) return true;
+        }
+        return false;
+    }
+
     private static final class BeardCtx implements DensityFunction.FunctionContext {
         int x, y, z;
         @Override public int blockX() { return x; }
@@ -878,8 +1718,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     }
 
     private static double cyclicDensity(int y, double cycleHeight) {
-        // Math.floorMod-style for double: keeps normalizedY in [0, 1) for negative y too.
-        // Java's % returns sign of dividend, which would invert density modifier below y=0.
+        // floorMod-style: Java's % returns the dividend's sign, which would invert the modifier below y=0.
         double mod = ((y % cycleHeight) + cycleHeight) % cycleHeight;
         double normalizedY = mod / cycleHeight;
         if (normalizedY < 0.8) {
@@ -889,8 +1728,8 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         }
     }
 
-    private static double edgeGradient(double y, double noiseValue, int dimMinY, int dimMaxY) {
-        // 32-block buffer + 64-block fade at top/bottom (shiftedY = globalY+32).
+    /** Split out of edgeGradient with no rounding change, so the air-gap skip can bound the peak density. */
+    static double edgeGradientFactor(double y, int dimMinY, int dimMaxY) {
         final double bottomZeroY = dimMinY + 64;
         final double bottomFadeEnd = bottomZeroY + 64;
         final double topZeroY = dimMaxY;
@@ -906,12 +1745,15 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         }
 
         if (y >= topFadeStart) {
-            // Clamp to [0, 1]: y above topZeroY would otherwise flip sign and leak
-            // phantom solid biomes at high y in BeyondEndBiomeSource queries.
+            // Clamp: y above topZeroY would otherwise flip sign and leak phantom solid biomes at high y.
             gradientTop = Math.max(0.0, (topZeroY - y) / 64.0);
         }
 
-        return gradientBottom * gradientTop * noiseValue;
+        return gradientBottom * gradientTop;
+    }
+
+    private static double edgeGradient(double y, double noiseValue, int dimMinY, int dimMaxY) {
+        return edgeGradientFactor(y, dimMinY, dimMaxY) * noiseValue;
     }
 
     private static double globalNoiseOffset(double min, double max, double x, double z, PerlinSimplexNoise noise) {
@@ -919,7 +1761,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         return min + (max - min) * ((noiseValue + 1) / 2);
     }
 
-    /** Isotropic variant: averages noise at four 90° rotations to cancel lattice gradient bias. */
     private static double globalNoiseOffsetMultirotation(double min, double max, double x, double z, PerlinSimplexNoise noise) {
         double r0 = noise.getValue( x,  z, false);
         double r1 = noise.getValue(-z,  x, false);
@@ -929,7 +1770,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         return min + (max - min) * ((avg + 1) * 0.5);
     }
 
-    /** 3x3 spatial-blur variant: mixes decorrelated adjacent simplex cells. */
     private static double globalNoiseOffsetBlur3x3(double min, double max, double x, double z, PerlinSimplexNoise noise) {
         final double delta = 1.0; // one simplex cell in noise-space
         double sum = 0.0;
@@ -942,7 +1782,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         return min + (max - min) * ((avg + 1) * 0.5);
     }
 
-    /** Distance-adaptive variant: amplitude decays 1/r beyond {@code refRadius} to bound ∂h/∂x·r. */
     private static double globalNoiseOffsetDistanceAdaptive(
             double min, double max, double refRadius,
             int worldX, int worldZ, PerlinSimplexNoise noise) {
@@ -956,7 +1795,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         return mid + halfRange * atten * noiseValue;
     }
 
-    /** Local-wrap variant: ping-pong-wraps the input to {@code [0, wrapRange]} before sampling. */
     private static double globalNoiseOffsetLocalWrap(
             double min, double max, int wrapRange,
             int worldX, int worldZ, PerlinSimplexNoise noise) {
@@ -976,7 +1814,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         computeNoisesIfNotPresent(random);
 
         float distanceFromOrigin = (float) Math.sqrt((double) globalX * globalX + (double) globalZ * globalZ);
-        // Wrap first so F3 matches what chunk gen actually sees at the same coords.
         long packed = computeWrappedCoords(globalX, globalZ);
         int wrappedX = unpackWrappedX(packed);
         int wrappedZ = unpackWrappedZ(packed);
@@ -1011,6 +1848,22 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     public NoiseColumn getBaseColumn(int x, int z, LevelHeightAccessor height, RandomState random) {
         computeNoisesIfNotPresent(random);
         BeyondTerrainStateInternal.setDimBounds(height.getMinBuildHeight(), height.getMaxBuildHeight());
+        // far-field terrain is Beyond's own density, so column readers use it too or they see phantom vanilla terrain
+        double dist = Math.sqrt((double) x * x + (double) z * z);
+        if (dist >= 650.0 && BeyondTerrainState.isActive()) {
+            int minY = height.getMinBuildHeight();
+            int columnHeight = height.getHeight();
+            net.minecraft.world.level.block.state.BlockState[] states =
+                    new net.minecraft.world.level.block.state.BlockState[columnHeight];
+            net.minecraft.world.level.block.state.BlockState endStone = Blocks.END_STONE.defaultBlockState();
+            net.minecraft.world.level.block.state.BlockState air = Blocks.AIR.defaultBlockState();
+            ColumnScratch s = SCRATCH.get();
+            initColumnScratch(x, z, (float) dist, s);
+            for (int i = 0; i < columnHeight; i++) {
+                states[i] = isSolidTerrainScratch(minY + i, s) ? endStone : air;
+            }
+            return new NoiseColumn(minY, states);
+        }
         return super.getBaseColumn(x, z, height, random);
     }
 
@@ -1019,23 +1872,101 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         computeNoisesIfNotPresent(random);
         BeyondTerrainStateInternal.setDimBounds(level.getMinBuildHeight(), level.getMaxBuildHeight());
         super.buildSurface(level, structureManager, random, chunk);
+        try { the_beyond$skinStructureCover(structureManager, chunk); }
+        catch (Throwable t) {
+            if (BeyondGenDiagnostics.loggedMaskKeys.add("cover-skin-fail")) {
+                com.thebeyond.TheBeyond.LOGGER.warn("[Beyond] cover re-skin skipped: {}", t.toString());
+            }
+        }
+    }
+
+
+    private static final int COVER_SKIN_DEPTH = 2;
+    private static final int COVER_SKIN_LOOK = 12;
+    private static final int COVER_SKIN_MARGIN = BeyondStructureCarver.ENVELOPE_LAT;
+
+    private static int the_beyond$coverTop(ChunkAccess chunk, BlockPos.MutableBlockPos m, int x, int z, int top, int bottom) {
+        for (int y = top; y > bottom; y--) {
+            if (!chunk.getBlockState(m.set(x, y, z)).isAir()) return y;
+        }
+        return Integer.MIN_VALUE;
+    }
+
+    private static BlockState[] the_beyond$neighbourSkin(ChunkAccess chunk, BlockPos.MutableBlockPos m,
+            int lx, int lz, ChunkPos cp, int top, int bottom) {
+        for (int r = 1; r <= COVER_SKIN_LOOK; r++) {
+            for (int dz = -r; dz <= r; dz++) {
+                for (int dx = -r; dx <= r; dx++) {
+                    if (Math.max(Math.abs(dx), Math.abs(dz)) != r) continue;
+                    int nx = lx + dx, nz = lz + dz;
+                    if (nx < 0 || nx > 15 || nz < 0 || nz > 15) continue;
+                    int wx = cp.getMinBlockX() + nx, wz = cp.getMinBlockZ() + nz;
+                    int ny = the_beyond$coverTop(chunk, m, wx, wz, top, bottom);
+                    if (ny == Integer.MIN_VALUE) continue;
+                    BlockState st = chunk.getBlockState(m.set(wx, ny, wz));
+                    if (st.is(Blocks.END_STONE) || st.isAir()) continue;
+                    if (!st.isSolidRender(chunk, m)) continue;
+                    BlockState[] col = new BlockState[COVER_SKIN_DEPTH];
+                    for (int k = 0; k < COVER_SKIN_DEPTH; k++) {
+                        int sy = ny - k;
+                        col[k] = sy > bottom ? chunk.getBlockState(m.set(wx, sy, wz)) : null;
+                    }
+                    return col;
+                }
+            }
+        }
+        return null;
+    }
+
+    /** Re-skins a beard lift near a structure with a neighbour's surface, since the default block reads as a pale slab. */
+    private void the_beyond$skinStructureCover(StructureManager structureManager, ChunkAccess chunk) {
+        if (!BeyondTerrainState.isActive()) return;
+        ChunkPos cp = chunk.getPos();
+        List<CarveMask> masks = the_beyond$collectCarveMasks(structureManager, cp);
+        if (masks.isEmpty()) return;
+        BlockState def = Blocks.END_STONE.defaultBlockState();
+        BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
+        int top = chunk.getMaxBuildHeight() - 1, bottom = chunk.getMinBuildHeight();
+        for (int lx = 0; lx < 16; lx++) {
+            for (int lz = 0; lz < 16; lz++) {
+                int x = cp.getMinBlockX() + lx, z = cp.getMinBlockZ() + lz;
+                boolean near = false;
+                for (int i = 0; i < masks.size() && !near; i++) {
+                    CarveMask mk = masks.get(i);
+                    for (int dz = -COVER_SKIN_MARGIN; dz <= COVER_SKIN_MARGIN && !near; dz++) {
+                        for (int dx = -COVER_SKIN_MARGIN; dx <= COVER_SKIN_MARGIN && !near; dx++) {
+                            near = mk.hasBoxAt(x + dx, z + dz);
+                        }
+                    }
+                }
+                if (!near) continue;
+                int y = the_beyond$coverTop(chunk, m, x, z, top, bottom);
+                if (y == Integer.MIN_VALUE || !chunk.getBlockState(m.set(x, y, z)).is(Blocks.END_STONE)) continue;
+                BlockState[] skin = the_beyond$neighbourSkin(chunk, m, lx, lz, cp, top, bottom);
+                if (skin == null) continue;
+                // Course for course: repeating the top block at every depth would double the biome's surface.
+                for (int i = 0; i < COVER_SKIN_DEPTH; i++) {
+                    BlockState st = skin[i];
+                    if (st == null || st.isAir()) break;
+                    if (!chunk.getBlockState(m.set(x, y - i, z)).is(Blocks.END_STONE)) break;
+                    chunk.setBlockState(m.set(x, y - i, z), st, false);
+                }
+            }
+        }
     }
 
     @Override
     public void applyBiomeDecoration(WorldGenLevel level, ChunkAccess chunk, StructureManager structureManager) {
         BeyondTerrainStateInternal.setDimBounds(level.getMinBuildHeight(), level.getMaxBuildHeight());
         super.applyBiomeDecoration(level, chunk, structureManager);
-        // Auroracite floor: owned by AuroraciteLayerFeature + AuroraciteLayerProtectionMixin.
 
-        // Clear column (0,0) above the central dome so the (0,0) heightmap re-primes
-        // onto Beyond's END_STONE — else the exit portal spawns at the foreign-pushed
-        // column top. One column only; gated on isActive().
+        // Clear column (0,0) so its heightmap re-primes on Beyond's stone, or the exit portal spawns on a foreign top.
         if (BeyondTerrainState.isActive()) {
             ChunkPos cp = chunk.getPos();
             if (cp.x == 0 && cp.z == 0) {
                 BlockPos.MutableBlockPos mpos = new BlockPos.MutableBlockPos();
                 int top = chunk.getMaxBuildHeight() - 1;
-                int floor = 60; // first y above Beyond's central island dome top at (0,0)
+                int floor = 60; // first y above the central island dome top at (0,0)
                 net.minecraft.world.level.block.state.BlockState air = Blocks.AIR.defaultBlockState();
                 for (int y = top; y >= floor; y--) {
                     mpos.set(0, y, 0);
@@ -1047,34 +1978,4 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         }
     }
 
-    /** Sums beardification from every valid structure start overlapping {@code (x, y, z)}. */
-    private double calculateStructureAdaptation(List<StructureStart> validStarts, int x, int y, int z) {
-        if (validStarts.isEmpty()) return 0.0;
-
-        double adaptation = 0.0;
-        // Indexed loop avoids Iterator allocation.
-        for (int i = 0, n = validStarts.size(); i < n; i++) {
-            adaptation += calculateStructureInfluence(validStarts.get(i), x, y, z);
-        }
-        return adaptation;
-    }
-
-    private double calculateStructureInfluence(StructureStart start, int x, int y, int z) {
-        BoundingBox bounds = start.getBoundingBox();
-
-        int dx = Math.max(Math.max(bounds.minX() - x, x - bounds.maxX()), 0);
-        int dy = Math.max(Math.max(bounds.minY() - y, y - bounds.maxY()), 0);
-        int dz = Math.max(Math.max(bounds.minZ() - z, z - bounds.maxZ()), 0);
-
-        int distance = dx + dy + dz;
-
-        int influenceRadius = Math.max(bounds.getXSpan(), bounds.getZSpan()) * 2;
-
-        if (distance < influenceRadius) {
-            double normalized = 1.0 - ((double)distance / influenceRadius);
-            return normalized * normalized * 0.3;
-        }
-
-        return 0.0;
-    }
 }

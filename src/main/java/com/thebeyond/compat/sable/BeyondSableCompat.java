@@ -60,5 +60,16 @@ public final class BeyondSableCompat {
             sub.logicalPose().transformPositionInverse(v);
             return new Vec3(v.x, v.y, v.z);
         }
+
+        @Override
+        public Vec3 toVisibleDir(Level level, BlockPos containedPos, Vec3 localDir) {
+            SubLevel sub = Sable.HELPER.getContaining(level, containedPos);
+            if (sub == null) return null;
+            // Difference of two projected points ~1 block apart: translation cancels, leaving the pose rotation.
+            Vec3 c = containedPos.getCenter();
+            Vec3 from = Sable.HELPER.projectOutOfSubLevel(level, c);
+            Vec3 to = Sable.HELPER.projectOutOfSubLevel(level, c.add(localDir.x, localDir.y, localDir.z));
+            return to.subtract(from);
+        }
     }
 }

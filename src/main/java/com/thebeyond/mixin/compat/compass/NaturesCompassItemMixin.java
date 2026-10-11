@@ -3,7 +3,7 @@ package com.thebeyond.mixin.compat.compass;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
-import com.thebeyond.common.knowledge.HiddenContentFilter;
+import com.thebeyond.common.awareness.HiddenContentFilter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -14,8 +14,7 @@ import org.spongepowered.asm.mixin.injection.At;
 
 import java.util.List;
 
-/** Filters Nature's Compass results per-player. Wraps {@code getAllowedBiomeKeys} —
- *  the downstream xpLevels/dimensionKeys derive from it, so one wrap is enough. */
+/** Filters Nature's Compass per player, getAllowedBiomeKeys feeds everything downstream so one wrap is enough. */
 @Pseudo
 @Mixin(targets = "com.chaosthedude.naturescompass.items.NaturesCompassItem", remap = false)
 public abstract class NaturesCompassItemMixin {

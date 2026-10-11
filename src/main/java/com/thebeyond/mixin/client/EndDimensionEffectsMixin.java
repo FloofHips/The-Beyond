@@ -10,9 +10,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Forces Beyond's {@link EndSpecialEffects} for any dim type whose {@code effectsLocation}
- *  path is {@code "the_end"}. BetterEnd/BCLib otherwise wins the registration race for
- *  {@code minecraft:the_end} via {@code RegisterDimensionSpecialEffectsEvent}. */
+/** Forces Beyond's End effects for any the_end effects path, BetterEnd or BCLib would otherwise win the race. */
 @Mixin(DimensionSpecialEffects.class)
 public class EndDimensionEffectsMixin {
 

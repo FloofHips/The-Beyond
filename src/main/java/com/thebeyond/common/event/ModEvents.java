@@ -2,7 +2,11 @@ package com.thebeyond.common.event;
 
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.entity.*;
+import com.thebeyond.common.entity.util.livingblock.LivingBlock;
 import com.thebeyond.common.registry.BeyondEntityTypes;
+import com.thebeyond.common.camera.Grade;
+import com.thebeyond.common.camera.Grades;
+import net.neoforged.neoforge.registries.DataPackRegistryEvent;
 import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -16,13 +20,18 @@ public class ModEvents {
     @SubscribeEvent
     public static void registerAttributes(EntityAttributeCreationEvent event){
         event.put(BeyondEntityTypes.ENDERGLOP.get(), EnderglopEntity.createAttributes().build());
+        event.put(BeyondEntityTypes.STALKER.get(), StalkerEntity.createAttributes().build());
         event.put(BeyondEntityTypes.ENADRAKE.get(), EnadrakeEntity.createAttributes().build());
         event.put(BeyondEntityTypes.ENATIOUS_TOTEM.get(), EnatiousTotemEntity.createAttributes().build());
         event.put(BeyondEntityTypes.LANTERN.get(), LanternEntity.createAttributes().build());
         event.put(BeyondEntityTypes.ABYSSAL_NOMAD.get(), AbyssalNomadEntity.createAttributes().build());
+        event.put(BeyondEntityTypes.BRUBBLE.get(), BrubbleEntity.createAttributes().build());
+        event.put(BeyondEntityTypes.BAUBLE.get(), BaubleEntity.createAttributes().build());
+        event.put(BeyondEntityTypes.TRINKET.get(), TrinketEntity.createAttributes().build());
+        event.put(BeyondEntityTypes.SIBLING.get(), SiblingEntity.createAttributes().build());
     }
 
-    /** Registered on both sides; a Dist.CLIENT-only registration would skip dedicated servers. */
+    /** Registered on both sides, a client-only registration would skip dedicated servers. */
     @SubscribeEvent
     public static void registerSpawnPlacements(RegisterSpawnPlacementsEvent event) {
         event.register(
@@ -40,5 +49,19 @@ public class ModEvents {
                 AbyssalNomadEntity::checkMonsterSpawnRules,
                 RegisterSpawnPlacementsEvent.Operation.OR
         );
+
+        event.register(
+                BeyondEntityTypes.BAUBLE.get(),
+                SpawnPlacementTypes.ON_GROUND,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                BaubleEntity::checkSpawnRules,
+                RegisterSpawnPlacementsEvent.Operation.REPLACE
+        );
+    }
+
+    /** Synced datapack registry of snapshot filters, from data/<ns>/the_beyond/grade/*.json. */
+    @SubscribeEvent
+    public static void registerDatapackRegistries(DataPackRegistryEvent.NewRegistry event) {
+        event.dataPackRegistry(Grades.REGISTRY, Grade.CODEC, Grade.NETWORK_CODEC);
     }
 }

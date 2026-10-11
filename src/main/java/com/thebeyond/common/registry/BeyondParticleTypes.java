@@ -2,10 +2,7 @@ package com.thebeyond.common.registry;
 
 import com.mojang.serialization.MapCodec;
 import com.thebeyond.TheBeyond;
-import com.thebeyond.client.particle.CircleColorTransitionOptions;
-import com.thebeyond.client.particle.CrosshairColorTransitionOptions;
-import com.thebeyond.client.particle.PixelColorTransitionOptions;
-import com.thebeyond.client.particle.SmokeColorTransitionOptions;
+import com.thebeyond.client.particle.*;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -20,11 +17,35 @@ public class BeyondParticleTypes {
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> GLOP = PARTICLE_TYPES.register("glop", () -> new SimpleParticleType(false) {});
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> AURORACITE_STEP = PARTICLE_TYPES.register("auroracite_step", () -> new SimpleParticleType(false) {});
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> VOID_FLAME = PARTICLE_TYPES.register("void_flame", () -> new SimpleParticleType(false) {});
+    public static final DeferredHolder<ParticleType<?>, ParticleType<BellowJetOptions>> BELLOW_JET = PARTICLE_TYPES.register("bellow_jet", BeyondParticleTypes::createBellowJetType);
 
     public static final DeferredHolder<ParticleType<?>, ParticleType<SmokeColorTransitionOptions>> SMOKE = PARTICLE_TYPES.register("smoke", BeyondParticleTypes::createSmokeParticleType);
     public static final DeferredHolder<ParticleType<?>, ParticleType<PixelColorTransitionOptions>> PIXEL = PARTICLE_TYPES.register("pixel", BeyondParticleTypes::createPixelParticleType);
     public static final DeferredHolder<ParticleType<?>, ParticleType<CrosshairColorTransitionOptions>> CROSSHAIR = PARTICLE_TYPES.register("crosshair", BeyondParticleTypes::createCrosshairParticleType);
     public static final DeferredHolder<ParticleType<?>, ParticleType<CircleColorTransitionOptions>> CIRCLE = PARTICLE_TYPES.register("circle", BeyondParticleTypes::createCircleParticleType);
+
+    public static final DeferredHolder<ParticleType<?>, ParticleType<CloudColorTransitionOptions>> CLOUD = PARTICLE_TYPES.register("cloud", BeyondParticleTypes::createCloudParticleType);
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> BITE = PARTICLE_TYPES.register("bite", () -> new SimpleParticleType(false) {});
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> WIND = PARTICLE_TYPES.register("wind", () -> new SimpleParticleType(false) {});
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> SOUL = PARTICLE_TYPES.register("soul", () -> new SimpleParticleType(false) {});
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> SHIMMER = PARTICLE_TYPES.register("shimmer", () -> new SimpleParticleType(false) {});
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> ARROW = PARTICLE_TYPES.register("arrow", () -> new SimpleParticleType(false) {});
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> EXCLAMATION = PARTICLE_TYPES.register("exclamation", () -> new SimpleParticleType(false) {});
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> BLOCK_POINT = PARTICLE_TYPES.register("block_point", () -> new SimpleParticleType(false) {});
+
+    private static ParticleType<CloudColorTransitionOptions> createCloudParticleType() {
+        return new ParticleType<CloudColorTransitionOptions>(false) {
+            @Override
+            public MapCodec<CloudColorTransitionOptions> codec() {
+                return CloudColorTransitionOptions.CODEC;
+            }
+
+            @Override
+            public StreamCodec<? super RegistryFriendlyByteBuf, CloudColorTransitionOptions> streamCodec() {
+                return CloudColorTransitionOptions.STREAM_CODEC;
+            }
+        };
+    }
 
     private static ParticleType<SmokeColorTransitionOptions> createSmokeParticleType() {
         return new ParticleType<SmokeColorTransitionOptions>(false) {
@@ -64,6 +85,20 @@ public class BeyondParticleTypes {
             @Override
             public StreamCodec<? super RegistryFriendlyByteBuf, CrosshairColorTransitionOptions> streamCodec() {
                 return CrosshairColorTransitionOptions.STREAM_CODEC;
+            }
+        };
+    }
+
+    private static ParticleType<BellowJetOptions> createBellowJetType() {
+        return new ParticleType<BellowJetOptions>(false) {
+            @Override
+            public MapCodec<BellowJetOptions> codec() {
+                return BellowJetOptions.CODEC;
+            }
+
+            @Override
+            public StreamCodec<? super RegistryFriendlyByteBuf, BellowJetOptions> streamCodec() {
+                return BellowJetOptions.STREAM_CODEC;
             }
         };
     }

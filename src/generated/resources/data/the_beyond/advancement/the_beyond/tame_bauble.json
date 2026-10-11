@@ -1,0 +1,26 @@
+{
+  "parent": "the_beyond:the_beyond/collect_pearl",
+  "criteria": {
+    "tame_bauble": {
+      "trigger": "the_beyond:tame_bauble"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.the_beyond.tame_bauble.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:cyan_dye"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.tame_bauble.title"
+    }
+  },
+  "requirements": [
+    [
+      "tame_bauble"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

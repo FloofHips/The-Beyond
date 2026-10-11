@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "B": {
+      "item": "the_beyond:prismuth"
+    },
+    "O": {
+      "tag": "the_beyond:obiroots"
+    },
+    "P": {
+      "tag": "the_beyond:mirrors"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    }
+  },
+  "pattern": [
+    "BBB",
+    "OPO",
+    "ORO"
+  ],
+  "result": {
+    "count": 1,
+    "id": "the_beyond:projector"
+  }
+}

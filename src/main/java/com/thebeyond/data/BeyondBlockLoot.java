@@ -7,9 +7,7 @@ import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
-import net.minecraft.world.level.storage.loot.entries.AlternativesEntry;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.functions.SetItemCountFunction;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
@@ -28,6 +26,11 @@ public class BeyondBlockLoot extends BlockLootSubProvider {
     @Override
     protected void generate() {
         dropSelf(BeyondBlocks.ENGRAVED_END_STONE.get());
+        dropOther(BeyondBlocks.UNSTABLE_NACRE.get(), BeyondBlocks.NACRE.get());
+        dropOther(BeyondBlocks.RAKED_NACRE.get(), BeyondBlocks.NACRE.get());
+        dropOther(BeyondBlocks.PALE_RAKED_NACRE.get(), BeyondBlocks.PALE_NACRE.get());
+        dropOther(BeyondBlocks.RICH_RAKED_NACRE.get(), BeyondBlocks.RICH_NACRE.get());
+        dropOther(BeyondBlocks.BRITTLE_METAL.get(), BeyondItems.BRITTLE_METAL_SHEET.get());
 
         dropSelf(BeyondBlocks.ZYMOTE.get());
         dropSelf(BeyondBlocks.PORTELAIN.get());
@@ -36,8 +39,10 @@ public class BeyondBlockLoot extends BlockLootSubProvider {
         dropSelf(BeyondBlocks.PORTELAIN_MOSAIC.get());
         dropSelf(BeyondBlocks.PORTELAIN_TILES.get());
         dropSelf(BeyondBlocks.GUSTER.get());
+        dropSelf(BeyondBlocks.BELLOW.get());
         dropSelf(BeyondBlocks.OBIROOT_SPROUT.get());
         dropSelf(BeyondBlocks.XYLEM.get());
+        dropSelf(BeyondBlocks.VILET.get());
 
         dropSelf(BeyondBlocks.POLAR_PILLAR.get());
         dropSelf(BeyondBlocks.POLAR_ANTENNA.get());
@@ -46,15 +51,65 @@ public class BeyondBlockLoot extends BlockLootSubProvider {
         dropSelf(BeyondBlocks.ENADRAKE_FLARE.get());
         dropSelf(BeyondBlocks.FERROJELLY_BLOCK.get());
 
+        dropSelf(BeyondBlocks.BLEEDING_THORN.get());
+        dropSelf(BeyondBlocks.BLINDING_THORN.get());
+
+        dropSelf(BeyondBlocks.NACRE.get());
+        dropSelf(BeyondBlocks.PALE_NACRE.get());
+        dropSelf(BeyondBlocks.RICH_NACRE.get());
+
+        dropSelf(BeyondBlocks.COBBLED_PEARL.get());
+        dropSelf(BeyondBlocks.COBBLED_PEARL_BRICKS.get());
+        dropSelf(BeyondBlocks.COBBLED_PEARL_BRICK_WALL.get());
+        dropSelf(BeyondBlocks.COBBLED_PEARL_BRICK_STAIRS.get());
+        dropSelf(BeyondBlocks.PEARL_BRICKS.get());
+        dropSelf(BeyondBlocks.PEARL_BRICK_WALL.get());
+        dropSelf(BeyondBlocks.PEARL_BRICK_STAIRS.get());
+
+        dropSelf(BeyondBlocks.PEARL_BRICKS.get());
+        dropSelf(BeyondBlocks.PEARL_BRICK_STAIRS.get());
+        dropSelf(BeyondBlocks.PEARL_BRICK_WALL.get());
+
+        dropSelf(BeyondBlocks.PEARL_CHIMES.get());
+        dropSelf(BeyondBlocks.ORNATE_MIRROR.get());
+        dropSelf(BeyondBlocks.MIRROR.get());
+
+        dropSelf(BeyondBlocks.GAUSSANITE.get());
+        dropSelf(BeyondBlocks.GAUSS_VENT.get());
+        dropSelf(BeyondBlocks.BELLOW.get());
+        dropSelf(BeyondBlocks.BRITTLE_METAL_BLOCK.get());
+        dropSelf(BeyondBlocks.BRITTLE_METAL_STAIRS.get());
+        dropSelf(BeyondBlocks.PROJECTOR.get());
+
+        dropSelf(BeyondBlocks.PERKA_STALK.get());
+        dropSelf(BeyondBlocks.PERKA_STALK_MOUTH.get());
+
+        // Pearl mirror: drops itself AND preserves its reflective-face configuration. copy_state
+        // writes the per-face booleans into the item's block_state component, which BlockItem
+        // re-applies on placement, so breaking + replacing keeps the exact face setup.
+        //add(BeyondBlocks.MIRROR.get(), block -> LootTable.lootTable().withPool(
+        //        applyExplosionCondition(block, LootPool.lootPool()
+        //                .setRolls(ConstantValue.exactly(1.0F))
+        //                .add(LootItem.lootTableItem(block)
+        //                        .apply(CopyBlockState.copyState(block)
+        //                                .copy(MirrorBlock.NORTH).copy(MirrorBlock.EAST)
+        //                                .copy(MirrorBlock.SOUTH).copy(MirrorBlock.WEST)
+        //                                .copy(MirrorBlock.UP).copy(MirrorBlock.DOWN))))));
+
         add(BeyondBlocks.VOID_CRYSTAL.get(), createSilkTouchOnlyTable(BeyondItems.VOID_CRYSTAL.get()));
+        add(BeyondBlocks.BEDAZZLED_END_STONE.get(), createSilkTouchOnlyTable(BeyondBlocks.BEDAZZLED_END_STONE.get()));
         add(BeyondBlocks.ENADRAKE_HUT.get(), createSilkTouchOnlyTable(BeyondBlocks.ENADRAKE_HUT.asItem()));
         add(BeyondBlocks.MAGNOLILLY.get(), createOreDrop(BeyondBlocks.MAGNOLILLY.get(), BeyondItems.FERROPETAL.get()));
 
-        add(BeyondBlocks.OBIROOT.get(), block -> createSilkTouchDispatchTable(
+        add(BeyondBlocks.POLAR_BULB.get(), block -> createSilkTouchDispatchTable(
+                block,
+                LootItem.lootTableItem(BeyondBlocks.POLAR_PILLAR.get())
+        ));
+        add(BeyondBlocks.OBIROOT.get(), block -> createSilkTouchOrShearsDispatchTable(
                 block,
                 LootItem.lootTableItem(BeyondBlocks.XYLEM.get())
         ));
-        add(BeyondBlocks.PEEPING_OBIROOT.get(), block -> createSilkTouchDispatchTable(
+        add(BeyondBlocks.PEEPING_OBIROOT.get(), block -> createSilkTouchOrShearsDispatchTable(
                 block,
                 LootItem.lootTableItem(BeyondBlocks.XYLEM.get())
         ));
@@ -62,11 +117,22 @@ public class BeyondBlockLoot extends BlockLootSubProvider {
                 block,
                 LootItem.lootTableItem(Blocks.END_STONE)
         ));
+        add(BeyondBlocks.PEARL.get(), block -> createSilkTouchDispatchTable(
+                block,
+                LootItem.lootTableItem(BeyondBlocks.COBBLED_PEARL.get())
+        ));
         add(BeyondBlocks.REACHING_ZYMOTE.get(), block -> createShearsDispatchTable(block, LootItem.lootTableItem(block).apply(SetItemCountFunction.setCount(ConstantValue.exactly(1.0F)))));
+        add(BeyondBlocks.VILE_GROWTH.get(), block -> createShearsDispatchTable(block, LootItem.lootTableItem(block).apply(SetItemCountFunction.setCount(ConstantValue.exactly(1.0F)))));
         add(BeyondBlocks.CREEPING_ZYMOTE.get(), createMultifaceBlockDrops(BeyondBlocks.CREEPING_ZYMOTE.get(), HAS_SHEARS));
 
         add(BeyondBlocks.PORTELAIN_DOOR.get(), this::createDoorTable);
+        add(BeyondBlocks.BRITTLE_METAL_DOOR.get(), this::createDoorTable);
+
         add(BeyondBlocks.PORTELAIN_SLAB.get(), this::createSlabItemTable);
+        add(BeyondBlocks.BRITTLE_METAL_SLAB.get(), this::createSlabItemTable);
+        add(BeyondBlocks.PEARL_SLAB.get(), this::createSlabItemTable);
+        add(BeyondBlocks.PEARL_BRICK_SLAB.get(), this::createSlabItemTable);
+        add(BeyondBlocks.COBBLED_PEARL_BRICK_SLAB.get(), this::createSlabItemTable);
     }
 
     @Override

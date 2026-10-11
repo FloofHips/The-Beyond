@@ -28,7 +28,8 @@
         "the_beyond:obiroot"
     ],
     [
-	"the_beyond:enadrake_village"
+	"the_beyond:enadrake_village",
+      "minecraft:end_gateway_return"
     ],
     [
 	"the_beyond:creeping_zymote"

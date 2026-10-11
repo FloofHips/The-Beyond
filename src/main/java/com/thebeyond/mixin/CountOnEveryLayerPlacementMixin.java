@@ -1,6 +1,6 @@
 package com.thebeyond.mixin;
 
-import com.thebeyond.api.worldgen.BeyondTerrainState;
+import com.thebeyond.common.worldgen.BeyondEndChunkGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.valueproviders.IntProvider;
@@ -20,8 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-/** Column scan emitting one position per solid→non-solid transition, replacing vanilla's
- *  single-tier {@code findOnGroundYPosition} which only sees the topmost pancake. */
+/** One position per solid-to-open transition, where vanilla's scan only sees the topmost layer. */
 @Mixin(CountOnEveryLayerPlacement.class)
 public abstract class CountOnEveryLayerPlacementMixin {
     @Shadow @Final private IntProvider count;
@@ -33,7 +32,7 @@ public abstract class CountOnEveryLayerPlacementMixin {
     private void the_beyond$multiLayerScan(
             PlacementContext ctx, RandomSource random, BlockPos origin,
             CallbackInfoReturnable<Stream<BlockPos>> cir) {
-        if (!BeyondTerrainState.isActive()) return;
+        if (!(ctx.generator() instanceof BeyondEndChunkGenerator)) return;
 
         int baseX = origin.getX();
         int baseZ = origin.getZ();
@@ -68,7 +67,7 @@ public abstract class CountOnEveryLayerPlacementMixin {
         cir.setReturnValue(positions.stream());
     }
 
-    /** Y above the {@code targetLayer}-th solid→non-solid transition (top-down, 0=topmost). MAX_VALUE if none. Fluids count as non-solid so lake surfaces produce their own layer. */
+    /** Y just above the targetLayer-th transition from the top, MAX_VALUE if absent, with fluids as open so lakes count. */
     private static int findLayerSurfaceY(PlacementContext ctx, int x, int z,
                                          int targetLayer, int minY, int maxY) {
         int[] surfaces = getOrComputeSurfaces(ctx, x, z, minY, maxY);

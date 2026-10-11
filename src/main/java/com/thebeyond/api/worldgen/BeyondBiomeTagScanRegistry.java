@@ -7,8 +7,7 @@ import org.jetbrains.annotations.ApiStatus;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-/** Extra biome tags addons register for Beyond's End auto-discovery, beyond the
- *  built-in vanilla/convention tags. */
+/** Extra biome tags addons register for the End discovery, on top of the vanilla and convention tags. */
 @ApiStatus.Experimental
 public final class BeyondBiomeTagScanRegistry {
     private static final Set<TagKey<Biome>> EXTRA_TAGS = new CopyOnWriteArraySet<>();

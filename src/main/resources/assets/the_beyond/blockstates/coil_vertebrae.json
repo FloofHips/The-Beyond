@@ -1,0 +1,14 @@
+{
+  "variants": {
+    "axis=z": {
+      "model": "the_beyond:block/coil_vertebrae_horizontal",
+      "y": 90
+    },
+    "axis=y": {
+      "model": "the_beyond:block/coil_vertebrae"
+    },
+    "axis=x": {
+      "model": "the_beyond:block/coil_vertebrae_horizontal"
+    }
+  }
+}

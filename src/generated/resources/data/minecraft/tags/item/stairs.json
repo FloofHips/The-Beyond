@@ -1,5 +1,10 @@
 {
   "values": [
-    "the_beyond:portelain_stairs"
+    "the_beyond:portelain_stairs",
+    "the_beyond:brittle_metal_stairs",
+    "the_beyond:memor_stairs",
+    "the_beyond:pearl_stairs",
+    "the_beyond:pearl_brick_stairs",
+    "the_beyond:cobbled_pearl_brick_stairs"
   ]
 }

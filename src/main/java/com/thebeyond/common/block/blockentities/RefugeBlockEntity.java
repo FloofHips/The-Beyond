@@ -1,19 +1,14 @@
 package com.thebeyond.common.block.blockentities;
 
-import com.google.common.cache.LoadingCache;
-import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.minecraft.client.MinecraftClient;
+import com.thebeyond.client.menu.RefugeMenu;
 import com.thebeyond.client.particle.CrosshairColorTransitionOptions;
 import com.thebeyond.common.block.RefugeBlock;
-import com.thebeyond.common.registry.BeyondAttachments;
-import com.thebeyond.common.registry.BeyondBlockEntities;
-import com.thebeyond.common.registry.BeyondBlocks;
-import com.thebeyond.common.registry.BeyondCriteriaTriggers;
+import com.thebeyond.common.registry.*;
+import com.thebeyond.data.BeyondDataMaps;
 import com.thebeyond.util.ColorUtils;
 import com.thebeyond.util.RefugeChunkData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.Rotations;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.BlockParticleOption;
@@ -27,7 +22,6 @@ import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.MenuProvider;
@@ -39,15 +33,12 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.PlayerHeadItem;
-import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.block.entity.EnchantingTableBlockEntity;
 import net.minecraft.world.level.block.entity.SkullBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
@@ -57,8 +48,6 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
@@ -278,15 +267,15 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     private void placeArm(BlockPos pos) {
-        level.playSound(null, pos, SoundEvents.WOOD_BREAK, SoundSource.BLOCKS);
-        level.playSound(null, this.worldPosition, SoundEvents.AXE_STRIP, SoundSource.BLOCKS);
+        level.playSound(null, pos, BeyondSoundEvents.ARM_PLACE.get(), SoundSource.BLOCKS, 1, 0.8f);
+        level.playSound(null, this.worldPosition, BeyondSoundEvents.ROOTS_CREAKING.get(), SoundSource.BLOCKS);
         level.setBlock(pos, BeyondBlocks.OBIROOT_ARM.get().defaultBlockState(), 3);
         if (level instanceof ServerLevel serverLevel)
             serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.OBIROOT.get().defaultBlockState()), pos.getX(), pos.getY(), pos.getZ(), 10, 0.5, 0.5, 0.5, 0.05);
     }
 
     private void activate() {
-        level.playSound(null, this.worldPosition, SoundEvents.AXE_STRIP, SoundSource.BLOCKS);
+        level.playSound(null, this.worldPosition, BeyondSoundEvents.REFUGE_READY.get(), SoundSource.BLOCKS);
         if (level instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.OBIROOT.get().defaultBlockState()), this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ(), 120, 1f, 3, 1f, 0.05);
             serverLevel.sendParticles(ColorUtils.voidOptions, this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ(), 12, 1f, 3, 1f, 0.05);
@@ -365,8 +354,18 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
 
     public void setMode(byte i, RefugeBlockEntity be) {
         be.updateAllChunks(i);
+        if (i != (byte)-1) {
+            be.level.playSound(null, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), BeyondSoundEvents.REFUGE_ACTIVATE, SoundSource.BLOCKS, 1.5f,1);
+        }
         if (!be.hasBeenUsed) hasBeenUsed = true;
+
+        if (level instanceof ServerLevel serverLevel) {
+            for (ServerPlayer player : serverLevel.getPlayers(p -> p.distanceToSqr(getBlockPos().getCenter()) < 8 * 8)) {
+                BeyondCriteriaTriggers.USE_REFUGE.get().trigger(player);
+            }
+        }
     }
+
     public byte getMode() {
         return currentMode;
     }
@@ -407,7 +406,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         }
 
         if (level == null) return;
-        level.playSound(null, this.worldPosition, SoundEvents.AXE_STRIP, SoundSource.BLOCKS);
+        level.playSound(null, this.worldPosition, BeyondSoundEvents.ROOTS_SPREAD.get(), SoundSource.BLOCKS);
         if (level instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.OBIROOT.get().defaultBlockState()), this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ(), 120, 1f, 3, 1f, 0.05);
         }
@@ -433,8 +432,6 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
 
         BlockPos p = new BlockPos(chunkX*16, -47, chunkZ*16);
 
-        //level.setBlock(p, Blocks.GLOWSTONE.defaultBlockState(), 3);
-
         for (int dx = -chunkRadius; dx <= chunkRadius; dx++) {
             for (int dz = -chunkRadius; dz <= chunkRadius; dz++) {
 
@@ -445,8 +442,6 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
 
                     ChunkPos chunkPos = new ChunkPos(chunkX + dx, chunkZ + dz);
                     affectedChunks.add(chunkPos);
-                    //level.setBlock(chunkPos.getMiddleBlockPosition(-52), Blocks.LIME_CONCRETE.defaultBlockState(), 3);
-
                 }
             }
         }
@@ -577,7 +572,6 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
 
         if (shouldPing(state, be)) {
             Vec3 center = be.worldPosition.getCenter();
-            level.playSound(null, center.x, center.y, center.z, SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 1, 1);
 
             if (level instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(new CrosshairColorTransitionOptions(
@@ -602,9 +596,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
 
         be.oRot = be.rot;
 
-        // Inside a sub-level (Sable/Aeronautics contraption) the block sits at far-off grid coordinates:
-        // search for the player at the contraption's real-world position, and measure the facing angle in the
-        // contraption's local frame (its render pose rotates the model), so the refuge still turns to the player.
+        // inside a sub-level the player is searched at the real position and the angle measured in the local frame
         Vec3 visible = com.thebeyond.api.compat.BeyondCompatHooks.visibleOnAnyLevel(level, pos);
         double searchX = visible != null ? visible.x : (double) pos.getX() + 0.5D;
         double searchY = visible != null ? visible.y : (double) pos.getY() + 0.5D;
@@ -625,7 +617,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
             double d0 = targetX - ((double) pos.getX() + 0.5D);
             double d1 = targetZ - ((double) pos.getZ() + 0.5D);
             be.tRot = (float) Mth.atan2(d1, d0);
-            level.playSound(player, searchX, searchY, searchZ, SoundEvents.ROOTS_BREAK, SoundSource.BLOCKS, 1, 1);
+            level.playSound(player, searchX, searchY, searchZ, BeyondSoundEvents.ROOTS_CREAKING.get(), SoundSource.BLOCKS, 1, 1);
         }
 
         while(be.rot >= (float)Math.PI) {
@@ -685,8 +677,7 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
         reapplyIfRelocated();
     }
 
-    /** Re-runs {@code addRefuge} on relocation; probes the center chunk first to skip
-     *  legacy saves whose counter was already applied in a prior session. */
+    /** Re-runs addRefuge after relocation, probing the center chunk so a counter applied in an earlier session is skipped. */
     private void reapplyIfRelocated() {
         if (level == null || level.isClientSide) return;
         if (currentMode < 0 || currentMode > 3) return;

@@ -93,8 +93,6 @@ public class PolarBulbBlock extends Block {
     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         if (!level.isAreaLoaded(pos, 1)) return;
 
-        // ~25% chance per random tick to grow (replaces the old singleton growTicker counter
-        // which was shared across all PolarBulbBlocks in the world).
         if (random.nextInt(4) == 0) {
             level.setBlock(pos, state.setValue(GLOP_CHARGE, state.getValue(GLOP_CHARGE) + 1), 3);
         }

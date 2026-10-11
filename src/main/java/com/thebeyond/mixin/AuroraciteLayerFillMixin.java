@@ -2,12 +2,11 @@ package com.thebeyond.mixin;
 
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.registry.BeyondBlocks;
-import com.thebeyond.common.worldgen.features.AuroraciteLayerDTFeature;
 import com.thebeyond.common.worldgen.features.AuroraciteLayerFeature;
+import com.thebeyond.compat.dt.DimensionalTearsCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.WorldGenLevel;
@@ -27,19 +26,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** Safety-net auroracite floor for End chunks that bypass Beyond's chunkgen.
- *  Tail-injected so it fires under any generator. */
+/** Safety-net auroracite floor for End chunks Beyond does not generate, injected at the tail of any generator. */
 @Mixin(ChunkGenerator.class)
 public abstract class AuroraciteLayerFillMixin {
 
     private static final ResourceLocation DT_FLUID_ID = ResourceLocation.parse("dimensional_tears:dimensional_tears");
 
-    // Lazily populated on first fire.
     private static volatile Boolean dtLoaded;
     private static volatile BlockState cachedDTFluid;
-    private static volatile SimplexNoise fallbackNoise;
 
-    /** Logs the first fire per JVM with the chosen noise source. */
     private static final AtomicBoolean LOGGED_FIRST_FIRE = new AtomicBoolean(false);
 
     @Inject(
@@ -50,11 +45,9 @@ public abstract class AuroraciteLayerFillMixin {
             WorldGenLevel level, ChunkAccess chunk, StructureManager structureManager,
             CallbackInfo ci) {
 
-        // End only.
         if (level.getLevel().dimension() != Level.END) return;
 
-        SimplexNoise noise = resolveNoise(level);
-        if (noise == null) return; // defensive; resolveNoise always returns non-null
+        SimplexNoise noise = AuroraciteLayerFeature.noiseFor(level.getSeed());
 
         final int minY = level.getMinBuildHeight();
         final int chunkX = chunk.getPos().getMinBlockX();
@@ -63,15 +56,12 @@ public abstract class AuroraciteLayerFillMixin {
         final BlockState auroracite = BeyondBlocks.AURORACITE.get().defaultBlockState();
         final boolean hasDT = isDTLoaded();
         final BlockState dtFluid = hasDT ? getDTFluidState() : Blocks.AIR.defaultBlockState();
-        final boolean dtUsable = hasDT && !dtFluid.isAir();
+        final boolean placeLiquid = hasDT && !dtFluid.isAir() && DimensionalTearsCompat.oceanEnabled();
 
         if (LOGGED_FIRST_FIRE.compareAndSet(false, true)) {
-            TheBeyond.LOGGER.info(
-                    "[AuroraciteLayerFillMixin] first fire: minY={}, dtLoaded={}, dtFluidAir={}, noiseSource={}",
-                    minY, hasDT, dtFluid.isAir(),
-                    (AuroraciteLayerDTFeature.getNoiseInstance() != null ? "DT-feature"
-                            : AuroraciteLayerFeature.getNoiseInstance() != null ? "regular-feature"
-                            : "fallback"));
+            TheBeyond.LOGGER.debug(
+                    "[AuroraciteLayerFillMixin] first fire: minY={}, dtLoaded={}, dtFluidAir={}",
+                    minY, hasDT, dtFluid.isAir());
         }
 
         final BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
@@ -82,56 +72,40 @@ public abstract class AuroraciteLayerFillMixin {
                 final double n = noise.getValue(globalX * 0.1, globalZ * 0.1);
 
                 if (n > 0.0) {
-                    // Two-layer auroracite column at the floor; overwrites foreign blocks
-                    // (auroracite is the End floor's ground truth). Idempotent: skip if already set.
-                    mutable.set(globalX, minY, globalZ);
-                    if (!chunk.getBlockState(mutable).is(BeyondBlocks.AURORACITE.get())) {
-                        chunk.setBlockState(mutable, auroracite, false);
+                    if (placeLiquid) {
+                        the_beyond$placeFluid(chunk, mutable.set(globalX, minY, globalZ), dtFluid);
+                        the_beyond$placeAuroracite(chunk, mutable.set(globalX, minY + 1, globalZ), auroracite);
+                        the_beyond$placeAuroracite(chunk, mutable.set(globalX, minY + 2, globalZ), auroracite);
+                        the_beyond$stripVegetation(chunk, mutable.set(globalX, minY + 3, globalZ));
+                    } else {
+                        the_beyond$placeAuroracite(chunk, mutable.set(globalX, minY, globalZ), auroracite);
+                        the_beyond$placeAuroracite(chunk, mutable.set(globalX, minY + 1, globalZ), auroracite);
+                        the_beyond$stripVegetation(chunk, mutable.set(globalX, minY + 2, globalZ));
                     }
-                    mutable.set(globalX, minY + 1, globalZ);
-                    if (!chunk.getBlockState(mutable).is(BeyondBlocks.AURORACITE.get())) {
-                        chunk.setBlockState(mutable, auroracite, false);
-                    }
-                    // Clear foreign vegetation that landed on the column via MOTION_BLOCKING
-                    // heightmap features; surface plants belong on islands, not the void floor.
-                    // Air check avoids erasing legitimate minY+2 placements.
-                    mutable.set(globalX, minY + 2, globalZ);
-                    BlockState aboveFloor = chunk.getBlockState(mutable);
-                    if (!aboveFloor.isAir()) {
-                        chunk.setBlockState(mutable, Blocks.AIR.defaultBlockState(), false);
-                    }
-                } else if (dtUsable) {
-                    // DT fluid fills the gaps; overwrite foreign blocks, skip if already
-                    // auroracite or the same DT fluid.
-                    mutable.set(globalX, minY, globalZ);
-                    BlockState existing = chunk.getBlockState(mutable);
-                    if (!existing.is(BeyondBlocks.AURORACITE.get()) && existing.getBlock() != dtFluid.getBlock()) {
-                        chunk.setBlockState(mutable, dtFluid, false);
-                    }
+                } else if (placeLiquid) {
+                    the_beyond$placeFluid(chunk, mutable.set(globalX, minY, globalZ), dtFluid);
+                    the_beyond$placeFluid(chunk, mutable.set(globalX, minY + 1, globalZ), dtFluid);
                 }
-                // No DT and noise <= 0: leave the existing block.
             }
         }
     }
 
-    /**
-     * Prefers either feature's live noise for cross-biome continuity; falls back to a
-     * JVM-cached, world-seeded noise when neither feature has run yet.
-     */
-    private static SimplexNoise resolveNoise(WorldGenLevel level) {
-        SimplexNoise n = AuroraciteLayerDTFeature.getNoiseInstance();
-        if (n != null) return n;
-        n = AuroraciteLayerFeature.getNoiseInstance();
-        if (n != null) return n;
+    private static void the_beyond$placeAuroracite(ChunkAccess chunk, BlockPos pos, BlockState auroracite) {
+        if (!chunk.getBlockState(pos).is(BeyondBlocks.AURORACITE.get())) {
+            chunk.setBlockState(pos, auroracite, false);
+        }
+    }
 
-        SimplexNoise cached = fallbackNoise;
-        if (cached != null) return cached;
-        synchronized (AuroraciteLayerFillMixin.class) {
-            if (fallbackNoise == null) {
-                long seed = level.getLevel().getSeed();
-                fallbackNoise = new SimplexNoise(RandomSource.create(seed));
-            }
-            return fallbackNoise;
+    private static void the_beyond$placeFluid(ChunkAccess chunk, BlockPos pos, BlockState dtFluid) {
+        BlockState existing = chunk.getBlockState(pos);
+        if (!existing.is(BeyondBlocks.AURORACITE.get()) && existing.getBlock() != dtFluid.getBlock()) {
+            chunk.setBlockState(pos, dtFluid, false);
+        }
+    }
+
+    private static void the_beyond$stripVegetation(ChunkAccess chunk, BlockPos pos) {
+        if (!chunk.getBlockState(pos).isAir()) {
+            chunk.setBlockState(pos, Blocks.AIR.defaultBlockState(), false);
         }
     }
 
@@ -147,10 +121,7 @@ public abstract class AuroraciteLayerFillMixin {
         }
     }
 
-    /**
-     * Returns DT's source fluid with {@code is_ocean=true} when that property exists
-     * (enables DT's skipRendering optimisation). Air if DT is absent or the property moved.
-     */
+    /** Sets {@code is_ocean=true} when present (enables DT's skipRendering optimisation). Air if DT is absent. */
     private static BlockState getDTFluidState() {
         BlockState cached = cachedDTFluid;
         if (cached != null) return cached;

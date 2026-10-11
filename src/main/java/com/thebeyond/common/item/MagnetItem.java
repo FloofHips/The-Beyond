@@ -53,76 +53,75 @@ public class MagnetItem extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         ItemStack itemstack = player.getItemInHand(usedHand);
 
-        if (!level.isClientSide) {
-            double range = 32;
-            Vec3 eyePos = player.getEyePosition();
-            Vec3 endPos = eyePos.add(player.getLookAngle().scale(range));
+        double range = 32;
+        Vec3 eyePos = player.getEyePosition();
+        Vec3 endPos = eyePos.add(player.getLookAngle().scale(range));
 
-            ClipContext clipContext = new ClipContext(
-                    eyePos,
-                    endPos,
-                    ClipContext.Block.OUTLINE,
-                    ClipContext.Fluid.NONE,
-                    player
-            );
+        ClipContext clipContext = new ClipContext(
+                eyePos,
+                endPos,
+                ClipContext.Block.OUTLINE,
+                ClipContext.Fluid.NONE,
+                player
+        );
 
-            BlockHitResult hit = level.clip(clipContext);
+        BlockHitResult hit = level.clip(clipContext);
 
-            if (hit.getType() != HitResult.Type.MISS) {
-                BlockPos pos = hit.getBlockPos();
-                BlockState state = level.getBlockState(pos);
+        if (hit.getType() != HitResult.Type.MISS) {
+            BlockPos pos = hit.getBlockPos();
+            BlockState state = level.getBlockState(pos);
 
-                if (state.is(BeyondTags.METAL_BLOCKS)) {
+            if (state.is(BeyondTags.METAL_BLOCKS)) {
 
-                    Vec3 playerPos = player.position();
-                    Vec3 blockCenter = BeyondCompatHooks.visibleOrCenter(level, pos);
-                    Vec3 distance = blockCenter.subtract(playerPos);
-                    Vec3 direction = distance.normalize();
+                Vec3 playerPos = player.position();
+                Vec3 blockCenter = BeyondCompatHooks.visibleOrCenter(level, pos);
+                Vec3 distance = blockCenter.subtract(playerPos);
+                Vec3 direction = distance.normalize();
 
-                    player.setDeltaMovement(direction.scale(1.5));
-                    player.hurtMarked = true;
+                player.setDeltaMovement(direction.scale(1.5));
+                player.hurtMarked = true;
 
-                    if (level instanceof ServerLevel serverLevel) {
+                level.addParticle(new CircleColorTransitionOptions(
+                        new Vector3f(1, 1, 1),
+                        new Vector3f(0.7f, 0.0f, 0.9f),
+                        (float) (0.1*distance.length())
+                ), blockCenter.x, blockCenter.y, blockCenter.z, 0, 0, 0);
+
+                level.addParticle(new CrosshairColorTransitionOptions(
+                        new Vector3f(0.7f, 0.0f, 0.9f),
+                        new Vector3f(0.1f, 0.1f, 0.3f),
+                        (float) (0.2*distance.length()/15f)
+                ), blockCenter.x+0.001f, blockCenter.y, blockCenter.z+0.001f, 0, 0, 0);
+
+
+                if (level instanceof ServerLevel serverLevel) {
+                    for (int i = 0; i < 15; i++) {
+                        double lerp = i / 15.0;
+                        Vec3 particlePos = playerPos.add(0,1,0).lerp(blockCenter, lerp);
+                        level.playSound(null, player.getX(), player.getY(), player.getZ(), BeyondSoundEvents.PULL.get(), SoundSource.NEUTRAL, 1f, (float) i/7.5f);
                         serverLevel.sendParticles(new CircleColorTransitionOptions(
+                                new Vector3f(0.7f, 0.0f, 0.9f),
                                 new Vector3f(1, 1, 1),
-                                new Vector3f(0.7f, 0.0f, 0.9f),
-                                (float) (0.1*distance.length())
-                        ), blockCenter.x, blockCenter.y, blockCenter.z, 1, 0, 0, 0, 0);
-
-                        serverLevel.sendParticles(new CrosshairColorTransitionOptions(
-                                new Vector3f(0.7f, 0.0f, 0.9f),
-                                new Vector3f(0.1f, 0.1f, 0.3f),
-                                (float) (0.2*distance.length()/15f)
-                        ), blockCenter.x+0.001f, blockCenter.y, blockCenter.z+0.001f, 1, 0, 0, 0, 0);
-
-                        for (int i = 0; i < 15; i++) {
-                            double lerp = i / 15.0;
-                            Vec3 particlePos = playerPos.add(0,1,0).lerp(blockCenter, lerp);
-                            level.playSound(null, player.getX(), player.getY(), player.getZ(), BeyondSoundEvents.PULL.get(), SoundSource.NEUTRAL, 1f, (float) i/7.5f);
-                            serverLevel.sendParticles(new CircleColorTransitionOptions(
-                                            new Vector3f(0.7f, 0.0f, 0.9f),
-                                            new Vector3f(1, 1, 1),
-                                            ((float) (lerp*lerp) + 0.05f) * 0.5f
-                                    ), particlePos.x, particlePos.y, particlePos.z, 1, 0, 0, 0, 0);
-                        }
-
-                        if (distance.length() > 31 && player instanceof ServerPlayer serverPlayer) BeyondCriteriaTriggers.FULL_POWER_MAGNET.get().trigger(serverPlayer);
+                                ((float) (lerp*lerp) + 0.05f) * 0.5f
+                        ), particlePos.x, particlePos.y, particlePos.z, 1, 0, 0, 0, 0);
                     }
 
-                    level.playSound(null, player.getX(), player.getY(), player.getZ(), BeyondSoundEvents.MAGNET_SUCCESS.get(), SoundSource.NEUTRAL, 1f, 0.5f + level.random.nextFloat());
-
-                    player.awardStat(Stats.ITEM_USED.get(this));
-                    player.getCooldowns().addCooldown(this, 10);
-                    return InteractionResultHolder.success(itemstack);
-                } else {
-                    level.playSound(null, player.getX(), player.getY(), player.getZ(), BeyondSoundEvents.MAGNET_FAIL.get(), SoundSource.PLAYERS, 1, 0.5f + level.random.nextFloat());
+                    if (distance.length() > 31 && player instanceof ServerPlayer serverPlayer) BeyondCriteriaTriggers.FULL_POWER_MAGNET.get().trigger(serverPlayer);
                 }
+
+                level.playSound(null, player.getX(), player.getY(), player.getZ(), BeyondSoundEvents.MAGNET_SUCCESS.get(), SoundSource.NEUTRAL, 1f, 0.5f + level.random.nextFloat());
+
+                player.awardStat(Stats.ITEM_USED.get(this));
+                player.getCooldowns().addCooldown(this, 10);
+                return InteractionResultHolder.success(itemstack);
             } else {
                 level.playSound(null, player.getX(), player.getY(), player.getZ(), BeyondSoundEvents.MAGNET_FAIL.get(), SoundSource.PLAYERS, 1, 0.5f + level.random.nextFloat());
+                return InteractionResultHolder.consume(itemstack);
             }
+        } else {
+            level.playSound(null, player.getX(), player.getY(), player.getZ(), BeyondSoundEvents.MAGNET_FAIL.get(), SoundSource.PLAYERS, 1, 0.5f + level.random.nextFloat());
+            return InteractionResultHolder.consume(itemstack);
         }
-
-        return InteractionResultHolder.pass(itemstack);
     }
 
     @Override
@@ -133,12 +132,12 @@ public class MagnetItem extends Item {
         double halfRange = range/2;
         level.getEntitiesOfClass(ItemEntity.class, new AABB(entity.position().subtract(halfRange, halfRange, halfRange), entity.position().add(halfRange, halfRange, halfRange)))
                 .forEach(itemEntity -> {
-                    if (itemEntity.tickCount > 20) itemEntity.setNoPickUpDelay();
-                    double dist = itemEntity.position().vectorTo(entity.position()).length();
-                    if (dist < 0.01) return;
-                    double factor = 0.01 * range / dist;
-                    itemEntity.addDeltaMovement(itemEntity.position().vectorTo(entity.position()).multiply(factor, factor, factor));
-                }
+                            if (itemEntity.tickCount > 20) itemEntity.setNoPickUpDelay();
+                            double dist = itemEntity.position().vectorTo(entity.position()).length();
+                            if (dist < 0.01) return;
+                            double factor = 0.01 * range / dist;
+                            itemEntity.addDeltaMovement(itemEntity.position().vectorTo(entity.position()).multiply(factor, factor, factor));
+                        }
                 );
     }
 

@@ -1,6 +1,7 @@
 package com.thebeyond.common.entity;
 
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondItems;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.common.registry.BeyondSoundEvents;
 import net.minecraft.core.particles.BlockParticleOption;
@@ -37,6 +38,7 @@ import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
@@ -249,7 +251,8 @@ public class EnderglopEntity extends Mob implements Enemy {
                             serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.PLATE_BLOCK.get().defaultBlockState()), this.getX(), this.getY(), this.getZ(), 30, 1.0F, 1.0F, 1.0F, 0.2F);
                         }
                         this.level().playSound(null, this.blockPosition(), BeyondSoundEvents.ENDERGLOP_ARMOR_BREAK.get(), SoundSource.HOSTILE, 1.0F, 1.0F);
-                        setIsArmored(false);
+                        if (this.getHealth() > 2)
+                            setIsArmored(false);
                     }
                     if (level() instanceof ServerLevel serverLevel) {
                         serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.FERROJELLY_BLOCK.get().defaultBlockState()), this.getX(), this.getY(), this.getZ(), 15, 1.0F, 1.0F, 1.0F, 0.2F);
@@ -306,13 +309,7 @@ public class EnderglopEntity extends Mob implements Enemy {
         if (this.getIsCharging() && this.getChargingTicks()==0){
             this.setIsCharging(false);
             this.armorUp();
-            // Do NOT force-start every available goal here. WrappedGoal::start invokes the
-            // underlying Goal#start() unconditionally, bypassing Goal#canUse(). Many goals
-            // (e.g. hearthandharvest's PungentEffectGoal) populate internal state inside
-            // canUse() and assume start() is only called after canUse() returned true —
-            // calling start() blind throws an NPE on the goal's uninitialised fields and
-            // crashes the entity tick. The vanilla GoalSelector will naturally re-evaluate
-            // canUse() on the next AI step and start whichever goals are appropriate.
+            // never force-start goals here, start() skips canUse() and some goals set their state in canUse()
         }
 
         if (this.getIsCharging() && !this.onGround()){
@@ -393,6 +390,13 @@ public class EnderglopEntity extends Mob implements Enemy {
         }
 
         super.onSyncedDataUpdated(key);
+    }
+
+    @Override
+    protected void dropCustomDeathLoot(ServerLevel level, DamageSource damageSource, boolean recentlyHit) {
+        super.dropCustomDeathLoot(level, damageSource, recentlyHit);
+        if (getIsArmored())
+            this.spawnAtLocation(new ItemStack(BeyondItems.FERROPETAL.get(), 1 + level.random.nextInt(3)));
     }
 
     public void remove(Entity.RemovalReason reason) {

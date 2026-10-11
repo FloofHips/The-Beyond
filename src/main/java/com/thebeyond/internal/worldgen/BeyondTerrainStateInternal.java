@@ -2,13 +2,12 @@ package com.thebeyond.internal.worldgen;
 
 import org.jetbrains.annotations.ApiStatus;
 
-/** Mutable session state for the End. Read-only facade lives at
- *  {@code com.thebeyond.api.worldgen.BeyondTerrainState}. */
+/** Mutable session state of the End, the read-only view is BeyondTerrainState. */
 @ApiStatus.Internal
 public final class BeyondTerrainStateInternal {
     public static volatile boolean active = false;
     public static volatile int dimMinY = 0;
-    /** Exclusive — matches {@code LevelHeightAccessor.getMaxBuildHeight}. */
+    /** Exclusive, like getMaxBuildHeight. */
     public static volatile int dimMaxY = 256;
 
     private BeyondTerrainStateInternal() {}

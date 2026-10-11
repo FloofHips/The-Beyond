@@ -1,5 +1,13 @@
 {
   "values": [
-    "#minecraft:is_end"
+    "#minecraft:is_end",
+    { "id": "#c:is_end_biome", "required": false },
+    { "id": "#stellarity:biomes/all", "required": false },
+    { "id": "#enderscape:is_enderscape", "required": false },
+    { "id": "#phantasm:is_end", "required": false },
+
+    { "id": "unusualend:gloopstone_midlands", "required": false },
+    { "id": "phantasm:dreaming_den", "required": false },
+    { "id": "phantasm:acidburnt_abysses", "required": false }
   ]
 }

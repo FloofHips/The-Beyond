@@ -3,6 +3,7 @@ package com.thebeyond.common.block;
 import com.thebeyond.common.entity.EnadrakeEntity;
 import com.thebeyond.common.registry.BeyondConfigFeatures;
 import com.thebeyond.common.registry.BeyondEntityTypes;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.common.registry.BeyondTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -13,6 +14,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
@@ -29,6 +31,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
@@ -40,6 +43,11 @@ public class ObirootSproutBlock extends Block implements BonemealableBlock, Fall
     public ObirootSproutBlock(Properties properties) {
         super(properties);
         this.registerDefaultState((BlockState)((BlockState)this.stateDefinition.any()).setValue(AGE, 0));
+    }
+
+    @Override
+    public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
+        return super.getStateForPlacement(context).setValue(AGE, 1);
     }
 
     @Override
@@ -59,7 +67,8 @@ public class ObirootSproutBlock extends Block implements BonemealableBlock, Fall
                 enadrake.setPos(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
                 enadrake.setDeltaMovement(0, 0.3, 0);
                 level.addFreshEntity(enadrake);
-                level.playSound(null, pos, SoundEvents.BEEHIVE_ENTER, SoundSource.BLOCKS);
+                level.playSound(null, pos, BeyondSoundEvents.ENADRAKE_HUT_LEAVE.get(), SoundSource.BLOCKS, 1, 1.5f);
+                level.playSound(null, pos, BeyondSoundEvents.ROOTS_SPREAD.get(), SoundSource.BLOCKS, 1, 2f);
                 level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
                 return;
             }

@@ -22,8 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import java.util.List;
 
-/** Routes piston stick/branch checks through {@link FerroJellyBlock} so it behaves
- *  as a directional sticky block. */
+/** Routes piston stick checks through FerroJellyBlock so it acts as a directional sticky block. */
 @Mixin(PistonStructureResolver.class)
 public abstract class PistonStructureResolverMixin {
     @Shadow @Final private Level level;

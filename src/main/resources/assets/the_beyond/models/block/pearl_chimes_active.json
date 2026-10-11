@@ -1,0 +1,43 @@
+{
+	"format_version": "1.9.0",
+	"render_type": "minecraft:cutout",
+	"textures": {
+		"0": "the_beyond:block/pearl_chimes_base",
+		"1": "the_beyond:block/pearl_chimes_beads_active",
+		"particle": "the_beyond:block/pearl_chimes_beads"
+	},
+	"elements": [
+		{
+			"from": [2, 14, 2],
+			"to": [14, 16, 14],
+			"rotation": {"angle": 0, "axis": "y", "origin": [2, 14, 2]},
+			"faces": {
+				"north": {"uv": [0, 12, 12, 14], "texture": "#0"},
+				"east": {"uv": [0, 12, 12, 14], "texture": "#0"},
+				"south": {"uv": [0, 12, 12, 14], "texture": "#0"},
+				"west": {"uv": [0, 12, 12, 14], "texture": "#0"},
+				"up": {"uv": [0, 0, 12, 12], "texture": "#0"},
+				"down": {"uv": [0, 0, 12, 12], "texture": "#0"}
+			}
+		},
+		{   "from": [ 0.8, 0, 8 ],
+            "to": [ 15.2, 16, 8 ],
+            "rotation": { "origin": [ 8, 8, 8 ], "axis": "y", "angle": 45, "rescale": true },
+            "shade": false,
+            "faces": {
+                "north": { "uv": [ 0, 0, 16, 16 ], "texture": "#1" },
+                "south": { "uv": [ 0, 0, 16, 16 ], "texture": "#1" }
+            }
+        },
+        {   "from": [ 8, 0, 0.8 ],
+            "to": [ 8, 16, 15.2 ],
+            "rotation": { "origin": [ 8, 8, 8 ], "axis": "y", "angle": 45, "rescale": true },
+            "shade": false,
+            "faces": {
+                "west": { "uv": [ 0, 0, 16, 16 ], "texture": "#1" },
+                "east": { "uv": [ 0, 0, 16, 16 ], "texture": "#1" }
+            }
+        }
+	]
+
+}

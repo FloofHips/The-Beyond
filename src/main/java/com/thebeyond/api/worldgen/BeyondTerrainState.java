@@ -3,8 +3,7 @@ package com.thebeyond.api.worldgen;
 import com.thebeyond.internal.worldgen.BeyondTerrainStateInternal;
 import org.jetbrains.annotations.ApiStatus;
 
-/** Read-only facade over the server-session End-worldgen state. Use {@link #isActive()}
- *  to gate compat behavior; {@link #getDimMinY()}/{@link #getDimMaxY()} for dim bounds. */
+/** Read-only view of the session's End worldgen state: isActive() gates compat, and the dimension bounds. */
 @ApiStatus.Experimental
 public final class BeyondTerrainState {
     private BeyondTerrainState() {}

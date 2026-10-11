@@ -1,0 +1,6 @@
+{
+  "values": [
+    "minecraft:warden",
+    { "id": "species:ghoul", "required": false }
+  ]
+}

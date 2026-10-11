@@ -23,6 +23,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -54,6 +55,7 @@ import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -144,6 +146,21 @@ public class EnadrakeEntity extends PathfinderMob {
     }
 
     @Override
+    protected @Nullable SoundEvent getDeathSound() {
+        return BeyondSoundEvents.ENADRAKE_DEATH.get();
+    }
+
+    @Override
+    protected @Nullable SoundEvent getHurtSound(DamageSource damageSource) {
+        return BeyondSoundEvents.ENADRAKE_HURT.get();
+    }
+
+    @Override
+    protected @Nullable SoundEvent getAmbientSound() {
+        return BeyondSoundEvents.ROOTS_CREAKING.get();
+    }
+
+    @Override
     public void tick() {
         super.tick();
         if (panic > 0) panic--;
@@ -156,6 +173,7 @@ public class EnadrakeEntity extends PathfinderMob {
 
             if (player != null) {
                 this.lookAt(player, 180, 180);
+                // on a player the screech mutes the audio, on a mob DEAFENED is the FOV-stealth state
                 player.addEffect(new MobEffectInstance(BeyondEffects.DEAFENED, 1200));
             }
         }
@@ -164,10 +182,7 @@ public class EnadrakeEntity extends PathfinderMob {
     }
 
     public void scream() {
-        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.FOX_SCREECH, SoundSource.HOSTILE, 2, 0.4f);
-        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.FOX_SCREECH, SoundSource.HOSTILE, 2, 0.45f);
-        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.FOX_SCREECH, SoundSource.HOSTILE, 2, 0.5f);
-        level().playSound(this, BlockPos.containing(this.position()), SoundEvents.BELL_RESONATE, SoundSource.HOSTILE, 2, 2);
+        level().playSound(this, BlockPos.containing(this.position()), BeyondSoundEvents.ENADRAKE_SCREECH.get(), SoundSource.HOSTILE, 2, 0.8f + random.nextFloat()*0.4f);
 
         AABB detectionBox = new AABB(getOnPos()).inflate(10);
         TargetingConditions conditions = TargetingConditions.forNonCombat().range(6).ignoreLineOfSight().selector((entity) -> entity instanceof EnadrakeEntity friend && friend.panic == 0);
@@ -243,18 +258,6 @@ public class EnadrakeEntity extends PathfinderMob {
                 this.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
                 this.setHoldingItem(false);
 
-                return InteractionResult.SUCCESS;
-            } else {
-                if (itemstack.isEmpty()) return InteractionResult.FAIL;
-                this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(itemstack.getItem(), 1));
-                this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
-                itemstack.consume(1, player);
-                playSound(BeyondSoundEvents.ROOTS_CREAKING.get());
-                this.setHoldingItem(true);
-
-                if (player instanceof ServerPlayer serverPlayer) {
-                    BeyondCriteriaTriggers.GIFT_ENADRAKE.get().trigger(serverPlayer);
-                }
                 return InteractionResult.SUCCESS;
             }
         }
@@ -367,7 +370,7 @@ public class EnadrakeEntity extends PathfinderMob {
                     Vec3 vec3 = Vec3.atCenterOf(blockpos).add((double)0.0F, (double)1, (double)0.0F);
                     serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.PEEPING_OBIROOT.get().defaultBlockState()), vec3.x, vec3.y, vec3.z, 10, 0.0F, 0.0F, 0.0F, 0.0F);
                 }
-                level().playSound(enadrake, blockpos, SoundEvents.ITEM_BREAK, enadrake.getSoundSource(), 0.5F, 1F);
+                level().playSound(enadrake, blockpos, BeyondBlocks.OBIROOT_SPROUT.get().asItem().getBreakingSound(), enadrake.getSoundSource(), 0.5F, 0.8f + random.nextFloat());
 
                 FallingBlockEntity fallingblockentity = FallingBlockEntity.fall(level(), blockpos, blockstate);
                 fallingblockentity.disableDrop();
@@ -437,7 +440,7 @@ public class EnadrakeEntity extends PathfinderMob {
                     List<ItemEntity> list = EnadrakeEntity.this.level().getEntitiesOfClass(ItemEntity.class, EnadrakeEntity.this.getBoundingBox().inflate((double)8.0F, (double)8.0F, (double)8.0F), EnadrakeEntity.ALLOWED_ITEMS);
                     if (list.size() == 1) {
                         ItemEntity item = list.getFirst();
-                        level().playSound(item, BlockPos.containing(item.position()), SoundEvents.CHORUS_FRUIT_TELEPORT, SoundSource.BLOCKS,1,1);
+                        level().playSound(item, BlockPos.containing(item.position()), BeyondSoundEvents.ENADRAKE_TELEPORT.get(), SoundSource.BLOCKS,0.58f,1);
                         item.moveTo(EnadrakeEntity.this.position());
                     }
                     if (!list.isEmpty()) {
@@ -453,7 +456,7 @@ public class EnadrakeEntity extends PathfinderMob {
                     if (itemstack.isEmpty() && !list.isEmpty()) {
                         if (list.size() == 1) {
                             ItemEntity item = list.getFirst();
-                            level().playSound(item, BlockPos.containing(item.position()), SoundEvents.CHORUS_FRUIT_TELEPORT, SoundSource.BLOCKS, 1, 1);
+                            level().playSound(item, BlockPos.containing(item.position()), BeyondSoundEvents.ENADRAKE_TELEPORT.get(), SoundSource.BLOCKS, 0.5f, 1);
                             item.moveTo(EnadrakeEntity.this.position());
                         } else {
                             EnadrakeEntity.this.getNavigation().moveTo(list.get(0), 1.2);
@@ -589,8 +592,6 @@ public class EnadrakeEntity extends PathfinderMob {
                 }
             }
 
-            //if (mob.getNavigation().isStuck()) mob.addDeltaMovement(new Vec3(0, 0.2, 0));
-
             BlockPos blockpos = new BlockPos(this.getMoveToTarget().getX(), this.getMoveToTarget().getY(), this.getMoveToTarget().getZ());
 
             if (!blockpos.closerToCenterThan(this.mob.position(), this.acceptedDistance())) {
@@ -702,8 +703,6 @@ public class EnadrakeEntity extends PathfinderMob {
                 }
             }
 
-            //if (mob.getNavigation().isStuck()) mob.addDeltaMovement(new Vec3(0, 0.2, 0));
-
             BlockPos blockpos = new BlockPos(this.getMoveToTarget().getX(), this.getMoveToTarget().getY(), this.getMoveToTarget().getZ());
 
             if (!blockpos.closerToCenterThan(this.mob.position(), this.acceptedDistance())) {
@@ -770,8 +769,6 @@ public class EnadrakeEntity extends PathfinderMob {
                     entity.panic = 50;
                 }
             }
-
-            //if (mob.getNavigation().isStuck()) mob.addDeltaMovement(new Vec3(0, 0.2, 0));
 
             BlockPos blockpos = new BlockPos(this.getMoveToTarget().getX(), this.getMoveToTarget().getY(), this.getMoveToTarget().getZ());
 
@@ -856,9 +853,7 @@ public class EnadrakeEntity extends PathfinderMob {
             //    }
             //}
 
-            // --- POD BEHAVIOR: uncomment to reset fleeToHut when enadrake enters hut ---
-            // entity.setFleeToHut(false);
-            // ---
+            // pod behaviour: entity.setFleeToHut(false) here resets the flag when the enadrake enters the hut
 
             super.stop();
         }
@@ -980,9 +975,7 @@ public class EnadrakeEntity extends PathfinderMob {
 
         @Override
         public boolean canUse() {
-            // Gate re-planting to ~10% per tick. MoveToBlockGoal polls canUse every tick,
-            // so a higher probability combined with the ParanoiaBlock sprout cadence
-            // produces near-instant re-planting on pickup.
+            // re-planting at 10% per tick, since canUse is polled every tick and more would re-plant almost on pickup
             ItemStack itemstack = entity.getItemBySlot(EquipmentSlot.MAINHAND);
             if (itemstack.is(BeyondBlocks.OBIROOT_SPROUT.asItem()) && level().random.nextFloat() < 0.1f) return super.canUse();
             return false;

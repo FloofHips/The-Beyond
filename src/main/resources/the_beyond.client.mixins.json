@@ -6,11 +6,19 @@
   "refmap": "the_beyond.refmap.json",
   "priority": 500,
   "mixins": [
+    "CameraAccessor",
     "CreativeModeInventoryScreenMixin",
     "CreativeModeTabMixin",
     "EndDimensionEffectsMixin",
     "FogRendererMixin",
-    "ItemRendererMixin"
+    "ItemRendererMixin",
+    "LevelRendererPhotoHideMixin",
+    "LevelRendererFabulousDepthMixin",
+    "MinecraftMainTargetAccessor",
+    "ResourceOrTagArgumentMixin",
+    "ResourceOrTagArgumentParseMixin",
+    "ResourceOrTagKeyArgumentParseMixin",
+    "CommandSuggestionsMixin"
   ],
   "server": [],
   "injectors": {

@@ -1,0 +1,26 @@
+{
+  "parent": "minecraft:end/enter_end_gateway",
+  "criteria": {
+    "geyser": {
+      "trigger": "the_beyond:geyser"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.the_beyond.geyser.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "the_beyond:gauss_vent"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.geyser.title"
+    }
+  },
+  "requirements": [
+    [
+      "geyser"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

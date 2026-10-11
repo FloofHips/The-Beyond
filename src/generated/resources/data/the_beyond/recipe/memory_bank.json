@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    {
+      "tag": "the_beyond:obiroots"
+    },
+    {
+      "item": "minecraft:book"
+    },
+    {
+      "item": "the_beyond:prismuth"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "the_beyond:memory_bank"
+  }
+}

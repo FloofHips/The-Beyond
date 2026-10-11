@@ -1,9 +1,10 @@
 package com.thebeyond;
 
+import com.thebeyond.client.event.CreativeTabEvents;
+import com.thebeyond.common.registry.BeyondEntityDataSerializers;
 import com.thebeyond.common.network.BeyondNetworking;
 import com.thebeyond.common.registry.*;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.server.packs.PackSelectionConfig;
 import net.minecraft.server.packs.PackType;
@@ -11,6 +12,8 @@ import net.minecraft.server.packs.PathPackResources;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackSource;
 import net.neoforged.fml.ModList;
+import net.neoforged.neoforge.client.gui.ConfigurationScreen;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -28,12 +31,10 @@ import java.util.Optional;
 
 @Mod(TheBeyond.MODID)
 public class TheBeyond {
-    // Define mod id in a common place for everything to reference
     public static final String MODID = "the_beyond";
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    // The constructor for the mod class is the first code that is run when your mod is loaded.
-    // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
+    // FML injects these constructor params.
     public TheBeyond(IEventBus modEventBus, ModContainer modContainer) {
         modEventBus.addListener(this::commonSetup);
 
@@ -51,6 +52,7 @@ public class TheBeyond {
         BeyondFluids.FLUIDS.register(modEventBus);
         BeyondFeatures.FEATURES.register(modEventBus);
         BeyondEffects.MOB_EFFECTS.register(modEventBus);
+        BeyondPotions.POTIONS.register(modEventBus);
         BeyondComponents.COMPONENTS.register(modEventBus);
         BeyondPoiTypes.POI_TYPES.register(modEventBus);
         BeyondBiomeModifiers.BIOME_MODIFIERS.register(modEventBus);
@@ -58,13 +60,19 @@ public class TheBeyond {
         BeyondAttachments.ATTACHMENT_TYPES.register(modEventBus);
         BeyondMenus.MENUS.register(modEventBus);
         BeyondCriteriaTriggers.TRIGGERS.register(modEventBus);
+        BeyondEntityDataSerializers.ENTITY_DATA_SERIALIZERS.register(modEventBus);
 
-        modEventBus.addListener(BeyondTabs::addCreative);
+        modEventBus.addListener(CreativeTabEvents::addCreative);
         modEventBus.addListener(BeyondNetworking::onRegisterPayloads);
+        modEventBus.addListener(com.thebeyond.common.data.BeyondDataMapTypes::onRegisterDataMaps);
         modEventBus.addListener(this::addBuiltinPacks);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, BeyondConfig.COMMON_CONFIG);
         modContainer.registerConfig(ModConfig.Type.CLIENT, BeyondConfig.CLIENT_CONFIG);
+
+        if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
+            modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+        }
     }
 
     private void addBuiltinPacks(AddPackFindersEvent event) {
@@ -77,21 +85,19 @@ public class TheBeyond {
                     PackSource.DEFAULT, Optional.empty());
             Pack.ResourcesSupplier supplier = new PathPackResources.PathResourcesSupplier(resourcePath);
 
-            // Always applied. Visible & player-toggleable (opt into soup mode) only when
-            // Convergence is present; otherwise required + hidden from the datapack UI.
+            // toggleable only with Isleweaver, otherwise required and hidden
             boolean convergencePresent = ModList.get().isLoaded("isleweaver");
             PackSelectionConfig selection =
                     new PackSelectionConfig(!convergencePresent, Pack.Position.TOP, false);
 
-            // Bounds-override compat children (rewrite End dim-type y-bounds) attached to beyond_terrain:
-            // UI-hidden, lifecycle-bound, win dim_type resolution; resolveWinner picks one by priority.
+            // addons contribute child packs that rewrite the End height bounds, the highest priority wins
             com.thebeyond.api.event.BeyondTerrainPackAssembleEvent assembleEvent =
                     new com.thebeyond.api.event.BeyondTerrainPackAssembleEvent(event);
             net.neoforged.fml.ModLoader.postEvent(assembleEvent);
 
             com.thebeyond.api.event.BeyondTerrainPackAssembleEvent.Contribution winner =
                     assembleEvent.resolveWinner();
-            LOGGER.info(
+            LOGGER.debug(
                     "[TheBeyond] BeyondTerrainPackAssembleEvent resolved: {} total contribution(s), winner={}",
                     assembleEvent.getContributions().size(),
                     winner == null ? "<none>" : winner.packName() + " (priority " + winner.priority() + ")");
@@ -110,7 +116,7 @@ public class TheBeyond {
                 if (!convergencePresent) {
                     toAccept = toAccept.hidden();
                 }
-                LOGGER.info(
+                LOGGER.debug(
                         "[TheBeyond] Submitting beyond_terrain pack to repository source: id={} childCount={} visible={}",
                         toAccept.getId(), finalChildren.size(), convergencePresent);
                 consumer.accept(toAccept);
@@ -118,7 +124,24 @@ public class TheBeyond {
         }
     }
 
+    /** End City clears rock with template air the terrain veto blocks, so its volume is carved instead. */
+    private static void hostVanillaEndStructures() {
+        net.minecraft.resources.ResourceLocation endCity =
+                net.minecraft.resources.ResourceLocation.withDefaultNamespace("end_city");
+        com.thebeyond.api.worldgen.BeyondForeignStructureProfiles.register(endCity,
+                com.thebeyond.api.worldgen.StructureIntegrationProfile
+                        .builder(com.thebeyond.api.worldgen.StructureIntegrationProfile.Anchor.SEATED)
+                        .rejectUnfit(false)
+                        .carve(true)
+                        .connectDetached(true)
+                        .basePedestal(true)
+                        .build());
+        com.thebeyond.api.worldgen.BeyondForeignStructureProfiles.markEmbedded(endCity);
+        com.thebeyond.api.worldgen.BeyondForeignStructureProfiles.markAutoSeatedProjected(endCity);
+    }
+
     private void commonSetup(final FMLCommonSetupEvent event) {
+        hostVanillaEndStructures();
         if (ModList.get().isLoaded("create")) {
             com.thebeyond.compat.create.BeyondCreateCompat.register();
         }
@@ -126,8 +149,7 @@ public class TheBeyond {
             com.thebeyond.compat.sable.BeyondSableCompat.register();
         }
 
-        // Notify addons Beyond's common-setup is done so they can register compat modules.
-        // Fires on the mod event bus; subscribers self-register.
+        // Lets addons register compat modules now that common-setup is done.
         net.neoforged.fml.ModLoader.postEvent(new com.thebeyond.api.event.BeyondCommonSetupEvent());
     }
 }

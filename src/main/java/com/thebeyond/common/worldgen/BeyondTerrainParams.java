@@ -5,17 +5,14 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
-/** Datapack-configurable knobs for the Beyond End coordinate transform. Decoded from the
- *  dimension JSON's {@code terrain_params} field (optional, falls back to {@link #DEFAULTS}).
- *  Published to {@link BeyondEndChunkGenerator#activeTerrainParams}; reset on server stop. */
+/** Datapack knobs of the End coordinate transform, from the dimension JSON's optional terrain_params. */
 public record BeyondTerrainParams(int wrapRange, double warpAmplitude, double warpScale) {
 
-    /** Wrap pivot outside the ~50k lore radius; low-frequency, low-magnitude warp fuzzes
-     *  the pivot reflection line without visibly distorting the interior. */
+    /** The wrap pivot sits past the 50k lore radius, and a faint warp blurs its reflection line. */
     public static final BeyondTerrainParams DEFAULTS = new BeyondTerrainParams(
             500000, 50.0, 0.001);
 
-    // Validation bounds. See class javadoc for the reasoning behind each.
+    // Validation bounds.
     public static final int    MIN_WRAP_RANGE = 50000;
     public static final int    MAX_WRAP_RANGE = 1000000;
     public static final double MIN_WARP_AMPLITUDE = 0.0;     // 0 = disabled
@@ -41,8 +38,7 @@ public record BeyondTerrainParams(int wrapRange, double warpAmplitude, double wa
                     "warp_scale must be in [" + MIN_WARP_SCALE + ", " + MAX_WARP_SCALE
                             + "], got " + warpScale);
         }
-        // If amplitude >= wrap_range the warp can push inputs across a full wrap
-        // cycle and the transform degenerates into pure noise. Reject early.
+        // an amplitude of wrap_range or more pushes inputs across a whole cycle and the transform turns to noise
         if (warpAmplitude >= wrapRange) {
             throw new IllegalArgumentException(
                     "warp_amplitude (" + warpAmplitude + ") must be smaller than wrap_range ("
@@ -50,12 +46,10 @@ public record BeyondTerrainParams(int wrapRange, double warpAmplitude, double wa
         }
     }
 
-    /** Unvalidated intermediate decode target; see {@link #CODEC}. */
+    /** Unvalidated decode target for CODEC. */
     private record Raw(int wrapRange, double warpAmplitude, double warpScale) {}
 
-    /** Two-stage codec: decode raw fields, then {@code flatXmap} through the record's compact
-     *  constructor so its {@link IllegalArgumentException} becomes {@link DataResult#error}
-     *  (world load logs the message, doesn't crash). All fields default individually. */
+    /** Raw fields default one by one, then the compact constructor turns a bad value into a logged DataResult error. */
     public static final MapCodec<BeyondTerrainParams> CODEC = RecordCodecBuilder.<Raw>mapCodec(instance ->
             instance.group(
                     Codec.INT.optionalFieldOf("wrap_range", DEFAULTS.wrapRange())

@@ -1,5 +1,7 @@
 package com.thebeyond.mixin.compat.simulated;
 
+import com.thebeyond.BeyondConfig;
+import com.thebeyond.TheBeyond;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
@@ -17,9 +19,8 @@ import java.util.Optional;
 @Mixin(targets = "dev.simulated_team.simulated.content.end_sea.EndSeaPhysicsData", remap = false)
 public abstract class SimEndSeaHeightMixin {
 
-    @Unique private static final int the_beyond$VOID_SEA_OFFSET_ABOVE_FLOOR = 2;
-
     @Unique private static boolean the_beyond$reflectFailed = false;
+    @Unique private static boolean the_beyond$loggedStartY = false;
     @Unique private static Method the_beyond$mDimension;
     @Unique private static Method the_beyond$mPriority;
     @Unique private static Method the_beyond$mStartY;
@@ -38,7 +39,9 @@ public abstract class SimEndSeaHeightMixin {
         try {
             if (the_beyond$ctor == null) the_beyond$resolve(original.getClass());
 
-            double targetStartY = level.getMinBuildHeight() + the_beyond$VOID_SEA_OFFSET_ABOVE_FLOOR;
+            // the sea sits relative to the auroracite floor, and below it EndVoidFloorMixin lowers the void line too
+            int minY = level.getMinBuildHeight();
+            double targetStartY = minY + BeyondConfig.VOID_SEA_OFFSET.get();
             double currentStartY = (double) the_beyond$mStartY.invoke(original);
             if (Math.abs(currentStartY - targetStartY) < 1.0e-9) return;
 
@@ -49,8 +52,14 @@ public abstract class SimEndSeaHeightMixin {
 
             cir.setReturnValue(the_beyond$ctor.newInstance(
                     dimension, priority, targetStartY, depthGradient, drag));
+            if (!the_beyond$loggedStartY) {
+                the_beyond$loggedStartY = true;
+                TheBeyond.LOGGER.debug("[Beyond] void sea startY={} (minY={}, offset={})",
+                        targetStartY, minY, BeyondConfig.VOID_SEA_OFFSET.get());
+            }
         } catch (Throwable t) {
             the_beyond$reflectFailed = true;
+            TheBeyond.LOGGER.warn("[Beyond] void sea height adjust failed (Simulated end_sea shape changed?); leaving vanilla sea.", t);
         }
     }
 

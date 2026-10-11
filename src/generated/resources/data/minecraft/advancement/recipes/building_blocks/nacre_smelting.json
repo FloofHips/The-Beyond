@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_rich_nacre": {
+      "conditions": {
+        "items": [
+          {
+            "items": "the_beyond:rich_nacre"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "minecraft:nacre_smelting"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_rich_nacre"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "minecraft:nacre_smelting"
+    ]
+  }
+}

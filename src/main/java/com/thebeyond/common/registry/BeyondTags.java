@@ -9,9 +9,11 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.StructureTags;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -26,13 +28,35 @@ public class BeyondTags {
     public static final TagKey<Block> PORTELAIN_BLOCKS = createBlock("portelain_blocks");
     public static final TagKey<Block> OBIROOT_BLOCKS = createBlock("obiroot_blocks");
     public static final TagKey<Block> METAL_BLOCKS = createBlock("metal_blocks");
+    public static final TagKey<Block> FOUNDATION_ROCK = createBlock("foundation_rock");
+    public static final TagKey<Block> NO_FOUNDATION_ROCK = createBlock("no_foundation_rock");
+    public static final TagKey<Block> BRITTLE_METAL_BLOCKS = createBlock("brittle_metal_blocks");
+    public static final TagKey<Block> PEARL_BLOCKS = createBlock("pearl_blocks");
+    public static final TagKey<Block> NACRE = createBlock("nacre");
 
     public static final TagKey<Item> OBIROOTS = createItem("obiroots");
     public static final TagKey<Item> REMEMBRANCES = createItem("remembrances");
     public static final TagKey<Item> AURORACITE_INTERACTABLE = createItem("auroracite_interactable");
+    public static final TagKey<Item> PRISMOGRAPH_FILM = createItem("prismograph_film");
+    public static final TagKey<Item> BRITTLE_TOOLS = createItem("brittle_tools");
+    public static final TagKey<Item> MIRRORS = createItem("mirrors");
+    public static final TagKey<Item> ROOTS = createItem("roots");
 
     public static final TagKey<Structure> BONFIRE_LOCATABLE = createStructure("bonfire_locatable");
     public static final TagKey<Structure> NOMAD_PRAYER_SITE = createStructure("nomad_prayer_site");
+    public static final TagKey<Structure> BASE_PEDESTAL = createStructure("base_pedestal");
+    public static final TagKey<Structure> NO_BASE_PEDESTAL = createStructure("no_base_pedestal");
+    public static final TagKey<Structure> KNEE = createStructure("knee");
+    public static final TagKey<Structure> NO_KNEE = createStructure("no_knee");
+
+    public static final TagKey<Biome> IS_FOGGY = createBiome("is_foggy");
+    public static final TagKey<Biome> IS_EXTRA_FOGGY = createBiome("is_extra_foggy");
+
+    public static final TagKey<EntityType<?>> IMMUNE_TO_DEAFENING = createEntity("immune_to_deafening");
+    public static final TagKey<EntityType<?>> SENSES_VIA_VIBRATION = createEntity("senses_via_vibration");
+
+    public static final TagKey<EntityType<?>> ENTROPIC_FORM = createEntity("entropic_form");
+    public static final TagKey<EntityType<?>> NO_IMAGE = createEntity("no_image");
 
     private static TagKey<Block> createBlock(String id) {
         return BlockTags.create(ResourceLocation.fromNamespaceAndPath(MODID, id));
@@ -44,5 +68,13 @@ public class BeyondTags {
 
     private static TagKey<Structure> createStructure(String id) {
         return TagKey.create(Registries.STRUCTURE, ResourceLocation.fromNamespaceAndPath(MODID, id));
+    }
+
+    private static TagKey<EntityType<?>> createEntity(String id) {
+        return TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(MODID, id));
+    }
+
+    private static TagKey<Biome> createBiome(String id) {
+        return TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(MODID, id));
     }
 }

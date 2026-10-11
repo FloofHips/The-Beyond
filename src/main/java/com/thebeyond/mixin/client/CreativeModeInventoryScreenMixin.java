@@ -1,6 +1,6 @@
 package com.thebeyond.mixin.client;
 
-import com.thebeyond.common.knowledge.HiddenContentFilter;
+import com.thebeyond.common.awareness.HiddenContentFilter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.player.LocalPlayer;
@@ -9,8 +9,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Filters hidden items out of the creative inventory search by post-filtering
- *  {@code menu.items} after {@code NonNullList#addAll}. {@code require = 0} for safety. */
+/** Filters hidden items out of the creative search after NonNullList#addAll, with require = 0. */
 @Mixin(CreativeModeInventoryScreen.class)
 public class CreativeModeInventoryScreenMixin {
 

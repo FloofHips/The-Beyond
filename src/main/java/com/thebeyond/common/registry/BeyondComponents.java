@@ -1,10 +1,19 @@
 package com.thebeyond.common.registry;
 
+import com.mojang.serialization.Codec;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.item.components.ComponentCodecs;
 import com.thebeyond.common.item.components.Components;
+import net.minecraft.core.component.DataComponentHolder;
 import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.ExtraCodecs;
+import net.neoforged.neoforge.common.util.DataComponentUtil;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -18,22 +27,48 @@ public class BeyondComponents {
                     .networkSynchronized(ComponentCodecs.DYNAMIC_COLOR_STREAM_CODEC)
     );
 
-    //public static final DeferredHolder<DataComponentType<?>, DataComponentType<Components.ColorComponent>> COLOR_COMPONENT = COMPONENTS.registerComponentType(
-    //        "color",
-    //        builder -> builder
-    //                .persistent(ComponentCodecs.COLOR_COMPONENT_CODEC)
-    //                .networkSynchronized(ComponentCodecs.COLOR_COMPONENT_STREAM_CODEC)
-    //);
-    //public static final DeferredHolder<DataComponentType<?>, DataComponentType<Components.AlphaComponent>> ALPHA_COMPONENT = COMPONENTS.registerComponentType(
-    //        "alpha",
-    //        builder -> builder
-    //                .persistent(ComponentCodecs.ALPHA_COMPONENT_CODEC)
-    //                .networkSynchronized(ComponentCodecs.ALPHA_COMPONENT_STREAM_CODEC)
-    //);
-    //public static final DeferredHolder<DataComponentType<?>, DataComponentType<Components.BrightnessComponent>> BRIGHTNESS_COMPONENT = COMPONENTS.registerComponentType(
-    //        "brightness",
-    //        builder -> builder
-    //                .persistent(ComponentCodecs.BRIGHTNESS_COMPONENT_CODEC)
-    //                .networkSynchronized(ComponentCodecs.BRIGHTNESS_COMPONENT_STREAM_CODEC)
-    //);
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> OCARINA_MODE = COMPONENTS.registerComponentType(
+            "ocarina_mode",
+            builder -> builder
+                    .persistent(ExtraCodecs.intRange(0, 3))
+                    .networkSynchronized(ByteBufCodecs.VAR_INT)
+    );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> ALERT = COMPONENTS.registerComponentType(
+            "alert",
+            builder -> builder
+                    .persistent(Codec.BOOL)
+                    .networkSynchronized(ByteBufCodecs.BOOL)
+    );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Component>> SNAPSHOT_DATE = COMPONENTS.registerComponentType(
+            "snapshot_date",
+            builder -> builder
+                    .persistent(ComponentSerialization.FLAT_CODEC)
+                    .networkSynchronized(ComponentSerialization.STREAM_CODEC)
+    );
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Components.SnapshotPixelsComponent>> SNAPSHOT_PIXELS = COMPONENTS.registerComponentType(
+            "snapshot_pixels",
+            builder -> builder
+                    .persistent(ComponentCodecs.SNAPSHOT_PIXELS_CODEC)
+                    .networkSynchronized(ComponentCodecs.SNAPSHOT_PIXELS_STREAM_CODEC)
+                    .cacheEncoding()
+    );
+
+    /** The filter a snapshot was taken with, used wherever the photo renders. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<ResourceLocation>> SNAPSHOT_GRADE = COMPONENTS.registerComponentType(
+            "snapshot_grade",
+            builder -> builder
+                    .persistent(ResourceLocation.CODEC)
+                    .networkSynchronized(ResourceLocation.STREAM_CODEC)
+    );
+
+    /** The filter a camera stamps onto the photos it takes. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<ResourceLocation>> CAMERA_GRADE = COMPONENTS.registerComponentType(
+            "camera_grade",
+            builder -> builder
+                    .persistent(ResourceLocation.CODEC)
+                    .networkSynchronized(ResourceLocation.STREAM_CODEC)
+    );
 }

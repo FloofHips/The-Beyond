@@ -1,0 +1,27 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "the_beyond:block/prismograph",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "the_beyond:block/prismograph"
+    },
+    "facing=south": {
+      "model": "the_beyond:block/prismograph",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "the_beyond:block/prismograph",
+      "y": 270
+    },
+    "facing=down": {
+      "model": "the_beyond:block/prismograph",
+      "x": 180
+    },
+    "facing=up": {
+      "model": "the_beyond:block/prismograph",
+      "x": 270
+    }
+  }
+}

@@ -43,11 +43,7 @@ public class ParanoiaBlock extends Block {
     @Override
     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         BlockState block = level.getBlockState(pos.below());
-        // Sprout-spawn probability per random tick:
-        //   thunder -> 5% (checked first; thunder is a superset of rain in vanilla)
-        //   rain    -> 2%
-        //   dry     -> no spawn
-        // An unconditional rain-only gate produced Enadrake swarms at scale.
+        // sprout chance per random tick: 5% in thunder (checked first), 2% in rain, none when dry
         if (block.isAir()) {
             float chance;
             if (level.isThundering()) {

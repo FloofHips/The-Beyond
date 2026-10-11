@@ -1,6 +1,11 @@
 {
   "values": [
     "the_beyond:xylem",
+    "the_beyond:perka_stalk",
+    "the_beyond:perka_stalk_mouth",
+    "the_beyond:bleeding_thorn",
+    "the_beyond:blinding_thorn",
+    "the_beyond:xylem",
     "#the_beyond:obiroot_blocks"
   ]
 }

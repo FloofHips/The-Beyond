@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_brittle_metal_block": {
+      "conditions": {
+        "items": [
+          {
+            "items": "the_beyond:brittle_metal_block"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "minecraft:brittle_metal_slab_from_brittle_metal_block_stonecutting"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_brittle_metal_block"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "minecraft:brittle_metal_slab_from_brittle_metal_block_stonecutting"
+    ]
+  }
+}

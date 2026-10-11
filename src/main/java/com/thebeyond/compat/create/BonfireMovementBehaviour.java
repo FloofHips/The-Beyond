@@ -13,8 +13,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 
-/** When {@link BonfireBlock#LIT}, spawns/splits lanterns capped at 10 around
- *  {@link MovementContext#position}. Player attributed to nearest within 16 blocks. */
+/** A lit bonfire spawns and splits up to 10 lanterns around it, credited to the nearest player within 16. */
 public class BonfireMovementBehaviour implements MovementBehaviour {
     private static final int CYCLE = 5;
     private static final int RADIUS = 20;

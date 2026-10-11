@@ -11,8 +11,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Intercepts the erased {@code encode(Object)} bridge before its checkcast to Holder so
- *  ResourceKey contamination (via generic erasure from other mods) doesn't crash saves. */
+/** Catches the erased encode bridge before its cast to Holder, so stray ResourceKeys from other mods cannot crash saves. */
 @Mixin(RegistryFileCodec.class)
 public class RegistryFileCodecMixin<E> {
 

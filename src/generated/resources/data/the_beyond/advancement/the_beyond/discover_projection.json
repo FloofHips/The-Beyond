@@ -1,0 +1,28 @@
+{
+  "parent": "the_beyond:the_beyond/fill_projector",
+  "criteria": {
+    "discover_projection": {
+      "trigger": "the_beyond:discover_projection"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.the_beyond.discover_projection.description"
+    },
+    "frame": "goal",
+    "hidden": true,
+    "icon": {
+      "count": 1,
+      "id": "the_beyond:beads_remembrance"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.discover_projection.title"
+    }
+  },
+  "requirements": [
+    [
+      "discover_projection"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

@@ -1,7 +1,6 @@
 package com.thebeyond.compat.jei;
 
-/** Class-load firewall: holds only a {@code Runnable} so {@link #refresh()} stays callable
- *  without JEI on the classloader. Hook never installed when JEI absent → no-op. */
+/** Holds only a Runnable so refresh() works without JEI loaded, a no-op when JEI is absent. */
 public final class JeiCompatBridge {
 
     private JeiCompatBridge() {}

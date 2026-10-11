@@ -4,7 +4,7 @@ import com.google.common.collect.ListMultimap;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
-import com.thebeyond.common.knowledge.HiddenContentFilter;
+import com.thebeyond.common.awareness.HiddenContentFilter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -16,8 +16,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import java.util.List;
 import java.util.Map;
 
-/** Filters Explorer's Compass results per-player. Wraps all three {@code StructureUtils}
- *  queries in {@code use()} so hidden names don't leak via the group multimaps. */
+/** Filters Explorer's Compass per player, wrapping all three StructureUtils queries so no hidden name leaks. */
 @Pseudo
 @Mixin(targets = "com.chaosthedude.explorerscompass.items.ExplorersCompassItem", remap = false)
 public abstract class ExplorersCompassItemMixin {

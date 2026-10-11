@@ -9,14 +9,12 @@ import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 import java.util.List;
 import java.util.Set;
 
-/** Dist-client gate for {@code the_beyond.client.mixins.json}: vetoes every target on
- *  servers so the config can be {@code required=true} without {@code ClassNotFoundException}
- *  on {@code net.minecraft.client.*}. The plugin itself must reference no game classes. */
+/** Vetoes the client mixins on servers so their config can be required, and must reference no game classes. */
 public class ClientMixinConfigPlugin implements IMixinConfigPlugin {
 
     @Override
     public void onLoad(String mixinPackage) {
-        // Do not log — LOGGER's slf4j binding may not be wired yet in datagen/JUnit bootstrap.
+        // no logging, slf4j may not be wired yet in datagen or JUnit
     }
 
     @Override

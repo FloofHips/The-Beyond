@@ -8,10 +8,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
-/**
- * Sent from server to client when the refuge mode is confirmed.
- * Triggers the activation animation on the client renderer.
- */
+/** Server to client once the refuge mode is confirmed, it starts the activation animation. */
 public record RefugeActivatePayload(BlockPos pos, byte mode) implements CustomPacketPayload {
     public static final Type<RefugeActivatePayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "refuge_activate"));
 

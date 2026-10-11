@@ -11,8 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-/** Strips non-Holder entries (ResourceKey contamination from other mods) out of
- *  {@code possibleBiomes}. Priority 1100 to run after UnusualEnd / Phantasm. */
+/** Strips ResourceKey entries other mods leave in possibleBiomes, at priority 1100 after UnusualEnd and Phantasm. */
 @Mixin(value = BiomeSource.class, priority = 1100)
 public class BiomeSourceSanitizerMixin {
 

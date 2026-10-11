@@ -1,12 +1,10 @@
 package com.thebeyond.common.block.blockentities;
 
 import com.thebeyond.common.block.EnadrakeHutBlock;
+import com.thebeyond.common.block.MirrorBlock;
 import com.thebeyond.common.block.blockstates.HutHeightProperty;
 import com.thebeyond.common.entity.EnadrakeEntity;
-import com.thebeyond.common.registry.BeyondBlockEntities;
-import com.thebeyond.common.registry.BeyondBlocks;
-import com.thebeyond.common.registry.BeyondEntityTypes;
-import com.thebeyond.common.registry.BeyondTags;
+import com.thebeyond.common.registry.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -31,6 +29,7 @@ import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.block.state.properties.StairsShape;
 import net.minecraft.world.phys.Vec3;
@@ -119,8 +118,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
     public static void tick(Level level, BlockPos pos, BlockState state, EnadrakeHutBlockEntity be) {
         if (!(level instanceof ServerLevel serverLevel)) return;
 
-        // Sub-level pull: mirrors EnadrakeEnterHutGoal + EnadrakeMoveToHutGoal canUse() gates.
-        // Gate on gameTime first to avoid the Sable lookup on 19 of every 20 ticks.
+        // the same gates as the hut goals' canUse(), checked every 20 ticks to spare the Sable lookup
         net.minecraft.world.phys.Vec3 visible = level.getGameTime() % 20 == 0
                 ? com.thebeyond.api.compat.BeyondCompatHooks.visibleOnly(level, pos)
                 : null;
@@ -168,8 +166,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
             be.tryToExit(false);
         }
 
-        // POD BEHAVIOR: implemented in EnadrakeEntity (fleeToHut flag + scream signal + EnadrakeEnterHutGoal)
-        // Uncomment the commented sections in EnadrakeEntity.java to enable
+        // pod behaviour lives in EnadrakeEntity's commented sections, uncomment them to enable it
 
         boolean hasItem = (be.item != null && !be.getItem(0).isEmpty());
         if (!hasItem) {
@@ -187,9 +184,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         }
     }
 
-    /**
-     * Counts how many ENADRAKE_HUT blocks are stacked above this one (including this one).
-     */
+    /** How many hut blocks are stacked from this one up, this one included. */
     public int getStackHeight() {
         if (level == null) return 1;
         int height = 1;
@@ -213,10 +208,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         return this.storedEnadrake.isEmpty();
     }
 
-    /**
-     * Atomically checks availability and reserves in one call.
-     * Returns true if reservation succeeded.
-     */
+    /** Checks availability and reserves in one call, true when it succeeded. */
     //public boolean reserve(UUID enadrakeUUID) {
     //    if (this.reservations.containsKey(enadrakeUUID)) return true;
     //    if (!isAvailable()) return false;
@@ -228,10 +220,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
     //    this.reservations.remove(enadrakeUUID);
     //}
 
-    /**
-     * Transfers stored enadrakes to another hut block entity.
-     * Exits one enadrake to account for the lost block, then migrates the rest.
-     */
+    /** Moves the stored enadrakes to another hut, one exits first for the lost block. */
     //public void migrateOccupantsTo(EnadrakeHutBlockEntity target) {
     //    // Exit one enadrake (the broken block reduces capacity by 1)
     //    if (!this.storedEnadrakes.isEmpty()) {
@@ -250,9 +239,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
     //    }
     //}
 
-    /**
-     * If stack shrunk (blocks broken), exit excess enadrakes.
-     */
+    /** Exits the enadrakes that no longer fit after blocks of the stack broke. */
     //public void validateCapacity() {
     //    int capacity = getStackHeight();
     //    while (this.storedEnadrakes.size() > capacity) {
@@ -273,7 +260,8 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         enadrake.setHutPosition(this.worldPosition);
 
         if (level instanceof ServerLevel serverLevel) {
-            serverLevel.playSound(null, this.getBlockPos(), SoundEvents.BEEHIVE_ENTER, SoundSource.BLOCKS, 1.0F, 0.7F + 0.5F);
+            serverLevel.playSound(null, this.getBlockPos(), BeyondSoundEvents.ENADRAKE_HUT_ENTER.get(), SoundSource.BLOCKS, 1.0F, 0.8f+level.random.nextFloat()*0.5f);
+            serverLevel.playSound(null, this.getBlockPos(), BeyondSoundEvents.ENADRAKE_TELEPORT.get(), SoundSource.BLOCKS, 1.0F, 0.8f+level.random.nextFloat()*0.5f);
             serverLevel.sendParticles(ParticleTypes.PORTAL, enadrake.position().x, enadrake.position().y+0.6, enadrake.position().z, 20, 0.3, 0.3, 0.3, 0.05);
         }
 
@@ -285,9 +273,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         return true;
     }
 
-    /**
-     * Exits one enadrake (first in list). Called when a hut block is broken.
-     */
+    /** Exits the first enadrake, when a hut block breaks. */
     public void tryToExit(boolean angerOne) {
         if (this.level == null || this.level.isClientSide) return;
         if (this.storedEnadrake.isEmpty()) return;
@@ -300,7 +286,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
                 com.thebeyond.api.compat.BeyondCompatHooks.visibleOnly(serverLevel, this.worldPosition);
         BlockPos exitPos = visible != null ? BlockPos.containing(visible).above() : this.findExitPosition();
 
-        serverLevel.playSound(null, this.getBlockPos(), SoundEvents.BEEHIVE_EXIT, SoundSource.BLOCKS, 1.0F, 0.7F + 0.5F);
+        serverLevel.playSound(null, this.getBlockPos(), BeyondSoundEvents.ENADRAKE_HUT_LEAVE.get(), SoundSource.BLOCKS, 1.0F, 0.8f+level.random.nextFloat()*0.5f);
 
         Entity entity = EntityType.loadEntityRecursive(nbt, serverLevel, (e) -> {
             e.moveTo(exitPos.getX() + 0.5, exitPos.getY(), exitPos.getZ() + 0.5, e.getYRot(), e.getXRot());
@@ -314,6 +300,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
             serverLevel.addFreshEntity(enadrake);
 
             serverLevel.sendParticles(ParticleTypes.PORTAL, enadrake.position().x, enadrake.position().y+0.6, enadrake.position().z, 20, 0.3, 0.3, 0.3, 0.05);
+            serverLevel.playSound(null, this.getBlockPos(), BeyondSoundEvents.ENADRAKE_TELEPORT.get(), SoundSource.BLOCKS, 1.0F, 0.8f+level.random.nextFloat()*0.5f);
 
             if (angerOne)
                 enadrake.panic = 220;
@@ -323,9 +310,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         safeSendBlockUpdated(this.level, this.worldPosition, this.getBlockState());
     }
 
-    /**
-     * Exits all enadrakes. Called when it starts raining or base is broken.
-     */
+    /** Exits every enadrake, when it starts raining or the base breaks. */
     //public void exitAll(boolean angerOne) {
     //    if (this.level == null || this.level.isClientSide) return;
     //    if (!(this.level instanceof ServerLevel serverLevel)) return;
@@ -482,7 +467,6 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
 
     private boolean tryExpandHut(ServerLevel level) {
         if (canExpandUpward()) {
-            level.playSound(null, this.getBlockPos(), SoundEvents.DECORATED_POT_INSERT, SoundSource.BLOCKS, 1.0F, 0.7F + 0.5F);
             return expandUpward(level);
         }
 
@@ -506,6 +490,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
             placeBlock(level, facing, newPos);
         }
 
+        level.playSound(null, this.getBlockPos(), BeyondSoundEvents.ENADRAKE_HUT_SPREAD.get(), SoundSource.BLOCKS, 1.0F, 0.8f + level.random.nextFloat()*0.3f);
         return true;
     }
 
@@ -531,6 +516,10 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
 
     private @NotNull BlockState getBlockState(Direction facing) {
         Rarity rarity = item.getRarity();
+
+        //replace with data driving
+        if (item.is(BeyondItems.PEARL_BEAD))
+            return BeyondBlocks.ORNATE_MIRROR.get().defaultBlockState().setValue(MirrorBlock.FACE_PROPERTIES.get(facing), true);
 
         if (rarity == Rarity.EPIC)
             return BeyondBlocks.ENADRAKE_FLARE.get().defaultBlockState();
@@ -649,7 +638,7 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
 
             placeBlock(level, facing, newPos);
 
-            level.playSound(null, this.getBlockPos(), SoundEvents.DECORATED_POT_INSERT, SoundSource.BLOCKS, 1.0F, 0.7F + 0.5F);
+            level.playSound(null, this.getBlockPos(), BeyondSoundEvents.ENADRAKE_HUT_SPREAD.get(), SoundSource.BLOCKS, 1.0F, 0.8f + level.random.nextFloat()*0.3f);
             return true;
         }
 

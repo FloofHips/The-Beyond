@@ -6,8 +6,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Lets {@code isThundering} return true in the End — vanilla gates on hasSkyLight
- *  (false here), breaking lantern migration / bonfire splits that depend on thunder. */
+/** Lets isThundering be true in the End, where hasSkyLight is false, for the thunder-driven lanterns and bonfires. */
 @Mixin(Level.class)
 public class EndWeatherMixin {
 

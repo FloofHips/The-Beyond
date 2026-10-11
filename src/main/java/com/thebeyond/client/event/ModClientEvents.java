@@ -4,98 +4,68 @@ import com.mojang.blaze3d.shaders.FogShape;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Axis;
+import com.simibubi.create.content.equipment.bell.SoulParticle;
 import com.thebeyond.BeyondConfig;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.event.specialeffects.EndSpecialEffects;
-import com.thebeyond.client.gui.NomadsBlessingOverlay;
-import com.thebeyond.client.gui.RefugeScreen;
+import com.thebeyond.client.gui.*;
 import com.thebeyond.client.model.*;
 
 import com.thebeyond.client.model.equipment.ArmorModel;
 import com.thebeyond.client.model.equipment.MultipartArmorModel;
 import com.thebeyond.client.particle.*;
 import com.thebeyond.client.renderer.*;
-import com.thebeyond.client.renderer.blockentities.BonfireRenderer;
-import com.thebeyond.client.renderer.blockentities.MemorFaucetRenderer;
-import com.thebeyond.client.renderer.blockentities.RefugeRenderer;
-import com.thebeyond.common.block.RefugeBlock;
-import com.thebeyond.common.block.blockentities.RefugeBlockEntity;
-import com.thebeyond.common.entity.TotemOfRespiteEntity;
-import com.thebeyond.common.item.LiveFlameItem;
-import com.thebeyond.common.item.ModelArmorItem;
+import com.thebeyond.client.renderer.blockentities.*;
+import com.thebeyond.common.item.*;
 import com.thebeyond.common.registry.*;
-import com.thebeyond.mixin.AbstractSoundInstanceAccessor;
-import com.thebeyond.util.AOEManager;
 import com.thebeyond.util.ColorUtils;
-import com.thebeyond.util.RefugeChunkData;
 import com.thebeyond.util.RenderUtils;
+import com.thebeyond.client.particle.BellowJetParticle;
+import com.thebeyond.compat.sable.client.BeyondSableClientCompat;
+import com.thebeyond.client.renderer.BlockCameraCapture;
+import com.thebeyond.mixin.client.BossHealthOverlayAccessor;
+import com.thebeyond.client.camera.CameraAim;
+import com.thebeyond.common.item.components.Components;
+import com.thebeyond.common.camera.Grades;
+import com.thebeyond.client.renderer.ItemIconTextures;
+import com.thebeyond.common.block.blockentities.MirrorBlockEntity;
+import com.thebeyond.client.renderer.MirrorReflection;
+import com.thebeyond.common.block.blockentities.ProjectorBlockEntity;
+import com.thebeyond.client.compat.ShaderCompatLib;
+import com.thebeyond.compat.sodium.client.SodiumSecondaryView;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.model.HumanoidModel;
-import net.minecraft.client.model.Model;
 import net.minecraft.client.model.geom.builders.CubeDeformation;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.FlameParticle;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
-import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.entity.FallingBlockRenderer;
-import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.ModelResourceLocation;
-import net.minecraft.client.resources.sounds.AbstractSoundInstance;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.core.*;
-import net.minecraft.core.particles.ItemParticleOption;
-import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.damagesource.DamageTypes;
-import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
-import net.minecraft.world.entity.ai.village.poi.PoiManager;
-import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.monster.Zombie;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.decoration.GlowItemFrame;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.vehicle.ChestBoat;
-import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.level.*;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.RotatedPillarBlock;
-import net.minecraft.world.level.block.SweetBerryBushBlock;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.ChunkAccess;
-import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.synth.PerlinSimplexNoise;
 import net.minecraft.world.level.material.FluidState;
-import net.minecraft.world.level.portal.DimensionTransition;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.Event;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -106,25 +76,13 @@ import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtension
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.common.util.TriState;
-import net.neoforged.neoforge.event.PlayLevelSoundEvent;
-import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
-import net.neoforged.neoforge.event.entity.living.*;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
-import net.neoforged.neoforge.event.entity.player.UseItemOnBlockEvent;
-import net.neoforged.neoforge.event.level.*;
-import net.neoforged.neoforge.event.tick.PlayerTickEvent;
-import net.neoforged.neoforge.event.tick.ServerTickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
-import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
-import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
-import java.lang.reflect.Field;
-import java.nio.Buffer;
 import java.util.*;
-import java.util.stream.Collectors;
+
+import net.neoforged.fml.ModList;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 
 @SuppressWarnings("unused")
 @EventBusSubscriber(modid = TheBeyond.MODID, value = Dist.CLIENT)
@@ -147,35 +105,63 @@ public class ModClientEvents {
     public static float bossFog = 0;
     public static float effectFog = 1;
     public static float nomadEyes = 0;
+    public static float empathy = 0;
+    public static float zoomModifier = 1;
+
+    @SubscribeEvent
+    public static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {
+        event.registerReloadListener((ResourceManagerReloadListener)
+                rm -> MirrorReflection.clearModelCache());
+        event.registerReloadListener((ResourceManagerReloadListener)
+                rm -> ProjectorRenderer.clearModelCache());
+    }
+
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event){
         EntityRenderers.register(BeyondEntityTypes.ENDERGLOP.get(), EnderglopRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.ENADRAKE.get(), EnadrakeRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.ENATIOUS_TOTEM.get(), EnatiousTotemRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.STALKER.get(), StalkerRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.KNOCKBACK_SEED.get(), KnockBackSeedRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.POISON_SEED.get(), PoisonSeedRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.UNSTABLE_SEED.get(), UnstableSeedRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.LANTERN.get(), LanternRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.ABYSSAL_NOMAD.get(), AbyssalNomadRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.TRINKET.get(), TrinketRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.BAUBLE.get(), LivingBlockRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.TOTEM_OF_RESPITE.get(), TotemOfRespiteRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.GRAVISTAR.get(), ThrownItemRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.SMOKE_FUSE.get(), ThrownItemRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.COILED_STALK.get(), ThrownItemRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.PEARL_BEAD.get(), ThrownItemRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.SIBLING.get(), SiblingRenderer::new);
         EntityRenderers.register(BeyondEntityTypes.RISING_BLOCK.get(), FallingBlockRenderer::new);
+        EntityRenderers.register(BeyondEntityTypes.BRUBBLE.get(), BrubbleRenderer::new);
 
         ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID.get(), RenderType.cutoutMipped());
         ItemBlockRenderTypes.setRenderLayer(BeyondFluids.GELLID_VOID_FLOWING.get(), RenderType.cutoutMipped());
-        // Fire textures have alpha-channel transparency; without cutout the default solid layer
-        // renders the alpha=0 pixels as opaque void, exposing the sky/render-behind through the
-        // flame and making the block underneath look transparent.
+        // Cutout, not solid: the flame texture has alpha=0 pixels.
         ItemBlockRenderTypes.setRenderLayer(BeyondBlocks.VOID_FLAME.get(), RenderType.cutout());
 
         BlockEntityRenderers.register(BeyondBlockEntities.BONFIRE.get(), BonfireRenderer::new);
         BlockEntityRenderers.register(BeyondBlockEntities.MEMOR_FAUCET.get(), MemorFaucetRenderer::new);
         BlockEntityRenderers.register(BeyondBlockEntities.REFUGE.get(), RefugeRenderer::new);
+        BlockEntityRenderers.register(BeyondBlockEntities.PROJECTOR.get(), ProjectorRenderer::new);
+        // Mirror has no BER: see onMirrorReflectionCapture / onMirrorDraw. Sable-gated so the class never loads without Sable.
+        if (ModList.get().isLoaded("sable")) {
+            BeyondSableClientCompat.registerRenderers();
+        }
+        // under Sodium's single render manager the off-loop renderLevel draws no terrain, so a spare context swaps in
+        if (ModList.get().isLoaded("sodium")) {
+            SodiumSecondaryView.install();
+        }
     }
 
     @SubscribeEvent
     public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(BeyondMenus.REFUGE.get(), RefugeScreen::new);
+        event.register(BeyondMenus.PROJECTOR.get(), ProjectorScreen::new);
+        event.register(BeyondMenus.MEMORY_BANK.get(), MemoryBankScreen::new);
     }
 
     @SubscribeEvent
@@ -199,6 +185,9 @@ public class ModClientEvents {
         event.registerLayerDefinition(BeyondModelLayers.LANTERN_SMALL, LanternSmallModel::createBodyLayer);
         event.registerLayerDefinition(BeyondModelLayers.ABYSSAL_NOMAD, () -> AbyssalNomadModel.createBodyLayer(CubeDeformation.NONE));
         event.registerLayerDefinition(BeyondModelLayers.ABYSSAL_NOMAD_GLOW, () -> AbyssalNomadModel.createBodyLayer(new CubeDeformation(-0.1f)));
+        event.registerLayerDefinition(BeyondModelLayers.STALKER, StalkerModel::createBodyLayer);
+        event.registerLayerDefinition(BeyondModelLayers.BRUBBLE, BrubbleModel::createBodyLayer);
+        event.registerLayerDefinition(BeyondModelLayers.SIBLING, SiblingModel::createBodyLayer);
 
 
         BeyondItems.ITEMS.getEntries().stream()
@@ -213,8 +202,7 @@ public class ModClientEvents {
                 });
     }
 
-    // Spawn placements moved to com.thebeyond.common.event.ModEvents — RegisterSpawnPlacementsEvent
-    // must fire on BOTH sides (mod event bus) or the dedicated server never registers them.
+    // Spawn placements live in common ModEvents: must fire on both sides, not just CLIENT.
 
     @SubscribeEvent
     public static void registerParticleProviders(RegisterParticleProvidersEvent event) {
@@ -229,14 +217,41 @@ public class ModClientEvents {
         event.registerSpriteSet(BeyondParticleTypes.VOID_FLAME.get(), sprites
                 -> new FlameParticle.Provider(sprites));
 
+        event.registerSpriteSet(BeyondParticleTypes.BITE.get(), sprites
+                -> new BiteParticle.Provider(sprites));
+
+        event.registerSpriteSet(BeyondParticleTypes.SHIMMER.get(), sprites
+                -> new ShimmerParticle.Provider(sprites));
+
+        event.registerSpriteSet(BeyondParticleTypes.EXCLAMATION.get(), sprites
+                -> new SmallDisappearingParticle.Provider(sprites));
+
+        event.registerSpriteSet(BeyondParticleTypes.BLOCK_POINT.get(), sprites
+                -> new BlockFaceParticle.Provider(sprites));
+
+        event.registerSpriteSet(BeyondParticleTypes.ARROW.get(), sprites
+                -> new SmallDisappearingParticle.Provider(sprites));
+
+        event.registerSpriteSet(BeyondParticleTypes.WIND.get(), sprites
+                -> new WindParticle.Provider(sprites));
+
+        event.registerSpriteSet(BeyondParticleTypes.SOUL.get(), sprites
+                -> new SoulEscapeParticle.Provider(sprites));
+
         event.registerSpriteSet(BeyondParticleTypes.SMOKE.get(),
                 sprites -> new SmokeParticle.Provider(sprites));
+
+        event.registerSpriteSet(BeyondParticleTypes.BELLOW_JET.get(),
+                sprites -> new BellowJetParticle.Provider(sprites));
 
         event.registerSpriteSet(BeyondParticleTypes.PIXEL.get(),
                 sprites -> new PixelParticle.Provider(sprites));
 
         event.registerSpriteSet(BeyondParticleTypes.CIRCLE.get(),
                 sprites -> new CircleParticle.Provider(sprites));
+
+        event.registerSpriteSet(BeyondParticleTypes.CLOUD.get(),
+                sprites -> new CloudParticle.Provider(sprites));
 
         event.registerSpriteSet(BeyondParticleTypes.CROSSHAIR.get(),
                 sprites -> new CrosshairParticle.Provider(sprites));
@@ -254,9 +269,60 @@ public class ModClientEvents {
             event.registerShader(new ShaderInstance(event.getResourceProvider(),
                     ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_refuge_gradient"),
                     DefaultVertexFormat.NEW_ENTITY), BeyondShaders::setRefugeGradient);
+            event.registerShader(new ShaderInstance(event.getResourceProvider(),
+                    ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_mirror"),
+                    DefaultVertexFormat.POSITION_COLOR), BeyondShaders::setMirror);
+            event.registerShader(new ShaderInstance(event.getResourceProvider(),
+                    ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_projector_grade_data"),
+                    DefaultVertexFormat.POSITION_TEX), BeyondShaders::setProjectorGradeData);
+            event.registerShader(new ShaderInstance(event.getResourceProvider(),
+                    ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_projector_dist"),
+                    DefaultVertexFormat.POSITION_TEX), BeyondShaders::setProjectorDist);
+            event.registerShader(new ShaderInstance(event.getResourceProvider(),
+                    ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_projector_dist_peel"),
+                    DefaultVertexFormat.POSITION_TEX), BeyondShaders::setProjectorDistPeel);
+            event.registerShader(new ShaderInstance(event.getResourceProvider(),
+                    ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_projector_dist_entity"),
+                    DefaultVertexFormat.NEW_ENTITY), BeyondShaders::setProjectorDistEntity);
+            event.registerShader(new ShaderInstance(event.getResourceProvider(),
+                    ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_projector_dist_block_entity"),
+                    DefaultVertexFormat.NEW_ENTITY), BeyondShaders::setProjectorDistBlockEntity);
+            event.registerShader(new ShaderInstance(event.getResourceProvider(),
+                    ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_projector_dist_block_entity_peel"),
+                    DefaultVertexFormat.NEW_ENTITY), BeyondShaders::setProjectorDistBlockEntityPeel);
+            event.registerShader(new ShaderInstance(event.getResourceProvider(),
+                    ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_projector_decal"),
+                    DefaultVertexFormat.POSITION), BeyondShaders::setProjectorDecal);
+            event.registerShader(new ShaderInstance(event.getResourceProvider(),
+                    ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "rendertype_projector_depth_merge"),
+                    DefaultVertexFormat.POSITION), BeyondShaders::setProjectorDepthMerge);
         } catch (Exception exception) {
             TheBeyond.LOGGER.error("The Beyond could not register internal shaders! :(", exception);
         }
+    }
+
+    /** The deafening potion is dark wine-purple, it has no baked effects so vanilla would color it water-blue. */
+    @SubscribeEvent
+    public static void colorSetupItem(RegisterColorHandlersEvent.Item event) {
+        event.register((stack, tintIndex) -> {
+            if (tintIndex > 0) return -1;
+            net.minecraft.world.item.alchemy.PotionContents contents =
+                    stack.getOrDefault(net.minecraft.core.component.DataComponents.POTION_CONTENTS,
+                            net.minecraft.world.item.alchemy.PotionContents.EMPTY);
+            if (contents.potion().map(h -> h.is(BeyondPotions.DEAFENING.getKey())).orElse(false)) {
+                return -12160095;
+            }
+            return contents.getColor();
+        }, net.minecraft.world.item.Items.POTION, net.minecraft.world.item.Items.SPLASH_POTION,
+                net.minecraft.world.item.Items.LINGERING_POTION);
+
+        event.register((stack, tintIndex) -> {
+            return tintIndex > 0 ? -1 : DyedItemColor.getOrDefault(stack, DyeColor.BLACK.getFireworkColor());
+        }, BeyondItems.SMOKE_FUSE.asItem());
+
+        event.register((stack, tintIndex) -> {
+            return tintIndex > 0 ? -1 : DyedItemColor.getOrDefault(stack, -10659444);
+        }, BeyondItems.MEMORY_BANK.asItem());
     }
 
     @SubscribeEvent
@@ -275,30 +341,13 @@ public class ModClientEvents {
             }
             return 0xFFFFFF;
         }, BeyondBlocks.AURORACITE.get());
-
-        //colors.register((state, reader, pos, tintIndex) -> {
-        //    if (pos != null) {
-        //        Vec3 B = new Vec3(202, 222, 234);
-        //        Vec3 PR = new Vec3(168, 200, 207);
-        //        Vec3 P = new Vec3(255, 227, 248);
-        //        Vec3 G = new Vec3(202, 234, 221);
-        //        Vec3 Y = new Vec3(239, 250, 218);
-//
-        //        return ColorUtils.getNoiseColor(pos, B, PR, P, G, Y);
-        //    }
-        //    return 0xFFFFFF;
-        //}, BeyondBlocks.PEARL.get(), BeyondBlocks.PEARL_BRICKS.get());
     }
 
     @SubscribeEvent(priority = EventPriority.LOW)
     public static void dimensionSpecialEffects(RegisterDimensionSpecialEffectsEvent event){
         EndSpecialEffects effects = new EndSpecialEffects();
         event.register(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "the_end"), effects);
-        // Also register for the vanilla key. When another mod (e.g. BetterEnd) overrides
-        // the End dimension type's effectsLocation back to minecraft:the_end, Beyond's custom
-        // sky, fog color, and lightmap adjustments must still apply. Priority LOW ensures this
-        // handler runs after other mods' NORMAL-priority handlers, so Beyond's registration
-        // takes precedence (last writer wins in the DimensionSpecialEffects map).
+        // also under the vanilla key, since a mod may repoint the End to minecraft:the_end, and LOW priority writes last
         event.register(ResourceLocation.withDefaultNamespace("the_end"), effects);
     }
 
@@ -306,8 +355,7 @@ public class ModClientEvents {
     public static void onRenderFog(ViewportEvent.RenderFog event) {
         Entity cameraEntity = event.getCamera().getEntity();
         if (cameraEntity == null) return;
-        // Gated by enableCustomFog clientside config — when disabled, the vanilla
-        // fog for the End runs unchanged. Mirrors FogRendererMixin's gate.
+        // enableCustomFog off leaves the vanilla End fog unchanged, the same gate as FogRendererMixin
         if (cameraEntity.level().dimension() == Level.END && BeyondConfig.ENABLE_CUSTOM_FOG.get()) {
             event.setCanceled(true);
             event.setFogShape(FogShape.SPHERE);
@@ -315,18 +363,12 @@ public class ModClientEvents {
             float finalFog = finalEffectFog(event.getCamera());
 
             float y = (float) cameraEntity.position().y;
-            // Clamp minimum fog end to 30 blocks so fog stays valid at negative Y
-            // (Enderscape extends End min height to y=-64)
+            // Floor at 30 keeps it valid at negative Y (Enderscape lowers End min to y=-64).
 
             float fogEnd = Math.max((y*2 + 30) * finalFog, 30 * finalFog);
             event.setFarPlaneDistance(fogEnd);
             event.setNearPlaneDistance(Mth.lerp(bossFog,15 * finalFog,0));
        }
-    }
-
-    @SubscribeEvent
-    public static void onColorFog(ViewportEvent.ComputeFogColor event) {
-
     }
 
     public static float finalEffectFog(Camera camera) {
@@ -358,8 +400,42 @@ public class ModClientEvents {
         }
     }
 
-    // Server-side Refuge, Totem, and gameplay handlers moved to ModGameEvents.java
-    // so they register on dedicated servers (not just Dist.CLIENT).
+    /** The deafening potion applies its effects on break, so its tooltip line is replaced by the real payload. */
+    @SubscribeEvent
+    public static void onItemTooltip(net.neoforged.neoforge.event.entity.player.ItemTooltipEvent event) {
+        ItemStack stack = event.getItemStack();
+        net.minecraft.world.item.alchemy.PotionContents contents =
+                stack.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS);
+        if (contents == null) return;
+        if (contents.potion().map(h -> !h.is(BeyondPotions.DEAFENING.getKey())).orElse(true)) return;
+
+        boolean lingering = stack.is(net.minecraft.world.item.Items.LINGERING_POTION);
+        int seconds = (lingering
+                ? com.thebeyond.common.event.BeyondDeafeningPotionEvents.LINGER_DURATION
+                : com.thebeyond.common.event.BeyondDeafeningPotionEvents.SPLASH_DURATION) / 20;
+        net.minecraft.ChatFormatting color = BeyondEffects.DEAFENED.value().getCategory().getTooltipFormatting();
+        Component effectLine = Component.translatable("effect.the_beyond.deafened")
+                .append(Component.literal(String.format(" (%d:%02d)", seconds / 60, seconds % 60)))
+                .withStyle(color);
+
+        var tooltip = event.getToolTip();
+        int at = -1;
+        for (int i = 0; i < tooltip.size(); i++) {
+            if (tooltip.get(i).getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents tc
+                    && "effect.none".equals(tc.getKey())) {
+                at = i;
+                break;
+            }
+        }
+        if (at >= 0) tooltip.set(at, effectLine);
+        else { at = Math.min(1, tooltip.size()); tooltip.add(at, effectLine); }
+        if (stack.is(net.minecraft.world.item.Items.POTION)) {
+            tooltip.add(at + 1, Component.translatable("tooltip.the_beyond.deafening_drinkable")
+                    .withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.ITALIC));
+        }
+    }
+
+    // server-side Refuge, Totem and gameplay handlers live in ModGameEvents so dedicated servers register them
 
     @SubscribeEvent
     public static void onRenderNameTag(RenderNameTagEvent event) {
@@ -368,11 +444,6 @@ public class ModClientEvents {
             if (!event.canRender().isFalse())
                 event.setCanRender(TriState.FALSE);
         }
-    }
-
-
-    @SubscribeEvent
-    public static void fogColor(ViewportEvent.ComputeFogColor event) {
     }
 
     @SubscribeEvent
@@ -400,30 +471,25 @@ public class ModClientEvents {
 
         event.registerFluidType(new IClientFluidTypeExtensions() {
             private static final ResourceLocation STILL = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_0"),
-                    STILL_2 = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/plate_block"),
-                    FLOW = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/auroracite"),
-                    OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/auroracite"),
-                    VIEW_OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/block/auroracite.png");
+                    FLOW = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_flowing_0"),
+                    OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_0"),
+                    VIEW_OVERLAY = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/block/gellid_void/gellid_void_0.png");
 
             @Override
             public ResourceLocation getStillTexture() {
                 return STILL;
             }
-//
             @Override
             public ResourceLocation getFlowingTexture() {
                 return FLOW;
             }
-//
             @Override
             public ResourceLocation getOverlayTexture() {
                 return OVERLAY;
             }
             @Override
             public ResourceLocation getStillTexture(FluidState state, BlockAndTintGetter getter, BlockPos pos) {
-                // Jade and other overlay mods may call this without a valid BlockPos (null)
-                // when rendering fluid icons in tooltips. Return the static base texture as
-                // fallback instead of NPE-ing on pos.getX().
+                // overlay mods like Jade pass a null pos for fluid tooltips
                 if (pos == null) return STILL;
                 int offset = (getVoidWaveOffset(pos.getX(), pos.getY(), pos.getZ())) % 39;
                 return ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_" + Mth.abs(offset));
@@ -431,7 +497,6 @@ public class ModClientEvents {
 
             @Override
             public ResourceLocation getFlowingTexture(FluidState state, BlockAndTintGetter getter, BlockPos pos) {
-                // Same null-safety as getStillTexture — overlay mods may omit BlockPos.
                 if (pos == null) return FLOW;
                 int offset = (getVoidWaveOffset(pos.getX(), pos.getY(), pos.getZ())) % 39;
                 return ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"block/gellid_void/gellid_void_flowing_" + Mth.abs(offset));
@@ -458,14 +523,13 @@ public class ModClientEvents {
 
             @Override
             public Vector3f modifyFogColor(Camera camera, float partialTick, ClientLevel level, int renderDistance, float darkenWorldAmount, Vector3f fluidFogColor) {
-                int color = -5566465;
-                return new Vector3f((color >> 16 & 0xFF) / 255F, (color >> 8 & 0xFF) / 255F, (color & 0xFF) / 255F);
+                return new Vector3f(0.3f, 0, 0.5f);
             }
 
             @Override
             public void modifyFogRender(Camera camera, FogRenderer.FogMode mode, float renderDistance, float partialTick, float nearDistance, float farDistance, FogShape shape) {
-                nearDistance = -20F;
-                farDistance = 2f;
+                nearDistance = 0F;
+                farDistance = 3f;
 
                 if (farDistance > renderDistance) {
                     farDistance = renderDistance;
@@ -482,6 +546,251 @@ public class ModClientEvents {
     @SubscribeEvent
     public static void renderGui(RegisterGuiLayersEvent event) {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "nomad_eyes"), new NomadsBlessingOverlay());
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "empathy"), new EmpathyOverlay());
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "camera_viewfinder"), new CameraViewfinderLayer());
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "ocarina"), new OcarinaOverlay());
+        event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "snapshot"), new SnapshotScreen());
+    }
+
+    /** Clear the aim when the camera leaves the player's hands, else the viewfinder sticks on. */
+    @SubscribeEvent
+    public static void onClientTick(ClientTickEvent.Post event) {
+        if (!CameraAim.isAiming()) {
+            return;
+        }
+        Player player = Minecraft.getInstance().player;
+        boolean holding = player != null
+                && (player.getMainHandItem().getItem() instanceof PrismographBlockItem
+                || player.getOffhandItem().getItem() instanceof PrismographBlockItem);
+        if (!holding) {
+            CameraAim.clear();
+            Minecraft mc = Minecraft.getInstance();
+            if (mc != null && mc.player!=null)
+                mc.player.playSound(BeyondSoundEvents.PRISMOGRAPH_CLOSE.value(), 0.5f, 1);
+        }
+    }
+
+    private static final ResourceLocation CAMERA_VIEWFINDER_LAYER =
+            ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "camera_viewfinder");
+
+    public static boolean aimingWithCamera() {
+        if (!CameraAim.isAiming()) {
+            return false;
+        }
+        Player player = Minecraft.getInstance().player;
+        if (!Minecraft.getInstance().options.getCameraType().isFirstPerson()) {
+            CameraAim.clear();
+            player.playSound(BeyondSoundEvents.PRISMOGRAPH_CLOSE.value(), 0.5f, 1);
+            player.displayClientMessage(Component.translatable("screen.the_beyond.prismograph.first_person"), true);
+            return false;
+        };
+
+        return player != null
+                && (player.getMainHandItem().getItem() instanceof PrismographBlockItem
+                || player.getOffhandItem().getItem() instanceof PrismographBlockItem);
+    }
+
+    /** While aiming, hide every HUD layer but the viewfinder so the framing matches the (HUD-less) photo. */
+    @SubscribeEvent
+    public static void onCameraHudHide(RenderGuiLayerEvent.Pre event) {
+        if (aimingWithCamera() && !event.getName().equals(CAMERA_VIEWFINDER_LAYER)) {
+            event.setCanceled(true);
+        }
+    }
+
+    /** Hides the first-person hand while aiming, the photo's centre crop already leaves it out. */
+    @SubscribeEvent
+    public static void onCameraHideHand(RenderHandEvent event) {
+        if (aimingWithCamera()) {
+            event.setCanceled(true);
+        }
+        if (event.getHand() == InteractionHand.MAIN_HAND && event.getItemStack().has(BeyondComponents.SNAPSHOT_PIXELS)) event.setCanceled(true);
+    }
+
+    @SubscribeEvent
+    public static void onCameraEscape(ScreenEvent.Opening event) {
+        if (aimingWithCamera() && !event.getNewScreen().isPauseScreen()) {
+            event.setCanceled(true);
+            CameraAim.clear();
+
+            Minecraft mc = Minecraft.getInstance();
+            if (mc != null && mc.player!=null)
+                mc.player.playSound(BeyondSoundEvents.PRISMOGRAPH_CLOSE.value(), 0.5f, 1);
+        }
+    }
+
+    /** While aiming, clicks never reach blocks or entities: the left one does nothing and the right one only shoots. */
+    @SubscribeEvent
+    public static void onCameraClick(InputEvent.InteractionKeyMappingTriggered event) {
+        if (!aimingWithCamera()) return;
+        event.setCanceled(true);
+        event.setSwingHand(false);
+        Minecraft mc = Minecraft.getInstance();
+        if (event.isUseItem()) {
+            InteractionHand hand = mc.player.getMainHandItem().getItem() instanceof PrismographBlockItem
+                    ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
+            mc.gameMode.useItem(mc.player, hand);
+        }
+        if (event.isAttack()) {
+            CameraAim.clear();
+            mc.player.playSound(BeyondSoundEvents.PRISMOGRAPH_CLOSE.value(), 0.5f, 1);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onCameraZoom(InputEvent.MouseScrollingEvent event) {
+        if (aimingWithCamera()) {
+            zoomModifier = Math.clamp((float) (zoomModifier - event.getScrollDeltaY()*0.2f),0,1.5f);
+            Minecraft.getInstance().cameraEntity.playSound(BeyondSoundEvents.PRISMOGRAPH_ZOOM.get(),1, Math.clamp(2-zoomModifier, 1f, 2f));
+            event.setCanceled(true);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onCameraZoom(ComputeFovModifierEvent event) {
+        if (aimingWithCamera()) {
+            event.setNewFovModifier(zoomModifier);
+        }
+    }
+
+    /** LOWEST so the recorded and the forced FOV are the final ones, after every other mod's change. */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onCameraFov(ViewportEvent.ComputeFov event) {
+        if (!event.usedConfiguredFov()) return;
+        if (BlockCameraCapture.isCapturingSelf()) {
+            CameraAim.View shot = CameraAim.shot();
+            if (shot != null) event.setFOV(shot.fov());
+        } else if (!BlockCameraCapture.isCapturing() && aimingWithCamera()) {
+            // Entity rotation, not the camera's, so other mods' angle tweaks are not applied twice in the photo.
+            Entity eye = event.getCamera().getEntity();
+            float pt = (float) event.getPartialTick();
+            CameraAim.recordView(event.getFOV(), eye.getViewYRot(pt), eye.getViewXRot(pt));
+        }
+    }
+
+
+
+    @SubscribeEvent
+    public static void onClientLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+        SnapshotTextures.clear();
+        BlockCameraCapture.release();
+        ItemIconTextures.release();
+        ProjectorDepthMap.clear();
+    }
+
+    @SubscribeEvent
+    public static void onRegisterTooltipFactories(RegisterClientTooltipComponentFactoriesEvent event) {
+        event.register(SnapshotTooltip.class,
+                ClientSnapshotTooltip::new);
+        event.register(PrismographTooltip.class,
+                ClientCameraTooltip::new);
+    }
+
+    private static final int FRAME_PHOTO_SIZE = 16;
+
+    /** Draw a framed snapshot as the photo. Cancelling skips only the FIXED render, so hand/GUI/ground stay vanilla. */
+    @SubscribeEvent
+    public static void onRenderItemInFrame(RenderItemInFrameEvent event) {
+        ItemStack stack = event.getItemStack();
+        Components.SnapshotPixelsComponent px =
+                stack.get(BeyondComponents.SNAPSHOT_PIXELS.get());
+        if (px == null || !px.isRenderable()) {
+            return;
+        }
+
+        ResourceLocation tex = SnapshotTextures.getDownsampled(px, Grades.NONE, FRAME_PHOTO_SIZE);
+
+        PoseStack pose = event.getPoseStack();
+        pose.pushPose();
+        pose.translate(0.0F, 0.0F, -0.005F);
+
+        PoseStack.Pose last = pose.last();
+        VertexConsumer vc = event.getMultiBufferSource().getBuffer(RenderType.entityCutoutNoCull(tex));
+        int light = event.getItemFrameEntity() instanceof GlowItemFrame ? 15728850 : event.getPackedLight(); // full-bright so it reads in the dark
+
+        frameVertex(vc, last, -0.5F,  0.5F, 1F, 0F, light);
+        frameVertex(vc, last,  0.5F,  0.5F, 0F, 0F, light);
+        frameVertex(vc, last,  0.5F, -0.5F, 0F, 1F, light);
+        frameVertex(vc, last, -0.5F, -0.5F, 1F, 1F, light);
+
+        pose.popPose();
+        event.setCanceled(true);
+    }
+
+    private static void frameVertex(VertexConsumer vc, PoseStack.Pose pose, float x, float y, float u, float v, int light) {
+        vc.addVertex(pose, x, y, 0F)
+                .setColor(255, 255, 255, 255)
+                .setUv(u, v)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(light)
+                .setNormal(pose, 0F, 0F, 1F);
+    }
+
+    /** Runs the camera's offscreen render between frames, inside renderLevel it corrupts the player's frame. */
+    @SubscribeEvent
+    public static void onRenderFramePre(RenderFrameEvent.Pre event) {
+        BlockCameraCapture.runQueued();
+        ItemIconTextures.runQueued();
+    }
+
+    @SubscribeEvent
+    public static void onMirrorReflectionCapture(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS) {
+            return;
+        }
+        if (MirrorBlockEntity.LOADED.isEmpty()) {
+            return;
+        }
+        MirrorReflection.capture(
+                event.getProjectionMatrix(),
+                event.getModelViewMatrix(),
+                event.getCamera(),
+                event.getFrustum(),
+                event.getPartialTick().getGameTimeDeltaPartialTick(true));
+    }
+
+    @SubscribeEvent
+    public static void onMirrorDraw(RenderLevelStageEvent event) {
+        // After translucent terrain (the pearl block) so the distance fade blends over it.
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
+            return;
+        }
+        if (MirrorBlockEntity.LOADED.isEmpty()) {
+            return;
+        }
+        MirrorReflection.draw(
+                event.getCamera(),
+                event.getPoseStack(),
+                event.getPartialTick().getGameTimeDeltaPartialTick(true));
+    }
+
+    // depth map at AFTER_SOLID_BLOCKS, where binding the capture FBO is pack-safe, and the decal paints at AFTER_LEVEL
+    @SubscribeEvent
+    public static void onProjectorDepthCapture(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS) {
+            return;
+        }
+        if (ProjectorBlockEntity.LOADED.isEmpty() || !ProjectorRenderer.deferredAvailable()) {
+            return;
+        }
+        ProjectorDepthMap.capture(event.getCamera(), event.getFrustum(),
+                event.getPartialTick().getGameTimeDeltaPartialTick(true));
+    }
+
+    @SubscribeEvent
+    public static void onProjectorDecalDraw(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+            return;
+        }
+        if (ProjectorBlockEntity.LOADED.isEmpty() || !ProjectorRenderer.deferredAvailable()) {
+            return;
+        }
+        // Entity dispatch deferred to this post-world window: mid-frame it collides with Iris whenever Iris is merely loaded.
+        ProjectorDepthMap.captureEntitiesPostFinal(
+                event.getPartialTick().getGameTimeDeltaPartialTick(true));
+        ProjectorDeferredDecal.draw(
+                event.getProjectionMatrix(), event.getModelViewMatrix(),
+                ShaderCompatLib.isShaderPackActive());
     }
 
     @SubscribeEvent
@@ -513,15 +822,11 @@ public class ModClientEvents {
 
         if (!(Math.sqrt(player.getX() * player.getX() + player.getZ() * player.getZ())>300)) {
 
-            // Detect any active boss fight. shouldCreateWorldFog() only returns true for
-            // Java ServerBossEvent boss bars (vanilla dragon). Stellarity uses command boss
-            // bars (/bossbar add) which never set that flag. Fall back to checking if the
-            // BossHealthOverlay has any entries at all — this catches both vanilla and
-            // Stellarity boss bars so the 3D cloud rings render during any End boss fight.
+            // shouldCreateWorldFog() misses command bossbars, so any overlay entry also counts
             boolean bossActive = Minecraft.getInstance().gui.getBossOverlay().shouldCreateWorldFog();
             if (!bossActive) {
                 var overlay = Minecraft.getInstance().gui.getBossOverlay();
-                if (overlay instanceof com.thebeyond.mixin.client.BossHealthOverlayAccessor accessor) {
+                if (overlay instanceof BossHealthOverlayAccessor accessor) {
                     bossActive = !accessor.the_beyond$getEvents().isEmpty();
                 }
             }
@@ -541,9 +846,16 @@ public class ModClientEvents {
 
         bufferSource.endBatch();
         poseStack.popPose();
+
+        // sky cracks are drawn in the world pass only under a shaderpack, vanilla uses renderSky
+        poseStack.pushPose();
+        EndSpecialEffects.renderCracksWorld(poseStack, bufferSource);
+        bufferSource.endBatch();
+        poseStack.popPose();
     }
 
     public static void renderClouds(PoseStack poseStack, float translate, float scale, float time, ResourceLocation model, MultiBufferSource.BufferSource buffer) {
+        if (BeyondConfig.ENABLE_MAIN_ISLAND_CLOUDS.isFalse()) return;
         poseStack.pushPose();
         boolean flag = scale == 50;
 

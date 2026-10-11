@@ -1,0 +1,204 @@
+package com.thebeyond.client.renderer;
+
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
+import com.thebeyond.TheBeyond;
+import com.thebeyond.client.camera.CameraAim;
+import com.thebeyond.client.renderer.util.LivingBlockMeshBaker;
+import com.thebeyond.common.entity.TrinketEntity;
+import com.thebeyond.common.entity.util.livingblock.LivingBlock;
+import com.thebeyond.common.entity.util.livingblock.TrinketGrowth;
+import com.thebeyond.common.entity.util.livingblock.TrinketGrowth.*;
+import com.thebeyond.common.registry.BeyondRenderTypes;
+import com.thebeyond.util.RenderUtils;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FastColor;
+import net.minecraft.util.Mth;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.phys.AABB;
+import org.joml.Matrix3f;
+import org.joml.Matrix4f;
+
+import java.awt.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class TrinketRenderer extends LivingBlockRenderer {
+    public static ResourceLocation SPIKE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/trinket/spike.png");
+    private static final RenderType SPIKE_TYPE = RenderType.entityCutout(SPIKE);
+    private static final int FULL_BLOCK_LIGHT = LightTexture.block(LightTexture.FULL_BRIGHT);
+    private static final int FULL_SKY_LIGHT = LightTexture.sky(LightTexture.FULL_BRIGHT);
+
+    private static final AABB[][] SPIKE_AABBS = new AABB[6][4];
+    static {
+        for (int d = 0; d < 6; d++) {
+            for (int size = 0; size <= 3; size++) {
+                Direction dir = Direction.values()[d];
+                float height = switch (size) {
+                    case 1 -> 2/16f;
+                    case 2 -> 4/16f;
+                    case 3 -> 6/16f;
+                    default -> 0;
+                };
+                float base = 2/16f;
+
+                SPIKE_AABBS[d][size] = switch (dir) {
+                    case UP -> new AABB(0, 0, 0, base, height, base);
+                    case DOWN -> new AABB(0, -height, 0, base, 0, base);
+                    case NORTH -> new AABB(0, 0, -height, base, base, 0);
+                    case SOUTH -> new AABB(0, 0, 0, base, base, height);
+                    case WEST -> new AABB(-height, 0, 0, 0, base, base);
+                    case EAST -> new AABB(0, 0, 0, height, base, base);
+                };
+            }
+        }
+    }
+
+    public TrinketRenderer(final EntityRendererProvider.Context context) {
+        super(context, "textures/entity/trinket/edges.png", "textures/entity/trinket/outline.png");
+    }
+
+    @Override
+    protected void renderShape(LivingBlock entity, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
+        Color color = Color.white;
+        Color color2 = new Color(DyeColor.WHITE.getTextureDiffuseColor());
+        if (entity instanceof TrinketEntity trinketEntity) {
+            color = trinketEntity.getBodyColor();
+            Color c = new Color(trinketEntity.getDyeColor().getTextureDiffuseColor());
+
+            color2 = new Color(FastColor.ARGB32.lerp(0.6f, color.getRGB(), c.getRGB()));
+        }
+
+        List<AABB> shape = entity.getShapeBoxes();
+        RenderUtils.renderCuboid(entity.getShapeBounds().deflate(0.001), poseStack, buffer.getBuffer(RenderType.entityCutout(getTextureLocation(entity))), packedLight, (color.getRed()*0.9f)/255f, (color.getGreen()*0.9f)/255f, (color.getBlue()*0.9f)/255f, 1);
+
+        Matrix4f matrix = poseStack.last().pose();
+        Matrix3f normalMatrix = poseStack.last().normal();
+
+        if (CameraAim.isAiming() || entity.position().distanceToSqr(Minecraft.getInstance().getCameraEntity().position()) < 28 * 28) {
+            List<LivingBlockMeshBaker.MeshQuad> mesh = this.meshCache.computeIfAbsent(shape, LivingBlockMeshBaker::bake);
+
+            VertexConsumer rim = buffer.getBuffer(BeyondRenderTypes.entityTranslucentNoCulled(this.skin.rim()));
+            for (LivingBlockMeshBaker.MeshQuad quad : mesh) {
+                if (quad.rim()) {
+                    emit(rim, matrix, normalMatrix, quad, packedLight, color.getRed(), color.getGreen(), color.getBlue(), 200);
+                }
+            }
+
+            if (entity instanceof TrinketEntity trinket) {
+                if (trinket.isSelected()) {
+                    float sin = 0;
+                    float v = Mth.sin((entity.tickCount + trinket.getFeaturePlanSeed() / 10000f) / 10f);
+                    sin = Math.clamp(v, 0, 1);
+                    int blockLight = LightTexture.block(packedLight);
+                    int skyLight = LightTexture.sky(packedLight);
+
+                    int lerpBlockLight = (int) Mth.lerp(sin, blockLight, FULL_BLOCK_LIGHT);
+                    int lerpSkyLight = (int) Mth.lerp(sin, skyLight, FULL_SKY_LIGHT);
+                    int newPackedLight = LightTexture.pack(lerpBlockLight, lerpSkyLight);
+
+                    renderAdditional(trinket, matrix, normalMatrix, poseStack, buffer, newPackedLight, (int) Mth.lerp(sin, color2.getRed(), 255), (int) Mth.lerp(sin, color2.getGreen(), 255), (int) Mth.lerp(sin, color2.getBlue(), 255), 255);
+                } else renderAdditional(trinket, matrix, normalMatrix, poseStack, buffer, packedLight, color2.getRed(), color2.getGreen(), color2.getBlue(), 1);
+
+            }
+        }
+    }
+
+    private void renderAdditional(TrinketEntity trinket, Matrix4f matrix, Matrix3f normalMatrix, PoseStack poseStack, MultiBufferSource buffer, int packedLight, float r, float g, float b, float a) {
+        float maxX = trinket.maxX;
+        float maxY = trinket.maxY;
+        float maxZ = trinket.maxZ;
+        float minX = trinket.minX;
+        float minY = trinket.minY;
+        float minZ = trinket.minZ;
+
+        List<Feature> plan = trinket.getFeaturePlan();
+        int stage = trinket.getGrowthStage();
+
+        int tWidth = trinket.getWidth();
+        int tHeight = trinket.getHeight();
+        int tDepth = trinket.getDepth();
+        if (plan == null) return;
+
+        for (int i = 0; i < plan.size(); i++) {
+            Feature f = plan.get(i);
+            SizeClass size = f.sizeAt(stage);
+            Direction d = f.face();
+            int width = f.getWidth(size);
+            int x = f.x();
+            int y = f.y();
+
+            boolean isSpike = f.kind() == Kind.SPIKE;
+            final int offset = 3 - (isSpike ? 2 : size.toInt());
+            if (size.toInt() == 0) continue;
+
+            switch (d) {
+                case UP -> {
+                    if (x + width > tWidth || y + width > tDepth) continue;
+                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r*255, g*255, b*255, 230F, Direction.Axis.Y, true, minX+(x/16f), maxY+(0.0001f*offset), minZ+(y/16f), width, width);
+                    if (isSpike) renderSpike(getAabb(d, size.toInt()), minX+((x+1)/16f), maxY+(0.0001f*offset), minZ+((y+1)/16f), poseStack, buffer, packedLight,r*255, g*255, b*255, 230F );
+                }
+                case DOWN -> {
+                    if (x + width > tWidth || y + width > tDepth) continue;
+                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r * 255, g * 255, b * 255, 230, Direction.Axis.Y, false, minX+(x/16f), minY-(0.0001f*offset), minZ+(y/16f), width, width);
+                    if (isSpike) renderSpike(getAabb(d, size.toInt()), minX+((x+1)/16f), minY-(0.0001f*offset), minZ+((y+1)/16f), poseStack, buffer, packedLight,r*255, g*255, b*255, 230F );
+                }
+                case WEST -> {
+                    if (x + width > tHeight || y + width > tDepth) continue;
+                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r * 255, g * 255, b * 255, 230, Direction.Axis.X, true, minX-(0.0001f*offset), minY+(x/16f), minZ+(y/16f), width, width);
+                    if (isSpike) renderSpike(getAabb(d, size.toInt()), minX-(0.0001f*offset), minY+((x+1)/16f), minZ+((y+1)/16f), poseStack, buffer, packedLight,r*255, g*255, b*255, 230F );
+                }
+                case EAST -> {
+                    if (x + width > tHeight || y + width > tDepth) continue;
+                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r * 255, g * 255, b * 255, 230, Direction.Axis.X, false, maxX+(0.0001f*offset), minY+(x/16f), minZ+(y/16f), width, width);
+                    if (isSpike) renderSpike(getAabb(d, size.toInt()), maxX+(0.0001f*offset), minY+((x+1)/16f), minZ+((y+1)/16f), poseStack, buffer, packedLight,r*255, g*255, b*255, 230F );
+                }
+                case NORTH -> {
+                    if (x + width > tWidth || y + width > tHeight) continue;
+                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r * 255, g * 255, b * 255, 230, Direction.Axis.Z, true, minX+(x/16f), minY+(y/16f), minZ-(0.0001f*offset), width, width);
+                    if (isSpike) renderSpike(getAabb(d, size.toInt()), minX+((x+1)/16f), minY+((y+1)/16f), minZ-(0.0001f*offset), poseStack, buffer, packedLight,r*255, g*255, b*255, 230F );
+                }
+                case SOUTH -> {
+                    if (x + width > tWidth || y + width > tHeight) continue;
+                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r * 255, g * 255, b * 255, 230, Direction.Axis.Z, false, minX+(x/16f), minY+(y/16f), maxZ+(0.0001f*offset), width, width);
+                    if (isSpike) renderSpike(getAabb(d, size.toInt()), minX+((x+1)/16f), minY+((y+1)/16f), maxZ+(0.0001f*offset), poseStack, buffer, packedLight,r*255, g*255, b*255, 230F );
+                }
+            }
+        }
+    }
+
+    private static AABB getAabb(Direction dir, int size) {
+        return SPIKE_AABBS[dir.ordinal()][size];
+    }
+
+    public void renderSpike(AABB aabb, float x, float y, float z, PoseStack poseStack, MultiBufferSource buffer, int packedLight, float r, float g, float b, float a) {
+        poseStack.pushPose();
+        poseStack.translate(x, y, z);
+        RenderUtils.renderCuboid(aabb, poseStack, buffer.getBuffer(SPIKE_TYPE), packedLight, r, g, b, a);
+        poseStack.popPose();
+    }
+
+    private static final Map<String, ResourceLocation> VARIANT_TEXTURES = Map.of(
+            "swirl",      ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/entity/trinket/swirl.png"),
+            "losange",    ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/entity/trinket/losange.png"),
+            "perforated", ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/entity/trinket/perforated.png"),
+            "pyramid",    ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/entity/trinket/pyramid.png"),
+            "eyes",       ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/entity/trinket/eyes.png")
+    );
+
+    @Override
+    public ResourceLocation getTextureLocation(LivingBlock entity) {
+        if (entity instanceof TrinketEntity trinket) {
+            return VARIANT_TEXTURES.get(trinket.getVariant());
+        }
+        return null;
+    }
+}

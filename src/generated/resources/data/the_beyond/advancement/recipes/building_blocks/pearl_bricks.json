@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_pearl": {
+      "conditions": {
+        "items": [
+          {
+            "items": "the_beyond:pearl"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "the_beyond:pearl_bricks"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_pearl"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "the_beyond:pearl_bricks"
+    ]
+  }
+}

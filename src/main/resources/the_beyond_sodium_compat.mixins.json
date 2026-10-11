@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "com.thebeyond.mixin.compat.sodium",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "the_beyond.refmap.json",
+  "client": [
+    "SodiumWorldRendererAccessor",
+    "SodiumRenderSectionManagerMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

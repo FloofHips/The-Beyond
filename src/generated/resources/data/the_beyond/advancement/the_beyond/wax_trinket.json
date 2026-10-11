@@ -1,0 +1,26 @@
+{
+  "parent": "the_beyond:the_beyond/tame_bauble",
+  "criteria": {
+    "wax_trinket": {
+      "trigger": "the_beyond:wax_trinket"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.the_beyond.wax_trinket.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:honeycomb"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.wax_trinket.title"
+    }
+  },
+  "requirements": [
+    [
+      "wax_trinket"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

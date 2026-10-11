@@ -1,6 +1,7 @@
 package com.thebeyond.common.entity;
 
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.common.registry.BeyondParticleTypes;
 import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.util.ColorUtils;
 import com.thebeyond.util.ITeleportingEntity;
@@ -179,8 +180,11 @@ public class EnatiousTotemEntity extends Mob implements Enemy, ITeleportingEntit
         super.tick();
 
         if (tickCount > 20 && this.getTarget() == null) {
-            Player player = this.level().getNearestPlayer(position().x, position().y, position().z, 32,true);
-            setTarget(player);
+            // the explicit guard also covers a mode switch between acquisition and this tick
+            Player player = this.level().getNearestPlayer(position().x, position().y, position().z, 32, false);
+            if (player != null && !player.isCreative() && !player.isSpectator()) {
+                setTarget(player);
+            }
         }
 
         if (tickCount % (1200 + getRandom().nextInt(300)) == 0 && this.getTarget() == null) {
@@ -227,6 +231,7 @@ public class EnatiousTotemEntity extends Mob implements Enemy, ITeleportingEntit
 
                 if (this.level() instanceof ServerLevel serverLevel) {
                     ((ServerLevel)this.level()).sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, BeyondBlocks.OBIROOT.get().defaultBlockState()), this.getX(), this.getY(0.6666666666666666), this.getZ(), 10, (double)(this.getBbWidth() / 4.0F), (double)(this.getBbHeight() / 4.0F), (double)(this.getBbWidth() / 4.0F), 0.05);
+                    ((ServerLevel)this.level()).sendParticles(BeyondParticleTypes.WIND.get(), this.getX(), this.getY(), this.getZ(), 20, 0.1f, 0.1f, 0.1f, 0.2);
                 }
 
                 if (entity instanceof LivingEntity living) {
@@ -309,7 +314,9 @@ public class EnatiousTotemEntity extends Mob implements Enemy, ITeleportingEntit
             }
 
             LivingEntity livingentity = this.mob.getTarget();
-            if (livingentity != null && livingentity.isAlive()) {
+            // a player who switched to creative or spectator after being acquired must not keep the attack alive
+            if (livingentity != null && livingentity.isAlive()
+                    && !(livingentity instanceof Player p && (p.isCreative() || p.isSpectator()))) {
                 this.target = livingentity;
                 return true;
             } else {

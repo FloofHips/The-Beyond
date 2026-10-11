@@ -13,6 +13,14 @@ public class BeyondSoundTypes {
             BeyondSoundEvents.END_STONE_FALL
     );
 
+    public static SoundType REFUGE = new DeferredSoundType(1.0F, 1.0F,
+            BeyondSoundEvents.REFUGE_BREAK,
+            BeyondSoundEvents.REFUGE_STEP,
+            BeyondSoundEvents.REFUGE_PLACE,
+            BeyondSoundEvents.REFUGE_HIT,
+            BeyondSoundEvents.REFUGE_FALL
+    );
+
     public static SoundType PLATED_END_STONE_BLOCK = new DeferredSoundType(1.0F, 1.0F,
             BeyondSoundEvents.PLATED_END_STONE_BREAK,
             BeyondSoundEvents.PLATED_END_STONE_STEP,
@@ -53,6 +61,30 @@ public class BeyondSoundTypes {
             BeyondSoundEvents.MEMOR_FALL
     );
 
+    public static SoundType PEARL = new DeferredSoundType(1.0F, 1.0F,
+            BeyondSoundEvents.PEARL_BREAK,
+            BeyondSoundEvents.PEARL_STEP,
+            BeyondSoundEvents.PEARL_PLACE,
+            BeyondSoundEvents.PEARL_HIT,
+            BeyondSoundEvents.PEARL_FALL
+    );
+
+    public static SoundType PEARL_HIGH = new DeferredSoundType(1.0F, 2.0F,
+            BeyondSoundEvents.PEARL_BREAK,
+            BeyondSoundEvents.PEARL_STEP,
+            BeyondSoundEvents.PEARL_PLACE,
+            BeyondSoundEvents.PEARL_HIT,
+            BeyondSoundEvents.PEARL_FALL
+    );
+
+    public static SoundType MIRROR_PEARL = new DeferredSoundType(1.0F, 1.0F,
+            BeyondSoundEvents.MIRROR_BREAK,
+            BeyondSoundEvents.PEARL_STEP,
+            BeyondSoundEvents.PEARL_PLACE,
+            BeyondSoundEvents.PEARL_HIT,
+            BeyondSoundEvents.PEARL_FALL
+    );
+
     public static SoundType BONFIRE = new DeferredSoundType(1.0F, 1.0F,
             BeyondSoundEvents.BONFIRE_BREAK,
             BeyondSoundEvents.BONFIRE_STEP,
@@ -75,6 +107,22 @@ public class BeyondSoundTypes {
             BeyondSoundEvents.PLATE_BLOCK_PLACE,
             BeyondSoundEvents.PLATE_BLOCK_HIT,
             BeyondSoundEvents.PLATE_BLOCK_FALL
+    );
+
+    public static SoundType BRITTLE_METAL = new DeferredSoundType(1.0F, 1.0F,
+            BeyondSoundEvents.BRITTLE_METAL_BREAK,
+            BeyondSoundEvents.BRITTLE_METAL_STEP,
+            BeyondSoundEvents.BRITTLE_METAL_PLACE,
+            BeyondSoundEvents.BRITTLE_METAL_HIT,
+            BeyondSoundEvents.BRITTLE_METAL_FALL
+    );
+
+    public static SoundType NACRE = new DeferredSoundType(1.0F, 1.0F,
+            BeyondSoundEvents.NACRE_BREAK,
+            BeyondSoundEvents.NACRE_STEP,
+            BeyondSoundEvents.NACRE_PLACE,
+            BeyondSoundEvents.NACRE_HIT,
+            BeyondSoundEvents.NACRE_FALL
     );
 
 }

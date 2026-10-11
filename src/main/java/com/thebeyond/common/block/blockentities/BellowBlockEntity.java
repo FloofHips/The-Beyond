@@ -1,0 +1,42 @@
+package com.thebeyond.common.block.blockentities;
+
+import com.thebeyond.common.block.BellowBlock;
+import com.thebeyond.common.registry.BeyondBlockEntities;
+import com.thebeyond.common.registry.BeyondSoundEvents;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+
+/** The server ticker polls redstone, syncs STRENGTH and pushes entities, the client ticker emits the jet. */
+public class BellowBlockEntity extends BlockEntity {
+    public BellowBlockEntity(BlockPos pos, BlockState state) {
+        super(BeyondBlockEntities.BELLOW.get(), pos, state);
+    }
+
+    public static void serverTick(Level level, BlockPos pos, BlockState state, BellowBlockEntity be) {
+        int signal = BellowBlock.inputSignal(level, pos, state);
+        int strength = BellowBlock.computeLevel(level, pos, state, signal);
+        if (strength != state.getValue(BellowBlock.STRENGTH)) {
+            if (strength > 0) {
+                level.playSound(null, pos, BeyondSoundEvents.GAUSS_VENT_MIDDLE.get(), SoundSource.BLOCKS, 1, 1);
+            }
+            level.setBlock(pos, state.setValue(BellowBlock.STRENGTH, strength), Block.UPDATE_CLIENTS);
+        }
+        if (strength > 0 && level instanceof ServerLevel serverLevel) {
+            if (level.random.nextFloat() < 0.05f) level.playSound(null, pos, BeyondSoundEvents.GAUSS_VENT_MIDDLE.get(),
+                    SoundSource.BLOCKS, 0.05f, 1);
+            BellowBlock.serverPush(serverLevel, pos, state, signal, strength, null);
+        }
+    }
+
+    public static void clientTick(Level level, BlockPos pos, BlockState state, BellowBlockEntity be) {
+        int strength = state.getValue(BellowBlock.STRENGTH);
+        if (strength > 0) {
+            BellowBlock.clientJet(level, pos, state, strength, null);
+        }
+    }
+}

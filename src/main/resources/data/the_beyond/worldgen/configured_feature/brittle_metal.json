@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:delta_feature",
+  "config": {
+    "contents": {
+      "Name": "the_beyond:brittle_metal"
+    },
+    "rim": {
+      "Name": "the_beyond:brittle_metal"
+    },
+    "rim_size": {
+      "type": "minecraft:constant",
+      "value": 1
+    },
+    "size": {
+      "type": "minecraft:uniform",
+      "max_inclusive": 8,
+      "min_inclusive": 4
+    }
+  }
+}

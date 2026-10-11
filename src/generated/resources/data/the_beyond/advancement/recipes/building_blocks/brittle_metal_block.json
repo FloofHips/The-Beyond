@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_brittle_metal_sheet": {
+      "conditions": {
+        "items": [
+          {
+            "items": "the_beyond:brittle_metal_sheet"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "the_beyond:brittle_metal_block"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_brittle_metal_sheet"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "the_beyond:brittle_metal_block"
+    ]
+  }
+}

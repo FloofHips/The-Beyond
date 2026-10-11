@@ -1,0 +1,26 @@
+{
+  "parent": "the_beyond:the_beyond/freeze",
+  "criteria": {
+    "snapshot": {
+      "trigger": "the_beyond:snapshot"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.the_beyond.snapshot.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "the_beyond:snapshot"
+    },
+    "title": {
+      "translate": "advancements.the_beyond.snapshot.title"
+    }
+  },
+  "requirements": [
+    [
+      "snapshot"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

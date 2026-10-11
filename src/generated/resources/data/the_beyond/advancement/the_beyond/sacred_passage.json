@@ -6,6 +6,7 @@
     }
   },
   "display": {
+    "announce_to_chat": false,
     "description": {
       "translate": "advancements.the_beyond.sacred_passage.description"
     },

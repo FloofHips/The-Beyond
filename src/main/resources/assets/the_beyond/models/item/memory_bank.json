@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "the_beyond:item/memory_bank_base",
+    "layer1": "the_beyond:item/memory_bank_overlay"
+  }
+}

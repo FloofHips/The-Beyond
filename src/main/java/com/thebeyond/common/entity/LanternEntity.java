@@ -1,5 +1,7 @@
 package com.thebeyond.common.entity;
 
+import com.thebeyond.BeyondConfig;
+import com.thebeyond.api.worldgen.BeyondTerrainState;
 import com.thebeyond.common.block.BonfireBlock;
 import com.thebeyond.common.entity.util.SlowRotFlyingMoveControl;
 import com.thebeyond.common.registry.*;
@@ -23,7 +25,6 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.control.FlyingMoveControl;
 import net.minecraft.world.entity.ai.control.SmoothSwimmingLookControl;
 import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
@@ -197,14 +198,13 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
         return new AABB(getX() - 0.7, getY() - 0.8, getZ() - 0.7, getX() + 0.7, getY() + 0.8, getZ() + 0.7);
     }
 
-    /** Models extend far beyond the collision AABB (Leviathan body ~5b vs 1.4b); without
-     *  this, frustum culling pops the entity in/out and a shaderpack's bloom flickers. */
+    /** The models reach far past the collision box, so culling would pop them and a pack's bloom would flicker. */
     @Override
     public AABB getBoundingBoxForCulling() {
         double inflate = switch (getSize()) {
             case 0 -> 1.0;   // small: short fins
             case 1 -> 2.0;   // medium: longer fins
-            case 2 -> 3.0;   // large: fins extend further in all directions
+            case 2 -> 3.0;   // large: fins reach further
             case 3 -> 6.0;   // Leviathan: body ~5b long, tail ~4b, fins ~1b
             default -> 2.0;
         };
@@ -273,7 +273,7 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
 
     @Override
     protected @Nullable SoundEvent getAmbientSound() {
-        return BeyondSoundEvents.LANTERN_IDLE.get();
+        return BeyondSoundEvents.WIND_HOWLING.get();
     }
 
     @Override
@@ -408,6 +408,8 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
     }
 
     public static boolean checkMonsterSpawnRules(EntityType<LanternEntity> lanternEntityEntityType, ServerLevelAccessor serverLevelAccessor, MobSpawnType mobSpawnType, BlockPos blockPos, RandomSource randomSource) {
+        // lanterns stay above the floor band, where vanilla's spawn Y collapses in island-free columns
+        if (blockPos.getY() <= BeyondTerrainState.getDimMinY() + 8) return false;
         return serverLevelAccessor.getBlockState(blockPos.below()).isAir() && serverLevelAccessor.getBlockState(blockPos.above()).isAir() && serverLevelAccessor.getBlockState(blockPos).isAir();
     }
 
@@ -422,6 +424,7 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
     }
 
     private void spawnTotem(ServerLevel level, Player player) {
+        if (!BeyondConfig.DROP_TOTEM_OF_RESPITE.get()) return;
         TotemOfRespiteEntity totem = new TotemOfRespiteEntity(BeyondEntityTypes.TOTEM_OF_RESPITE.get(), level);
         totem.setOwner(player);
 

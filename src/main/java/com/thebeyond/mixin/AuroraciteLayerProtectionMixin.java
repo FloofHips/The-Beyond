@@ -1,6 +1,8 @@
 package com.thebeyond.mixin;
 
+import com.thebeyond.api.worldgen.SanctionedWrite;
 import com.thebeyond.common.registry.BeyondBlocks;
+import com.thebeyond.compat.dt.DimensionalTearsCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -14,8 +16,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Vetoes foreign block writes at the End's auroracite floor. Whitelist: Beyond's
- *  auroracite, plus DT's source fluid when DT is loaded. */
+/** Vetoes foreign writes at the End's auroracite floor, except auroracite and DT's fluid. */
 @Mixin(WorldGenRegion.class)
 public abstract class AuroraciteLayerProtectionMixin {
 
@@ -33,20 +34,17 @@ public abstract class AuroraciteLayerProtectionMixin {
         WorldGenRegion self = (WorldGenRegion) (Object) this;
         int minY = self.getMinBuildHeight();
 
-        // Fast exit: only the 2-block auroracite layer at the dimension floor.
-        if (y != minY && y != minY + 1) return;
-
-        // Only in the End dimension.
-        if (self.getLevel().dimension() != Level.END) return;
-
-        // Allow Beyond's auroracite — its own features write here.
-        if (state.is(BeyondBlocks.AURORACITE.get())) return;
-
-        // Allow DT fluid when Dimensional Tears is loaded — Beyond's DT feature writes it here.
         Block dt = the_beyond$resolveDTFluid();
-        if (dt != null && state.is(dt)) return;
+        boolean oceanLiquid = dt != null && DimensionalTearsCompat.oceanEnabled();
+        int topY = oceanLiquid ? minY + 2 : minY + 1;
 
-        // Veto — anything else is foreign and would create a hole in the auroracite layer.
+        if (y < minY || y > topY) return;
+        if (self.getLevel().dimension() != Level.END) return;
+        // Our structures seat on the floor by design (the fountain anchors at minY+2).
+        if (SanctionedWrite.isSanctioned()) return;
+        if (state.is(BeyondBlocks.AURORACITE.get())) return;
+        if (oceanLiquid && state.is(dt)) return;
+
         cir.setReturnValue(false);
     }
 

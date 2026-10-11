@@ -1,6 +1,7 @@
 package com.thebeyond.common.effect;
 
 import com.thebeyond.client.event.ModClientEvents;
+import com.thebeyond.common.registry.BeyondSoundEvents;
 import com.thebeyond.util.TeleportUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.sounds.SoundEvents;
@@ -31,7 +32,7 @@ public class NomadsBlessingEffect extends GenericEffect {
 
             if (livingEntity instanceof Player player) {
                 ModClientEvents.nomadEyes = 1;
-                player.level().playSound(player, player.getX(), player.getY(), player.getZ(), SoundEvents.BEACON_ACTIVATE, SoundSource.NEUTRAL);
+                player.level().playSound(player, player.getX(), player.getY(), player.getZ(), BeyondSoundEvents.ABYSSAL_NOMAD_NOD.get(), SoundSource.NEUTRAL);
             }
 
             return super.applyEffectTick(livingEntity, amplifier);

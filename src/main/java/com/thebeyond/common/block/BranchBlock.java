@@ -19,6 +19,11 @@ public class BranchBlock extends PipeBlock {
         this.registerDefaultState(this.stateDefinition.any().setValue(NORTH, Boolean.valueOf(false)).setValue(EAST, Boolean.valueOf(false)).setValue(SOUTH, Boolean.valueOf(false)).setValue(WEST, Boolean.valueOf(false)).setValue(UP, Boolean.valueOf(false)).setValue(DOWN, Boolean.valueOf(false)));
     }
 
+    public BranchBlock(BlockBehaviour.Properties p_51707_, float a) {
+        super(a, p_51707_);
+        this.registerDefaultState(this.stateDefinition.any().setValue(NORTH, Boolean.valueOf(false)).setValue(EAST, Boolean.valueOf(false)).setValue(SOUTH, Boolean.valueOf(false)).setValue(WEST, Boolean.valueOf(false)).setValue(UP, Boolean.valueOf(false)).setValue(DOWN, Boolean.valueOf(false)));
+    }
+
     public BlockState getStateForPlacement(BlockPlaceContext pContext) {
         return this.getStateForPlacement(pContext.getLevel(), pContext.getClickedPos());
     }
@@ -34,8 +39,9 @@ public class BranchBlock extends PipeBlock {
     }
 
     public BlockState updateShape(BlockState pState, Direction pFacing, BlockState pFacingState, LevelAccessor pLevel, BlockPos pCurrentPos, BlockPos pFacingPos) {
-        boolean flag = pFacingState.is(this) || pFacingState.isSolid() || pFacing == Direction.DOWN && pFacingState.isSolid();
-        return pState.setValue(PROPERTY_BY_DIRECTION.get(pFacing), Boolean.valueOf(flag));
+        //boolean flag = pFacingState.is(this) || pFacingState.isSolid() || pFacing == Direction.DOWN && pFacingState.isSolid();
+        return getStateForPlacement(pLevel, pCurrentPos);
+       // return pState.setValue(PROPERTY_BY_DIRECTION.get(pFacing), Boolean.valueOf(flag));
     }
 
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) {

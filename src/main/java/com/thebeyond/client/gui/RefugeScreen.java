@@ -2,11 +2,10 @@ package com.thebeyond.client.gui;
 
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.renderer.blockentities.RefugeRenderer;
 import com.thebeyond.common.block.blockentities.RefugeBlockEntity;
-import com.thebeyond.common.block.blockentities.RefugeMenu;
+import com.thebeyond.client.menu.RefugeMenu;
 import com.thebeyond.common.network.RefugeSetModePayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -26,7 +25,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.PacketDistributor;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 
 @OnlyIn(Dist.CLIENT)
@@ -106,8 +104,7 @@ public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
 
         byte displayMode = selectedMode >= 0 ? selectedMode : menu.getMode();
 
-        // Set up transforms for raw PlayerModel rendering in GUI
-        // In GUI space Y goes down, same as PlayerModel, so no Y flip needed
+        // GUI space has Y down like PlayerModel, so the raw model needs no flip
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(this.leftPos + 130, this.topPos - 9, 50.0);
         guiGraphics.pose().scale(55, 55, 55);
@@ -186,7 +183,7 @@ public class RefugeScreen extends AbstractContainerScreen<RefugeMenu> {
             super(x, y, 24, 24, CommonComponents.EMPTY);
             this.resourcelocation = resourcelocation;
             this.mode = mode;
-            setTooltip(Tooltip.create(Component.literal("Block " + tooltip)));
+            setTooltip(Tooltip.create(Component.translatable("screen.the_beyond.refuge.block", tooltip)));
         }
 
         @Override

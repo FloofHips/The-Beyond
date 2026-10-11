@@ -2,6 +2,7 @@ package com.thebeyond.common.registry;
 
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.worldgen.processors.AmphoraProcessor;
+import com.thebeyond.common.worldgen.processors.NacreTypeProcessor;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorType;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -12,4 +13,5 @@ public class BeyondProcessors {
             DeferredRegister.create(Registries.STRUCTURE_PROCESSOR, TheBeyond.MODID);
 
     public static final DeferredHolder<StructureProcessorType<?>, StructureProcessorType<AmphoraProcessor>> AMPHORA_SIZE = PROCESSOR_TYPES.register("amphora_size", () -> () -> AmphoraProcessor.CODEC);
+    public static final DeferredHolder<StructureProcessorType<?>, StructureProcessorType<NacreTypeProcessor>> NACRE_TYPE = PROCESSOR_TYPES.register("nacre_type", () -> () -> NacreTypeProcessor.CODEC);
 }

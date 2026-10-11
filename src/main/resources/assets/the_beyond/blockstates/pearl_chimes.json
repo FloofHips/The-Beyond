@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "the_beyond:block/pearl_chimes"
+    },
+    "lit=true": {
+      "model": "the_beyond:block/pearl_chimes_active"
+    }
+  }
+}

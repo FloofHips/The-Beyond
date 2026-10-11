@@ -1,0 +1,87 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_memory_remembrance": {
+      "conditions": {
+        "items": [
+          {
+            "items": "#the_beyond:remembrances"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_pearl_bead": {
+      "conditions": {
+        "items": [
+          {
+            "items": "the_beyond:pearl_bead"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_peeping_obiroot": {
+      "conditions": {
+        "items": [
+          {
+            "items": "the_beyond:peeping_obiroot"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_prismograph": {
+      "conditions": {
+        "items": [
+          {
+            "items": "the_beyond:prismograph"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_prismuth": {
+      "conditions": {
+        "items": [
+          {
+            "items": "the_beyond:prismuth"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_snapshot": {
+      "conditions": {
+        "items": [
+          {
+            "items": "the_beyond:snapshot"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "the_beyond:projector"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_prismuth",
+      "has_pearl_bead",
+      "has_peeping_obiroot",
+      "has_memory_remembrance",
+      "has_snapshot",
+      "has_prismograph"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "the_beyond:projector"
+    ]
+  }
+}

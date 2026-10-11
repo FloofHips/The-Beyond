@@ -17,6 +17,9 @@ public class EnadrakeRenderer extends MobRenderer<EnadrakeEntity, EnadrakeModel<
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enadrake/enadrake.png");
     private static final ResourceLocation TEXTURE_SCREAM = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enadrake/enadrake_scream.png");
 
+    private static final ResourceLocation ENADRACULA_TEXTURE = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enadrake/enadracula.png");
+    private static final ResourceLocation ENADRACULA_TEXTURE_SCREAM = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/entity/enadrake/enadracula_scream.png");
+
     public EnadrakeRenderer(EntityRendererProvider.Context pContext) {
         super(pContext,new EnadrakeModel<>(pContext.bakeLayer(BeyondModelLayers.ENADRAKE)),0.25F);
         this.addLayer(new EnadrakeItemLayer(this, pContext.getItemInHandRenderer()));
@@ -24,6 +27,10 @@ public class EnadrakeRenderer extends MobRenderer<EnadrakeEntity, EnadrakeModel<
 
     @Override
     public ResourceLocation getTextureLocation(EnadrakeEntity enadrakeEntity) {
+        if (enadrakeEntity.hasCustomName() && enadrakeEntity.getCustomName().getString().toLowerCase().equals("enadracula")) {
+            return enadrakeEntity.getDataScream() ? ENADRACULA_TEXTURE_SCREAM : ENADRACULA_TEXTURE;
+        }
+
         return enadrakeEntity.getDataScream() ? TEXTURE_SCREAM : TEXTURE;
     }
 }
