@@ -49,5 +49,8 @@ class MaxNoiseSafetyTest {
         Assertions.assertTrue(peak < bound,
                 "measured |HashSimplexNoise.getValue| peak " + peak + " >= MAX_NOISE " + bound
                         + " — the air-gap density-skip's bound is INVALID and could delete a solid block. RAISE MAX_NOISE.");
+        Assertions.assertTrue(peak < BeyondEndChunkGenerator.OCTAVE_BOUND,
+                "measured |HashSimplexNoise.getValue| peak " + peak + " >= OCTAVE_BOUND " + BeyondEndChunkGenerator.OCTAVE_BOUND
+                        + ", the octave early exit could delete a solid block. RAISE OCTAVE_BOUND.");
     }
 }

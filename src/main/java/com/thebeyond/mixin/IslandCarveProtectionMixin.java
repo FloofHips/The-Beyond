@@ -39,7 +39,7 @@ public abstract class IslandCarveProtectionMixin {
         if (state.is(BeyondBlocks.GELLID_VOID.get())
                 && FeatureGuard.insideStructureVolume(pos.getX(), pos.getY(), pos.getZ())) {
             cir.setReturnValue(false);
-            if (!BeyondGenDiagnostics.loggedGellidVeto) {
+            if (FeatureGuard.debugLogs && !BeyondGenDiagnostics.loggedGellidVeto) {
                 BeyondGenDiagnostics.loggedGellidVeto = true;
                 com.thebeyond.TheBeyond.LOGGER.debug("[FeatureGuard] first gellid-in-structure veto at {}", pos);
             }
@@ -49,7 +49,7 @@ public abstract class IslandCarveProtectionMixin {
         if (FeatureGuard.blocksFeatureAt(pos.getX(), pos.getY(), pos.getZ())) {
             // void crystals only write into air, so Beyond's decoration may hang through without defacing blocks
             if (state.is(BeyondBlocks.VOID_CRYSTAL.get())) {
-                if (!BeyondGenDiagnostics.loggedCrystalAllow) {
+                if (FeatureGuard.debugLogs && !BeyondGenDiagnostics.loggedCrystalAllow) {
                     BeyondGenDiagnostics.loggedCrystalAllow = true;
                     com.thebeyond.TheBeyond.LOGGER.debug(
                             "[FeatureGuard] void-crystal allowlisted (hangs full) at {}", pos);
@@ -59,16 +59,16 @@ public abstract class IslandCarveProtectionMixin {
             cir.setReturnValue(false);
             ForeignStructureWrite.Scope hit = ForeignStructureWrite.currentScope();
             if (hit != null) hit.featureVeto++;
-            if (!BeyondGenDiagnostics.loggedFeatureVeto) {
+            if (FeatureGuard.debugLogs && !BeyondGenDiagnostics.loggedFeatureVeto) {
                 BeyondGenDiagnostics.loggedFeatureVeto = true;
                 com.thebeyond.TheBeyond.LOGGER.debug(
                         "[FeatureGuard] first feature-in-volume veto at {} (state={})", pos, state);
             }
             return;
         }
+        boolean guarded = !state.isAir() && FeatureGuard.armedOutsideStructure();
         // A feature may not replace what a piece stands on, its writes into air are kept.
-        if (FeatureGuard.isArmed() && !FeatureGuard.inStructure() && !state.isAir()
-                && FeatureGuard.insidePieceVolume(pos.getX(), pos.getY(), pos.getZ())) {
+        if (guarded && FeatureGuard.insidePieceVolume(pos.getX(), pos.getY(), pos.getZ())) {
             BlockState there = self.getBlockState(pos);
             if (!there.isAir() && !there.is(Blocks.END_STONE)) {
                 cir.setReturnValue(false);
@@ -76,7 +76,7 @@ public abstract class IslandCarveProtectionMixin {
             }
         }
         // decoration near a carve structure is recorded, and the post-decoration sweep drops what lost its support
-        if (FeatureGuard.isArmed() && !FeatureGuard.inStructure() && !state.isAir()) {
+        if (guarded) {
             FloatingFeatureGuard.record(pos.asLong());
         }
         // Carve veto: foreign template AIR over solid island terrain.
@@ -100,7 +100,7 @@ public abstract class IslandCarveProtectionMixin {
         String id = scope != null ? scope.structureId : "<no scope>";
         if (scope != null) scope.terrainVeto++;
         // Probe the diagnostic set once per scope, not once per vetoed block.
-        if ((scope == null || scope.terrainVeto == 1) && BeyondGenDiagnostics.loggedCarveVeto.add(id)) {
+        if (FeatureGuard.debugLogs && (scope == null || scope.terrainVeto == 1) && BeyondGenDiagnostics.loggedCarveVeto.add(id)) {
             com.thebeyond.TheBeyond.LOGGER.debug(
                     "[IslandCarveProtection] {} first air-over-solid veto at {} (existing={})", id, pos, existing);
         }

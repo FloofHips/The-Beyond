@@ -104,16 +104,15 @@ public final class BeyondStructureCarver {
     static final int CEIL_LAT = 3;
     static final int CEIL_SLOPE = 2;
 
-    static final java.util.concurrent.atomic.AtomicLongArray CEIL_APRON_HITS =
-            new java.util.concurrent.atomic.AtomicLongArray(CEIL_LAT + 1);
+    static final java.util.concurrent.atomic.LongAdder[] CEIL_APRON_HITS = the_beyond$adders(CEIL_LAT + 1);
     private static volatile boolean the_beyond$apronLogged = false;
 
     static void the_beyond$logCeilApron() {
-        if (the_beyond$apronLogged || CEIL_APRON_HITS.get(0) < APRON_LOG_MIN) return;
+        if (the_beyond$apronLogged || CEIL_APRON_HITS[0].sum() < APRON_LOG_MIN) return;
         if (!BeyondGenDiagnostics.loggedMaskKeys.add("ceil-apron")) return;
         the_beyond$apronLogged = true;
         StringBuilder run = new StringBuilder();
-        for (int t = 0; t <= CEIL_LAT; t++) run.append(t == 0 ? "" : ",").append(CEIL_APRON_HITS.get(t));
+        for (int t = 0; t <= CEIL_LAT; t++) run.append(t == 0 ? "" : ",").append(CEIL_APRON_HITS[t].sum());
         com.thebeyond.TheBeyond.LOGGER.debug(
                 "[Beyond] ceil-apron lat={} slope={} reach={} run=[{}] (cumulative)",
                 CEIL_LAT, CEIL_SLOPE, CARVE_CEIL_REACH, run);
@@ -123,7 +122,7 @@ public final class BeyondStructureCarver {
 
     static void the_beyond$resetApronCounters() {
         the_beyond$apronLogged = false;
-        for (int t = 0; t <= CEIL_LAT; t++) CEIL_APRON_HITS.set(t, 0L);
+        for (int t = 0; t <= CEIL_LAT; t++) CEIL_APRON_HITS[t].reset();
     }
 
     /** Span clear only within this dt3 distance of a block, so far-apart parts keep their gap, but a wide room keeps rock. */
@@ -219,7 +218,7 @@ public final class BeyondStructureCarver {
                 }
             }
             if (!occupied && keepNear) {
-                ISLAND_KEEP_HITS.incrementAndGet();
+                ISLAND_KEEP_HITS.increment();
                 return 0.0;
             }
         }
@@ -256,7 +255,7 @@ public final class BeyondStructureCarver {
                 // Grow off the own column, capped by the slope, so the rings are not a rectangle and the lid stays monotone.
                 if (dxz[k] > 0) ceilEff += growLat > CEIL_SLOPE ? CEIL_SLOPE : growLat;
                 if ((y - hi[k]) <= ceilEff - CEIL_SLOPE * dxz[k]) {
-                    CEIL_APRON_HITS.incrementAndGet(dxz[k]);
+                    CEIL_APRON_HITS[dxz[k]].increment();
                     return Double.POSITIVE_INFINITY;
                 }
             }
@@ -318,11 +317,11 @@ public final class BeyondStructureCarver {
             if (p > penalty) penalty = p;
         }
         if (growNear <= growLat) {
-            SPAN_GROW_HITS.incrementAndGet(growNear);
+            SPAN_GROW_HITS[growNear].increment();
             return Double.POSITIVE_INFINITY;
         }
         if (rimHit) {
-            RIM_HITS.incrementAndGet();
+            RIM_HITS.increment();
             return Math.max(penalty, RIM_PENALTY);
         }
         return penalty;
@@ -345,32 +344,37 @@ public final class BeyondStructureCarver {
     private static final double SPAN_GROW_VFREQ = 0.05, SPAN_GROW_VFREQ_HI = 0.15;
     private static final double SPAN_GROW_GAIN = 1.9;
 
-    static final java.util.concurrent.atomic.AtomicLongArray SPAN_GROW_HITS =
-            new java.util.concurrent.atomic.AtomicLongArray(SPAN_GROW_MAX + 1);
-    static final java.util.concurrent.atomic.AtomicLong ISLAND_KEEP_HITS =
-            new java.util.concurrent.atomic.AtomicLong();
+    static final java.util.concurrent.atomic.LongAdder[] SPAN_GROW_HITS = the_beyond$adders(SPAN_GROW_MAX + 1);
+    static final java.util.concurrent.atomic.LongAdder ISLAND_KEEP_HITS = new java.util.concurrent.atomic.LongAdder();
     private static volatile boolean the_beyond$branchLogged = false;
 
     static void the_beyond$resetCarveCounters() {
         the_beyond$branchLogged = false;
         the_beyond$rimLogged = false;
-        for (int t = 0; t <= SPAN_GROW_MAX; t++) SPAN_GROW_HITS.set(t, 0L);
-        ISLAND_KEEP_HITS.set(0L);
-        RIM_HITS.set(0L);
+        for (int t = 0; t <= SPAN_GROW_MAX; t++) SPAN_GROW_HITS[t].reset();
+        ISLAND_KEEP_HITS.reset();
+        RIM_HITS.reset();
     }
 
     static final int ROUND_R = 5;
     static final int RIM_SCAN = 32;
     static final double RIM_PENALTY = 1.0e6;
-    static final java.util.concurrent.atomic.AtomicLong RIM_HITS = new java.util.concurrent.atomic.AtomicLong();
+    static final java.util.concurrent.atomic.LongAdder RIM_HITS = new java.util.concurrent.atomic.LongAdder();
+
+    // Striped, since every generation thread bumps these inside the carve's per-block loop.
+    private static java.util.concurrent.atomic.LongAdder[] the_beyond$adders(int n) {
+        java.util.concurrent.atomic.LongAdder[] a = new java.util.concurrent.atomic.LongAdder[n];
+        for (int i = 0; i < n; i++) a[i] = new java.util.concurrent.atomic.LongAdder();
+        return a;
+    }
     private static volatile boolean the_beyond$rimLogged = false;
 
     static void the_beyond$logRim() {
-        if (the_beyond$rimLogged || RIM_HITS.get() < APRON_LOG_MIN / 2) return;
+        if (the_beyond$rimLogged || RIM_HITS.sum() < APRON_LOG_MIN / 2) return;
         if (!BeyondGenDiagnostics.loggedMaskKeys.add("rim-round")) return;
         the_beyond$rimLogged = true;
         com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] rim-round R={} cells={} (cumulative)",
-                ROUND_R, RIM_HITS.get());
+                ROUND_R, RIM_HITS.sum());
     }
 
     static double the_beyond$rimReach(int depth) {
@@ -394,13 +398,13 @@ public final class BeyondStructureCarver {
     static void the_beyond$logCarveBranches() {
         if (the_beyond$branchLogged) return;
         long total = 0;
-        for (int t = 1; t <= SPAN_GROW_MAX; t++) total += SPAN_GROW_HITS.get(t);
+        for (int t = 1; t <= SPAN_GROW_MAX; t++) total += SPAN_GROW_HITS[t].sum();
         if (total < APRON_LOG_MIN || !BeyondGenDiagnostics.loggedMaskKeys.add("carve-branches")) return;
         the_beyond$branchLogged = true;
         StringBuilder ring = new StringBuilder();
-        for (int t = 1; t <= SPAN_GROW_MAX; t++) ring.append(t == 1 ? "" : ",").append(SPAN_GROW_HITS.get(t));
+        for (int t = 1; t <= SPAN_GROW_MAX; t++) ring.append(t == 1 ? "" : ",").append(SPAN_GROW_HITS[t].sum());
         com.thebeyond.TheBeyond.LOGGER.debug(
-                "[Beyond] carve-branches: span-grow by ring=[{}] total={} island-cap-keep={} (cumulative)", ring, total, ISLAND_KEEP_HITS.get());
+                "[Beyond] carve-branches: span-grow by ring=[{}] total={} island-cap-keep={} (cumulative)", ring, total, ISLAND_KEEP_HITS.sum());
     }
 
     /** Extra ring around the start's box so the span grow is not clipped, at the cost of hole closing sealing channel mouths. */

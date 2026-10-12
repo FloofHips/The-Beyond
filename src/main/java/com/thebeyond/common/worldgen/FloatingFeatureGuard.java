@@ -1,6 +1,7 @@
 package com.thebeyond.common.worldgen;
 
 import com.thebeyond.TheBeyond;
+import com.thebeyond.api.worldgen.FeatureGuard;
 import com.thebeyond.api.worldgen.SanctionedWrite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.WorldGenLevel;
@@ -8,16 +9,15 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Drops recorded feature blocks the guard left unsupported, whose canSurvive now fails, cascading up. */
 public final class FloatingFeatureGuard {
-    private static final ThreadLocal<List<Long>> RECORDED = ThreadLocal.withInitial(ArrayList::new);
+    private static final ThreadLocal<LongArrayList> RECORDED = ThreadLocal.withInitial(LongArrayList::new);
     private static final AtomicBoolean loggedFirstSweep = new AtomicBoolean(false);
 
     private FloatingFeatureGuard() {}
@@ -29,14 +29,15 @@ public final class FloatingFeatureGuard {
 
     /** After decoration: drop any recorded block that can no longer survive where it stands, cascading upward. */
     public static void sweep(WorldGenLevel level) {
-        List<Long> rec = RECORDED.get();
+        LongArrayList rec = RECORDED.get();
         if (rec.isEmpty()) return;
-        Set<Long> live = new HashSet<>(rec);
-        ArrayDeque<Long> queue = new ArrayDeque<>(rec);
+        LongOpenHashSet live = new LongOpenHashSet(rec);
+        LongArrayFIFOQueue queue = new LongArrayFIFOQueue(rec.size());
+        for (int i = 0, n = rec.size(); i < n; i++) queue.enqueue(rec.getLong(i));
         BlockPos.MutableBlockPos mp = new BlockPos.MutableBlockPos();
         int removed = 0;
         while (!queue.isEmpty()) {
-            long p = queue.poll();
+            long p = queue.dequeueLong();
             if (!live.contains(p)) continue;
             int px = BlockPos.getX(p), py = BlockPos.getY(p), pz = BlockPos.getZ(p);
             BlockState st = level.getBlockState(mp.set(px, py, pz));
@@ -54,17 +55,21 @@ public final class FloatingFeatureGuard {
                 live.remove(p);
                 removed++;
                 // removing this may unsupport a recorded neighbour, so they are checked again
-                for (long np : new long[]{
-                        BlockPos.asLong(px, py + 1, pz), BlockPos.asLong(px, py - 1, pz),
-                        BlockPos.asLong(px + 1, py, pz), BlockPos.asLong(px - 1, py, pz),
-                        BlockPos.asLong(px, py, pz + 1), BlockPos.asLong(px, py, pz - 1)}) {
-                    if (live.contains(np)) queue.add(np);
-                }
+                requeue(live, queue, BlockPos.asLong(px, py + 1, pz));
+                requeue(live, queue, BlockPos.asLong(px, py - 1, pz));
+                requeue(live, queue, BlockPos.asLong(px + 1, py, pz));
+                requeue(live, queue, BlockPos.asLong(px - 1, py, pz));
+                requeue(live, queue, BlockPos.asLong(px, py, pz + 1));
+                requeue(live, queue, BlockPos.asLong(px, py, pz - 1));
             }
         }
-        if (removed > 0 && loggedFirstSweep.compareAndSet(false, true)) {
+        if (FeatureGuard.debugLogs && removed > 0 && loggedFirstSweep.compareAndSet(false, true)) {
             TheBeyond.LOGGER.debug("[FloatingFeature] removed {} base-less feature block(s) near a carve structure", removed);
         }
         rec.clear();
+    }
+
+    private static void requeue(LongOpenHashSet live, LongArrayFIFOQueue queue, long p) {
+        if (live.contains(p)) queue.enqueue(p);
     }
 }

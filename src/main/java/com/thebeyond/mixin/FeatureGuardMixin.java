@@ -100,6 +100,7 @@ public abstract class FeatureGuardMixin {
             int dropped = gen.the_beyond$dropCarveDebris(level, chunk, masks, snap);
             if (dropped <= 0) return;
             int total = BeyondGenDiagnostics.debrisDropped.addAndGet(dropped);
+            if (!FeatureGuard.debugLogs) return;
             if (!BeyondGenDiagnostics.loggedDebris) {
                 BeyondGenDiagnostics.loggedDebris = true;
                 com.thebeyond.TheBeyond.LOGGER.debug(

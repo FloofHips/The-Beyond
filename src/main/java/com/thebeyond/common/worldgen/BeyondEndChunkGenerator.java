@@ -92,6 +92,21 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     private static final int TERRAIN_Y_OFFSET = 32;
     /** Measured ceiling on |normalizedNoise| (peak about 0.979 over 50M samples), never lower it past that peak. */
     static final double MAX_NOISE = 1.20;
+    /** Above the 3D simplex noise's true peak (about 0.98), so an octave never leaves [-1, 1]. */
+    static final double OCTAVE_BOUND = 1.0;
+    private static final double[] REMAINING_AMPLITUDE = new double[NUM_OCTAVES];
+    private static final double TOTAL_AMPLITUDE;
+    static {
+        double[] amp = new double[NUM_OCTAVES];
+        double a = 1.0, total = 0.0;
+        for (int i = 0; i < NUM_OCTAVES; i++) { amp[i] = a; total += a; a *= PERSISTENCE; }
+        TOTAL_AMPLITUDE = total;
+        for (int i = 0; i < NUM_OCTAVES; i++) {
+            double rest = 0.0;
+            for (int j = i + 1; j < NUM_OCTAVES; j++) rest += amp[j];
+            REMAINING_AMPLITUDE[i] = rest;
+        }
+    }
 
     private static final double[] OCTAVE_WRAP_FACTORS = {1.00, 0.91, 0.83, 0.77};
 
@@ -686,6 +701,44 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         return noiseDensity(shiftedY, s, ef, cyc);
     }
 
+    /** Same as noiseDensity, or AIR_SENTINEL once the octaves left cannot lift the density above limit. */
+    static double noiseDensityOrAir(int shiftedY, ColumnScratch s, double ef, double cyc, double limit) {
+        HashSimplexNoise noise = simplexNoise;
+        double[] hScales = s.hScales, vScales = s.vScales;
+        int[] wrappedXs = s.wrappedXs, wrappedZs = s.wrappedZs;
+        double noiseValue = 0.0;
+        double amplitude = 1.0;
+        double maxAmplitude = 0.0;
+        double frequencyMult = 1.0;
+        final boolean blend = useBandBlend;
+        for (int octave = 0; octave < NUM_OCTAVES; octave++) {
+            double sampleY = shiftedY * vScales[octave];
+            double octaveNoise;
+            if (blend) {
+                int lo = s.bbLoIdx[octave];
+                double hLo = BB_BAND_FREQUENCIES[lo] * frequencyMult;
+                double hHi = BB_BAND_FREQUENCIES[lo + 1] * frequencyMult;
+                double wx = wrappedXs[octave];
+                double wz = wrappedZs[octave];
+                double sLo = noise.getValue(wx * hLo, sampleY, wz * hLo);
+                double sHi = noise.getValue(wx * hHi, sampleY, wz * hHi);
+                octaveNoise = sLo + s.bbT[octave] * (sHi - sLo);
+                frequencyMult *= LACUNARITY;
+            } else {
+                double hScale = hScales[octave];
+                octaveNoise = noise.getValue(wrappedXs[octave] * hScale, sampleY, wrappedZs[octave] * hScale);
+            }
+            noiseValue += octaveNoise * amplitude;
+            maxAmplitude += amplitude;
+            amplitude *= PERSISTENCE;
+            if (octave < NUM_OCTAVES - 1) {
+                double peak = (noiseValue + REMAINING_AMPLITUDE[octave] * OCTAVE_BOUND) / TOTAL_AMPLITUDE;
+                if (ef * (peak * cyc) <= limit - 1.0e-9) return AIR_SENTINEL;
+            }
+        }
+        return ef * ((noiseValue / maxAmplitude) * cyc);
+    }
+
     private static double noiseDensity(int shiftedY, ColumnScratch s, double ef, double cyc) {
         double nv = computeNormalizedNoise(shiftedY, s.hScales, s.vScales, s.wrappedXs, s.wrappedZs,
                 useBandBlend ? s.bbLoIdx : null, useBandBlend ? s.bbT : null);
@@ -704,6 +757,10 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         public double islandEnvelope;
         public int dimMinY;
         public int dimMaxY;
+        // The carve reads the same cells' solidity many times per column, so each answer is kept until the next init.
+        private int[] solidStamp = new int[0];
+        private boolean[] solidMemo = new boolean[0];
+        private int stamp;
     }
 
     static final ThreadLocal<ColumnScratch> SCRATCH =
@@ -744,6 +801,16 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         s.islandEnvelope = useIslandEnvelope ? getIslandEnvelope(globalX, globalZ) : 1.0;
         s.dimMinY = BeyondTerrainState.getDimMinY();
         s.dimMaxY = BeyondTerrainState.getDimMaxY();
+        int span = s.dimMaxY - s.dimMinY + 1;
+        if (s.solidStamp.length != span) {
+            s.solidStamp = new int[span];
+            s.solidMemo = new boolean[span];
+            s.stamp = 0;
+        }
+        if (++s.stamp == 0) {
+            java.util.Arrays.fill(s.solidStamp, 0);
+            s.stamp = 1;
+        }
     }
 
     public static double getTerrainDensityScratch(int globalY, ColumnScratch s) {
@@ -754,6 +821,16 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     }
 
     public static boolean isSolidTerrainScratch(int globalY, ColumnScratch s) {
+        int i = globalY - s.dimMinY;
+        if (i < 0 || i >= s.solidStamp.length) return solidTerrainScratch(globalY, s);
+        if (s.solidStamp[i] == s.stamp) return s.solidMemo[i];
+        boolean solid = solidTerrainScratch(globalY, s);
+        s.solidMemo[i] = solid;
+        s.solidStamp[i] = s.stamp;
+        return solid;
+    }
+
+    private static boolean solidTerrainScratch(int globalY, ColumnScratch s) {
         // The air-gap skip's bound: where even the noise's peak cannot reach the threshold, the noise is not sampled.
         int shiftedY = globalY + TERRAIN_Y_OFFSET;
         double ef = edgeGradientFactor(shiftedY, s.dimMinY, s.dimMaxY);
@@ -952,12 +1029,18 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             double cyc = cyclicDensity(shiftedY, cycleHeight);
             // Summed in the order of the density below, so rounding cannot pass a cell this bound skips.
             if (ef * cyc * MAX_NOISE + beardDelta + baseBeardDelta <= baseThreshold) return false;
-            density = noiseDensity(shiftedY, s, ef, cyc);
-        } else {
-            density = terrainDensityOrSkip(y, s, cycleHeight, baseThreshold, beardCap);
+            density = noiseDensityOrAir(shiftedY, s, ef, cyc, baseThreshold - beardDelta - baseBeardDelta);
             if (density == AIR_SENTINEL) return false;
+        } else {
+            int shiftedY = y + TERRAIN_Y_OFFSET;
+            double ef = edgeGradientFactor(shiftedY, s.dimMinY, s.dimMaxY);
+            if (ef <= 0.0) return false;
+            double cyc = cyclicDensity(shiftedY, cycleHeight);
+            if (ef * cyc * MAX_NOISE + beardCap <= baseThreshold) return false;
             beardDelta = beardAt.applyAsDouble(y);
             baseBeardDelta = carve != null ? carve.baseBeardDeltaAt(y) : 0.0;
+            density = noiseDensityOrAir(shiftedY, s, ef, cyc, baseThreshold - beardDelta - baseBeardDelta);
+            if (density == AIR_SENTINEL) return false;
         }
         double finalDensity = density + beardDelta + baseBeardDelta;
         if (finalDensity <= baseThreshold) return false;

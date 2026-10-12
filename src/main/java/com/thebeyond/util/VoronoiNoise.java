@@ -191,6 +191,15 @@ public class VoronoiNoise {
         );
     }
 
+    private static final int[] NEAREST_FIRST = {0, -1, 1, -2, 2};
+
+    private static double boxGap(int cur, double v) {
+        double below = cur - 1 - v;
+        if (below > 0.0) return below * below;
+        double above = v - (cur + 1);
+        return above > 0.0 ? above * above : 0.0;
+    }
+
     public CellResult3D getCell(double x, double y, double z, double frequency) {
         x *= frequency;
         y *= frequency;
@@ -201,15 +210,36 @@ public class VoronoiNoise {
         int zInt = (int)(z > 0 ? z : z - 1);
 
         double minDist = Double.MAX_VALUE;
+        double limit = Double.MAX_VALUE;
+        int bestIdx = Integer.MAX_VALUE;
         long closestCellId = 0;
 
         double xCandidate = 0;
         double yCandidate = 0;
         double zCandidate = 0;
 
-        for (int zCur = zInt - 2; zCur <= zInt + 2; zCur++) {
-            for (int yCur = yInt - 2; yCur <= yInt + 2; yCur++) {
-                for (int xCur = xInt - 2; xCur <= xInt + 2; xCur++) {
+        // a cell's point lies within one unit of its corner, so a plane, row or cell already farther than the best cannot win
+        double[] gap = new double[15];
+        for (int o = 0; o < 5; o++) {
+            gap[o] = boxGap(xInt + o - 2, x);
+            gap[5 + o] = boxGap(yInt + o - 2, y);
+            gap[10 + o] = boxGap(zInt + o - 2, z);
+        }
+
+        for (int iz = 0; iz < 5; iz++) {
+            int dz = NEAREST_FIRST[iz];
+            double gz = gap[10 + dz + 2];
+            if (gz > limit) continue;
+            int zCur = zInt + dz;
+            for (int iy = 0; iy < 5; iy++) {
+                int dy = NEAREST_FIRST[iy];
+                double gzy = gz + gap[5 + dy + 2];
+                if (gzy > limit) continue;
+                int yCur = yInt + dy;
+                for (int ix = 0; ix < 5; ix++) {
+                    int dx = NEAREST_FIRST[ix];
+                    if (gzy + gap[dx + 2] > limit) continue;
+                    int xCur = xInt + dx;
 
                     long cellSeed = (long)xCur * 1619L
                             + (long)yCur * 31337L
@@ -239,8 +269,12 @@ public class VoronoiNoise {
 
                     double dist = xDist * xDist + yDist * yDist + zDist * zDist;
 
-                    if (dist < minDist) {
+                    // ties go to the cell the plain z,y,x loop meets first
+                    int idx = ((dz + 2) * 5 + (dy + 2)) * 5 + (dx + 2);
+                    if (dist < minDist || (dist == minDist && idx < bestIdx)) {
                         minDist = dist;
+                        limit = dist * 1.000000001 + 1.0e-12;
+                        bestIdx = idx;
                         closestCellId = cellSeed;
                         xCandidate = xPos;
                         yCandidate = yPos;
