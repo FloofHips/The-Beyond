@@ -359,6 +359,12 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
     }
 
     private int selectBiome(int x, int y, int z, List<Holder<Biome>> biomePool) {
+        VoronoiNoise.CellResult3D cell = getCell(x, y, z);
+
+        return (int)(Math.abs(cell.cellId()) % biomePool.size());
+    }
+
+    public VoronoiNoise.CellResult3D getCell(int x, int y, int z) {
         double cellSize = 200.0;
         VoronoiNoise.CellResult3D cell = voronoiNoise.get().getCell(
                 x,
@@ -366,8 +372,7 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
                 z,
                 1.0 / cellSize
         );
-
-        return (int)(Math.abs(cell.cellId()) % biomePool.size());
+        return cell;
     }
 
     /** Voronoi-cell biome of the tainted pool ignoring air and solid, for Isleweaver's 3D-cell feature filter. */

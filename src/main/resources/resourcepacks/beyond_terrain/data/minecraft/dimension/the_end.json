@@ -19,6 +19,7 @@
       "outer_void_biomes": [
         "minecraft:the_void",
         "minecraft:small_end_islands",
+        "the_beyond:void_bog",
         "enderscape:void_depths",
         "enderscape:void_skies",
         "enderscape:void_sky_islands",
