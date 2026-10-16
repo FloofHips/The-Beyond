@@ -261,11 +261,9 @@ public class ModGameEvents {
             }
 
             // onDrop cancels the normal drops, so grab Curios into the totem here or they vanish.
-            int curiosCount = 0;
             if (CURIOS_LOADED) {
                 for (ItemStack stack : com.thebeyond.compat.curios.BeyondCuriosCompat.collectAndClear(player)) {
                     itemsList.add(stack.save(regAccess));
-                    curiosCount++;
                 }
             }
 
@@ -273,9 +271,6 @@ public class ModGameEvents {
                 persistent.put(TAG_TOTEM_ITEMS, itemsList);
                 persistent.putBoolean(TAG_PENDING_TOTEM, true);
             }
-
-            TheBeyond.LOGGER.debug("[TotemRespite] totem captured items={} (curios among them={}) curiosLoaded={} corpse={}",
-                    itemsList.size(), curiosCount, CURIOS_LOADED, net.neoforged.fml.ModList.get().isLoaded("corpse"));
 
             player.getPersistentData().put(Player.PERSISTED_NBT_TAG, persistent);
         }

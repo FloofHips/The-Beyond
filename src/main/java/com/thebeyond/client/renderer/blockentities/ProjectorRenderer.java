@@ -93,12 +93,12 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         List<ContraptionFrame> resolve(Level level, AABB worldBounds, Vec3 camPos, float partialTick);
     }
 
-    static boolean DIAG_CONTRAPTION = true;
+    static boolean DIAG_CONTRAPTION = false;
     private static final Set<BlockPos> DIAG_LOGGED = ConcurrentHashMap.newKeySet();
 
-    static boolean DIAG_GLASS_TONE = true;
+    static boolean DIAG_GLASS_TONE = false;
     private static final ConcurrentHashMap<BlockPos, ResourceLocation> DIAG_LAST_TONE = new ConcurrentHashMap<>();
-    static boolean DIAG_DRAW = true;
+    static boolean DIAG_DRAW = false;
     private static final ConcurrentHashMap<BlockPos, int[]> DIAG_LAST_DRAW = new ConcurrentHashMap<>();
     private static final int DRAW_DEFERRED = 1, DRAW_NO_ITEMS = 2, DRAW_UNLIT = 3, DRAW_NO_SURFACE = 4, DRAW_NO_SLOTS = 5,
             DRAW_NO_TEXTURE = 6, DRAW_OK = 7, DIAG_DRAW_CAP = 12;
@@ -253,7 +253,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         Vec3 normal = up.cross(right).normalize();
         double coneK = ph.coneK();
 
-        ProjectorClipFn fn = subLevelClip; // null on the base path
+        ProjectorClipFn fn = subLevelClip;
 
         // lens centre and four corners: similar distances keep one quad, else the image conforms per cell
         double centerDist = clipDist(fn, level, pos, eye, forward);
@@ -274,7 +274,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         }
         if (!anyHit) {
             diagDraw(be, DRAW_NO_SURFACE, 0, 0);
-            return; // aimed fully at open air
+            return;
         }
         boolean flat = allHit && (maxD - minD) < FLAT_TOL;
 
@@ -284,13 +284,12 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
 
         int mode = be.getMode();
         ResourceLocation gradeId = frontGlassGradeId(be);
-        int[] filled = be.filledSlots();
-        int f = filled.length;
-        if (f == 0) {
+        int f = be.filledSlots().length;
+        List<ProjectorSlides.Slide> slides = ProjectorSlides.of(be);
+        if (slides.isEmpty()) {
             diagDraw(be, DRAW_NO_SLOTS, 0, 0);
             return;
         }
-        int carousel = Math.floorMod(be.getCarouselIndex(), f);
 
         double flatDist = Math.max(0.5, centerDist - SURFACE_EPS);
         Vec3 flatCenter = eye.add(forward.scale(flatDist));
@@ -307,21 +306,19 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         }
 
         int unresolved = 0, drawn = 0;
-        for (int j = 0; j < f; j++) {
-            int slot = filled[j];
-            Resolved base = resolveTexture(items.get(slot), gradeId);
+        for (ProjectorSlides.Slide slide : slides) {
+            Resolved base = resolveTexture(slide.stack(), gradeId);
             if (base == null) {
                 unresolved++;
                 continue;
             }
-            if (mode == ProjectorBlockEntity.MODE_CAROUSEL && j != carousel) {
-                continue;
-            }
-            ProjectorTexture.Region region = regionFor(mode, j, f, base.region());
+            int j = slide.index();
+            float opacity = base.opacity() * slide.opacity();
+            ProjectorTexture.Region region = regionFor(mode, j, slide.count(), base.region());
             VertexConsumer vc = buffers.getBuffer(BeyondRenderTypes.projectorPack(base.texture()));
             double layerDepth = (mode == ProjectorBlockEntity.MODE_MIXUP) ? j * LAYER_DEPTH : 0.0;
             if (canMesh) {
-                emitMeshSlot(vc, pose, mesh, region, base.opacity(), base.flipV(), layerDepth, forward, ox, oy, oz);
+                emitMeshSlot(vc, pose, mesh, region, opacity, base.flipV(), layerDepth, forward, ox, oy, oz);
             } else if (flat) {
                 Vec3 quadCenter = flatCenter;
                 if (mode == ProjectorBlockEntity.MODE_MIXUP) {
@@ -332,10 +329,10 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
                         quadCenter = quadCenter.add(right.scale(fan)).add(up.scale(fan));
                     }
                 }
-                emitRegionQuad(vc, pose, quadCenter, right, up, normal, flatHalf, region, base.opacity(), base.flipV(), ox, oy, oz);
+                emitRegionQuad(vc, pose, quadCenter, right, up, normal, flatHalf, region, opacity, base.flipV(), ox, oy, oz);
             } else {
                 emitConformGrid(vc, pose, eye, forward, right, up, normal, coneK, region,
-                        base.opacity(), base.flipV(), layerDepth, fn, level, pos, ox, oy, oz);
+                        opacity, base.flipV(), layerDepth, fn, level, pos, ox, oy, oz);
             }
             drawn++;
         }
@@ -617,7 +614,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         Vec3 n = new Vec3(mq.nx(), mq.ny(), mq.nz());
         Vec3 center = q[0].add(q[1]).add(q[2]).add(q[3]).scale(0.25);
         if (n.dot(center.subtract(eye)) >= -1.0e-6) {
-            return; // quad faces away from the lens
+            return;
         }
         // Drop quads wholly behind the near plane or outside the cone rectangle.
         boolean anyFront = false;
@@ -638,7 +635,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
         int sub = (int) Mth.clamp(Math.ceil(span / UV_CELL), 1, MAX_SUB);
         Vec3 e1 = q[1].subtract(q[0]);
         Vec3 e2 = q[3].subtract(q[0]);
-        Vec3 warp = q[2].subtract(q[1]).subtract(q[3]).add(q[0]); // bilinear cross term
+        Vec3 warp = q[2].subtract(q[1]).subtract(q[3]).add(q[0]);
         // Occlusion on a capped grid then interpolated: 4 corner rays would miss a thin mid-face occluder.
         BlockPos self = new BlockPos(bx, by, bz);
         int osub = Math.min(sub, OCC_SUB);
@@ -753,7 +750,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
                     return false; // the quad's own collider must not self-occlude
                 }
                 if (isLightTransmitting(level.getBlockState(hit.getBlockPos()))) {
-                    from = hit.getLocation().add(dir.scale(1.0e-3)); // glass is not an occluder
+                    from = hit.getLocation().add(dir.scale(1.0e-3));
                     continue;
                 }
                 return hit.getLocation().distanceTo(eye) < dist - OCC_EPS;
@@ -803,7 +800,7 @@ public class ProjectorRenderer implements BlockEntityRenderer<ProjectorBlockEnti
             rand.setSeed(42L); // stable per state: CTM/dynamic models vary texture, not geometry
             for (BakedQuad bq : model.getQuads(state, face, rand)) {
                 int[] v = bq.getVertices();
-                int stride = v.length / 4;  // ints per vertex, position first, atlas UV at 4 and 5
+                int stride = v.length / 4;
                 float[] qp = new float[12];
                 float[] qt = new float[8];
                 for (int k = 0; k < 4; k++) {

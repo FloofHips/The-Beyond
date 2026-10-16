@@ -44,41 +44,41 @@ public class BeyondItems {
         @Override
         public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
             super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
-            tooltipComponents.add(Component.literal("When in Hand:").withStyle(ChatFormatting.GRAY));
-            tooltipComponents.add(Component.literal(" Preserve items on Death").withStyle(ChatFormatting.AQUA));
+            tooltipComponents.add(BeyondTooltips.header("in_hand"));
+            tooltipComponents.add(BeyondTooltips.effect("keep_items", ChatFormatting.AQUA));
         }
     });
     public static final DeferredItem<Item> ETHER_CLOAK = registerItem("ether_cloak", () -> new ModelArmorItem(BeyondArmorMaterials.SHROUD_ARMOR, ArmorItem.Type.HELMET, new Item.Properties().durability(ArmorItem.Type.BOOTS.getDurability(10)).stacksTo(1), EtherCloakModel::new) {
         @Override
         public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
             super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
-            tooltipComponents.add(Component.literal("Passive:").withStyle(ChatFormatting.GRAY));
-            tooltipComponents.add(Component.literal(" Hide Nametag").withStyle(ChatFormatting.BLUE));
-            tooltipComponents.add(Component.literal(" Lower Aggro Distance").withStyle(ChatFormatting.BLUE));
+            tooltipComponents.add(BeyondTooltips.header("passive"));
+            tooltipComponents.add(BeyondTooltips.effect("hide_nametag", ChatFormatting.BLUE));
+            tooltipComponents.add(BeyondTooltips.effect("low_aggro", ChatFormatting.BLUE));
         }
     });
     public static final DeferredItem<Item> ANCHOR_LEGGINGS = registerItem("anchor_leggings", () -> new AnchorLeggingsItem(BeyondArmorMaterials.ANCHOR_ARMOR, ArmorItem.Type.LEGGINGS, new Item.Properties().durability(ArmorItem.Type.LEGGINGS.getDurability(10)).stacksTo(1).rarity(Rarity.EPIC), AnchorLeggingsModel::new) {
         @Override
         public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
             super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
-            tooltipComponents.add(Component.literal("On Crouch Mid Air:").withStyle(ChatFormatting.GRAY));
-            tooltipComponents.add(Component.literal(" Land with KnockBack Impact").withStyle(ChatFormatting.LIGHT_PURPLE));
+            tooltipComponents.add(BeyondTooltips.header("air_crouch"));
+            tooltipComponents.add(BeyondTooltips.effect("impact", ChatFormatting.LIGHT_PURPLE));
         }
     });
     public static final DeferredItem<Item> PATHFINDER_BOOTS = registerItem("pathfinder_boots", () -> new ModelArmorItem(BeyondArmorMaterials.SHROUD_ARMOR, ArmorItem.Type.BOOTS, new Item.Properties().durability(ArmorItem.Type.BOOTS.getDurability(10)).stacksTo(1), EtherCloakModel::new) {
         @Override
         public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
             super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
-            tooltipComponents.add(Component.literal("Passive:").withStyle(ChatFormatting.GRAY));
-            tooltipComponents.add(Component.literal(" Walk on Auroracite").withStyle(ChatFormatting.DARK_AQUA));
+            tooltipComponents.add(BeyondTooltips.header("passive"));
+            tooltipComponents.add(BeyondTooltips.effect("auroracite", ChatFormatting.DARK_AQUA));
         }
     });
     public static final DeferredItem<Item> ECTOPLASM = registerItem("ectoplasm", () -> new AirPlaceableBlockItem(BeyondBlocks.ECTOPLASM.get(), new Item.Properties()) {
         @Override
         public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
             super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
-            tooltipComponents.add(Component.literal("Can be placed mid-air").withStyle(ChatFormatting.GRAY));
-            tooltipComponents.add(Component.literal("Used on lit Bonfires").withStyle(ChatFormatting.DARK_AQUA));
+            tooltipComponents.add(BeyondTooltips.line("air_place", ChatFormatting.GRAY));
+            tooltipComponents.add(BeyondTooltips.line("bonfires", ChatFormatting.DARK_AQUA));
         }
     });
 
@@ -119,7 +119,7 @@ public class BeyondItems {
     public static final DeferredItem<Item> BRITTLE_PICKAXE = registerItem("brittle_pickaxe", () -> new PickaxeItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(PickaxeItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 1.0F, -2.1F))));
     public static final DeferredItem<Item> BRITTLE_AXE = registerItem("brittle_axe", () -> new AxeItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(AxeItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 6.0F, -2.5F))));
     public static final DeferredItem<Item> BRITTLE_HOE = registerItem("brittle_hoe", () -> new HoeItem(BeyondToolTiers.BRITTLE_TIER, new Item.Properties().attributes(HoeItem.createAttributes(BeyondToolTiers.BRITTLE_TIER, 0.0F, -2.2F))));
-    // Block-click places the camera block; in-air or sneaking shoots it handheld.
+    // Block-click places the camera block, while in the air or sneaking it shoots handheld.
     public static final DeferredItem<Item> PRISMOGRAPH = registerItem("prismograph", () -> new PrismographBlockItem(BeyondBlocks.PRISMOGRAPH.get(), new Item.Properties().stacksTo(1)));
     public static final DeferredItem<Item> SNAPSHOT = registerItem("snapshot", () -> new SnapshotItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<Item> MEMORY_BANK = registerItem("memory_bank", () -> new MemoryBankItem(new Item.Properties().stacksTo(1).component(DataComponents.DYED_COLOR, new DyedItemColor(-10659444, false))));

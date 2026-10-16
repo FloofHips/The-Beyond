@@ -297,12 +297,11 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
         if (cache.blockX == blockX && cache.blockZ == blockZ) {
             absSeed = cache.absSeed;
         } else {
+            // on purpose: the curve is tuned to blockX with biomeZ, and unwrapped biome coords keep the layout from repeating
             int biomeX = blockX / 64;
             int biomeZ = blockZ / 64;
-            // blockX with biomeZ is a deliberate unit mix the threshold curve is tuned to, do not change it alone
             float distanceFromOrigin = (float) Math.sqrt((double) blockX * blockX + (double) biomeZ * biomeZ);
 
-            // not wrapped on purpose: it feeds the seed hash, and wrapping would repeat the biome layout every 2*wrapRange
             double horizontalScale = BeyondEndChunkGenerator.getHorizontalBaseScale(biomeX, biomeZ);
             double threshold = BeyondEndChunkGenerator.getThreshold(biomeX, biomeZ, distanceFromOrigin);
 
@@ -360,14 +359,9 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
 
     private int selectBiome(int x, int y, int z, List<Holder<Biome>> biomePool) {
         double cellSize = 200.0;
-        VoronoiNoise.CellResult3D cell = voronoiNoise.get().getCell(
-                x,
-                y,
-                z,
-                1.0 / cellSize
-        );
+        long cellId = voronoiNoise.get().cellId3D(x, y, z, 1.0 / cellSize);
 
-        return (int)(Math.abs(cell.cellId()) % biomePool.size());
+        return (int)(Math.abs(cellId) % biomePool.size());
     }
 
     /** Voronoi-cell biome of the tainted pool ignoring air and solid, for Isleweaver's 3D-cell feature filter. */
@@ -399,7 +393,7 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
         Pair<BlockPos, Holder<Biome>> best = null;
         long bestDistSq = Long.MAX_VALUE;
 
-        // cube shells outward, stopping once the next shell cannot beat bestDistSq, so locate is no longer cubic
+        // cube shells outward, stopping once the next shell cannot beat bestDistSq, so locate skips most of the cube
         shellLoop:
         for (int shell = 0; shell <= maxShell; shell++) {
             int xRange = Math.min(qRadius, shell * qHorizStep);

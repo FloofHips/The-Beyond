@@ -201,9 +201,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
                     colors.z()
             );
         }
-            ////i think the skylight is being fucked with by thunderstorms... or ambient light
 
-        //0.22983016
         colors.set(
                 Mth.lerp(bossFog, colors.x() * 0.9f, colors.x()),
                 Mth.lerp(bossFog, Mth.clamp(colors.y() * 1.1f, 0, 1), colors.y()*0.6),
@@ -520,7 +518,6 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         RenderSystem.setShaderColor(1, 1, 1, Math.min(crack.lifeTime, 0.8f));
         //RenderSystem.setShaderColor(1, 1, 1, 0.5f);
 
-        // crack.position is already camera-relative in sky space, so the billboard is built from it alone.
         poseStack.mulPose(Axis.YP.rotationDegrees(90.0f));
 
         Matrix4f matrix4f3 = poseStack.last().pose();

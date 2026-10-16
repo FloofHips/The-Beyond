@@ -76,6 +76,7 @@ import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtension
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.common.util.TriState;
+import net.neoforged.neoforge.event.level.LevelEvent;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
@@ -147,7 +148,6 @@ public class ModClientEvents {
         BlockEntityRenderers.register(BeyondBlockEntities.MEMOR_FAUCET.get(), MemorFaucetRenderer::new);
         BlockEntityRenderers.register(BeyondBlockEntities.REFUGE.get(), RefugeRenderer::new);
         BlockEntityRenderers.register(BeyondBlockEntities.PROJECTOR.get(), ProjectorRenderer::new);
-        // Mirror has no BER: see onMirrorReflectionCapture / onMirrorDraw. Sable-gated so the class never loads without Sable.
         if (ModList.get().isLoaded("sable")) {
             BeyondSableClientCompat.registerRenderers();
         }
@@ -676,6 +676,14 @@ public class ModClientEvents {
         BlockCameraCapture.release();
         ItemIconTextures.release();
         ProjectorDepthMap.clear();
+    }
+
+    // a dimension change drops the old client level without setRemoved on its block entities, so they would stay listed
+    @SubscribeEvent
+    public static void onClientLevelUnload(LevelEvent.Unload event) {
+        if (!event.getLevel().isClientSide()) return;
+        MirrorBlockEntity.LOADED.removeIf(be -> be.getLevel() == event.getLevel());
+        ProjectorBlockEntity.LOADED.removeIf(be -> be.getLevel() == event.getLevel());
     }
 
     @SubscribeEvent

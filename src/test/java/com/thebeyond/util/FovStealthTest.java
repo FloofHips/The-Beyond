@@ -6,10 +6,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Boundary tests for {@link FovStealth} — the flattened frontal-cone geometry that gates
- * whether a deafened mob can notice the player. Pure math, no Minecraft bootstrap.
- */
+/** Boundary tests for the {@link FovStealth} cone that gates whether a deafened mob notices the player, pure math. */
 class FovStealthTest {
 
     private static double[] point(double phiDeg, double psiDeg, double r) {

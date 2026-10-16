@@ -9,6 +9,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.compat.ShaderCompatLib;
+import com.thebeyond.client.compat.VeilCompat;
 import com.thebeyond.common.block.MirrorBlock;
 import com.thebeyond.common.block.blockentities.MirrorBlockEntity;
 import com.thebeyond.common.registry.BeyondRenderTypes;
@@ -100,8 +101,6 @@ public final class MirrorReflection {
     }
 
     private static Slot[] slots;
-    private static boolean loggedBuildTag;
-    private static boolean loggedShadowSkip;
 
     // Cached per state: CTM/dynamic models vary only texture, not these positions, so the cache stays correct.
     private static final java.util.Map<BlockState, float[]> OCCLUDER_MODEL_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
@@ -186,14 +185,9 @@ public final class MirrorReflection {
         return null;
     }
 
-    /** RenderLevelStageEvent at AFTER_SOLID_BLOCKS. */
+    /** At AFTER_SOLID_BLOCKS, never in Iris's shadow pass, whose orthographic view breaks the oblique clip (NaN). */
     public static void capture(Matrix4f projIn, Matrix4f viewIn, Camera camera, Frustum frustum, float partialTick) {
-        // Iris fires stage events during the shadow pass too, whose orthographic view degenerates the oblique clip (NaN).
         if (ShaderCompatLib.isShadowPass()) {
-            if (!loggedShadowSkip) {
-                loggedShadowSkip = true;
-                TheBeyond.LOGGER.info("[TheBeyond] mirror: skipping reflection capture/draw during Iris shadow pass");
-            }
             return;
         }
         Minecraft mc = Minecraft.getInstance();
@@ -212,10 +206,6 @@ public final class MirrorReflection {
         LocalPlayer player = mc.player;
         if (player == null || mc.level == null) {
             return;
-        }
-        if (!loggedBuildTag) {
-            loggedBuildTag = true;
-            TheBeyond.LOGGER.info("[TheBeyond] mirror reflection active — occluder=" + (com.thebeyond.BeyondConfig.MIRROR_OCCLUSION_MODEL_BASED.get() ? "model" : "AABB") + " (configurable), AABB shade incl. foliage; passable mount-support; door-shade, lightweight LOS");
         }
 
         double px = Mth.lerp(partialTick, player.xOld, player.getX());
@@ -278,7 +268,6 @@ public final class MirrorReflection {
             if (!info.inFrustum) {
                 continue;
             }
-            // Player must be on the reflective (+normal) side.
             if (eyePos.subtract(info.point).dot(info.normal) <= 0.0) {
                 continue;
             }
@@ -327,6 +316,7 @@ public final class MirrorReflection {
         Matrix4fStack mvStack = RenderSystem.getModelViewStack();
         mvStack.pushMatrix();
         EntityRenderDispatcher disp = mc.getEntityRenderDispatcher();
+        boolean veilSuspended = VeilCompat.suspendBuffers();
 
         try {
             for (int i = 0; i < selected.size(); i++) {
@@ -349,6 +339,7 @@ public final class MirrorReflection {
                 }
             }
         } finally {
+            VeilCompat.resumeBuffers(veilSuspended);
             mvStack.popMatrix();
             RenderSystem.applyModelViewMatrix();
             RenderSystem.restoreProjectionMatrix();
@@ -381,11 +372,10 @@ public final class MirrorReflection {
         Matrix4f proj = new Matrix4f(projIn);
         Matrix4f modelView = new Matrix4f(viewIn).mul(reflect);
 
-        // Clip at the mirror plane, else the first-person player smears its underside across every mirror.
+        // clip at the mirror plane or the player smears across every mirror, packs sample the FBO with the unclipped projIn
         applyObliqueNearClip(proj, viewIn, n, p0rel);
 
         if (packPath) {
-            // sampleVP keeps the unclipped projIn so the face still samples the FBO at its true screen position.
             slot.sampleVP.set(projIn).mul(viewIn).translate(
                     (float) -camPos.x, (float) -camPos.y, (float) -camPos.z);
         }
@@ -724,7 +714,7 @@ public final class MirrorReflection {
                         mp.set(wx, wy, wz);
                     }
                     if (!topOpen && !botOpen) {
-                        continue; // interior cell
+                        continue;
                     }
                     // cut on the side facing the entity's visible half when exposed, else the other
                     boolean coverLower = (wy + 0.5) < eCy;
@@ -747,7 +737,7 @@ public final class MirrorReflection {
                     boolean exNZ = !bcell(ix, iy, iz - 1, dx, dy, dz);
                     boolean exPZ = !bcell(ix, iy, iz + 1, dx, dy, dz);
                     if (!(exNX || exPX || exNZ || exPZ)) {
-                        continue; // interior face
+                        continue;
                     }
                     // Falloff centred on the entity, shared by every cell picking it, so the blob is one seamless shape.
                     for (AABB a : vs.toAabbs()) {
@@ -846,7 +836,7 @@ public final class MirrorReflection {
                 float bA = Mth.lerp((float) j / n, b0, b1), bB = Mth.lerp((float) (j + 1) / n, b0, b1);
                 float a00 = al[i * w + j], a10 = al[(i + 1) * w + j], a11 = al[(i + 1) * w + j + 1], a01 = al[i * w + j + 1];
                 if (a00 + a10 + a11 + a01 < 0.004f) {
-                    continue; // fully transparent
+                    continue;
                 }
                 if (a00 + a11 > a10 + a01) { // flip the diagonal so the radial gradient has no triangle seam
                     emit3D(vc, orient, fixed, aB, bA, ox, oy, oz, c, a10);
@@ -953,11 +943,10 @@ public final class MirrorReflection {
             }
             front.add(e);
         }
-        // Players first, then other living bodies: the cap is small, and dropped items must not crowd them out.
+        // players first so items can't crowd them out of the small cap, a check budget bounds the cost of occluded crowds
         front.sort(Comparator.<Entity>comparingInt(MirrorReflection::reflectionPriority)
                 .thenComparingDouble(e -> e.distanceToSqr(info.point.x, info.point.y, info.point.z)));
 
-        // Bounded by a check budget then the entity cap, so a crowd of occluded mobs can't blow up the cost.
         List<Entity> visible = new ArrayList<>();
         int budget = Math.min(front.size(), MAX_REFLECTED_ENTITIES * 3);
         for (int i = 0; i < budget && visible.size() < MAX_REFLECTED_ENTITIES; i++) {
@@ -1038,7 +1027,7 @@ public final class MirrorReflection {
             }
             BlockState st = chunk.getBlockState(mp);
             if (st.getBlock() instanceof MirrorBlock) {
-                continue; // mirrors are transparent to another plane's reflection
+                continue;
             }
             if (st.canOcclude() && st.isCollisionShapeFullBlock(level, mp)) {
                 return false;  // only a full opaque cube culls, the depth occluder covers partial blocks
@@ -1055,7 +1044,7 @@ public final class MirrorReflection {
     /** RenderLevelStageEvent at AFTER_TRANSLUCENT_BLOCKS: draws each captured face over the pearl block. */
     public static void draw(Camera camera, PoseStack poseStack, float partialTick) {
         if (ShaderCompatLib.isShadowPass()) {
-            return; // see capture()
+            return;
         }
         if (slots == null) {
             return;
@@ -1204,16 +1193,14 @@ public final class MirrorReflection {
 
     /** Lengyel oblique clip: proj's near plane becomes the mirror plane, so hardware clipping works under a pack too. */
     public static void applyObliqueNearClip(Matrix4f proj, Matrix4f viewIn, Vec3 n, Vec3 p0rel) {
-        // eye space is camera-relative and the normal points away from the kept side, so the camera is at w < 0
         Vector4f nEye = new Vector4f((float) n.x, (float) n.y, (float) n.z, 0.0f);
-        viewIn.transform(nEye); // w = 0 → direction only
+        viewIn.transform(nEye);
         float cx = -nEye.x, cy = -nEye.y, cz = -nEye.z;
         float cw = (float) (n.x * p0rel.x + n.y * p0rel.y + n.z * p0rel.z);
-        // Q: clip-space corner most opposite the clip plane.
         float qx = (sgn(cx) + proj.m20()) / proj.m00();
         float qy = (sgn(cy) + proj.m21()) / proj.m11();
         float qw = (1.0f + proj.m22()) / proj.m32();
-        float denom = cx * qx + cy * qy - cz + cw * qw; // qz = −1
+        float denom = cx * qx + cy * qy - cz + cw * qw;
         float s = 2.0f / denom;
         // a camera on the plane makes s non-finite, so the plain projection keeps the reflection uncut
         if (!Float.isFinite(qx) || !Float.isFinite(qy) || !Float.isFinite(qw)

@@ -118,7 +118,6 @@ public class BeyondAdvancements extends AdvancementProvider {
                                     new PlayerTrigger.TriggerInstance(Optional.empty())))
                     .save(consumer, "the_beyond:the_beyond/pass_the_torch");
 
-            // nomad branch
 
             // An Offering Remembered - give a remembrance to a nomad
             AdvancementHolder offeringRemembered = Advancement.Builder.advancement()
@@ -168,7 +167,6 @@ public class BeyondAdvancements extends AdvancementProvider {
                                     new PlayerTrigger.TriggerInstance(Optional.empty())))
                     .save(consumer, "the_beyond:the_beyond/memories_returned");
 
-            // totem
 
             // Defying the Void - obtain a totem of respite
             AdvancementHolder defyingTheVoid = Advancement.Builder.advancement()
@@ -186,7 +184,6 @@ public class BeyondAdvancements extends AdvancementProvider {
                                     new PlayerTrigger.TriggerInstance(Optional.empty())))
                     .save(consumer, "the_beyond:the_beyond/defying_the_void");
 
-            // exploration
 
             // So Below - walk on the void river with pathfinder boots
             AdvancementHolder soBelow = Advancement.Builder.advancement()

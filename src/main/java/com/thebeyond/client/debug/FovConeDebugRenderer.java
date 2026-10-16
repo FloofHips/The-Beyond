@@ -68,10 +68,10 @@ public final class FovConeDebugRenderer {
 
         record Pt(double az, double el, float r, float g, float b) {}
         java.util.List<Pt> rim = new java.util.ArrayList<>();
-        for (double az = -hh; az < hh; az += STEP) rim.add(new Pt(az, up, 0.1f, 1.0f, 0.1f));      // top L->R (green)
-        for (double el = up; el > -down; el -= STEP) rim.add(new Pt(hh, el, 1.0f, 0.2f, 0.2f));    // right U->D (red)
-        for (double az = hh; az > -hh; az -= STEP) rim.add(new Pt(az, -down, 0.25f, 0.5f, 1.0f));  // bottom R->L (blue)
-        for (double el = -down; el < up; el += STEP) rim.add(new Pt(-hh, el, 1.0f, 0.2f, 0.2f));   // left D->U (red)
+        for (double az = -hh; az < hh; az += STEP) rim.add(new Pt(az, up, 0.1f, 1.0f, 0.1f));
+        for (double el = up; el > -down; el -= STEP) rim.add(new Pt(hh, el, 1.0f, 0.2f, 0.2f));
+        for (double az = hh; az > -hh; az -= STEP) rim.add(new Pt(az, -down, 0.25f, 0.5f, 1.0f));
+        for (double el = -down; el < up; el += STEP) rim.add(new Pt(-hh, el, 1.0f, 0.2f, 0.2f));
 
         int n = rim.size();
         for (int i = 0; i < n; i++) {
@@ -80,12 +80,12 @@ public final class FovConeDebugRenderer {
             line(pose, lines, pa, pb, a.r, a.g, a.b, 1.0f);
             line(pose, lines, eye.add(pa.subtract(eye).scale(0.5)), eye.add(pb.subtract(eye).scale(0.5)),
                     a.r * 0.6f, a.g * 0.6f, a.b * 0.6f, 0.8f);
-            if (i % 3 == 0) line(pose, lines, eye, pa, 0.65f, 0.65f, 0.65f, 0.35f); // lateral surface rays
+            if (i % 3 == 0) line(pose, lines, eye, pa, 0.65f, 0.65f, 0.65f, 0.35f);
         }
-        for (double[] c : new double[][]{{-hh, up}, {hh, up}, {-hh, -down}, {hh, -down}}) { // corner rays
+        for (double[] c : new double[][]{{-hh, up}, {hh, up}, {-hh, -down}, {hh, -down}}) {
             line(pose, lines, eye, at(eye, head, c[0], c[1]), 0.85f, 0.85f, 0.85f, 0.8f);
         }
-        line(pose, lines, eye, at(eye, head, 0, 0), 1.0f, 1.0f, 1.0f, 1.0f); // forward ray (white)
+        line(pose, lines, eye, at(eye, head, 0, 0), 1.0f, 1.0f, 1.0f, 1.0f);
     }
 
     /** Point at RADIUS along azimuth and elevation in the head frame, the same basis inFovCone tests. */

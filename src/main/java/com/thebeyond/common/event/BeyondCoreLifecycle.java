@@ -61,7 +61,7 @@ public final class BeyondCoreLifecycle {
         // Reset Beyond's own static world-bound state so the next start re-detects.
         BeyondTerrainStateInternal.reset();
         BeyondEndChunkGenerator.resetNoises();
-        com.thebeyond.common.worldgen.BeyondGenDiagnostics.reset();   // re-arm one-shot gen logs for next world
+        com.thebeyond.common.worldgen.BeyondGenDiagnostics.reset();
         com.thebeyond.api.worldgen.BeyondForeignStructureProfiles.clearLayerDistributed();
         com.thebeyond.common.worldgen.AutoHostWarmUp.reset();
         com.thebeyond.common.worldgen.BeyondStructureArbiter.reset();

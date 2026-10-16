@@ -74,7 +74,7 @@ public final class FeatureGuard {
     /** Decided once per feature on its first block, so no feature is placed by halves. */
     public static boolean blocksFeatureAt(int x, int y, int z) {
         State s = STATE.get();
-        if (s.depth > 0) return false;          // a structure is building itself → allow
+        if (s.depth > 0) return false;
         ProtectedVolume v = s.volume;
         if (s.featureDepth == 0) return v != null && v.contains(x, y, z);
         if (s.decision == 0) s.decision = (v != null && v.contains(x, y, z)) ? 2 : 1;

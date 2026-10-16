@@ -225,7 +225,7 @@ public abstract class ForeignGroundSeatMixin {
     private static void the_beyond$logSeat(Structure.GenerationContext context,
             @org.jetbrains.annotations.Nullable ResourceLocation key, String what) {
         ChunkPos cp = context.chunkPos();
-        if (BeyondGenDiagnostics.loggedMaskKeys.size() < 4000
+        if (BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedMaskKeys.size() < 4000
                 && BeyondGenDiagnostics.loggedMaskKeys.add("ground-seat@" + key + "@" + cp.toLong())) {
             com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] held seat {} at chunk [{},{}]: {}", key, cp.x, cp.z, what);
         }

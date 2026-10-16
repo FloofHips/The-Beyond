@@ -27,6 +27,9 @@ import java.util.WeakHashMap;
 public final class Deafening {
     private Deafening() {}
 
+    // per-event traces of the deafening rules, off so they never reach players' logs
+    public static boolean TRACE = false;
+
     public static boolean isImmune(Entity e) {
         return e.getType().is(BeyondTags.IMMUNE_TO_DEAFENING);
     }
@@ -39,15 +42,12 @@ public final class Deafening {
         return e.hasEffect(BeyondEffects.DEAFENED);
     }
 
-    /** No particles, the feedback is the screech and the startle. */
     public static void deafen(LivingEntity target, int durationTicks) {
-        // ambient=false, visible(particles)=false, showIcon=true
         target.addEffect(new MobEffectInstance(BeyondEffects.DEAFENED, durationTicks, 0, false, false, true));
     }
 
-    /** Past the crowd cap nobody is deafened, a crowd notices you anyway. */
+    /** Past the smaller of the two crowd caps nobody is deafened, a crowd notices you anyway. */
     public static int deafenMobsAround(ServerLevel level, Vec3 center, double radius, int durationTicks) {
-        // Use the smaller cap so a globalCap set below localCap still governs.
         int cap = Math.min(BeyondConfig.DEAFENING_LOCAL_CAP.get(), BeyondConfig.DEAFENING_GLOBAL_CAP.get());
         AABB box = new AABB(center, center).inflate(radius);
         List<Mob> eligible = level.getEntitiesOfClass(Mob.class, box, m -> m.isAlive() && !isImmune(m));

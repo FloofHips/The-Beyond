@@ -81,6 +81,53 @@ public class OrientedBox {
         };
     }
 
+    private OrientedBox(double centerX, double centerY, double centerZ, double extentX, double extentY, double extentZ,
+                        Vector3f[] axes, AABB localAABB) {
+        this.localAABB = localAABB;
+        this.centerX = centerX;
+        this.centerY = centerY;
+        this.centerZ = centerZ;
+        this.extentX = extentX;
+        this.extentY = extentY;
+        this.extentZ = extentZ;
+        this.axes = axes;
+        this.spanX = Math.abs(axes[0].x) * extentX + Math.abs(axes[1].x) * extentY + Math.abs(axes[2].x) * extentZ;
+        this.spanY = Math.abs(axes[0].y) * extentX + Math.abs(axes[1].y) * extentY + Math.abs(axes[2].y) * extentZ;
+        this.spanZ = Math.abs(axes[0].z) * extentX + Math.abs(axes[1].z) * extentY + Math.abs(axes[2].z) * extentZ;
+        this.worldAABB = new AABB(centerX - spanX, centerY - spanY, centerZ - spanZ,
+                centerX + spanX, centerY + spanY, centerZ + spanZ);
+    }
+
+    /** A box centred on center with half sizes along the given (not yet normalised) axes. */
+    public static OrientedBox spanning(Vec3 center, double halfX, double halfY, double halfZ, Vec3 axisX, Vec3 axisY, Vec3 axisZ) {
+        Vector3f[] axes = {
+                new Vector3f((float) axisX.x, (float) axisX.y, (float) axisX.z).normalize(),
+                new Vector3f((float) axisY.x, (float) axisY.y, (float) axisY.z).normalize(),
+                new Vector3f((float) axisZ.x, (float) axisZ.y, (float) axisZ.z).normalize()
+        };
+        return new OrientedBox(center.x, center.y, center.z, halfX, halfY, halfZ, axes,
+                new AABB(-halfX, -halfY, -halfZ, halfX, halfY, halfZ));
+    }
+
+    public boolean axisAligned() {
+        for (Vector3f axis : this.axes) {
+            float m = Math.max(Math.abs(axis.x), Math.max(Math.abs(axis.y), Math.abs(axis.z)));
+            if (m < 1.0F - 1.0E-4F) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** This box carried rigidly into another frame: centred on center, its axes turned by turn. */
+    public OrientedBox carried(Vec3 center, Quaternionf turn) {
+        Vector3f[] turned = new Vector3f[AXIS_COUNT];
+        for (int i = 0; i < AXIS_COUNT; i++) {
+            turned[i] = new Vector3f(this.axes[i]).rotate(turn);
+        }
+        return new OrientedBox(center.x, center.y, center.z, this.extentX, this.extentY, this.extentZ, turned, this.localAABB);
+    }
+
     private static boolean satAxis(final OrientedBox a, final OrientedBox b, final int i, final Vector3f out) {
         if (i < AXIS_COUNT) {
             out.set(a.axes[i]);

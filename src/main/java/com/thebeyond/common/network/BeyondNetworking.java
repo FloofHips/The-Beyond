@@ -370,7 +370,7 @@ public class BeyondNetworking {
                     new Components.SnapshotPixelsComponent(w, h, payload.rgb()));
             if (context.player() != null)
                 snapshot.set(BeyondComponents.SNAPSHOT_DATE.get(),
-                        Component.literal("Day - " + (context.player().level().getDayTime()/24000)));
+                        Component.translatable("item.the_beyond.snapshot.day", String.valueOf(context.player().level().getDayTime()/24000)));
             snapshot.set(BeyondComponents.SNAPSHOT_GRADE.get(),
                     claim.gradeId() != null ? claim.gradeId() : Grades.SEPIA);
             if (claim.ejectAt() == null) {

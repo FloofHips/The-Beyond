@@ -3,6 +3,8 @@ package com.thebeyond.compat.sable;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.api.compat.BeyondCompatHooks;
 import com.thebeyond.api.compat.LocationTranslator;
+import com.thebeyond.common.entity.util.livingblock.LivingBlockFrames;
+import com.thebeyond.common.entity.util.livingblock.LivingBlockNeighbourhood;
 import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.companion.math.BoundingBox3d;
 import dev.ryanhcode.sable.sublevel.SubLevel;
@@ -19,6 +21,9 @@ public final class BeyondSableCompat {
     public static void register() {
         try {
             BeyondCompatHooks.locationTranslator = new SableTranslator();
+            LivingBlockNeighbourhood.subLevelsNear = (level, box) -> Sable.HELPER.getContaining(level, box.getCenter()) != null
+                    || Sable.HELPER.getAllIntersecting(level, new BoundingBox3d(box)).iterator().hasNext();
+            LivingBlockFrames.hooks = new SableLivingBlockFrames();
             TheBeyond.LOGGER.info("[TheBeyond] Sable LocationTranslator registered.");
         } catch (Throwable t) {
             TheBeyond.LOGGER.error("[TheBeyond] Failed to register Sable LocationTranslator", t);

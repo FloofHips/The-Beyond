@@ -53,17 +53,17 @@ public class BeyondEntityEvents {
     @SubscribeEvent
     public static void onLivingChangeTarget(LivingChangeTargetEvent event) {
         if (!(event.getEntity() instanceof Mob mob)) return;
-        if (mob.level().isClientSide) return;  // target acquisition is server-authoritative
+        if (mob.level().isClientSide) return;
         if (!(event.getNewAboutToBeSetTarget() instanceof Player player)) return;
-        if (Deafening.isImmune(mob)) return;              // always notices
-        if (!Deafening.isDeafened(mob)) return;           // not deaf → normal targeting
-        if (mob.getLastHurtByMob() == player) return;  // retaliation always aggros
+        if (Deafening.isImmune(mob)) return;
+        if (!Deafening.isDeafened(mob)) return;
+        if (mob.getLastHurtByMob() == player) return;
 
         boolean nonVisual = Deafening.sensesViaVibration(mob);
-        if (!nonVisual && Deafening.canSeeInFov(mob, player)) return; // sighted: player within cone + LOS → noticed
+        if (!nonVisual && Deafening.canSeeInFov(mob, player)) return;
 
         event.setCanceled(true);
-        if (mob.tickCount % 20 == 0) { // throttle: ~1/s per suppressed mob confirms the rule is firing
+        if (Deafening.TRACE && mob.tickCount % 20 == 0) {
             TheBeyond.LOGGER.debug("[Deafening] {} kept from targeting player (deaf; {})",
                     mob.getType().getDescriptionId(), nonVisual ? "non-visual hunter" : "outside FOV cone/LOS");
         }
@@ -80,12 +80,13 @@ public class BeyondEntityEvents {
         if (!BeyondConfig.DEAFENING_DISENGAGE.get()) return;
         if (Deafening.isImmune(mob) || Deafening.sensesViaVibration(mob)) return;
         if (!Deafening.isDeafened(mob)) return;
-        if (mob.getLastHurtByMob() == player) return; // don't drop someone who just hit us
+        if (mob.getLastHurtByMob() == player) return;
         if (Deafening.canSeeInFov(mob, player)) return;
 
-        mob.setTarget(null);  // goal-based mobs, the null change event is ignored above
-        mob.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);  // brain-based mobs, a no-op without the module
-        TheBeyond.LOGGER.debug("[Deafening] {} dropped player target (deaf + player left FOV cone/LOS)",
+        // goal mobs drop through setTarget (its null event is ignored above), brain mobs through the memory module
+        mob.setTarget(null);
+        mob.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);
+        if (Deafening.TRACE) TheBeyond.LOGGER.debug("[Deafening] {} dropped player target (deaf + player left FOV cone/LOS)",
                 mob.getType().getDescriptionId());
     }
 

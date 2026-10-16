@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    { "id": "the_beyond:trinket", "required": false },
+    { "id": "the_beyond:bauble", "required": false },
+    { "id": "the_beyond:entropic_block", "required": false }
+  ]
+}

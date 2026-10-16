@@ -78,7 +78,8 @@ public class AuroraBorealisRenderer {
         RenderUtils.ResolvedModel m2 = RenderUtils.ResolvedModel.resolve(AURORA_2_MODEL);
         RenderUtils.ResolvedModel m3 = RenderUtils.ResolvedModel.resolve(AURORA_3_MODEL);
 
-        var consumer = buffer.getBuffer(BeyondRenderTypes.cutout());
+        RenderType type = BeyondRenderTypes.cutout();
+        var consumer = buffer.getBuffer(type);
 
         for (long[] off : activeOffsets) {
             int x = (int) off[0];
@@ -135,7 +136,7 @@ public class AuroraBorealisRenderer {
                     else if (modelLoc == AURORA_1_MODEL) rm = m1;
                     else if (modelLoc == AURORA_2_MODEL) rm = m2;
                     else rm = m3;
-                    rm.emit(poseStack, consumer, color, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
+                    rm.emit(poseStack, consumer, type, color, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
 
                     poseStack.popPose();
                 }

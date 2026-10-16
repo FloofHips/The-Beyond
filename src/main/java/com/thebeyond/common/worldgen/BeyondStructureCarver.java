@@ -108,6 +108,7 @@ public final class BeyondStructureCarver {
     private static volatile boolean the_beyond$apronLogged = false;
 
     static void the_beyond$logCeilApron() {
+        if (!BeyondGenDiagnostics.TRACE) return;
         if (the_beyond$apronLogged || CEIL_APRON_HITS[0].sum() < APRON_LOG_MIN) return;
         if (!BeyondGenDiagnostics.loggedMaskKeys.add("ceil-apron")) return;
         the_beyond$apronLogged = true;
@@ -209,10 +210,9 @@ public final class BeyondStructureCarver {
                 int vo = y < lo[k] ? lo[k] - y : (y > hi[k] ? y - hi[k] : 0);
                 if (dxz[k] == 0 && vo == 0) { occupied = true; break; }
                 if (baseFloor == null || (baseFloor[k] != Integer.MIN_VALUE && hi[k] <= baseFloor[k])) {
-                    // The cap is about a roof the island grew over, so it still asks for rock overhead.
+                    // cap: a roof the island grew over, shell: a bunker whose roof is the ground and has nothing above
                     boolean cap   = (buriedAbove[k] && (base == null || !base[k]) && dxz[k] <= CEIL_LAT && y > hi[k]
                             && (y - hi[k]) <= CARVE_CEIL_REACH - CEIL_SLOPE * dxz[k]);
-                    // Not the flank: a bunker whose roof is the ground has nothing above, and asking left a skirt-wide gap.
                     boolean shell = (dxz[k] <= SUBSURF_KEEP_REACH && y <= hi[k]);
                     if (cap || shell) keepNear = true;
                 }
@@ -229,13 +229,11 @@ public final class BeyondStructureCarver {
             int vertOut = y < lo[k] ? lo[k] - y : (y > hi[k] ? y - hi[k] : 0);
             boolean floorPlane = baseFloor != null && baseFloor[k] != Integer.MIN_VALUE && y == baseFloor[k];
             boolean subFlank = the_beyond$subFlank(k, dxz, lo, hi, dist, baseFloor, y, insideBox);
-            // Fails open: no dt3 for this bit means today's unconditional span carve is kept.
+            // fly fails open (no dt3 keeps the span carve), hug closes the island on this hull (no clear outside its volume)
             boolean flyBit = fly != null && fly[k];
-            // The island is meant to close on this hull, so nothing outside its own volume is offered a clear.
             boolean hugBit = hug != null && hug[k];
             if (!flyBit && vertOut == 0 && (!dist[k] || d3[k] > DT3_CAP || d3[k] <= SPAN_DIST_CAP)) {
                 if (dxz[k] == 0) return Double.POSITIVE_INFINITY;
-                // The d3 test keeps separated tower and ship gaps apart, and the start's floor plane waits for its tiles.
                 if (!hugBit && !floorPlane && !subFlank && dxz[k] < growNear) growNear = dxz[k];
                 // Round the underside where a piece hangs below, the top only where it also rises out (no courtyard moat).
                 if (!rimHit && dist[k] && !hugBit && !floorPlane && !subFlank && !flankHeld && d2 != null && lo[k] < runBot) {
@@ -243,9 +241,8 @@ public final class BeyondStructureCarver {
                     if (rim > 0.0 && d2[k] <= (growLat + rim) * (growLat + rim)) rimHit = true;
                 }
             }
-            // A run column skips the ceiling apron (it would eat island above the gap) but keeps the dt3 skirt.
+            // run columns skip the ceiling apron but keep the dt3 skirt, a lower neighbour's roof plane is left to the ground
             boolean runBit = corr != null && corr[k];
-            // A lower neighbour makes the base's floor plane read as its roof, so that plane is left to the ground.
             boolean baseDeck = (floorPlane && dxz[k] > 0) || subFlank;
             boolean capped = capTop != null && capTop[k] != Integer.MIN_VALUE && y <= capTop[k];
             if (!hugBit && !runBit && !baseDeck && !capped && (dxz[k] == 0 || dxz[k] <= ceilLat) && seat[k] && !filled[k] && y > hi[k]) {
@@ -303,9 +300,8 @@ public final class BeyondStructureCarver {
                     else if (aboveBase < DIST_SUPPORT_BAND) p *= the_beyond$smootherstep((double) aboveBase / DIST_SUPPORT_BAND);
                 }
             } else {
-                // An island whose run tops out under the hull is not in the floater's way, so the bubble leaves it whole.
+                // a run topping out under the hull is not in the way, true distance keeps the widest clear round, not square
                 if (y < lo[k] && runTop != Integer.MAX_VALUE && runTop < lo[k]) continue;
-                // True distance keeps this widest clear round like an island edge, Chebyshev would make it square.
                 double lat = d2 != null ? Math.sqrt(d2[k]) : dxz[k];
                 double nl = lat / (double) CARVE_LAT_REACH;
                 double nv = vertOut / (double) CARVE_VERT_REACH;
@@ -370,6 +366,7 @@ public final class BeyondStructureCarver {
     private static volatile boolean the_beyond$rimLogged = false;
 
     static void the_beyond$logRim() {
+        if (!BeyondGenDiagnostics.TRACE) return;
         if (the_beyond$rimLogged || RIM_HITS.sum() < APRON_LOG_MIN / 2) return;
         if (!BeyondGenDiagnostics.loggedMaskKeys.add("rim-round")) return;
         the_beyond$rimLogged = true;
@@ -396,6 +393,7 @@ public final class BeyondStructureCarver {
 
 
     static void the_beyond$logCarveBranches() {
+        if (!BeyondGenDiagnostics.TRACE) return;
         if (the_beyond$branchLogged) return;
         long total = 0;
         for (int t = 1; t <= SPAN_GROW_MAX; t++) total += SPAN_GROW_HITS[t].sum();
@@ -437,6 +435,7 @@ public final class BeyondStructureCarver {
     }
 
     static void the_beyond$logSpanGrow(String id, int oX, int oZ, int w, int d) {
+        if (!BeyondGenDiagnostics.TRACE) return;
         if (BeyondEndChunkGenerator.simplexNoise == null) return;
         if (w < 2 || d < 2) return;
         int n = 0, min = Integer.MAX_VALUE, max = Integer.MIN_VALUE, changes = 0, prev = -1;
@@ -544,9 +543,8 @@ public final class BeyondStructureCarver {
     static final int ENVELOPE_DOWN = 6;
     static final double ENVELOPE_ROUGH = 0.35;
 
-    /** Ellipsoidal so the cover does not read as a box around a box. */
+    /** An ellipsoidal fill, not a lift: lifted ground over a roof floats on an air slit, and a box reads as a box. */
     public static double the_beyond$envelopeBeardDelta(int lo, int hi, double dist, int y, double rough) {
-        // Lifted ground over a roof floats as a slab over an air slit, so the roof's own cover is a fill instead.
         if (y > hi) return 0.0;
         int dv = y < lo ? lo - y : 0;
         if (dist <= 0.0 && dv == 0) return 0.0;
@@ -643,6 +641,7 @@ public final class BeyondStructureCarver {
     }
 
     static void the_beyond$logNoGroundFoot(CarveMask m) {
+        if (!BeyondGenDiagnostics.TRACE) return;
         if (BeyondGenDiagnostics.loggedCityGround.size() < 4000
                 && BeyondGenDiagnostics.loggedCityGround.add("foot@" + m.baseBox.minX() + "," + m.baseBox.minZ())) {
             com.thebeyond.TheBeyond.LOGGER.warn("[Beyond] ground under {} at [{},{},{}]: the start piece's ground floor is"
@@ -651,6 +650,7 @@ public final class BeyondStructureCarver {
     }
 
     static void the_beyond$notePlanKeptOut(CarveMask owner, int x, int y, int z, String by) {
+        if (!BeyondGenDiagnostics.TRACE) return;
         if (owner.planKeptOutLogged) return;
         owner.planKeptOutLogged = true;
         com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] ground under {}: planned cell [{},{},{}] kept out by {}",
@@ -664,6 +664,7 @@ public final class BeyondStructureCarver {
     }
 
     static void the_beyond$logGroundPlan(CarveMask m, @org.jetbrains.annotations.Nullable CityGroundPlan p) {
+        if (!BeyondGenDiagnostics.TRACE) return;
         if (p == null || BeyondGenDiagnostics.loggedCityGround.size() >= 4000
                 || !BeyondGenDiagnostics.loggedCityGround.add("plan@" + m.baseBox.minX() + "," + m.baseBox.minZ())) return;
         if (p.orphan) {
@@ -736,7 +737,7 @@ public final class BeyondStructureCarver {
             if (masks == null) masks = new ArrayList<>(2);
             masks.add(mask);
             String id = key == null ? "unknown" : key.toString();
-            if (BeyondGenDiagnostics.loggedMaskKeys.add(id)) {
+            if (BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedMaskKeys.add(id)) {
                 int cells = the_beyond$maskCellCount(mask);
                 int area = mask.w * mask.d;
                 int span = mask.gHi - mask.gLo;
@@ -777,7 +778,7 @@ public final class BeyondStructureCarver {
                 if (masks != null && masks.contains(mask)) continue;
                 if (masks == null) masks = new ArrayList<>(2);
                 masks.add(mask);
-                if (BeyondGenDiagnostics.loggedFarMaskKeys.add(System.identityHashCode(start))) {
+                if (BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedFarMaskKeys.add(System.identityHashCode(start))) {
                     com.thebeyond.TheBeyond.LOGGER.debug(
                             "[Beyond] far-chunk carve mask hit (no STRUCTURE_REFERENCES) for start bbox={} at chunk {}"
                             + " -> STRUCTURE_STARTS pre-seed supplied the mask", start.getBoundingBox(), cp);
@@ -1099,7 +1100,7 @@ public final class BeyondStructureCarver {
                                 new net.minecraft.world.level.levelgen.LegacyRandomSource(0L));
                 rnd.setLargeFeatureSeed(level.getSeed() ^ start.getChunkPos().toLong(), cp.x, cp.z);
                 start.placeInChunk(level, sm, gen, rnd, area, cp);
-                if (BeyondGenDiagnostics.loggedFarBuild.add(System.identityHashCode(start)))
+                if (BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedFarBuild.add(System.identityHashCode(start)))
                     com.thebeyond.TheBeyond.LOGGER.debug(
                             "[Beyond] far-chunk BUILD (no reference) start@{} placed at chunk {}", start.getChunkPos(), cp);
             } catch (Throwable ignored) {
@@ -1138,7 +1139,7 @@ public final class BeyondStructureCarver {
                 ResourceLocation key = sm.registryAccess()
                         .registryOrThrow(Registries.STRUCTURE).getKey(self.getStructure());
                 String id = key == null ? "unknown" : key.toString();
-                if (BeyondGenDiagnostics.loggedCavityReject.add(id)) {
+                if (BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedCavityReject.add(id)) {
                     com.thebeyond.TheBeyond.LOGGER.debug(
                             "[Beyond] landmark-cavity-reject {} @bbox-center({},{}) frac={}/{} in foreign carve cavity -> SKIP placeInChunk",
                             id, cx, cz, inHole, probed);
@@ -1195,7 +1196,7 @@ public final class BeyondStructureCarver {
                 if (piece instanceof TemplateStructurePiece tsp) {
                     tsHits = the_beyond$rasterizeTemplate(tsp.template(), tsp.placeSettings(), tsp.templatePosition(),
                             oX, oZ, w, d, occ, gy, cLo, cHi, wallLo, distributed, dt3I, dt3J, dt3Y, hasBlock, null, true);
-                    if (com.thebeyond.TheBeyond.LOGGER.isDebugEnabled()
+                    if (BeyondGenDiagnostics.TRACE && com.thebeyond.TheBeyond.LOGGER.isDebugEnabled()
                             && BeyondGenDiagnostics.loggedMaskPieces.add("TS@" + tsp.templatePosition())) {
                         BoundingBox tb = piece.getBoundingBox();
                         com.thebeyond.TheBeyond.LOGGER.debug(
@@ -1297,7 +1298,7 @@ public final class BeyondStructureCarver {
                     } catch (Throwable ignored) { tmPerBlock = false; }
                 }
                 if (!tmPerBlock) the_beyond$rasterizeBox(piece.getBoundingBox(), oX, oZ, w, d, occ, gy, cLo, cHi, wallLo);
-                if (BeyondGenDiagnostics.loggedMaskPieces.add("TM@" + pe.getPosition())) {
+                if (BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedMaskPieces.add("TM@" + pe.getPosition())) {
                     BoundingBox tb = piece.getBoundingBox();
                     com.thebeyond.TheBeyond.LOGGER.debug(
                             "[Beyond] mask terrain_matching piece {} pos={} mode={} hits={} skipVoid={} topSolid=[{}..{}] assemblyBbox=[{},{},{}..{},{},{}]",
@@ -1334,7 +1335,7 @@ public final class BeyondStructureCarver {
                 if (buriedThere || underStart) {
                     int marked = the_beyond$markRoomRoof(t, new StructurePlaceSettings().setRotation(pe.getRotation()),
                             pe.getPosition(), rb, oX, oZ, w, d, roomRoof);
-                    if (marked > 0 && BeyondGenDiagnostics.loggedMaskPieces.add("ROOF@" + pe.getPosition())) {
+                    if (marked > 0 && BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedMaskPieces.add("ROOF@" + pe.getPosition())) {
                         com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] room roof cover {} roofY={} columns={} ({})",
                                 pieceLoc, rb.maxY(), marked, buriedThere ? "buried there" : "under the start floor");
                     }
@@ -1355,7 +1356,7 @@ public final class BeyondStructureCarver {
                     pedLo = sb.minY();
                 }
             }
-            if (BeyondGenDiagnostics.loggedMaskPieces.add(pieceLoc + "@" + pe.getPosition())) {
+            if (BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedMaskPieces.add(pieceLoc + "@" + pe.getPosition())) {
                 BoundingBox pb = piece.getBoundingBox();
                 String depth = "";
                 if (baseBox != null && pb.minY() < baseBox.minY()) {
@@ -1379,7 +1380,7 @@ public final class BeyondStructureCarver {
             for (StructurePiece piece : start.getPieces()) pieceBoxes.add(piece.getBoundingBox());
             corrOcc = new long[((w * d) + 63) >> 6];
             int added = the_beyond$connectDetached(pieceBoxes, occ, cLo, cHi, w, d, gy, oX, oZ, corrOcc);
-            if (added > 0 && BeyondGenDiagnostics.loggedMaskKeys.add("corridor@" + oX + "," + oZ)) {
+            if (added > 0 && BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedMaskKeys.add("corridor@" + oX + "," + oZ)) {
                 com.thebeyond.TheBeyond.LOGGER.debug(
                         "[Beyond] detached-part corridor: {} columns added (half-width {}) mask origin=[{},{}] size={}x{}",
                         added, CORRIDOR_HALF_WIDTH, oX, oZ, w, d);
@@ -1434,7 +1435,7 @@ public final class BeyondStructureCarver {
         built.buriedInterior = buriedInterior;
         built.roomRoof = roomRoof[0];
         built.floorOff = the_beyond$pieceFloors(farFloors, tmLoCol, occ, cLo, oX, oZ, w, d, gLo, baseBox);
-        if (built.floorOff != null && com.thebeyond.TheBeyond.LOGGER.isDebugEnabled()
+        if (built.floorOff != null && BeyondGenDiagnostics.TRACE && com.thebeyond.TheBeyond.LOGGER.isDebugEnabled()
                 && BeyondGenDiagnostics.loggedMaskKeys.add("floors@" + oX + "," + oZ)) {
             int moved = 0;
             for (short f : built.floorOff) if (f != 0) moved++;
@@ -1761,7 +1762,7 @@ public final class BeyondStructureCarver {
             }
         }
         CORRIDOR_LAST_SKIP = runs == 0 ? reason : null;
-        if (runs == 0 && BeyondGenDiagnostics.loggedMaskKeys.add("corridor-none@" + oX + "," + oZ)) {
+        if (runs == 0 && BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedMaskKeys.add("corridor-none@" + oX + "," + oZ)) {
             com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] corridor NONE: {} pieces, {}, mask origin=[{},{}]",
                     boxes.size(), reason, oX, oZ);
         }
@@ -1816,7 +1817,7 @@ public final class BeyondStructureCarver {
         }
         if (lo < gy[0]) gy[0] = lo;
         if (hi > gy[1]) gy[1] = hi;
-        if (BeyondGenDiagnostics.loggedMaskKeys.add("corridor-run@" + oX + "," + oZ + "#" + idx)) {
+        if (BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedMaskKeys.add("corridor-run@" + oX + "," + oZ + "#" + idx)) {
             int rock = Integer.MIN_VALUE;
             try {
                 if (BeyondEndChunkGenerator.simplexNoise != null)
@@ -2045,7 +2046,6 @@ public final class BeyondStructureCarver {
         /** Forced before the carve, the plan is kept out of other structures' pieces, and out of its own box from the sole up. */
         private boolean planLays(int i, int y) {
             if (y < planLo[i] || y > planHi[i]) return false;
-            // The edge rests on what was really placed, so it never floats where the carve took the rock under it.
             if (planRamp[i] && lastPlaced != y - 1) return false;
             if (y >= planSole[i] && planOwner[i].insideBoxAt(globalX, y, globalZ)) {
                 the_beyond$notePlanKeptOut(planOwner[i], globalX, y, globalZ, "its own pieces");
@@ -2343,7 +2343,7 @@ public final class BeyondStructureCarver {
                 if (nat != Integer.MIN_VALUE && bits.lo[k] - bits.gLo[k] > BEARD_GROUND_BAND) nat = Integer.MIN_VALUE;
                 int confined = the_beyond$seatConfinedNatTop(nat, seatFloor);
                 if (confined == Integer.MIN_VALUE && nat != Integer.MIN_VALUE
-                        && BeyondGenDiagnostics.loggedMaskKeys.add("bbconfine@" + (globalX >> 4) + "," + (globalZ >> 4))) {
+                        && BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedMaskKeys.add("bbconfine@" + (globalX >> 4) + "," + (globalZ >> 4))) {
                     com.thebeyond.TheBeyond.LOGGER.debug(
                             "[Beyond] base-beard SEAT-CONFINE chunk=[{},{}] col=({},{}) seatFloor={} natTop={} drop={} -> cross-pancake weld EXCLUDED (no wall-silhouette)",
                             globalX >> 4, globalZ >> 4, bits.colX[k], bits.colZ[k], seatFloor, nat, (seatFloor - nat));
@@ -2373,8 +2373,9 @@ public final class BeyondStructureCarver {
         final boolean anyFloat = the_beyond$anyFloating(bits, nBits);
         final int carveYLo = hasCarve ? cyLo - FLOAT_VMARGIN - CARVE_ERODE_REACH : 0;
         final int carveYHi = hasCarve ? cyHi + FLOAT_VMARGIN + CARVE_ERODE_REACH : 0;
-        // Only feeds a debug line, so it stops running once that line exists for this chunk.
-        String buriedKey = DISTRIBUTED_SUBSURFACE_BURY && hasCarve && anyDist && com.thebeyond.TheBeyond.LOGGER.isDebugEnabled()
+        // Only feeds a trace line, so it runs with TRACE on and stops once that line exists for this chunk.
+        String buriedKey = BeyondGenDiagnostics.TRACE && DISTRIBUTED_SUBSURFACE_BURY && hasCarve && anyDist
+                && com.thebeyond.TheBeyond.LOGGER.isDebugEnabled()
                 ? "buried@" + (globalX >> 4) + "," + (globalZ >> 4) : null;
         if (buriedKey != null && !BeyondGenDiagnostics.loggedMaskKeys.contains(buriedKey)) {
             final BeyondEndChunkGenerator.ColumnScratch probe = BeyondEndChunkGenerator.PROBE_SCRATCH.get();
@@ -2409,9 +2410,8 @@ public final class BeyondStructureCarver {
             for (int k = 0; k < nBits; k++) {
                 if (!bits.dist[k] || bits.dxz[k] > ENVELOPE_LAT) continue;
                 if (bits.baseFloor[k] == Integer.MIN_VALUE || bits.lo[k] >= bits.baseFloor[k]) continue;
-                // A pedestal's own footing is left to the pedestal, wrapping it here hangs a wart under the island.
+                // pedestal footings are left to the pedestal (no wart), over a covered roof the flanks rise to the cover
                 if (bits.base[k] && bits.mask[k].basePedestal) continue;
-                // Over a covered roof the flanks rise to the cover, so it does not stand a course proud of them.
                 int top = bits.capTop[k] != Integer.MIN_VALUE ? bits.capTop[k] : Math.min(bits.hi[k], bits.baseFloor[k] - 1);
                 if (top < bits.lo[k]) continue;
                 double de = Math.sqrt(bits.d2[k]);

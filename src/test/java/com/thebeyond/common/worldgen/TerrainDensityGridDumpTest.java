@@ -17,18 +17,14 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Diagnostic PNG dumps of {@link BeyondEndChunkGenerator#getTerrainDensity(int, int, int)} for spotting
- * directional anisotropy. Not a contract test — real output is the PNGs under {@code build/terrain-grid-dumps/}.
- */
+/** Diagnostic PNG dumps of the terrain density for spotting anisotropy, not a contract test (see build/terrain-grid-dumps). */
 class TerrainDensityGridDumpTest {
 
     private static final int GRID_SIZE = 1024;
 
     private static final int GRID_STRIDE = 2;
 
-    /** Needs extended dim bounds (Enderscape pack) to sit under the edgeGradient cutoff —
-     *  under default Beyond-only bounds this clamps to 0 and dumps blank PNGs. */
+    /** Needs the Enderscape pack bounds, under default Beyond bounds this Y clamps to 0 and the PNGs come out blank. */
     private static final int SAMPLE_Y = 234;
 
     private static final int SAMPLE_DIM_MIN_Y = -64;
@@ -805,7 +801,7 @@ class TerrainDensityGridDumpTest {
         }
     }
 
-    /** Bit-exact replica of the private {@code BeyondEndChunkGenerator.cyclicDensity(int, double)} — keep in sync. */
+    /** Bit-exact replica of the private {@code BeyondEndChunkGenerator.cyclicDensity(int, double)}, keep them in sync. */
     private static double replicateCyclicDensity(int y, double cycleHeight) {
         double normalizedY = (y % cycleHeight) / cycleHeight;
         if (normalizedY < 0.8) {

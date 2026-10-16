@@ -7,6 +7,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class BeyondGenDiagnostics {
     private BeyondGenDiagnostics() {}
 
+    // master switch of the per-structure and per-chunk worldgen traces, off so they never reach players' logs
+    public static boolean TRACE = false;
+
     public static volatile boolean loggedSilhouetteClear = false;
     public static volatile boolean loggedAccept = false;
     public static volatile boolean loggedReject = false;
@@ -53,6 +56,7 @@ public final class BeyondGenDiagnostics {
     private static final java.util.concurrent.ConcurrentMap<String, Set<Long>> DECISIONS = new ConcurrentHashMap<>();
 
     public static void countDecision(String id, String cls, String decision, long chunk) {
+        if (!TRACE) return;
         int cut = decision.indexOf(' ');
         String code = cut < 0 ? decision : decision.substring(0, cut);
         DECISIONS.computeIfAbsent(id + " class=" + cls + " " + code, k -> ConcurrentHashMap.newKeySet()).add(chunk);
@@ -70,6 +74,7 @@ public final class BeyondGenDiagnostics {
     private static final int CARVE_PERF_FIRST = 64, CARVE_PERF_EVERY = 4096;
 
     static void carveChunkDone(long nanos) {
+        if (!TRACE) return;
         CARVE_NANOS.add(nanos);
         long n = CARVE_CHUNKS.incrementAndGet();
         // Doubling up to the steady interval, so a long session does not fill the log.

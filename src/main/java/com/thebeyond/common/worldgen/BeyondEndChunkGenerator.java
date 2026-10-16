@@ -90,9 +90,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     private static final double LACUNARITY = 2.0;
     private static final double PERSISTENCE = 0.5;
     private static final int TERRAIN_Y_OFFSET = 32;
-    /** Measured ceiling on |normalizedNoise| (peak about 0.979 over 50M samples), never lower it past that peak. */
     static final double MAX_NOISE = 1.20;
-    /** Above the 3D simplex noise's true peak (about 0.98), so an octave never leaves [-1, 1]. */
     static final double OCTAVE_BOUND = 1.0;
     private static final double[] REMAINING_AMPLITUDE = new double[NUM_OCTAVES];
     private static final double TOTAL_AMPLITUDE;
@@ -307,7 +305,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                 var structReg = registryAccess.registryOrThrow(Registries.STRUCTURE);
                 for (StructureStart start : chunk.getAllStarts().values()) {
                     if (start == null || !start.isValid()) continue;
-                    if (the_beyond$carver.the_beyond$maskCache.containsKey(start)) continue;   // already seeded
+                    if (the_beyond$carver.the_beyond$maskCache.containsKey(start)) continue;
                     ResourceLocation key = structReg.getKey(start.getStructure());
                     StructureIntegrationProfile profile = BeyondForeignStructureProfiles.resolve(start.getStructure(), key);
                     if (profile == null || !profile.carve()) continue;      // only carve structures need far reach
@@ -327,7 +325,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                     m.floating = floater;
                     m.structureKey = key;
                     the_beyond$carver.the_beyond$maskCache.put(start, m);
-                    if (distributed
+                    if (distributed && BeyondGenDiagnostics.TRACE
                             && BeyondGenDiagnostics.loggedFootingSuppressed.add(System.identityHashCode(start))
                             && BeyondGenDiagnostics.loggedFootingSuppressed.size() <= 40) {
                         com.thebeyond.TheBeyond.LOGGER.debug(
@@ -970,10 +968,9 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             if (m.carveOnly && globalX >= m.oX - 16 && globalX < m.oX + m.w + 16
                     && globalZ >= m.oZ - 16 && globalZ < m.oZ + m.d + 16) { suppressBeard = true; break; }
         }
-        // loopStart/loopEnd skip the 32-block edgeGradient zero bands at top/bottom, where density is forced 0.
+        // loops skip the 32-block zero bands at both ends, and the beard only lifts (its gouging half is left to the carve)
         final int loopStart = dimMinY + 33;
         final int loopEnd = dimMaxY - 32;
-        // Beard lift clamped non-negative: its gouging half is dropped, since the carve below handles clearing.
         final boolean noBeard = suppressBeard;
         final java.util.function.IntToDoubleFunction beardAt =
                 yy -> { if (noBeard) return 0.0; bc.y = yy; return Math.max(0.0, beard.compute(bc)); };
@@ -1092,18 +1089,18 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
     /** Per-column occupancy of the real footprint, not the box, so clearing never cuts a cube around a sparse structure. */
     public static final class CarveMask {
-        final int oX, oZ, w, d;   // footprint origin + size, in columns
-        final long[] occ;  // w*d bits, set where a piece's footprint covers the column
-        final int gLo, gHi;        // overall solid Y-range across the structure's pieces (gLo = the byte Y-origin)
+        final int oX, oZ, w, d;
+        final long[] occ;
+        final int gLo, gHi;
         final short[] colLoOff, colHiOff;
         final long[] filledOcc;
         final boolean seated;
         final boolean distributed;
         final boolean layerDistributed;
-        final int foundationDepth; // SEATED: support reach below gLo (= profile.flushTolerance)
-        final int filledHoles;     // diagnostic only
+        final int foundationDepth;
+        final int filledHoles;
         final byte[] dt3;
-        final int dt3OX, dt3OZ, dt3W, dt3D, dt3YLo, dt3Layers;   // padded grid origin/size (all 0 when dt3 == null)
+        final int dt3OX, dt3OZ, dt3W, dt3D, dt3YLo, dt3Layers;
         final BoundingBox baseBox;
         boolean carveOnly;
         boolean hugTerrain;
@@ -1366,7 +1363,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             int n = w * d;
             for (int bit = 0; bit < n; bit++) {
                 if ((occ[bit >> 6] & (1L << (bit & 63))) == 0) continue;
-                if (hasBlock != null && hasBlock[bit]) continue;   // already seeded by its real blocks
+                if (hasBlock != null && hasBlock[bit]) continue;
                 int i = (bit % w) + DT3_CAP, j = (bit / w) + DT3_CAP;
                 int yLo = cLo[bit], yHi = cHi[bit];
                 if (yHi < yLo) continue;
@@ -1416,7 +1413,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         }
         // two-pass 3x3x3 distance transform with no border source, so outside the seeds it reads DT3_CAP, not 0
         static void chebyshevDT3(byte[] dist, int w, int d, int layers, int cap) {
-            // forward pass, ascending: the 13 neighbours already visited
             for (int L = 0; L < layers; L++) {
                 for (int z = 0; z < d; z++) {
                     for (int x = 0; x < w; x++) {
@@ -1469,7 +1465,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         static int fillEnclosed(long[] occ, long[] filledOcc, int w, int d, int[] cLo, int[] cHi, int gLo, int gHi, int closeR) {
             if (w <= 2 || d <= 2 || gHi < gLo) return 0;
             int n = w * d;
-            // only the longest contiguous trapped run per column, so the gap between two enclosures is never shafted
             int[] runLo = new int[n], runHi = new int[n], bestLo = new int[n], bestHi = new int[n];
             java.util.Arrays.fill(runLo, Integer.MAX_VALUE); java.util.Arrays.fill(runHi, Integer.MIN_VALUE);
             java.util.Arrays.fill(bestLo, Integer.MAX_VALUE); java.util.Arrays.fill(bestHi, Integer.MIN_VALUE);
@@ -1486,7 +1481,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                 for (int c = 0; c < n; c++) dist[c] = (dist[c] > closeR) ? 0 : cap;
                 chebyshevDT(dist, w, d, cap, true);
                 for (int c = 0; c < n; c++) inC[c] = dist[c] > closeR || wall[c];
-                // Flood the open space (complement of the closed set) from the envelope border, 4-conn.
                 java.util.Arrays.fill(reached, false);
                 int sp = 0;
                 for (int x = 0; x < w; x++) {
@@ -1593,7 +1587,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                         oLo[n] = colLo(bit); oHi[n] = colHi(bit); oGLo[n] = gLo; oSeat[n] = seated; oFilled[n] = isFilled(bit); oDist[n] = distributed;
                         // distributed-gated so FLOATING/pure-SEATED stay base=false.
                         oBase[n] = distributed && inBaseFootprint(x + dx, z + dz);
-                        oMask[n] = this;   // null dt3 ⇒ dt3At returns DT3_CAP+1
+                        oMask[n] = this;
                         oColX[n] = x + dx; oColZ[n] = z + dz;
                         if (oCorr != null) oCorr[n] = isCorridor(bit);
                         n++;

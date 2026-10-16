@@ -23,9 +23,9 @@ class OrganicBeardLipScanTest {
 
     @Test
     void risesToPlatformTop_coversSlabSide() {
-        int anchorColLo = 120, buildingTop = 180;           // colHi: tall building far above the apron
-        int platformTop = anchorColLo + (COVER - 1);        // slab's exposed top face
-        int natTop = anchorColLo - 1;                       // island just under the apron
+        int anchorColLo = 120, buildingTop = 180;
+        int platformTop = anchorColLo + (COVER - 1);
+        int natTop = anchorColLo - 1;
         int near = BeyondEndChunkGenerator.the_beyond$lipTop(natTop, anchorColLo, buildingTop, 1);
         int mid  = BeyondEndChunkGenerator.the_beyond$lipTop(natTop, anchorColLo, buildingTop, 3);
         int edge = BeyondEndChunkGenerator.the_beyond$lipTop(natTop, anchorColLo, buildingTop, R);

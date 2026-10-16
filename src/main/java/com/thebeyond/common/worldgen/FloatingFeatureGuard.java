@@ -46,7 +46,7 @@ public final class FloatingFeatureGuard {
             if (st.getBlock() instanceof FallingBlock) {
                 drop = level.getBlockState(mp.set(px, py - 1, pz)).isAir();  // a fruit whose stem was removed
             } else {
-                drop = !st.canSurvive(level, mp.set(px, py, pz));            // its own support-rule now fails
+                drop = !st.canSurvive(level, mp.set(px, py, pz));
             }
             if (drop) {
                 SanctionedWrite.enter();

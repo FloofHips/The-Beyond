@@ -5,10 +5,7 @@ import net.minecraft.util.RandomSource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-/**
- * Safety gate for the air-gap density-skip's {@code |getValue| <= MAX_NOISE} assumption, which
- * {@link HashSimplexNoise#getValue} has no analytic clamp to guarantee — must be measured instead.
- */
+/** Safety gate for the density skip's {@code |getValue| <= MAX_NOISE} assumption, measured since nothing clamps it. */
 class MaxNoiseSafetyTest {
 
     @Test
@@ -16,8 +13,6 @@ class MaxNoiseSafetyTest {
         final double bound = BeyondEndChunkGenerator.MAX_NOISE;
         double peak = 0.0;
         double pkx = 0, pky = 0, pkz = 0;
-        // Many seeds (different gradient permutations) × a broad random sweep over the coord ranges the terrain
-        // sampler actually reaches (wrapped XZ * band freqs ~ small; sampleY = shiftedY*vScale).
         long[] seeds = { 42L, 1L, 7L, 123456L, 99999L, 2024L };
         for (long seed : seeds) {
             HashSimplexNoise noise = new HashSimplexNoise(RandomSource.create(seed));
@@ -29,7 +24,7 @@ class MaxNoiseSafetyTest {
                 double v = Math.abs(noise.getValue(x, y, z));
                 if (v > peak) { peak = v; pkx = x; pky = y; pkz = z; }
             }
-            // Hill-climb from the random peak — local search catches a sharper maximum the sweep stepped over.
+            // Hill-climb from the random peak, a local search catches a sharper maximum the sweep stepped over.
             double step = 0.5;
             for (int round = 0; round < 4000; round++) {
                 double bx = pkx, by = pky, bz = pkz, bv = peak;

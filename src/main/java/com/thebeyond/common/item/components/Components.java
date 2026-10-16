@@ -5,7 +5,6 @@ public class Components {
 
     /** On the stack so it syncs to clients, raw RGB at 3 bytes per pixel. */
     public record SnapshotPixelsComponent(int width, int height, byte[] rgb) {
-        /** The pixel buffer is present and matches the declared dimensions (3 bytes/pixel). */
         public boolean isRenderable() {
             return width > 0 && height > 0 && rgb != null && rgb.length == width * height * 3;
         }

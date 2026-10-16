@@ -89,7 +89,7 @@ class BandBlendSkipEquivalenceTest {
         double skipPct = 100.0 * skipped / Math.max(1, checked);
         System.out.printf("[BandBlendSkipEquivalence] checked=%d  skipped=%d (%.2f%%)  nonSkipped=%d  solidNonSkipped=%d  thr=[%.3f..%.3f]%n",
                 checked, skipped, skipPct, nonSkipped, solidNonSkipped, minThr, maxThr);
-        // the gate is correctness (asserted per-cell above); the ratio here is reported, not asserted.
+        // the gate is correctness (asserted per cell above), the ratio here is only printed.
         Assertions.assertTrue(checked > 100_000, "too few cells sampled: " + checked);
         Assertions.assertTrue(solidNonSkipped > 0, "no solid cells sampled — test is vacuous");
     }

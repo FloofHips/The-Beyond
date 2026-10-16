@@ -11,6 +11,16 @@
       },
       "trigger": "minecraft:inventory_changed"
     },
+    "has_pearl_bead": {
+      "conditions": {
+        "items": [
+          {
+            "items": "the_beyond:pearl_bead"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
     "has_the_recipe": {
       "conditions": {
         "recipe": "the_beyond:mirror"
@@ -21,7 +31,8 @@
   "requirements": [
     [
       "has_the_recipe",
-      "has_pearl"
+      "has_pearl",
+      "has_pearl_bead"
     ]
   ],
   "rewards": {
