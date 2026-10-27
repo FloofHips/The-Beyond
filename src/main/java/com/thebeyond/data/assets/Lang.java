@@ -60,6 +60,22 @@ public class Lang extends LanguageProvider {
         add("item.minecraft.tipped_arrow.effect.deafening", "Arrow of Deafening");
         add("item.the_beyond.trinket_bucket", "Bucket of Trinket");
         add("tooltip.the_beyond.deafening_drinkable", "Does nothing when drunk");
+        add("tooltip.the_beyond.in_hand", "When in Hand:");
+        add("tooltip.the_beyond.passive", "Passive:");
+        add("tooltip.the_beyond.on_use", "On Use:");
+        add("tooltip.the_beyond.crouching", "When Crouching:");
+        add("tooltip.the_beyond.air_crouch", "On Crouch Mid Air:");
+        add("tooltip.the_beyond.keep_items", "Preserve items on Death");
+        add("tooltip.the_beyond.hide_nametag", "Hide Nametag");
+        add("tooltip.the_beyond.low_aggro", "Lower Aggro Distance");
+        add("tooltip.the_beyond.slam", "Perform Slam Attack");
+        add("tooltip.the_beyond.fall_speed", "+ Falling Speed");
+        add("tooltip.the_beyond.impact", "Land with KnockBack Impact");
+        add("tooltip.the_beyond.auroracite", "Walk on Auroracite");
+        add("tooltip.the_beyond.air_place", "Can be placed mid-air");
+        add("tooltip.the_beyond.bonfires", "Used on lit Bonfires");
+        add("tooltip.the_beyond.slingshot", "Slingshot towards metal");
+        add("tooltip.the_beyond.attract", "Attract nearby items");
 
         Set<EntityType<?>> mobs = BuiltInRegistries.ENTITY_TYPE.stream().filter(i -> TheBeyond.MODID.equals(BuiltInRegistries.ENTITY_TYPE.getKey(i).getNamespace()))
                 .collect(Collectors.toSet());
@@ -114,6 +130,12 @@ public class Lang extends LanguageProvider {
         add("screen.the_beyond.projector.rotate", "Rotate");
         add("screen.the_beyond.projector.flip", "Flip");
         add("screen.the_beyond.projector.missing", "Missing a light source");
+        add("screen.the_beyond.projector.previous", "Previous Mode");
+        add("screen.the_beyond.projector.next", "Next Mode");
+        add("screen.the_beyond.projector.mix_up", "Mix-up");
+        add("screen.the_beyond.projector.carousel", "Carousel");
+        add("screen.the_beyond.projector.line", "Line");
+        add("screen.the_beyond.projector.quadrant", "Quadrant");
         add("screen.the_beyond.refuge.block", "Block %s");
         add("screen.the_beyond.prismograph.first_person", "Switch to first person to use");
         add("screen.the_beyond.prismograph.no_film", "Out of film");
@@ -124,6 +146,7 @@ public class Lang extends LanguageProvider {
         add("screen.the_beyond.ocarina.trinkets_deselected", "Deselected %s Trinkets");
         add("screen.the_beyond.ocarina.no_trinkets", "No Trinkets selected");
 
+        add("item.the_beyond.snapshot.day", "Day - %s");
         add("item.the_beyond.ocarina.mode.select", "Select mode");
         add("item.the_beyond.ocarina.mode.guide", "Guide mode");
         add("item.the_beyond.ocarina.mode.follow", "Follow mode");

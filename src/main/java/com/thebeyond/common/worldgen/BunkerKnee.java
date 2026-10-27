@@ -36,7 +36,7 @@ public final class BunkerKnee {
             int n = fillOrThrow(level, chunk, masks);
             if (n > 0) {
                 BeyondGenDiagnostics.kneeLaid.addAndGet(n);
-                if (BeyondGenDiagnostics.loggedKnees.size() < 2000 && BeyondGenDiagnostics.loggedKnees.add(cp.toLong())) {
+                if (BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedKnees.size() < 2000 && BeyondGenDiagnostics.loggedKnees.add(cp.toLong())) {
                     com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] knee at chunk [{},{}]: {} blocks laid", cp.x, cp.z, n);
                 }
             }

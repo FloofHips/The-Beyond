@@ -59,7 +59,6 @@ public abstract class FeatureGuardMixin {
                     // the whole erodable band, since erosion is noisy and a feature on a cut column would float
                     List<BeyondEndChunkGenerator.CarveMask> masks = gen.the_beyond$collectCarveMasks(structureManager, cp);
                     if (!masks.isEmpty()) {
-                        // the carve's own Y band, outside it edgeGradient forces air anyway
                         final int loY = BeyondTerrainState.getDimMinY() + 33;
                         final int hiY = BeyondTerrainState.getDimMaxY() - 32;
                         // prefilter, then veto only where the carve removed terrain, so a nearby intact island stays decorated
@@ -67,25 +66,23 @@ public abstract class FeatureGuardMixin {
                                 && BeyondStructureCarver.the_beyond$guardOutsideDist(masks, x, y, z)
                                         <= BeyondStructureCarver.CARVE_ERODE_REACH
                                 && BeyondStructureCarver.the_beyond$carveRemovedAirAt(masks, x, y, z));
-                        // Structure volume: bar the gellid-void pool from intruding any carve structure's footprint.
+                        // no gellid pool inside a carve footprint, and a cleared feature never overwrites a piece
                         FeatureGuard.setStructureVolume((x, y, z) ->
                                 BeyondEndChunkGenerator.the_beyond$insideAnyStructureFootprint(masks, x, y, z));
-                        // A cleared feature may cross the margin but never overwrite a piece, as vanilla settles it.
                         FeatureGuard.setPieceVolume((x, y, z) ->
                                 BeyondEndChunkGenerator.the_beyond$insideAnyPieceBox(masks, x, y, z));
                         FeatureGuard.setPieceClearance((x, y, z) ->
                                 BeyondEndChunkGenerator.the_beyond$insideAnyPieceClearance(masks, x, y, z));
                     }
                 } catch (Throwable t) {
-                    FeatureGuard.clearVolume();   // fail-soft: no guard, vanilla decoration wins
+                    FeatureGuard.clearVolume();
                 }
             }
             original.call(level, chunk, structureManager);
-            // After placement template air severs rock too, and this runs before the sweep that cleans it.
+            // sweep the rock that template air severed, then drop base-less parts of features the guard cut
             if (debrisSnapshot != null) {
                 the_beyond$sweepDebris(debrisGen, level, chunk, debrisMasks, debrisSnapshot);
             }
-            // Drop base-less parts of grounded features the guard severed above. Fail-soft.
             try { FloatingFeatureGuard.sweep(level); } catch (Throwable ignored) { }
         } finally {
             FeatureGuard.clearVolume();
@@ -100,6 +97,7 @@ public abstract class FeatureGuardMixin {
             int dropped = gen.the_beyond$dropCarveDebris(level, chunk, masks, snap);
             if (dropped <= 0) return;
             int total = BeyondGenDiagnostics.debrisDropped.addAndGet(dropped);
+            if (!FeatureGuard.debugLogs) return;
             if (!BeyondGenDiagnostics.loggedDebris) {
                 BeyondGenDiagnostics.loggedDebris = true;
                 com.thebeyond.TheBeyond.LOGGER.debug(

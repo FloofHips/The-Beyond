@@ -62,6 +62,9 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
     private boolean active = false;
     private NonNullList<ItemStack> items = NonNullList.withSize(getContainerSize(), ItemStack.EMPTY);
     public int birthday = 0;
+    private boolean sentActive;
+    private int sentProgressBits;
+    private ItemStack[] sentItems;
 
     public MemorFaucetBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
         super(type, pos, blockState);
@@ -552,8 +555,28 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
         return tag;
     }
 
+    // a faucet that has run once asks for an update every tick (its lerp never settles), so a packet equal to the last is skipped
     @Override
     public ClientboundBlockEntityDataPacket getUpdatePacket() {
+        if (this.sentItems != null && this.sentActive == this.active
+                && this.sentProgressBits == Float.floatToIntBits(this.activeProgress) && this.sameItemsAsSent()) {
+            return null;
+        }
+        this.sentActive = this.active;
+        this.sentProgressBits = Float.floatToIntBits(this.activeProgress);
+        this.sentItems = new ItemStack[this.items.size()];
+        for (int i = 0; i < this.items.size(); i++) {
+            this.sentItems[i] = this.items.get(i).copy();
+        }
         return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    private boolean sameItemsAsSent() {
+        for (int i = 0; i < this.items.size(); i++) {
+            if (!ItemStack.matches(this.sentItems[i], this.items.get(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 }

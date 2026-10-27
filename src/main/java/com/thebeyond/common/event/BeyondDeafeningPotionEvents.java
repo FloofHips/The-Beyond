@@ -51,15 +51,14 @@ public class BeyondDeafeningPotionEvents {
         int duration = lingering ? LINGER_DURATION : SPLASH_DURATION;
 
         level.playSound(null, pos.x, pos.y, pos.z, BeyondSoundEvents.ENADRAKE_SCREECH.get(), SoundSource.HOSTILE, 2.0F, 1.0F);
-        // startle before deafening, so only mobs that can still hear the burst turn toward it
+        // startle before deafening, so only mobs that can still hear turn toward the burst
         Deafening.startleMobsAround(level, pos, radius + 2.0);
         int deafened = Deafening.deafenMobsAround(level, pos, radius, duration);
-        // players in the radius go deaf too, the thrower included
         int deafenedPlayers = Deafening.deafenPlayersAround(level, pos, radius, duration);
         LivingEntity thrower = potion.getOwner() instanceof LivingEntity le ? le : null;
         Deafening.alertWardensAround(level, pos, radius, thrower);
 
-        TheBeyond.LOGGER.debug("[Deafening] potion broke at {} ({}): deafened {} mob(s), {} player(s)",
+        if (Deafening.TRACE) TheBeyond.LOGGER.debug("[Deafening] potion broke at {} ({}): deafened {} mob(s), {} player(s)",
                 pos, lingering ? "lingering" : "splash", deafened, deafenedPlayers);
         // Do NOT cancel: canceling ProjectileImpactEvent makes the potion keep flying instead of breaking.
     }

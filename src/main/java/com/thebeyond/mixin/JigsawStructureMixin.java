@@ -94,7 +94,6 @@ public abstract class JigsawStructureMixin implements com.thebeyond.common.world
         if (context.chunkGenerator() instanceof BeyondEndChunkGenerator beg)
             beg.computeNoisesIfNotPresent(context.randomState());
 
-        // jump_platform_island is a separate pool with no branch here, so vanilla places it
         if ("misc/jump_platform".equals(path)) {
             int centerX = chunkPos.getMinBlockX();
             int centerZ = chunkPos.getMinBlockZ();
@@ -197,7 +196,7 @@ public abstract class JigsawStructureMixin implements com.thebeyond.common.world
             kept.addPiece(p);
         }
         if (dropped == 0) return assembled;
-        if (BeyondGenDiagnostics.loggedMaskKeys.add("rock-platform@" + key)) {
+        if (BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedMaskKeys.add("rock-platform@" + key)) {
             com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] {} leaves out {} piece(s) of island rock under its start:"
                     + " the island's own ground stands in for them", key, dropped);
         }
@@ -238,14 +237,14 @@ public abstract class JigsawStructureMixin implements com.thebeyond.common.world
         boolean aside = fit.dx() != 0 || fit.dz() != 0;
         if (chosen == held && aside) {
             // A refused sideways move still leaves the plain seat.
-            if (BeyondGenDiagnostics.loggedMaskKeys.add("ground-seat-aside@" + key + "@" + cp.toLong())
+            if (BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedMaskKeys.add("ground-seat-aside@" + key + "@" + cp.toLong())
                     && BeyondGenDiagnostics.loggedMaskKeys.size() <= 4000) {
                 com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] held seat {} at chunk [{},{}]: not moved {},{} sideways because {},"
                         + " seated in place", key, cp.x, cp.z, fit.dx(), fit.dz(), why);
             }
             return the_beyond$onGround(context, key, at, aliasPos, draw, held, false);
         }
-        if (BeyondGenDiagnostics.loggedMaskKeys.add("ground-seat@" + key + "@" + cp.toLong())
+        if (BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedMaskKeys.add("ground-seat@" + key + "@" + cp.toLong())
                 && BeyondGenDiagnostics.loggedMaskKeys.size() <= 4000) {
             String moved = !aside ? "," : " " + fit.dx() + "," + fit.dz() + " sideways, where it holds "
                     + Math.round(fit.held() * 100) + "% of the floor,";
@@ -272,7 +271,7 @@ public abstract class JigsawStructureMixin implements com.thebeyond.common.world
             Structure.GenerationStub inPlace = the_beyond$onGround(context, key, at, at, draw, stub, false);
             if (the_beyond$yieldsTo(context, self, key, inPlace) == null) {
                 ChunkPos cp = context.chunkPos();
-                if (BeyondGenDiagnostics.loggedMaskKeys.add("held-in-place@" + key + "@" + cp.toLong())
+                if (BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedMaskKeys.add("held-in-place@" + key + "@" + cp.toLong())
                         && BeyondGenDiagnostics.loggedMaskKeys.size() <= 4000) {
                     com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] held seat {} at chunk [{},{}]: seated in place, {} would"
                             + " have dropped it moved sideways", key, cp.x, cp.z, rival[0]);
@@ -288,7 +287,7 @@ public abstract class JigsawStructureMixin implements com.thebeyond.common.world
 
     private static void the_beyond$logSinks(@org.jetbrains.annotations.Nullable ResourceLocation key, ChunkPos cp,
             Structure.GenerationStub assembled, net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager tm) {
-        if (BeyondGenDiagnostics.loggedSinks.size() <= 4000 && BeyondGenDiagnostics.loggedSinks.add(key + "@" + cp.toLong())) {
+        if (BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedSinks.size() <= 4000 && BeyondGenDiagnostics.loggedSinks.add(key + "@" + cp.toLong())) {
             com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] held seat {} at chunk [{},{}]: its pieces reach {} under its start's"
                     + " floor, so it sinks into the island and gets no pedestal", key, cp.x, cp.z,
                     ForeignFit.sinkDepth(assembled.getPiecesBuilder().build().pieces(), tm));
@@ -465,11 +464,10 @@ public abstract class JigsawStructureMixin implements com.thebeyond.common.world
             return stub;
         }
         if (roofed.isPresent()) {
-            // No other layer fits, so redraw on the same seat and keep the first layout that fits under the roof.
+            // no other layer fits, so redraw on the same seat (on the layer, so the biome is judged on the ground)
             int redrawn = 0;
             for (int r = 1; r <= ROOF_REDRAWS && redrawn == 0; r++) {
                 int draw = MAX_LAYER_TRIES + r;
-                // Drawn on the layer so the biome is judged on the ground, a redraw may put its centre over the void.
                 Optional<Structure.GenerationStub> again = the_beyond$heldDraw(context, key, roofedLayer, roofedLayer, draw);
                 if (again.isEmpty() || !the_beyond$validBiome(context, again.get())) continue;
                 double[] share = new double[2];
@@ -593,7 +591,7 @@ public abstract class JigsawStructureMixin implements com.thebeyond.common.world
         }
         ChunkPos cp = context.chunkPos();
         the_beyond$logAuto(self, key, cp, "A", (chosen != first ? "START_RAISED" : "START_BURIED_KEPT") + " y=" + layer[1]);
-        if (BeyondGenDiagnostics.loggedMaskKeys.add("buried-start@" + key + "@" + cp.toLong())
+        if (BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedMaskKeys.add("buried-start@" + key + "@" + cp.toLong())
                 && BeyondGenDiagnostics.loggedMaskKeys.size() <= 4000) {
             com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] buried start {} at chunk [{},{}]: {}% under the island at y={},"
                     + " footprint surface {}, {}", key, cp.x, cp.z, Math.round(buried * 100), layer[1], surface,
@@ -628,7 +626,7 @@ public abstract class JigsawStructureMixin implements com.thebeyond.common.world
     }
 
     private static void the_beyond$logHeld(@org.jetbrains.annotations.Nullable ResourceLocation key, ChunkPos cp, String what) {
-        if (BeyondGenDiagnostics.loggedMaskKeys.add("held-seat@" + key + "@" + cp.toLong())
+        if (BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedMaskKeys.add("held-seat@" + key + "@" + cp.toLong())
                 && BeyondGenDiagnostics.loggedMaskKeys.size() <= 4000) {
             com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] held seat {} at chunk [{},{}]: {}", key, cp.x, cp.z, what);
         }
@@ -802,7 +800,7 @@ public abstract class JigsawStructureMixin implements com.thebeyond.common.world
 
     private static void the_beyond$logDistributedY(ResourceLocation key, ChunkPos cp, int requestedY) {
         String id = key == null ? "?" : key.toString();
-        if (BeyondGenDiagnostics.loggedDistributedY.add(id + "@" + cp.x + "," + cp.z)
+        if (BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedDistributedY.add(id + "@" + cp.x + "," + cp.z)
                 && BeyondGenDiagnostics.loggedDistributedY.size() <= 40) {
             com.thebeyond.TheBeyond.LOGGER.debug(
                     "[Beyond] layer-distribute {} chunk=[{},{}] requestedY={}", id, cp.x, cp.z, requestedY);

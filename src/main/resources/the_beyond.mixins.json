@@ -4,7 +4,6 @@
   "compatibilityLevel": "JAVA_21",
   "refmap": "the_beyond.refmap.json",
   "mixins": [
-    "AbstractSoundInstanceAccessor",
     "AuroraciteLayerFillMixin",
     "AuroraciteLayerProtectionMixin",
     "BaseFireBlockMixin",
@@ -15,7 +14,6 @@
     "CountOnEveryLayerPlacementMixin",
     "CountOnEveryLayerPlacementAccessor",
     "ClearableWorldgenMixin",
-    "CreativeModeInventoryScreenAccessor",
     "EndCitySeatingMixin",
     "CreativeModeTabAccessor",
     "EndWeatherMixin",
@@ -33,6 +31,13 @@
     "JigsawStructureMixin",
     "LakeFeatureMixin",
     "LevelEntityCollisionsMixin",
+    "EntityBoundsNeighbourhoodMixin",
+    "EntitySectionNeighbourhoodMixin",
+    "LivingEntityPushNeighbourhoodMixin",
+    "LivingEntityCoilClimbMixin",
+    "PersistentEntitySectionManagerAccessor",
+    "TransientEntitySectionManagerAccessor",
+    "ServerLevelEntitySectionsMixin",
     "LocateCommandMixin",
     "MultiNoiseBiomeSourceMixin",
     "PistonStructureResolverMixin",
@@ -52,6 +57,7 @@
     "ChunkBlockWatchMixin"
   ],
   "client": [
+    "client.ClientLevelEntitySectionsMixin",
     "ItemFrameRendererMixin",
     "client.ItemEntityMixin",
     "client.BossHealthOverlayAccessor",

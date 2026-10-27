@@ -37,7 +37,7 @@ class FoundationSeatScanTest {
     void thinPancake_refillsBase_noVoidPillar() {
         IntPredicate pancake = y -> y >= GLO - 3 && y <= GLO;
         Assertions.assertTrue(fillsAt(GLO, pancake), "thin pancake: carved base gLo must be refilled");
-        // the original pillar bug: a fixed-depth fill poured gLo-4, gLo-5 into the void below the island.
+        // pillar case: a fixed-depth fill would pour gLo-4, gLo-5 into the void below the island.
         for (int y = GLO - 4; y >= GLO - DEPTH; y--) {
             Assertions.assertFalse(fillsAt(y, pancake),
                     "no foundation fill below the island bottom (void pillar) at y=" + y);
@@ -115,13 +115,10 @@ class FoundationSeatScanTest {
                 GLO - 1, BeyondEndChunkGenerator.FOUNDATION_MIN_RUN, thinTop));
     }
 
-    // A distributed end_city gets no per-column footing anywhere, so its cantilevers never weld to
-    // islands they pass over; a seated-but-not-distributed tower still needs footing under its legs.
+    // a distributed end_city gets no footing, so its cantilevers skip islands, while a seated tower needs footing under its legs
 
     @Test
     void footingActiveAt_truthTable() {
-        // footingActiveAt(seated, distributed, inBaseFootprint) = seated && !distributed; inBaseFootprint is
-        // ignored — a distributed base rests on its own start_platform foot instead.
         Assertions.assertFalse(BeyondEndChunkGenerator.the_beyond$footingActiveAt(false, false, false),
                 "a pure FLOATING structure has no foundation footing");
         Assertions.assertTrue(BeyondEndChunkGenerator.the_beyond$footingActiveAt(true, false, false),
@@ -136,8 +133,6 @@ class FoundationSeatScanTest {
 
     @Test
     void distributed_noFootingAnywhere() {
-        // Island is in reach and isFoundationFill would place the bridge — proves footingActiveAt (not
-        // isFoundationFill) is what suppresses the slab for a distributed structure.
         IntPredicate islandBelow = y -> y <= GLO - 2;
         int natTop = BeyondEndChunkGenerator.the_beyond$foundationNatTop(GLO, DEPTH, islandBelow);
         Assertions.assertEquals(GLO - 2, natTop, "precondition: the island is within reach");
@@ -157,7 +152,7 @@ class FoundationSeatScanTest {
         BeyondEndChunkGenerator.CarveMask mask =
                 BeyondEndChunkGenerator.CarveMask.fromBoxes(boxes, true, 0, true, true);
         Assertions.assertTrue(mask.distributed, "fromBoxes(distributed=true) builds a distributed mask");
-        // inBaseFootprint is kept for the future rounded-base option; it still classifies base vs cantilever columns.
+        // inBaseFootprint stays for a future rounded-base option and still classifies base vs cantilever columns.
         Assertions.assertTrue(mask.inBaseFootprint(4, 4), "a column inside the start_platform footprint is base");
         Assertions.assertTrue(mask.inBaseFootprint(8 + R, 4), "…still base out to the lip's lateral reach");
         Assertions.assertFalse(mask.inBaseFootprint(8 + R + 1, 4), "a column past base+reach is a cantilever, not base");

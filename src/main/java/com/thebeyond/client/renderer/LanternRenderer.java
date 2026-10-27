@@ -87,7 +87,6 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
         float alpha = Math.max(((transMax - distance) / (float) transMax), entity.level().getRainLevel(partialTicks));
 
         int finalAlpha = ModClientEvents.aimingWithCamera() ? 255 : (int) Math.max(255 * alpha, entity.getAlpha());
-        // ARGB with green and alpha at finalAlpha, so the lantern fades to a ghostly magenta
         int color = (finalAlpha << 24) | (0xFF << 16) | (finalAlpha << 8) | 0xFF;
 
         ResourceLocation textureLocation = getTextureLocation(entity);

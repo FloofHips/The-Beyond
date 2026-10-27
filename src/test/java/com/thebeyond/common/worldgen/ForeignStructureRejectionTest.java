@@ -30,9 +30,7 @@ class ForeignStructureRejectionTest {
     private static final int STATION_START_ABS = 80;
     private static final double FAR_FIELD = 650.0;
 
-    // --- mirror JigsawPlacementMixin max-anchor floor (the towers' stub Y) ---
     private static final int FX_RADIUS = 19, FX_STEP = 1, FX_BAND = 64;
-    // getBaseHeight scans from dimMaxY-33 (top of the fill range) so upper pancakes on tall dims aren't missed.
     private static final int SCAN_TOP = DIM_MAX_Y - 33;
 
     private HashSimplexNoise sS, sBS;
@@ -107,7 +105,7 @@ class ForeignStructureRejectionTest {
         return total == 0 ? 0 : (double) pad / total;
     }
 
-    /** getBaseHeight mirror: highest solid scanning from SCAN_TOP down; minY if void. */
+    /** getBaseHeight mirror: highest solid scanning from SCAN_TOP down, minY if void. */
     private static int baseHeight(int x, int z, BeyondEndChunkGenerator.ColumnScratch scr) {
         float d = (float) Math.sqrt((double) x * x + (double) z * z);
         BeyondEndChunkGenerator.initColumnScratch(x, z, d, scr);
@@ -127,9 +125,9 @@ class ForeignStructureRejectionTest {
                 int x = (cx << 4) + 8, z = (cz << 4) + 8;
                 if (Math.sqrt((double) x * x + (double) z * z) <= FAR_FIELD) continue;
                 int floor = maxAnchorFloor(x, z);
-                if (floor == Integer.MIN_VALUE) continue;   // no pancake at centre → mixin leaves vanilla
+                if (floor == Integer.MIN_VALUE) continue;
                 candidates++;
-                double pf2 = padFraction(x, z, floor, TOWER_STEP, scr);   // production sampling
+                double pf2 = padFraction(x, z, floor, TOWER_STEP, scr);
                 for (int i = 0; i < cuts.length; i++) if (pf2 <= cuts[i]) kept[i]++;
                 if (pf2 <= PAD_REJECT && padFraction(x, z, floor, 1, scr) > PAD_REJECT) acceptedButSparse++;
             }
@@ -154,10 +152,8 @@ class ForeignStructureRejectionTest {
 
     @Test
     void stationRejectionAndFitness() {
-        // The station is rejected only on ceiling clip; islands crossing it get organically cleared by
-        // carveOutsideDist instead (geometry gated by BodyBurialScanTest.silhouetteClearGate).
-        final int ERODE = BeyondEndChunkGenerator.CARVE_ERODE_REACH;   // carveOutsideDist <= ERODE ⇒ carved
-        final int SCAN  = BeyondEndChunkGenerator.CARVE_SCAN_REACH;    // lateral clear extent for a floating piece
+        final int ERODE = BeyondEndChunkGenerator.CARVE_ERODE_REACH;
+        final int SCAN  = BeyondEndChunkGenerator.CARVE_SCAN_REACH;
         BeyondEndChunkGenerator.ColumnScratch scr = BeyondEndChunkGenerator.getColumnScratch();
         int candidates = 0, clipRejected = 0, acceptedButClipped = 0;
         for (int cx = -200; cx <= 200; cx += 11) {
@@ -165,14 +161,13 @@ class ForeignStructureRejectionTest {
                 int x = (cx << 4) + 8, z = (cz << 4) + 8;
                 if (Math.sqrt((double) x * x + (double) z * z) <= FAR_FIELD) continue;
                 candidates++;
-                int floor = STATION_START_ABS + Math.max(baseHeight(x, z, scr), MIN_Y);   // refY = 80 + getFirstFreeHeight
+                int floor = STATION_START_ABS + Math.max(baseHeight(x, z, scr), MIN_Y);
                 if (floor + FLOAT_ENVELOPE > MAX_Y) { clipRejected++; continue; }
-                if (floor + FLOAT_ENVELOPE > MAX_Y) acceptedButClipped++;   // 0 by construction
+                if (floor + FLOAT_ENVELOPE > MAX_Y) acceptedButClipped++;
             }
         }
 
-        // carveOutsideDist at the station's start-piece scale (73x86x89): body all distance 0, bounded.
-        // One structure → one occupancy mask (here a single fully-occupied box).
+        // the station start piece is 73x86x89, one structure gives one fully occupied mask
         final int sHalfX = 36, sHalfZ = 44, sH = 86, f = 100;
         java.util.List<BeyondEndChunkGenerator.CarveMask> sBox =
                 java.util.List.of(BeyondEndChunkGenerator.CarveMask.fromBoxes(

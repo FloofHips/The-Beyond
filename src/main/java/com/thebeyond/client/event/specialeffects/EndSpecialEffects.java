@@ -130,9 +130,9 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
             result = biomeFogColor.subtract(0, 0.3 * level.getRainLevel(0), 0);
         } else {
             result = biomeFogColor.multiply(
-                    Mth.lerp(bossFog, 1, 0.3F),
                     Mth.lerp(bossFog, 1, 0.2F),
-                    Mth.lerp(bossFog, 1, 0.5F)
+                    Mth.lerp(bossFog, 1, 0.1F),
+                    Mth.lerp(bossFog, 1, 0.3F)
             );
         }
 
@@ -201,12 +201,11 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
                     colors.z()
             );
         }
-            ////i think the skylight is being fucked with by thunderstorms... or ambient light
 
         colors.set(
-                Mth.lerp(bossFog, colors.x() * 0.9f, colors.x() * 0.3 + 0.22983016),
-                Mth.lerp(bossFog, Mth.clamp(colors.y() * 1.1f, 0, 1), colors.y() * 0.4),
-                Mth.lerp(bossFog, colors.z() * 0.9f, colors.z() * 0.4 + 0.22983016)
+                Mth.lerp(bossFog, colors.x() * 0.9f, colors.x()),
+                Mth.lerp(bossFog, Mth.clamp(colors.y() * 1.1f, 0, 1), colors.y()*0.6),
+                Mth.lerp(bossFog, colors.z() * 0.9f, colors.z())
         );
 
 
@@ -519,7 +518,6 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         RenderSystem.setShaderColor(1, 1, 1, Math.min(crack.lifeTime, 0.8f));
         //RenderSystem.setShaderColor(1, 1, 1, 0.5f);
 
-        // crack.position is already camera-relative in sky space, so the billboard is built from it alone.
         poseStack.mulPose(Axis.YP.rotationDegrees(90.0f));
 
         Matrix4f matrix4f3 = poseStack.last().pose();

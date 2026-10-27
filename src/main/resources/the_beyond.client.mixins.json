@@ -6,7 +6,9 @@
   "refmap": "the_beyond.refmap.json",
   "priority": 500,
   "mixins": [
+    "AbstractSoundInstanceAccessor",
     "CameraAccessor",
+    "CreativeModeInventoryScreenAccessor",
     "CreativeModeInventoryScreenMixin",
     "CreativeModeTabMixin",
     "EndDimensionEffectsMixin",

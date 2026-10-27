@@ -1,4 +1,4 @@
-package com.thebeyond.mixin;
+package com.thebeyond.mixin.client;
 
 import net.minecraft.client.resources.sounds.AbstractSoundInstance;
 import org.spongepowered.asm.mixin.Mixin;

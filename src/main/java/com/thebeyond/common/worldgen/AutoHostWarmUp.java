@@ -95,7 +95,7 @@ public final class AutoHostWarmUp {
         ChunkPos c = start.getChunkPos();
         boolean far = (double) c.getMinBlockX() * c.getMinBlockX() + (double) c.getMinBlockZ() * c.getMinBlockZ() >= 650.0 * 650.0;
         if (!far || !seatsOnLayer(start.getStructure(), key, endBiomes)) return false;
-        if (BeyondGenDiagnostics.loggedRestartLayer.size() < 2000 && BeyondGenDiagnostics.loggedRestartLayer.add(key + "@" + cp)) {
+        if (BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedRestartLayer.size() < 2000 && BeyondGenDiagnostics.loggedRestartLayer.add(key + "@" + cp)) {
             com.thebeyond.TheBeyond.LOGGER.debug("[Beyond] restart layer {} start@[{},{}]: seated on a layer in an earlier session", key, c.x, c.z);
         }
         return true;

@@ -1,7 +1,9 @@
 package com.thebeyond.common.item;
 
+import com.thebeyond.BeyondConfig;
 import com.thebeyond.client.gui.OcarinaOverlay;
 import com.thebeyond.common.entity.TrinketEntity;
+import com.thebeyond.common.entity.util.livingblock.LivingBlockFrames;
 import com.thebeyond.common.entity.util.livingblock.movement.Target;
 import com.thebeyond.common.registry.BeyondComponents;
 import com.thebeyond.common.registry.BeyondCriteriaTriggers;
@@ -34,7 +36,11 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import static com.thebeyond.common.block.MemorFaucetBlock.AGE;
 
@@ -45,10 +51,15 @@ public class OcarinaItem extends Item {
     private static final double DETECTION_RADIUS = 8;
     private static final int MODE_SWITCH_TICKS = 12;
 
-    private final List<TrinketEntity> linkedTrinkets = new ArrayList<>();
+    // per player and per side: the item is one instance that the client and the integrated server thread share
+    private static final Map<UUID, List<TrinketEntity>> CLIENT_LINKS = new HashMap<>();
+    private static final Map<UUID, List<TrinketEntity>> SERVER_LINKS = new HashMap<>();
 
-    public List<TrinketEntity> getLinkedTrinkets() {
-        return linkedTrinkets;
+    public static List<TrinketEntity> getLinkedTrinkets(Player player) {
+        List<TrinketEntity> linked = (player.level().isClientSide ? CLIENT_LINKS : SERVER_LINKS)
+                .computeIfAbsent(player.getUUID(), id -> new ArrayList<>());
+        linked.removeIf(trinket -> trinket.isRemoved() || trinket.level() != player.level());
+        return linked;
     }
 
     public OcarinaItem(Properties properties) {
@@ -71,18 +82,19 @@ public class OcarinaItem extends Item {
     }
 
     private void doUse(Level level, Player player, ItemStack stack) {
+        List<TrinketEntity> linkedTrinkets = getLinkedTrinkets(player);
         if (player.isShiftKeyDown()) {
             level.playSound(player, player.blockPosition(), BeyondSoundEvents.OCARINA_DESELECT.get(), SoundSource.PLAYERS, 1f,1);
             if (!linkedTrinkets.isEmpty()) {
                 player.displayClientMessage(Component.translatable("screen.the_beyond.ocarina.trinkets_deselected", linkedTrinkets.size()), true);
-                deselectAll();
+                deselectAll(linkedTrinkets);
             }
             return;
         }
 
         OcarinaMode mode = getMode(stack);
         if (mode == OcarinaMode.SELECT) {
-            select(level, player);
+            select(level, player, linkedTrinkets);
             player.getCooldowns().addCooldown(stack.getItem(), MODE_SWITCH_TICKS);
             return;
         }
@@ -97,20 +109,25 @@ public class OcarinaItem extends Item {
         player.getCooldowns().addCooldown(stack.getItem(), MODE_SWITCH_TICKS);
 
         if (mode == OcarinaMode.GUIDE) {
-            guide(level, player);
+            guide(level, player, linkedTrinkets);
             return;
         }
         if (mode == OcarinaMode.FOLLOW) {
-            follow(player);
+            follow(player, linkedTrinkets);
             return;
         }
         if (mode == OcarinaMode.SCATTER) {
-            scatter(level, player);
+            scatter(level, player, linkedTrinkets);
             return;
         }
     }
 
-    private void deselectAll() {
+    public static int maxTrinkets() {
+        int max = BeyondConfig.OCARINA_MAX_TRINKETS.get();
+        return max <= 0 ? Integer.MAX_VALUE : max;
+    }
+
+    private static void deselectAll(List<TrinketEntity> linkedTrinkets) {
         List<TrinketEntity> snapshot = new ArrayList<>(linkedTrinkets);
         for (TrinketEntity trinket : snapshot) {
             if (!trinket.isAlive()) continue;
@@ -159,16 +176,19 @@ public class OcarinaItem extends Item {
         return InteractionResultHolder.consume(stack);
     }
 
-    private void select(Level level, Player player) {
+    private void select(Level level, Player player, List<TrinketEntity> linkedTrinkets) {
         AABB detectionBox = new AABB(player.getOnPos()).inflate(DETECTION_RADIUS);
 
         List<TrinketEntity> nearby = level.getEntitiesOfClass(TrinketEntity.class, detectionBox);
+        int max = maxTrinkets();
+        if (nearby.size() > max) nearby.sort(Comparator.comparingDouble(t -> LivingBlockFrames.worldPosition(t).distanceToSqr(player.position())));
 
         if (!linkedTrinkets.isEmpty()) {
-            deselectAll();
+            deselectAll(linkedTrinkets);
         }
 
         for (TrinketEntity trinket : nearby) {
+            if (linkedTrinkets.size() >= max) break;
             if (isOwnedBy(trinket, player)) {
                 linkedTrinkets.add(trinket);
                 trinket.setSelected(true);
@@ -190,14 +210,14 @@ public class OcarinaItem extends Item {
         }
     }
 
-    private void follow(Player player) {
+    private void follow(Player player, List<TrinketEntity> linkedTrinkets) {
         List<TrinketEntity> snapshot = new ArrayList<>(linkedTrinkets);
         for (TrinketEntity trinket : snapshot) {
             trinket.setMovementTarget(Target.followingEntity(player, 3));
         }
     }
 
-    private void guide(Level level, Player player) {
+    private void guide(Level level, Player player, List<TrinketEntity> linkedTrinkets) {
         Vec3 eyePos = player.getEyePosition();
         Vec3 endPos = eyePos.add(player.getLookAngle().scale(64));
         Vec3 forClient = null;
@@ -230,7 +250,7 @@ public class OcarinaItem extends Item {
         }
     }
 
-    private void scatter(Level level, Player player) {
+    private void scatter(Level level, Player player, List<TrinketEntity> linkedTrinkets) {
         if (!linkedTrinkets.isEmpty()) {
             List<TrinketEntity> snapshot = new ArrayList<>(linkedTrinkets);
             for (TrinketEntity trinket : snapshot) {
@@ -243,7 +263,7 @@ public class OcarinaItem extends Item {
                 trinket.setMovementTarget(Target.near(centre, CALL_RADIUS));
             }
         }
-        deselectAll();
+        deselectAll(linkedTrinkets);
     }
 
     private BlockPos findScatterPos(Level level, BlockPos origin, int radius) {

@@ -57,7 +57,7 @@ public abstract class ForeignStructureRejectionMixin {
 
             StructureIntegrationProfile profile =
                     BeyondForeignStructureProfiles.resolve((Structure) (Object) this, key);
-            if (profile == null || !profile.rejectUnfit()) return;   // not hosted → leave to vanilla
+            if (profile == null || !profile.rejectUnfit()) return;
             // A pedestal's seat judged it on the floor it moved to, where this test would read the sample's height.
             boolean pedestal = profile.basePedestal()
                     || BeyondForeignStructureProfiles.isBasePedestal(key, registry, (Structure) (Object) this);

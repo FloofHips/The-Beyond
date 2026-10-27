@@ -104,15 +104,22 @@ public class MirrorBlock extends BaseEntityBlock {
         });
     }
 
-    /** False for tagged types and for an entity named in the data map for its type. */
+    /** False for tagged types and names in the type's data map, any letter case: players by account, others by custom name. */
     public static boolean showsInImages(Entity entity) {
         if (entity.getType().is(BeyondTags.NO_IMAGE)) {
             return false;
         }
         List<String> names = entity.getType().builtInRegistryHolder().getData(BeyondDataMapTypes.NO_IMAGE_NAMES);
-        // read like vanilla's Dinnerbone: a player by account, anything else only by a custom name
-        return names == null || !(entity instanceof Player || entity.hasCustomName())
-                || !names.contains(ChatFormatting.stripFormatting(entity.getName().getString()));
+        if (names == null || !(entity instanceof Player || entity.hasCustomName())) {
+            return true;
+        }
+        String name = ChatFormatting.stripFormatting(entity.getName().getString());
+        for (String hidden : names) {
+            if (hidden.equalsIgnoreCase(name)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

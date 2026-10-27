@@ -2,6 +2,7 @@ package com.thebeyond.client.gui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.renderer.blockentities.SnapshotTextures;
 import com.thebeyond.common.camera.Grades;
@@ -20,6 +21,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 public class SnapshotScreen implements LayeredDraw.Layer{
@@ -30,7 +32,8 @@ public class SnapshotScreen implements LayeredDraw.Layer{
 
     @Override
     public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
-        var mc = Minecraft.getInstance();
+        Minecraft minecraft = Minecraft.getInstance();
+        var mc = minecraft;
         LocalPlayer player = mc.player;
         if (mc.level == null || player == null || mc.options.hideGui) return;
         ItemStack snapshot = player.getItemInHand(InteractionHand.MAIN_HAND);
@@ -39,6 +42,8 @@ public class SnapshotScreen implements LayeredDraw.Layer{
 
         int screenHeight = mc.getWindow().getGuiScaledHeight();
         int screenWidth = mc.getWindow().getGuiScaledWidth();
+        float fMin = Math.min(screenHeight, screenWidth);
+        boolean viewBobbingEnabled = minecraft.options.bobView().get();
 
         float xRot = Math.clamp(90-(player.getXRot()), 0, 90)/90f;
 
@@ -51,10 +56,10 @@ public class SnapshotScreen implements LayeredDraw.Layer{
         RenderSystem.setShaderColor(1,1,1, alpha);
         guiGraphics.fillGradient(0, 0, screenWidth, screenHeight, -1072689136, -804253680);
         RenderSystem.setShaderColor(1,1,1, 1);
-        float scale = Math.clamp(1+alpha, 1.5f, 2f);
-        pose.translate(0, ts,0);
+        float scale = Math.clamp(1+alpha, 1.5f, 2);
+        pose.translate(0, ts*fMin*0.0035f,0);
 
-        renderSnapshot(guiGraphics, pose, screenWidth, screenHeight, scale, snapshot, mc.font);
+        renderSnapshot(guiGraphics, pose, screenWidth, screenHeight, scale*fMin*0.0035f, snapshot, mc.font);
         pose.popPose();
     }
 

@@ -596,7 +596,6 @@ public class RefugeBlockEntity extends BlockEntity implements MenuProvider {
 
         be.oRot = be.rot;
 
-        // inside a sub-level the player is searched at the real position and the angle measured in the local frame
         Vec3 visible = com.thebeyond.api.compat.BeyondCompatHooks.visibleOnAnyLevel(level, pos);
         double searchX = visible != null ? visible.x : (double) pos.getX() + 0.5D;
         double searchY = visible != null ? visible.y : (double) pos.getY() + 0.5D;

@@ -52,7 +52,6 @@ public final class SodiumSecondaryView {
             mc.gameRenderer.renderLevel(delta);
             int visible = swr.getVisibleChunkCount();
             complete = visible > 0 && swr.isTerrainRenderComplete();
-            logOnce("[camera] Sodium secondary view active: visibleChunks=" + visible + " complete=" + complete);
         } catch (Throwable t) {
             RenderFailureLog.error("[camera] Sodium secondary view failed", t);
         } finally {

@@ -30,6 +30,10 @@ repositories {
             includeGroup "dev.ryanhcode.sable-companion"
         }
     }
+    maven {
+        url "https://api.modrinth.com/maven"
+        content { includeGroup "maven.modrinth" }
+    }
     // Test/build deps. After cursemaven so its includeGroup keeps curse artifacts routed right.
     mavenCentral()
 }
@@ -95,6 +99,30 @@ neoForge {
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
+// runData deletes every file under src/generated it did not write (HashCache), so a hand-placed translation stops it first
+def generatedRoot = file('src/generated/resources')
+tasks.configureEach { task ->
+    if (task.name == 'runData') {
+        task.doFirst {
+            def written = [] as Set
+            new File(generatedRoot, '.cache').listFiles()?.each { cache ->
+                cache.eachLine { line -> if (!line.startsWith('//')) written << line.substring(line.indexOf(' ') + 1) }
+            }
+            def stray = []
+            generatedRoot.eachFileRecurse(groovy.io.FileType.FILES) { f ->
+                def path = generatedRoot.toPath().relativize(f.toPath()).toString().replace('\\', '/')
+                boolean generated = written ? written.contains(path) : !path.matches('assets/[^/]+/lang/(?!en_us\\.json).+\\.json')
+                if (!path.startsWith('.cache/') && path != 'version.json' && !generated) {
+                    stray << path
+                }
+            }
+            if (stray) {
+                throw new GradleException("runData would delete files it did not write, move them to src/main/resources: ${stray.join(', ')}")
+            }
+        }
+    }
+}
+
 configurations {
     runtimeClasspath.extendsFrom localRuntime
 }
@@ -113,6 +141,8 @@ dependencies {
     compileOnly "dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:1.6.0"
     // Sodium: secondary-view block-camera capture. compileOnly (never shipped), gated by ModList + a non-required mixin config.
     compileOnly "curse.maven:sodium-394468:5909717"
+
+    compileOnly "maven.modrinth:exposure:iBvaR6AK"
 
     // Optional Curios compat (compileOnly, gated by ModList.isLoaded) — Totem of Respite saves curio slots on death.
     compileOnly "curse.maven:curios-309927:6529130"

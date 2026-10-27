@@ -202,10 +202,10 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
     @Override
     public AABB getBoundingBoxForCulling() {
         double inflate = switch (getSize()) {
-            case 0 -> 1.0;   // small: short fins
-            case 1 -> 2.0;   // medium: longer fins
-            case 2 -> 3.0;   // large: fins reach further
-            case 3 -> 6.0;   // Leviathan: body ~5b long, tail ~4b, fins ~1b
+            case 0 -> 1.0;
+            case 1 -> 2.0;
+            case 2 -> 3.0;
+            case 3 -> 6.0;
             default -> 2.0;
         };
         return getBoundingBox().inflate(inflate);

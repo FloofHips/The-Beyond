@@ -36,7 +36,8 @@ public abstract class StructureManagerPedestalBeardMixin {
             if (BeyondForeignStructureProfiles.isBasePedestal(key, reg, st) && !ForeignFit.sinks(s.getPieces(), null)) {
                 var profile = BeyondForeignStructureProfiles.resolve(st, key);
                 if (profile != null && profile.carve()) continue;
-                if (com.thebeyond.common.worldgen.BeyondGenDiagnostics.loggedBeardKept.size() < 2000
+                if (com.thebeyond.common.worldgen.BeyondGenDiagnostics.TRACE
+                        && com.thebeyond.common.worldgen.BeyondGenDiagnostics.loggedBeardKept.size() < 2000
                         && com.thebeyond.common.worldgen.BeyondGenDiagnostics.loggedBeardKept.add(key + "@" + s.getChunkPos().toLong())) {
                     com.thebeyond.TheBeyond.LOGGER.warn("[Beyond] pedestal {} start@[{},{}] has no carve profile, so it keeps its beard",
                             key, s.getChunkPos().x, s.getChunkPos().z);

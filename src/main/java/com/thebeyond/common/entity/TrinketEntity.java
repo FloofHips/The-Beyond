@@ -129,10 +129,10 @@ public class TrinketEntity extends BaubleEntity implements Bucketable, OwnableEn
 
     public void readAdditionalSaveData(CompoundTag compound) {
         super.readAdditionalSaveData(compound);
-        this.setDyeColor(DyeColor.byId(compound.getInt("DyeColor")));
-        this.setBodyColor(compound.getInt("BodyColor"));
-        this.setWaxed(compound.getBoolean("IsWaxed"));
-        this.setVariant(compound.getString("Variant"));
+        if (compound.contains("DyeColor")) this.setDyeColor(DyeColor.byId(compound.getInt("DyeColor")));
+        if (compound.contains("BodyColor")) this.setBodyColor(compound.getInt("BodyColor"));
+        if (compound.contains("IsWaxed")) this.setWaxed(compound.getBoolean("IsWaxed"));
+        if (compound.contains("Variant")) this.setVariant(compound.getString("Variant"));
 
         UUID uuid;
         if (compound.hasUUID("Owner")) {
@@ -254,10 +254,12 @@ public class TrinketEntity extends BaubleEntity implements Bucketable, OwnableEn
             return super.mobInteract(player, hand);
         }
 
-        if (item instanceof OcarinaItem ocarina) {
-            if (getOwnerUUID() != null && getOwnerUUID().equals(player.getUUID()) && !isSelected()) {
+        if (item instanceof OcarinaItem) {
+            List<TrinketEntity> linked = OcarinaItem.getLinkedTrinkets(player);
+            if (getOwnerUUID() != null && getOwnerUUID().equals(player.getUUID()) && !isSelected()
+                    && (linked.contains(this) || linked.size() < OcarinaItem.maxTrinkets())) {
+                if (!linked.contains(this)) linked.add(this);
                 if (!level().isClientSide) {
-                    ocarina.getLinkedTrinkets().add(this);
                     setSelected(true);
                 }
                 return InteractionResult.sidedSuccess(level().isClientSide);

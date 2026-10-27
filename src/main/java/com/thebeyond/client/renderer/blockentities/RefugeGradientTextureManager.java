@@ -30,11 +30,11 @@ public class RefugeGradientTextureManager {
 
     // EDIT HERE (Java is the source of truth), then mirror these 5 hex colors into rendertype_refuge_gradient.fsh.
     private static final int[][] GRADIENT_STOPS = {
-            {0x0C, 0x08, 0x26}, // #0C0826
-            {0x31, 0x33, 0x4B}, // #31334B
-            {0x79, 0x89, 0xA9}, // #7989A9
-            {0x87, 0xB1, 0xDA}, // #87B1DA
-            {0xE8, 0xF4, 0xFF}  // #E8F4FF
+            {0x0C, 0x08, 0x26},
+            {0x31, 0x33, 0x4B},
+            {0x79, 0x89, 0xA9},
+            {0x87, 0xB1, 0xDA},
+            {0xE8, 0xF4, 0xFF}
     };
     private static final float[] GRADIENT_POSITIONS = {0.00f, 0.30f, 0.75f, 0.92f, 1.00f};
 

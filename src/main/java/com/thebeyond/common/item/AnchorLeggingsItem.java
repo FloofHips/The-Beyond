@@ -105,8 +105,8 @@ public class AnchorLeggingsItem extends ModelArmorItem {
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
-        tooltipComponents.add(Component.literal("When Crouching:").withStyle(ChatFormatting.GRAY));
-        tooltipComponents.add(Component.literal(" Perform Slam Attack").withStyle(ChatFormatting.BLUE));
-        tooltipComponents.add(Component.literal(" + Falling Speed").withStyle(ChatFormatting.BLUE));
+        tooltipComponents.add(BeyondTooltips.header("crouching"));
+        tooltipComponents.add(BeyondTooltips.effect("slam", ChatFormatting.BLUE));
+        tooltipComponents.add(BeyondTooltips.effect("fall_speed", ChatFormatting.BLUE));
     }
 }

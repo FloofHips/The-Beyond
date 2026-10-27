@@ -23,6 +23,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -199,6 +200,20 @@ public class ProjectorBlock extends BaseEntityBlock {
                 }
             }
         }
+    }
+
+    @Override
+    protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+        // a redstone lamp switches with no block update, only this shape update tells the projector its light changed
+        if (direction == state.getValue(FACING).getOpposite() && !level.isClientSide()) {
+            level.scheduleTick(pos, this, 1);
+        }
+        return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
+    }
+
+    @Override
+    protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        neighborChanged(state, level, pos, this, pos, false);
     }
 
     private static void makeParticle(ServerLevel level, BlockPos pos, float alpha) {

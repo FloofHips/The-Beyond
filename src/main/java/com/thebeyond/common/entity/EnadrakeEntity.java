@@ -1,5 +1,7 @@
 package com.thebeyond.common.entity;
 
+import com.thebeyond.BeyondConfig;
+import com.thebeyond.TheBeyond;
 import com.thebeyond.common.block.EnadrakeHutBlock;
 import com.thebeyond.common.block.EnatiousTotemSeedBlock;
 import com.thebeyond.common.block.ObirootSproutBlock;
@@ -12,7 +14,9 @@ import com.thebeyond.common.registry.*;
 import com.thebeyond.util.ColorUtils;
 import com.thebeyond.util.TeleportUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Vec3i;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
@@ -41,6 +45,8 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -54,6 +60,7 @@ import net.minecraft.world.level.block.state.properties.StairsShape;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.event.EventHooks;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.jetbrains.annotations.Nullable;
 
@@ -71,6 +78,8 @@ public class EnadrakeEntity extends PathfinderMob {
     private boolean insideHut = false;
     private BlockPos hutPosition = null;
     private int inHutTime = 0;
+    private static boolean loggedGriefBypass;
+    private static boolean loggedGriefRespected;
 
      private boolean fleeToHut = false;
      public boolean shouldFleeToHut() { return fleeToHut; }
@@ -179,6 +188,36 @@ public class EnadrakeEntity extends PathfinderMob {
         }
         if (panic == 175) setDataScream(false);
         if (this.navigation.isStuck()) level().addParticle(ColorUtils.dustOptions, this.getX(), this.getY(), this.getZ(), 0,0,0);
+    }
+
+    @Override
+    public void aiStep() {
+        super.aiStep();
+        // Mob.aiStep picks nothing up while mobGriefing denies it, so the loop runs here unless the config says to respect it
+        if (!level().isClientSide && canPickUpLoot() && isAlive() && !dead
+                && !BeyondConfig.ENADRAKES_RESPECT_MOB_GRIEFING.get() && !EventHooks.canEntityGrief(level(), this)) {
+            if (!loggedGriefBypass) {
+                loggedGriefBypass = true;
+                TheBeyond.LOGGER.info("[Beyond] mobGriefing denies item pickup here, Enadrakes gather anyway (EnadrakesRespectMobGriefing=false)");
+            }
+            Vec3i reach = getPickupReach();
+            for (ItemEntity item : level().getEntitiesOfClass(ItemEntity.class, getBoundingBox().inflate(reach.getX(), reach.getY(), reach.getZ()))) {
+                if (!item.isRemoved() && !item.getItem().isEmpty() && !item.hasPickUpDelay() && wantsToPickUp(item.getItem())) {
+                    pickUpItem(item);
+                }
+            }
+        }
+    }
+
+    private boolean mayGrief() {
+        if (!BeyondConfig.ENADRAKES_RESPECT_MOB_GRIEFING.get() || EventHooks.canEntityGrief(level(), this)) {
+            return true;
+        }
+        if (!loggedGriefRespected) {
+            loggedGriefRespected = true;
+            TheBeyond.LOGGER.info("[Beyond] mobGriefing denies it here and EnadrakesRespectMobGriefing is on, Enadrakes stop taking items, planting, harvesting and building");
+        }
+        return false;
     }
 
     public void scream() {
@@ -333,7 +372,7 @@ public class EnadrakeEntity extends PathfinderMob {
             ItemStack itemstack = enadrake.getItemBySlot(EquipmentSlot.MAINHAND);
             if (!itemstack.isEmpty()) return false;
 
-            return level().isRaining() && super.canUse();
+            return level().isRaining() && enadrake.mayGrief() && super.canUse();
         }
 
         @Override
@@ -407,6 +446,7 @@ public class EnadrakeEntity extends PathfinderMob {
             }
             if (EnadrakeEntity.this.onAWalkTimer > 0) return false;
             if (!EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty()) return false;
+            if (!EnadrakeEntity.this.mayGrief()) return false;
 
             List<ItemEntity> list = EnadrakeEntity.this.level().getEntitiesOfClass(ItemEntity.class, EnadrakeEntity.this.getBoundingBox().inflate((double)8.0F, (double)8.0F, (double)8.0F), EnadrakeEntity.ALLOWED_ITEMS);
             return !list.isEmpty() && EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty();
@@ -415,6 +455,7 @@ public class EnadrakeEntity extends PathfinderMob {
         public boolean canContinueToUse() {
             if (!EnadrakeEntity.this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty()) return false;
             if (searchTicks > 100) return false;
+            if (!EnadrakeEntity.this.mayGrief()) return false;
             List<ItemEntity> list = EnadrakeEntity.this.level().getEntitiesOfClass(ItemEntity.class, EnadrakeEntity.this.getBoundingBox().inflate((double)8.0F, (double)8.0F, (double)8.0F), EnadrakeEntity.ALLOWED_ITEMS);
             return !list.isEmpty();
         }
@@ -512,7 +553,7 @@ public class EnadrakeEntity extends PathfinderMob {
         @Override
         public boolean canUse() {
             ItemStack itemstack = entity.getItemBySlot(EquipmentSlot.MAINHAND);
-            if (!itemstack.isEmpty()) return super.canUse();
+            if (!itemstack.isEmpty() && entity.mayGrief()) return super.canUse();
             return false;
         }
 
@@ -647,7 +688,6 @@ public class EnadrakeEntity extends PathfinderMob {
             BlockState blockstate = levelReader.getBlockState(blockPos);
             if (!blockstate.is(BeyondBlocks.ENADRAKE_HUT.get())) return false;
 
-            // Only target ground-level huts (not elevated on expansion blocks)
             //Block belowBlock = levelReader.getBlockState(blockPos.below()).getBlock();
             //if (belowBlock instanceof EnadrakeHutBlock
             //    || belowBlock == BeyondBlocks.ENADRAKE_FLARE.get()
@@ -730,7 +770,7 @@ public class EnadrakeEntity extends PathfinderMob {
         @Override
         public boolean canUse() {
             ItemStack itemstack = entity.getItemBySlot(EquipmentSlot.MAINHAND);
-            if (!itemstack.isEmpty() && itemstack.getRarity() != Rarity.EPIC) return super.canUse();
+            if (!itemstack.isEmpty() && itemstack.getRarity() != Rarity.EPIC && entity.mayGrief()) return super.canUse();
             return false;
         }
 
@@ -785,20 +825,58 @@ public class EnadrakeEntity extends PathfinderMob {
         }
     }
 
+    /** False only when no loaded section within reach of the hut scan around center has a hut in its palette. */
+    public static boolean hutMaybeWithin(Level level, BlockPos center, int searchRange, int verticalSearchRange) {
+        int minY = Math.max(center.getY() - verticalSearchRange - 1, level.getMinBuildHeight());
+        int maxY = Math.min(center.getY() + verticalSearchRange - 1, level.getMaxBuildHeight() - 1);
+        if (minY > maxY) {
+            return false;
+        }
+        int reach = searchRange - 1;
+        for (int cx = SectionPos.blockToSectionCoord(center.getX() - reach); cx <= SectionPos.blockToSectionCoord(center.getX() + reach); cx++) {
+            for (int cz = SectionPos.blockToSectionCoord(center.getZ() - reach); cz <= SectionPos.blockToSectionCoord(center.getZ() + reach); cz++) {
+                LevelChunk chunk = level.getChunkSource().getChunkNow(cx, cz);
+                if (chunk == null) {
+                    return true;
+                }
+                for (int sy = SectionPos.blockToSectionCoord(minY); sy <= SectionPos.blockToSectionCoord(maxY); sy++) {
+                    LevelChunkSection section = chunk.getSection(chunk.getSectionIndexFromSectionY(sy));
+                    if (!section.hasOnlyAir() && section.maybeHas(state -> state.is(BeyondBlocks.ENADRAKE_HUT.get()))) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     class EnadrakeEnterHutGoal extends MoveToBlockGoal {
         EnadrakeEntity entity;
         boolean reachedTarget;
         int stuckTicks = 0;
         boolean giveUp;
+        private final int hutSearchRange;
+        private final int hutVerticalRange;
 
         public EnadrakeEnterHutGoal(PathfinderMob mob, double speedModifier, int searchRange, int verticalSearchRange) {
             super(mob, speedModifier, searchRange, verticalSearchRange);
             this.entity = (EnadrakeEntity) mob;
+            this.hutSearchRange = searchRange;
+            this.hutVerticalRange = verticalSearchRange;
         }
 
         @Override
         protected int nextStartTick(PathfinderMob mob) {
             return reducedTickDelay(20 + mob.getRandom().nextInt(40));
+        }
+
+        // the scan reads ~18k blocks every 1 to 3 s, and it cannot find a hut when no section it covers holds one
+        @Override
+        protected boolean findNearestBlock() {
+            if (!hutMaybeWithin(this.mob.level(), this.mob.blockPosition(), this.hutSearchRange, this.hutVerticalRange)) {
+                return false;
+            }
+            return super.findNearestBlock();
         }
 
         @Override
@@ -853,7 +931,6 @@ public class EnadrakeEntity extends PathfinderMob {
             //    }
             //}
 
-            // pod behaviour: entity.setFleeToHut(false) here resets the flag when the enadrake enters the hut
 
             super.stop();
         }
@@ -867,7 +944,6 @@ public class EnadrakeEntity extends PathfinderMob {
             BlockState blockstate = levelReader.getBlockState(blockPos);
             if (!blockstate.is(BeyondBlocks.ENADRAKE_HUT.get())) return false;
 
-            // Only target ground-level huts (not elevated on expansion blocks)
             //Block belowBlock = levelReader.getBlockState(blockPos.below()).getBlock();
             //if (belowBlock instanceof EnadrakeHutBlock
             //    || belowBlock == BeyondBlocks.ENADRAKE_FLARE.get()
@@ -876,10 +952,8 @@ public class EnadrakeEntity extends PathfinderMob {
             BlockEntity hut = entity.level().getBlockEntity(blockPos);
             if (!(hut instanceof EnadrakeHutBlockEntity hutblockentity)) return false;
 
-            // Not occupied AND not reserved by another enadrake
             return hutblockentity.isAvailable();
 
-            // Reserve immediately so other enadrakes pick a different hut
             //hutblockentity.reserve(entity.getUUID());
             //return true;
         }
@@ -948,7 +1022,7 @@ public class EnadrakeEntity extends PathfinderMob {
             // Give up if stuck for too long (e.g. blocked by flares/walls)
             if (mob.getNavigation().isStuck()) {
                 stuckTicks++;
-                if (stuckTicks > 60) { // ~3 seconds stuck → find another hut
+                if (stuckTicks > 60) {
                     giveUp = true;
                 } else if (stuckTicks % 10 == 0) {
                     BlockPos blockpos = this.getMoveToTarget();
@@ -977,7 +1051,7 @@ public class EnadrakeEntity extends PathfinderMob {
         public boolean canUse() {
             // re-planting at 10% per tick, since canUse is polled every tick and more would re-plant almost on pickup
             ItemStack itemstack = entity.getItemBySlot(EquipmentSlot.MAINHAND);
-            if (itemstack.is(BeyondBlocks.OBIROOT_SPROUT.asItem()) && level().random.nextFloat() < 0.1f) return super.canUse();
+            if (itemstack.is(BeyondBlocks.OBIROOT_SPROUT.asItem()) && level().random.nextFloat() < 0.1f && entity.mayGrief()) return super.canUse();
             return false;
         }
 

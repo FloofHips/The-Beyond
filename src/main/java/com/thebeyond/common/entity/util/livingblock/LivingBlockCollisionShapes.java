@@ -165,18 +165,38 @@ public final class LivingBlockCollisionShapes {
                 ? EntitySelector.CAN_BE_COLLIDED_WITH
                 : EntitySelector.NO_SPECTATORS.and(entity::canCollideWith);
         AABB probe = collisionBox.inflate(QUERY_SLOP);
-        List<Entity> list = level.getEntities(entity, probe, predicate);
+        List<Entity> list = LivingBlockNeighbourhood.getEntities(level, entity, probe, predicate);
+        // contraption blocks are not in the level, so a living block meets them here, beside the entities
+        List<VoxelShape> moving = List.of();
+        if (entity instanceof LivingBlock && LivingBlockFrames.extraTerrain != null) {
+            List<VoxelShape> found = new ArrayList<>();
+            for (OrientedBox part : LivingBlockFrames.extraTerrain(level, probe)) {
+                if (part.getWorldAABB().intersects(probe)) {
+                    found.add(new OrientedBoxShape(part, part.getWorldAABB()));
+                }
+            }
+            moving = found;
+        }
         if (list.isEmpty()) {
-            return List.of();
+            return moving.isEmpty() ? List.of() : List.copyOf(moving);
         }
 
         if (entity instanceof LivingBlock asker && !asker.usesOrientedCollision()) {
-            List<VoxelShape> plain = new ArrayList<>(list.size());
+            List<VoxelShape> plain = new ArrayList<>(moving);
             for (Entity other : list) {
                 if (LivingBlockCollisionHandler.carrying(entity, other)) {
                     continue;
                 }
                 Placement precise = preciseGeometry(other);
+                List<OrientedBox> carried = crossFrameBoxes(entity, other, precise);
+                if (carried != null) {
+                    for (OrientedBox box : carried) {
+                        if (box.getWorldAABB().intersects(probe)) {
+                            plain.add(new OrientedBoxShape(box, box.getWorldAABB()));
+                        }
+                    }
+                    continue;
+                }
                 for (AABB piece : precise == null ? List.of(other.getBoundingBox()) : precise.boxes()) {
                     plain.add(Shapes.create(piece));
                 }
@@ -188,12 +208,21 @@ public final class LivingBlockCollisionShapes {
         boolean askerResolved = false;
         AABB stepFootprint = entity == null ? null : stepFootprint(entity, collisionBox);
 
-        List<VoxelShape> built = new ArrayList<>(list.size());
+        List<VoxelShape> built = new ArrayList<>(moving);
         for (Entity other : list) {
             if (LivingBlockCollisionHandler.carrying(entity, other)) {
                 continue;
             }
             Placement precise = preciseGeometry(other);
+            List<OrientedBox> carried = crossFrameBoxes(entity, other, precise);
+            if (carried != null) {
+                for (OrientedBox box : carried) {
+                    if (box.getWorldAABB().intersects(probe)) {
+                        built.add(new OrientedBoxShape(box, box.getWorldAABB()));
+                    }
+                }
+                continue;
+            }
             if (precise == null) {
                 built.add(Shapes.create(other.getBoundingBox()));
                 continue;
@@ -229,6 +258,16 @@ public final class LivingBlockCollisionShapes {
         double dx = positiveX > negativeX ? positiveX : negativeX > positiveX ? -negativeX : 0.0;
         double dz = positiveZ > negativeZ ? positiveZ : negativeZ > positiveZ ? -negativeZ : 0.0;
         return current.move(dx, 0.0, dz);
+    }
+
+    // a living block and an entity in different frames (a sub-level plot and the world) collide through carried boxes
+    @Nullable
+    static List<OrientedBox> crossFrameBoxes(@Nullable final Entity asker, final Entity other, @Nullable final Placement precise) {
+        if (LivingBlockFrames.hooks == null || !(asker instanceof LivingBlock || other instanceof LivingBlock)) {
+            return null;
+        }
+        return LivingBlockFrames.carriedBoxes(asker, other,
+                precise == null ? List.of(new OrientedBox(other.getBoundingBox())) : precise.obbs());
     }
 
     @Nullable

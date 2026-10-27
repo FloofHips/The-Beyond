@@ -53,8 +53,7 @@ public class OcarinaOverlay implements LayeredDraw.Layer {
 
         guiGraphics.blit(FRAME, screenWidth/2 + 91 , screenHeight - 22, 0, 0, 30, 20, 30,20);
 
-        OcarinaItem ocarinaItem = (OcarinaItem) ocarina.getItem();
-        List<TrinketEntity> list = ocarinaItem.getLinkedTrinkets();
+        List<TrinketEntity> list = OcarinaItem.getLinkedTrinkets(player);
 
         guiGraphics.blit(getTexture(ocarina), screenWidth/2 + 98 , screenHeight - 20, 0, 0, 16, 16, 16,16);
 

@@ -90,7 +90,6 @@ public class TheBeyond {
             PackSelectionConfig selection =
                     new PackSelectionConfig(!convergencePresent, Pack.Position.TOP, false);
 
-            // addons contribute child packs that rewrite the End height bounds, the highest priority wins
             com.thebeyond.api.event.BeyondTerrainPackAssembleEvent assembleEvent =
                     new com.thebeyond.api.event.BeyondTerrainPackAssembleEvent(event);
             net.neoforged.fml.ModLoader.postEvent(assembleEvent);

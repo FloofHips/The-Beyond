@@ -5,12 +5,14 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.thebeyond.client.event.ModClientEvents;
+import com.thebeyond.client.renderer.UnpackedModel;
 import com.mojang.blaze3d.vertex.*;
 import com.thebeyond.common.registry.BeyondParticleTypes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
@@ -144,19 +146,30 @@ public class RenderUtils {
 
     /** A model resolved once per frame and reused across draws, sparing the lookup and allocation per call. */
     public static final class ResolvedModel {
+        private final ResourceLocation location;
         private final List<BakedModel> passes;
-        private ResolvedModel(List<BakedModel> passes) { this.passes = passes; }
+        private ResolvedModel(ResourceLocation location, List<BakedModel> passes) {
+            this.location = location;
+            this.passes = passes;
+        }
 
         public static ResolvedModel resolve(ResourceLocation loc) {
             ModelManager manager = Minecraft.getInstance().getModelManager();
-            return new ResolvedModel(manager.getModel(ModelResourceLocation.standalone(loc)).getRenderPasses(ItemStack.EMPTY, true));
+            return new ResolvedModel(loc, manager.getModel(ModelResourceLocation.standalone(loc)).getRenderPasses(ItemStack.EMPTY, true));
         }
 
-        public void emit(PoseStack poseStack, VertexConsumer consumer, int packedLight, int overlayCoord, float r, float g, float b, float a) {
+        public void emit(PoseStack poseStack, VertexConsumer consumer, RenderType type, int packedLight, int overlayCoord,
+                         float r, float g, float b, float a) {
             ItemRenderer renderer = Minecraft.getInstance().getItemRenderer();
             for (BakedModel pass : passes) {
                 consumer.setColor(r, g, b, a);
-                renderer.renderModelLists(pass, ItemStack.EMPTY, packedLight, overlayCoord, poseStack, consumer);
+                UnpackedModel replay = UnpackedModel.replayFor(pass, this.location, consumer, type, renderer, poseStack,
+                        packedLight, overlayCoord);
+                if (replay != null) {
+                    replay.emit(poseStack.last(), consumer, packedLight, overlayCoord);
+                } else {
+                    renderer.renderModelLists(pass, ItemStack.EMPTY, packedLight, overlayCoord, poseStack, consumer);
+                }
                 consumer.setColor(1, 1, 1, 1);
             }
         }

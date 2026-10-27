@@ -23,6 +23,8 @@ public class BeyondConfig {
     public static ModConfigSpec.EnumValue<PrismographResolution> PRISMOGRAPH_RESOLUTION;
     public static ModConfigSpec.IntValue PRISMOGRAPH_POSTERIZATION;
     public static ModConfigSpec.BooleanValue DROP_TOTEM_OF_RESPITE;
+    public static ModConfigSpec.IntValue OCARINA_MAX_TRINKETS;
+    public static ModConfigSpec.BooleanValue ENADRAKES_RESPECT_MOB_GRIEFING;
 
     public static ModConfigSpec.BooleanValue DEAFENING_DISENGAGE;
     public static ModConfigSpec.IntValue DEAFENING_LOCAL_CAP;
@@ -116,6 +118,14 @@ public class BeyondConfig {
                 .comment("Posterization quant step: 1 = full color, higher = coarser bands (~10 reads retro).",
                         "Changing this is costless, it is purely to taste")
                 .defineInRange("PrismographPosterization", 10, 1, 20);
+
+        OCARINA_MAX_TRINKETS = COMMON_BUILDER
+                .comment("Most trinkets one player's ocarina commands at once, nearest first. 0 removes the limit")
+                .defineInRange("OcarinaMaxTrinkets", 0, 0, 100000);
+
+        ENADRAKES_RESPECT_MOB_GRIEFING = COMMON_BUILDER
+                .comment("Enadrakes follow mobGriefing like vanilla mobs: with it off they stop taking items, planting, harvesting and building refuges")
+                .define("EnadrakesRespectMobGriefing", false);
         COMMON_BUILDER.pop();
 
         COMMON_CONFIG = COMMON_BUILDER.build();

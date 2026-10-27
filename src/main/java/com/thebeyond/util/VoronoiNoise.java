@@ -191,25 +191,117 @@ public class VoronoiNoise {
         );
     }
 
+    private static final int[] NEAREST_FIRST = {0, -1, 1, -2, 2};
+
+    private static double boxGap(int cur, double v) {
+        double below = cur - 1 - v;
+        if (below > 0.0) return below * below;
+        double above = v - (cur + 1);
+        return above > 0.0 ? above * above : 0.0;
+    }
+
     public CellResult3D getCell(double x, double y, double z, double frequency) {
         x *= frequency;
         y *= frequency;
         z *= frequency;
 
+        Nearest n = this.nearest(x, y, z, false);
+        return new CellResult3D(
+                n.cellId(),
+                getDistance(n.px() - x, n.py() - y, n.pz() - z),
+                n.px() / frequency,
+                n.py() / frequency,
+                n.pz() / frequency
+        );
+    }
+
+    private record Nearest(long cellId, double px, double py, double pz, double dist, double secondDist,
+                           int xInt, int yInt, int zInt) {}
+
+    private static final class NearCell {
+        private VoronoiNoise owner;
+        private double frequency;
+        private int xInt;
+        private int yInt;
+        private int zInt;
+        private double x;
+        private double y;
+        private double z;
+        private double reachSq = -1.0;
+        private long cellId;
+    }
+
+    private static final ThreadLocal<NearCell> NEAR_CELL = ThreadLocal.withInitial(NearCell::new);
+
+    /** getCell(x, y, z, frequency).cellId(), reusing this thread's last answer while no other candidate can be nearer. */
+    public long cellId3D(double x, double y, double z, double frequency) {
+        x *= frequency;
+        y *= frequency;
+        z *= frequency;
+        NearCell near = NEAR_CELL.get();
+        if (near.owner == this && near.frequency == frequency
+                && near.xInt == (int)(x > 0 ? x : x - 1) && near.yInt == (int)(y > 0 ? y : y - 1)
+                && near.zInt == (int)(z > 0 ? z : z - 1)) {
+            double dx = x - near.x;
+            double dy = y - near.y;
+            double dz = z - near.z;
+            if (dx * dx + dy * dy + dz * dz < near.reachSq) {
+                return near.cellId;
+            }
+        }
+        Nearest n = this.nearest(x, y, z, true);
+        // same 125 candidates, so the answer holds while the point moves less than half the gap to the runner-up
+        double reach = (Math.sqrt(n.secondDist()) - Math.sqrt(n.dist())) * 0.5 - 1.0e-6;
+        near.owner = this;
+        near.frequency = frequency;
+        near.xInt = n.xInt();
+        near.yInt = n.yInt();
+        near.zInt = n.zInt();
+        near.x = x;
+        near.y = y;
+        near.z = z;
+        near.reachSq = reach > 0.0 ? reach * reach : -1.0;
+        near.cellId = n.cellId();
+        return n.cellId();
+    }
+
+    private Nearest nearest(double x, double y, double z, boolean withSecond) {
         int xInt = (int)(x > 0 ? x : x - 1);
         int yInt = (int)(y > 0 ? y : y - 1);
         int zInt = (int)(z > 0 ? z : z - 1);
 
         double minDist = Double.MAX_VALUE;
+        double secondDist = Double.MAX_VALUE;
+        double limit = Double.MAX_VALUE;
+        int bestIdx = Integer.MAX_VALUE;
         long closestCellId = 0;
 
         double xCandidate = 0;
         double yCandidate = 0;
         double zCandidate = 0;
 
-        for (int zCur = zInt - 2; zCur <= zInt + 2; zCur++) {
-            for (int yCur = yInt - 2; yCur <= yInt + 2; yCur++) {
-                for (int xCur = xInt - 2; xCur <= xInt + 2; xCur++) {
+        // a cell's point lies within one unit of its corner, so a plane, row or cell beyond the limit cannot change the answer
+        double[] gap = new double[15];
+        for (int o = 0; o < 5; o++) {
+            gap[o] = boxGap(xInt + o - 2, x);
+            gap[5 + o] = boxGap(yInt + o - 2, y);
+            gap[10 + o] = boxGap(zInt + o - 2, z);
+        }
+
+        for (int iz = 0; iz < 5; iz++) {
+            int dz = NEAREST_FIRST[iz];
+            double gz = gap[10 + dz + 2];
+            if (gz > limit) continue;
+            int zCur = zInt + dz;
+            for (int iy = 0; iy < 5; iy++) {
+                int dy = NEAREST_FIRST[iy];
+                double gzy = gz + gap[5 + dy + 2];
+                if (gzy > limit) continue;
+                int yCur = yInt + dy;
+                for (int ix = 0; ix < 5; ix++) {
+                    int dx = NEAREST_FIRST[ix];
+                    if (gzy + gap[dx + 2] > limit) continue;
+                    int xCur = xInt + dx;
 
                     long cellSeed = (long)xCur * 1619L
                             + (long)yCur * 31337L
@@ -239,24 +331,28 @@ public class VoronoiNoise {
 
                     double dist = xDist * xDist + yDist * yDist + zDist * zDist;
 
-                    if (dist < minDist) {
+                    // ties go to the cell the plain z,y,x loop meets first
+                    int idx = ((dz + 2) * 5 + (dy + 2)) * 5 + (dx + 2);
+                    if (dist < minDist || (dist == minDist && idx < bestIdx)) {
+                        secondDist = minDist;
                         minDist = dist;
+                        limit = (withSecond ? secondDist : dist) * 1.000000001 + 1.0e-12;
+                        bestIdx = idx;
                         closestCellId = cellSeed;
                         xCandidate = xPos;
                         yCandidate = yPos;
                         zCandidate = zPos;
+                    } else if (dist < secondDist) {
+                        secondDist = dist;
+                        if (withSecond) {
+                            limit = dist * 1.000000001 + 1.0e-12;
+                        }
                     }
                 }
             }
         }
 
-        return new CellResult3D(
-                closestCellId,
-                getDistance(xCandidate - x, yCandidate - y, zCandidate - z),
-                xCandidate / frequency,
-                yCandidate / frequency,
-                zCandidate / frequency
-        );
+        return new Nearest(closestCellId, xCandidate, yCandidate, zCandidate, minDist, secondDist, xInt, yInt, zInt);
     }
 
     public record CellResult(long cellId, double distance, double cellX, double cellZ) {}

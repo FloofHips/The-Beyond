@@ -13,6 +13,7 @@ import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -46,7 +47,7 @@ public class CameraViewfinderLayer implements LayeredDraw.Layer {
         float dt = deltaTracker.getGameTimeDeltaTicks();
         scopeScale = Mth.lerp(0.5F * dt, scopeScale, 1.3F);
         panelProgress = Mth.lerp(0.15F * dt, panelProgress, 7F);
-        color = (float) Mth.lerp(0.1 * dt, color, 0f);
+        color = (float) Mth.lerp(0.05 * dt, color, 0f);
 
         // drawn only in first person, third person keeps it ticking so switching back resumes mid-raise
         if (mc.options.hideGui || !mc.options.getCameraType().isFirstPerson()) {
@@ -73,6 +74,16 @@ public class CameraViewfinderLayer implements LayeredDraw.Layer {
         guiGraphics.fill(RenderType.gui(), 0, 0, guiGraphics.guiWidth(), l, -90, 0xFF000000);
         guiGraphics.fill(RenderType.gui(), 0, l, k, j1, -90, 0xFF000000);
         guiGraphics.fill(RenderType.gui(), i1, l, guiGraphics.guiWidth(), j1, -90, 0xFF000000);
+
+//        Component component = Component.translatable("mount.onboard", mc.options.keyAttack.getTranslatedKeyMessage());
+//        int textWidth = mc.font.width(component);
+//        int x = (guiGraphics.guiWidth() - textWidth) / 2;
+//        int y = guiGraphics.guiHeight() - mc.font.lineHeight - 20;
+//
+//        int alpha = (int) Mth.lerp(color, 0, 255);
+//        int argb = (alpha << 24) | 0xFFFFFF;
+//
+//        guiGraphics.drawString(mc.font, component, x, y, argb, false);
     }
 
     private int renderLayer(GuiGraphics guiGraphics, float baseScale, ResourceLocation texture) {
@@ -97,7 +108,7 @@ public class CameraViewfinderLayer implements LayeredDraw.Layer {
         guiGraphics.pose().translate(guiGraphics.guiWidth() / 2f, guiGraphics.guiHeight() / 2f, 0f);
         guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(rotation));
         guiGraphics.pose().translate(-i / 2f, -i / 2f, 0f);
-        guiGraphics.pose().translate(0, -22*panelProgress, 0f);
+        guiGraphics.pose().translate(0, -fMin*0.07f*panelProgress, 0f);//
 
         RenderSystem.setShaderColor(1-color, 1-color, 1-color, 1);
         guiGraphics.blit(PANEL, 0, 0, -90, 0.0F, 0.0F, i, i, i, i);

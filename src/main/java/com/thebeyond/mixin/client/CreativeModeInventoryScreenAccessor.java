@@ -1,4 +1,4 @@
-package com.thebeyond.mixin;
+package com.thebeyond.mixin.client;
 
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;

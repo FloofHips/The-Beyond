@@ -67,7 +67,8 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
     public static final int MODE_QUADRANT = 3;
 
     // button labels in MODE order, raw strings so this class still loads on the server
-    public static final String[] MODE_NAMES = {"Mix-up", "Carousel", "Line", "Quadrant"};
+    public static final String[] MODE_KEYS = {"screen.the_beyond.projector.mix_up", "screen.the_beyond.projector.carousel",
+            "screen.the_beyond.projector.line", "screen.the_beyond.projector.quadrant"};
 
     private static final Component DEFAULT_NAME = Component.translatable("container.the_beyond.projector");
 
@@ -214,7 +215,9 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
     }
 
     public static void serverTick(net.minecraft.world.level.Level level, BlockPos pos, BlockState state, ProjectorBlockEntity be) {
-
+        if (level instanceof net.minecraft.server.level.ServerLevel server) {
+            ProjectorMapSync.tick(server, pos, be.items);
+        }
     }
 
     @Override
