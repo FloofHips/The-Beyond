@@ -5,6 +5,7 @@ The mod aims to fully overhaul the end dimension with new biomes, mobs, structur
 - A bunch of fun new mechanics and mobs
 
 # Please install [Isleweaver](https://modrinth.com/mod/isleweaver) by Nacolla if you are playing with other end mods!
+# Please do NOT port the mod to 1.20.1 or any other version.
 
 \*Many many MANY updates are planned, adding a very large amount of content I am excited to share, but for now have this early version and give me your feedback :)
 
