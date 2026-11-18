@@ -1,25 +1,18 @@
+The mod aims to fully overhaul the end dimension with new biomes, mobs, structures and mechanics! While also building on lore in a fun way. The current version is a very early access beta with:
+- Full overhaul of the End terrain generation
+- New biomes to explore
+- Full end lighting and mood rehaul
+- A bunch of fun new mechanics and mobs
 
-Installation information
-=======
+# Please install [Isleweaver](https://modrinth.com/mod/isleweaver) by Nacolla if you are playing with other end mods!
 
-This template repository can be directly cloned to get you started with a new
-mod. Simply create a new repository cloned from this one, by following the
-instructions provided by [GitHub](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template).
+\*Many many MANY updates are planned, adding a very large amount of content I am excited to share, but for now have this early version and give me your feedback :)
 
-Once you have your clone, simply open the repository in the IDE of your choice. The usual recommendation for an IDE is either IntelliJ IDEA or Eclipse.
+This document contains a lot of the planned content, but be warned of the spoilers...
+https://docs.google.com/document/d/1jZFZf_A8d_TKQQeG4zLG_Cc1RnvUUqWy6mZIh3X1KRo
 
-If at any point you are missing libraries in your IDE, or you've run into problems you can
-run `gradlew --refresh-dependencies` to refresh the local cache. `gradlew clean` to reset everything 
-{this does not affect your code} and then start the process again.
+![alt text](https://cdn.bsky.app/img/feed_fullsize/plain/did:plc:yqvl2lty52fv3nzga44yq3lo/bafkreifeicdy2iultnx7s3us5qrjk4yara6yb2wnatzuxhbyrjg3656ceu)
 
-Mapping Names:
-============
-By default, the MDK is configured to use the official mapping names from Mojang for methods and fields 
-in the Minecraft codebase. These names are covered by a specific license. All modders should be aware of this
-license. For the latest license text, refer to the mapping file itself, or the reference copy here:
-https://github.com/NeoForged/NeoForm/blob/main/Mojang.md
+![alt text](https://cdn.bsky.app/img/feed_fullsize/plain/did:plc:yqvl2lty52fv3nzga44yq3lo/bafkreig24xb2nk7qsncaq5uis3czvmmwqzq2kxpwkqr57iqz5efvvcytli)
 
-Additional Resources: 
-==========
-Community Documentation: https://docs.neoforged.net/  
-NeoForged Discord: https://discord.neoforged.net/
+![alt text](https://cdn.bsky.app/img/feed_fullsize/plain/did:plc:yqvl2lty52fv3nzga44yq3lo/bafkreicv4o7jblrfxryw2ylwag37mepmms4u6otzmrdwulpcgonlvburwi)
