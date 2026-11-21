@@ -71,7 +71,6 @@ public class AuroraBorealisRenderer {
 
         ensureActiveOffsets(playerChunk, renderDistance);
 
-        // Resolve the 5 distinct aurora models ONCE per call instead of per tile.
         RenderUtils.ResolvedModel mCrumbling = RenderUtils.ResolvedModel.resolve(AURORA_CRUMBLING_MODEL);
         RenderUtils.ResolvedModel m0 = RenderUtils.ResolvedModel.resolve(AURORA_0_MODEL);
         RenderUtils.ResolvedModel m1 = RenderUtils.ResolvedModel.resolve(AURORA_1_MODEL);
@@ -93,31 +92,12 @@ public class AuroraBorealisRenderer {
                         chunkPos.getMiddleBlockZ()
                 );
 
-                // ~96-block half-extent box bounds the ~32x32 geometry (+ wiggle) so off-screen tiles cull.
-                AABB pickaxeAABB = new AABB(
-                        centerPos.getX() - 96, centerPos.getY() - 96, centerPos.getZ() - 96,
-                        centerPos.getX() + 96, centerPos.getY() + 96, centerPos.getZ() + 96
-                );
+                float wiggle = Mth.sin((time + (chunkPos.z)*20)/10);
+                float wiggle2 = Mth.sin((time + yoffset + (chunkPos.z)*10)/20) + (Mth.sin(chunkPos.z/2f)*15);
 
-                if (frustum.isVisible(pickaxeAABB)) {
+                if (frustum.isVisible(tileBounds(centerPos, yoffset, wiggle, wiggle2, rainlevel))) {
                     poseStack.pushPose();
-
-                    poseStack.translate(centerPos.getX(), centerPos.getY(), centerPos.getZ());
-                    float wiggle = Mth.sin((time + (chunkPos.z)*20)/10);
-                    float wiggle2 = Mth.sin((time + yoffset + (chunkPos.z)*10)/20) + (Mth.sin(chunkPos.z/2f)*15);
-
-
-                    poseStack.translate(wiggle2, wiggle, 0);
-                    poseStack.translate(0, yoffset, 0);
-                    poseStack.translate(-0.5f, -0.5f, -0.5f);
-                    poseStack.scale( 32,32,32);
-
-                    poseStack.mulPose(Axis.XP.rotationDegrees(-90f));
-
-                    poseStack.translate(0, -0.5f, -0.5f);
-
-                    poseStack.translate(0, 0, (1 - rainlevel)*2);
-                    poseStack.scale((float) rainlevel, (float) rainlevel, (float) rainlevel);
+                    applyTileTransform(poseStack, centerPos, yoffset, wiggle, wiggle2, rainlevel);
 
                     double chunkCenterX = chunkPos.getMiddleBlockX();
                     double chunkCenterZ = chunkPos.getMiddleBlockZ();
@@ -142,6 +122,30 @@ public class AuroraBorealisRenderer {
                 }
             }
         }
+    }
+
+    static void applyTileTransform(PoseStack poseStack, BlockPos centerPos, float yoffset, float wiggle, float wiggle2, double rainlevel) {
+        poseStack.translate(centerPos.getX(), centerPos.getY(), centerPos.getZ());
+        poseStack.translate(wiggle2, wiggle, 0);
+        poseStack.translate(0, yoffset, 0);
+        poseStack.translate(-0.5f, -0.5f, -0.5f);
+        poseStack.scale( 32,32,32);
+
+        poseStack.mulPose(Axis.XP.rotationDegrees(-90f));
+
+        poseStack.translate(0, -0.5f, -0.5f);
+
+        poseStack.translate(0, 0, (1 - rainlevel)*2);
+        poseStack.scale((float) rainlevel, (float) rainlevel, (float) rainlevel);
+    }
+
+    static AABB tileBounds(BlockPos centerPos, float yoffset, float wiggle, float wiggle2, double rainlevel) {
+        double s = 32 * rainlevel;
+        double lo = Math.min(0, s), hi = Math.max(0, s);
+        double x0 = centerPos.getX() - 0.5 + wiggle2;
+        double y0 = centerPos.getY() + yoffset - 0.5 + wiggle + 32 * (2 * (1 - rainlevel) - 0.5);
+        double z0 = centerPos.getZ() + 15.5;
+        return new AABB(x0 + lo - 0.5, y0 + lo - 0.5, z0 - hi - 0.5, x0 + hi + 0.5, y0 + hi + 0.5, z0 - lo + 0.5);
     }
 
     public static ResourceLocation getAuroraModel(int relX, int relZ, ChunkPos chunkPos, int renderDistance) {

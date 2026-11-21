@@ -93,7 +93,7 @@ public class BeyondEntityEvents {
     @SubscribeEvent
     public static void onEntityHurt(LivingDamageEvent.Post event) {
         Entity entity = event.getSource().getEntity();
-        if (entity == null) return;
+        if (entity == null || entity == event.getEntity()) return;
 
         if (entity instanceof LivingEntity livingEntity && !livingEntity.hasEffect(BeyondEffects.EMPATHY)) return;
         entity.hurt(event.getSource(), event.getNewDamage());

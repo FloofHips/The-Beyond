@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /** No rain or snow strands in the End, modded biomes with precipitation would leak them. */
-@Mixin(LevelRenderer.class)
+@Mixin(value = LevelRenderer.class, priority = 1100)
 public abstract class LevelRendererWeatherSuppressMixin {
     @Inject(method = "renderSnowAndRain", at = @At("HEAD"), cancellable = true)
     private void the_beyond$skipEndWeather(CallbackInfo ci) {

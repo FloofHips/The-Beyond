@@ -24,11 +24,15 @@
         "enderscape:void_sky_islands",
         "endercon:end_depths",
         "endercon:end_skies",
-        "endercon:end_sky_islands"
+        "endercon:end_sky_islands",
+        "unusualend:warped_reef"
       ],
       "inner_void_biomes": [
         "the_beyond:true_void",
         "minecraft:small_end_islands"
+      ],
+      "land_rate_void_biomes": [
+        "unusualend:warped_reef"
       ],
       "center_biome": "minecraft:the_end",
       "bottom_biome": "the_beyond:the_paths"

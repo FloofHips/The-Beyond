@@ -460,6 +460,9 @@ public class Lang extends LanguageProvider {
         add("the_beyond.configuration.wardenEnrageAnger", "Warden enrage anger");
         add("the_beyond.configuration.wardenSmellRadius", "Warden smell radius");
         add("the_beyond.configuration.voidSeaOffsetAboveFloor", "Void Sea offset above floor");
+        add("the_beyond.configuration.worldgen", "World generation");
+        add("the_beyond.configuration.biomeWidthMultiplier", "End biome width (experimental)");
+        add("the_beyond.configuration.biomeHeightMultiplier", "End biome height (experimental)");
 
         add("the_beyond.configuration.DropTotemOfRespite", "Totem of Respite drops");
         add("the_beyond.configuration.PrismographResolution", "Prismograph resolution");

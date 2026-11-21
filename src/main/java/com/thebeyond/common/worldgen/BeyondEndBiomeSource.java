@@ -10,7 +10,6 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.*;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.thebeyond.TheBeyond;
-import com.thebeyond.util.HashSimplexNoise;
 import com.thebeyond.util.VoronoiNoise;
 import net.minecraft.core.*;
 import net.minecraft.core.registries.Registries;
@@ -115,6 +114,8 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
                     Codec.INT.optionalFieldOf("farlands_z_boundary").forGetter(source -> source.farlandsZBoundary),
                     LENIENT_BIOME_LIST.fieldOf("outer_void_biomes").forGetter(source -> source.outerVoidBiomeList),
                     LENIENT_BIOME_LIST.fieldOf("inner_void_biomes").forGetter(source -> source.innerVoidBiomeList),
+                    LENIENT_BIOME_LIST.optionalFieldOf("land_rate_void_biomes", List.of())
+                            .forGetter(source -> source.landRateVoidBiomeList),
                     LENIENT_BIOME.fieldOf("center_biome").forGetter(source -> source.centerBiome),
                     LENIENT_BIOME.fieldOf("bottom_biome").forGetter(source -> source.bottomBiome),
                     BeyondTerrainParams.FULL_CODEC.optionalFieldOf("terrain_params", BeyondTerrainParams.DEFAULTS)
@@ -131,6 +132,7 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
     private final List<Holder<Biome>> outerVoidBiomeList;
     private final List<Holder<Biome>> outerVoidBiomeListNoTheVoid;
     private final List<Holder<Biome>> innerVoidBiomeList;
+    private final List<Holder<Biome>> landRateVoidBiomeList;
     private final Holder<Biome> centerBiome;
     private final Holder<Biome> bottomBiome;
     /** Effective values live in {@link BeyondEndChunkGenerator#activeTerrainParams}, written by this constructor. */
@@ -138,41 +140,21 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
     private Set<Holder<Biome>> allBiomes;
     private final boolean farlandsGateActive;
 
-    /** Per thread: the biome is y-invariant over about 80 samples per quart column, and chunk generation is threaded. */
-    private static final class ColumnCache {
-        int blockX = Integer.MIN_VALUE;
-        int blockZ = Integer.MIN_VALUE;
-        long absSeed;
-    }
+    private final Set<ResourceKey<Biome>> disabledBiomes = new HashSet<>();
+    private volatile Map<List<Holder<Biome>>, PoolMask> poolMasks;
 
-    private final ThreadLocal<ColumnCache> columnCacheTL = ThreadLocal.withInitial(ColumnCache::new);
+    private record PoolMask(boolean[] off, int[] enabled) {}
 
-    private static final int BASELINE_POOL_SIZE = 12;
+    private volatile LandRateDraw landRateDraw;
 
-    private volatile double cachedBiomeNoiseScale = -1.0;
-
-    /** Scales by sqrt(BASELINE / poolSize) since patches are 2D, clamped to 0.35..1 times 0.02, tainted pool only. */
-    private double getBiomeNoiseScale() {
-        double cached = cachedBiomeNoiseScale;
-        if (cached > 0) return cached;
-        int poolSize = Math.max(taintedEndBiomeList.size(), 1);
-        double factor;
-        if (poolSize <= BASELINE_POOL_SIZE) {
-            factor = 1.0;
-        } else {
-            factor = Math.sqrt((double) BASELINE_POOL_SIZE / poolSize);
-            if (factor < 0.35) factor = 0.35;
-        }
-        double scale = 0.02 * factor;
-        cachedBiomeNoiseScale = scale;
-        return scale;
-    }
+    private record LandRateDraw(List<Holder<Biome>> slots, int cells) {}
 
     public BeyondEndBiomeSource(List<Holder<Biome>> taintedEndBiomes,
                                 List<Holder<Biome>> farlandsBiomes,
                                 Optional<Integer> farlandsZBoundary,
                                 List<Holder<Biome>> outerVoidBiomes,
                                 List<Holder<Biome>> innerVoidBiomes,
+                                List<Holder<Biome>> landRateVoidBiomes,
                                 Holder<Biome> centerBiome, Holder<Biome> bottomBiome,
                                 BeyondTerrainParams terrainParams) {
         super();
@@ -186,6 +168,7 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
                 .filter(h -> !h.is(net.minecraft.world.level.biome.Biomes.THE_VOID))
                 .toList();
         this.innerVoidBiomeList = innerVoidBiomes;
+        this.landRateVoidBiomeList = landRateVoidBiomes;
         this.centerBiome = centerBiome;
         this.bottomBiome = bottomBiome;
         this.terrainParams = terrainParams;
@@ -197,6 +180,7 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
                 .addAll(farlandsBiomeList)
                 .addAll(innerVoidBiomeList)
                 .addAll(outerVoidBiomeList)
+                .addAll(landRateVoidBiomeList)
                 .add(centerBiome)
                 .add(bottomBiome)
                 .build();
@@ -216,9 +200,7 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
             TheBeyond.LOGGER.info("[TheBeyond] Custom terrain_params: wrap_range={} warp_amplitude={} warp_scale={}",
                     terrainParams.wrapRange(), terrainParams.warpAmplitude(), terrainParams.warpScale());
         }
-        TheBeyond.LOGGER.debug("[TheBeyond] Biome noise scale {} for {} tainted biomes",
-                getBiomeNoiseScale(), taintedEndBiomeList.size());
-
+        rebuildPoolMasks();
         // terrain state is not set here, CreateWorldScreen builds this even without the pack, BeyondCoreLifecycle sets it
     }
 
@@ -232,7 +214,6 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
         return allBiomes.stream();
     }
 
-    /** Adds discovered biomes to the tainted pool at server start, skipping duplicates, and returns how many were added. */
     @Override
     public int injectBiomesIntoTaintedPool(Collection<Holder<Biome>> biomes) {
         Set<ResourceKey<Biome>> existingKeys = allBiomes.stream()
@@ -245,7 +226,7 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
 
         if (toAdd.isEmpty()) return 0;
 
-        // Overlay-only biomes (e.g. warped_reef) bypass the Voronoi pool but still reach allBiomes for /locate.
+        // Overlay-only biomes bypass the Voronoi pool but still reach allBiomes for /locate.
         List<Holder<Biome>> overlayOnly = toAdd.stream()
                 .filter(h -> h.unwrapKey().map(k -> BeyondBiomeRegistration.isPoolExcluded(k.location())).orElse(false))
                 .toList();
@@ -253,8 +234,7 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
                 .filter(h -> h.unwrapKey().map(k -> !BeyondBiomeRegistration.isPoolExcluded(k.location())).orElse(true))
                 .toList();
         taintedEndBiomeList.addAll(poolEligible);
-
-        cachedBiomeNoiseScale = -1.0;
+        rebuildPoolMasks();
 
         allBiomes = ImmutableSet.<Holder<Biome>>builder()
                 .addAll(taintedEndBiomeList)
@@ -262,6 +242,7 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
                 .addAll(farlandsBiomeList)
                 .addAll(innerVoidBiomeList)
                 .addAll(outerVoidBiomeList)
+                .addAll(landRateVoidBiomeList)
                 .add(centerBiome)
                 .add(bottomBiome)
                 .build();
@@ -292,38 +273,8 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
         if (blockY < dimMinY + 10)
             return bottomBiome;
 
-        ColumnCache cache = columnCacheTL.get();
-        final long absSeed;
-        if (cache.blockX == blockX && cache.blockZ == blockZ) {
-            absSeed = cache.absSeed;
-        } else {
-            // on purpose: the curve is tuned to blockX with biomeZ, and unwrapped biome coords keep the layout from repeating
-            int biomeX = blockX / 64;
-            int biomeZ = blockZ / 64;
-            float distanceFromOrigin = (float) Math.sqrt((double) blockX * blockX + (double) biomeZ * biomeZ);
-
-            double horizontalScale = BeyondEndChunkGenerator.getHorizontalBaseScale(biomeX, biomeZ);
-            double threshold = BeyondEndChunkGenerator.getThreshold(biomeX, biomeZ, distanceFromOrigin);
-
-            HashSimplexNoise biomeNoiseField = BeyondEndChunkGenerator.biomeSimplexNoise;
-            if (biomeNoiseField == null) {
-                return centerBiome;
-            }
-            double biomeFreq = getBiomeNoiseScale();
-            double biomeNoise = biomeNoiseField.getValue(
-                    biomeX * horizontalScale * biomeFreq,
-                    biomeZ * horizontalScale * biomeFreq
-            );
-
-            if (voronoiNoise == null) voronoiNoise = Suppliers.memoize(() -> new VoronoiNoise(BeyondEndChunkGenerator.seed, (short) 0));
-
-            long seed = (long) (biomeNoise * threshold * 1000000) + biomeX * 31L + biomeZ * 961L;
-            absSeed = Math.abs(seed);
-
-            cache.blockX = blockX;
-            cache.blockZ = blockZ;
-            cache.absSeed = absSeed;
-        }
+        if (BeyondEndChunkGenerator.biomeSimplexNoise == null) return centerBiome;
+        if (voronoiNoise == null) voronoiNoise = Suppliers.memoize(() -> new VoronoiNoise(BeyondEndChunkGenerator.seed, (short) 0));
 
         // Inside 690 radius, skip getTerrainDensity (the costliest call here) entirely.
         if (distanceFromO <= 690) {
@@ -340,11 +291,12 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
                     ? outerVoidBiomeList
                     : (outerVoidBiomeListNoTheVoid.isEmpty() ? outerVoidBiomeList : outerVoidBiomeListNoTheVoid);
             if (voidPool.isEmpty()) return centerBiome;
-            int outer_void_index = selectBiome(blockX, blockY, blockZ, voidPool);
-            return voidPool.get(outer_void_index);
+            long cellId = cellId(blockX, blockY, blockZ);
+            Holder<Biome> landRate = landRateVoidBiome(cellId);
+            return landRate != null ? landRate : voidPool.get(selectBiome(cellId, voidPool));
         }
 
-        // solid columns only, so warped_reef never smears onto void columns near the_paths floor
+        // solid columns only, so a macro region never smears onto void columns near the_paths floor
         Holder<Biome> reefMacro = BeyondMacroRegions.queryAt(blockX, blockZ);
         if (reefMacro != null) return reefMacro;
 
@@ -358,10 +310,98 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
     }
 
     private int selectBiome(int x, int y, int z, List<Holder<Biome>> biomePool) {
-        double cellSize = 200.0;
-        long cellId = voronoiNoise.get().cellId3D(x, y, z, 1.0 / cellSize);
+        return selectBiome(cellId(x, y, z), biomePool);
+    }
 
-        return (int)(Math.abs(cellId) % biomePool.size());
+    /** Scaling y by width over height makes the cells that tall, and equal sizes give back the plain cubic cell. */
+    private long cellId(int x, int y, int z) {
+        double width = BiomeCellScale.cellWidth();
+        return voronoiNoise.get().cellId3D(x, y * (width / BiomeCellScale.cellHeight()), z, 1.0 / width);
+    }
+
+    private int selectBiome(long cellId, List<Holder<Biome>> biomePool) {
+        int index = (int)(Math.abs(cellId) % biomePool.size());
+        Map<List<Holder<Biome>>, PoolMask> masks = poolMasks;
+        if (masks == null) return index;
+        PoolMask mask = masks.get(biomePool);
+        if (mask == null || !mask.off()[index]) return index;
+        long h = cellId * 0x9E3779B97F4A7C15L;
+        return mask.enabled()[(int) Math.floorMod(h ^ (h >>> 32), (long) mask.enabled().length)];
+    }
+
+    /** The land-rate void biome of this cell, or null: each takes one void cell in (enabled land biomes + their count). */
+    private Holder<Biome> landRateVoidBiome(long cellId) {
+        LandRateDraw draw = landRateDraw;
+        if (draw == null) return null;
+        long h = (cellId ^ 0x5DEECE66DL) * 0x9E3779B97F4A7C15L;
+        int slot = (int) Math.floorMod(h ^ (h >>> 32), (long) draw.cells());
+        return slot < draw.slots().size() ? draw.slots().get(slot) : null;
+    }
+
+    /** Disabled biomes keep their pool slot, so only their own cells re-roll, and a pool left with none keeps them all. */
+    @Override
+    public int disableBiomes(Collection<ResourceKey<Biome>> keys) {
+        Set<ResourceKey<Biome>> pooled = Stream.of(taintedEndBiomeList, farlandsBiomeList, outerVoidBiomeList, innerVoidBiomeList)
+                .flatMap(List::stream).flatMap(h -> h.unwrapKey().stream()).collect(Collectors.toSet());
+        int added = 0;
+        for (ResourceKey<Biome> key : keys) {
+            if (pooled.contains(key)) {
+                if (disabledBiomes.add(key)) added++;
+            } else if (key.equals(centerBiome.unwrapKey().orElse(null)) || key.equals(bottomBiome.unwrapKey().orElse(null))) {
+                TheBeyond.LOGGER.warn("[TheBeyond] {} is the End's center or bottom biome and cannot be disabled", key.location());
+            }
+        }
+        rebuildPoolMasks();
+        return added;
+    }
+
+    private void rebuildPoolMasks() {
+        if (disabledBiomes.isEmpty() && landRateVoidBiomeList.isEmpty()) return;
+        Map<List<Holder<Biome>>, PoolMask> masks = new IdentityHashMap<>();
+        for (List<Holder<Biome>> pool : List.of(taintedEndBiomeList, farlandsBiomeList, outerVoidBiomeList,
+                outerVoidBiomeListNoTheVoid, innerVoidBiomeList)) {
+            // a land-rate biome also listed in the outer void pool gives its slots back, its share comes from its own draw
+            boolean outerVoid = pool == outerVoidBiomeList || pool == outerVoidBiomeListNoTheVoid;
+            boolean[] off = new boolean[pool.size()];
+            int[] enabled = new int[pool.size()];
+            int count = 0;
+            boolean anyDisabled = false;
+            for (int i = 0; i < pool.size(); i++) {
+                boolean disabled = isDisabled(pool.get(i));
+                anyDisabled |= disabled;
+                off[i] = disabled || outerVoid && landRateVoidBiomeList.contains(pool.get(i));
+                if (!off[i]) enabled[count++] = i;
+            }
+            if (count == 0 && !pool.isEmpty()) {
+                if (anyDisabled) {
+                    TheBeyond.LOGGER.warn("[TheBeyond] Every biome of an End pool is disabled, keeping that pool as it is: {}",
+                            pool.stream().flatMap(h -> h.unwrapKey().stream()).map(k -> k.location().toString()).toList());
+                }
+            } else if (count < pool.size()) {
+                masks.put(pool, new PoolMask(off, Arrays.copyOf(enabled, count)));
+            }
+        }
+        poolMasks = masks.isEmpty() ? null : masks;
+        rebuildLandRateDraw();
+    }
+
+    private void rebuildLandRateDraw() {
+        if (landRateVoidBiomeList.isEmpty()) return;
+        int land = (int) taintedEndBiomeList.stream().filter(h -> !isDisabled(h)).count();
+        if (land == 0) land = taintedEndBiomeList.size();
+        List<Holder<Biome>> slots = new ArrayList<>(landRateVoidBiomeList.size());
+        for (Holder<Biome> biome : landRateVoidBiomeList) slots.add(isDisabled(biome) ? null : biome);
+        LandRateDraw draw = new LandRateDraw(Collections.unmodifiableList(slots), land + slots.size());
+        if (!draw.equals(landRateDraw)) {
+            TheBeyond.LOGGER.info("[TheBeyond] Land-rate void biomes {} take one void cell in {} each",
+                    landRateVoidBiomeList.stream().flatMap(h -> h.unwrapKey().stream()).map(k -> k.location().toString()).toList(),
+                    draw.cells());
+        }
+        landRateDraw = draw;
+    }
+
+    private boolean isDisabled(Holder<Biome> biome) {
+        return biome.unwrapKey().map(disabledBiomes::contains).orElse(false);
     }
 
     /** Voronoi-cell biome of the tainted pool ignoring air and solid, for Isleweaver's 3D-cell feature filter. */

@@ -1,6 +1,7 @@
 package com.thebeyond.api.worldgen;
 
 import net.minecraft.core.Holder;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.biome.Biome;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -11,6 +12,8 @@ import java.util.Collection;
 public interface BeyondEndBiomeSourceApi {
     /** Adds discovered biomes to the tainted Voronoi pool at server start and returns how many were new. */
     int injectBiomesIntoTaintedPool(Collection<Holder<Biome>> biomes);
+
+    int disableBiomes(Collection<ResourceKey<Biome>> keys);
 
     Holder<Biome> voronoiCellBiomeIgnoringDensity(int blockX, int blockY, int blockZ);
 }

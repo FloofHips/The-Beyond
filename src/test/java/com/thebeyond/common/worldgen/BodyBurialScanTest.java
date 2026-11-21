@@ -377,12 +377,12 @@ class BodyBurialScanTest {
                                 for (int y = floor; y <= floor + H - 1; y++) {
                                     if (!BeyondEndChunkGenerator.isSolidTerrainScratch(y, scr)) continue;
                                     rawBuried++;
-                                    if (BeyondEndChunkGenerator.the_beyond$carveOutsideDist(boxes, wx, y, wz) != 0) bodyResidual++;
+                                    if (BeyondStructureCarver.the_beyond$carveOutsideDist(boxes, wx, y, wz) != 0) bodyResidual++;
                                 }
                             }
                             if (dxzToBox > REACH) {
                                 for (int y = floor; y <= floor + H - 1; y++) {
-                                    if (BeyondEndChunkGenerator.the_beyond$carveOutsideDist(boxes, wx, y, wz) <= REACH) {
+                                    if (BeyondStructureCarver.the_beyond$carveOutsideDist(boxes, wx, y, wz) <= REACH) {
                                         clearedBeyondRing++; break;
                                     }
                                 }
@@ -419,15 +419,15 @@ class BodyBurialScanTest {
         long indepMidInRange = 0, indepMidCells = 0, oneGapUncleared = 0, gapCells = 0;
         long bodyACleared = 0, bodyBCleared = 0;
         for (int y = 70; y <= 180; y++) {
-            int dIndep = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(independent, colX, y, colZ);
-            int dOne = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(oneStructure, colX, y, colZ);
+            int dIndep = BeyondStructureCarver.the_beyond$carveOutsideDist(independent, colX, y, colZ);
+            int dOne = BeyondStructureCarver.the_beyond$carveOutsideDist(oneStructure, colX, y, colZ);
             if (y >= 80 && y <= 100 && dIndep == 0) bodyACleared++;
             if (y >= 150 && y <= 170 && dIndep == 0) bodyBCleared++;
             if (y > 100 && y < 150) {
                 gapCells++;
                 if (dOne != 0) oneGapUncleared++;
                 // gap MIDDLE = beyond the FLOATING margin + erosion reach of BOTH boxes (the margin extends the clear)
-                int VM = BeyondEndChunkGenerator.FLOAT_VMARGIN;
+                int VM = BeyondStructureCarver.FLOAT_VMARGIN;
                 if (y - 100 - VM > REACH && 150 - VM - y > REACH) {
                     indepMidCells++;
                     if (dIndep <= REACH) indepMidInRange++;
@@ -458,11 +458,11 @@ class BodyBurialScanTest {
 
         long seatedFoundationInRange = 0, floatingBelowInRange = 0;
         for (int y = 100 - REACH; y < 100; y++) {
-            if (BeyondEndChunkGenerator.the_beyond$carveOutsideDist(seated, 0, y, 0) <= REACH) seatedFoundationInRange++;
-            if (BeyondEndChunkGenerator.the_beyond$carveOutsideDist(floating, 0, y, 0) <= REACH) floatingBelowInRange++;
+            if (BeyondStructureCarver.the_beyond$carveOutsideDist(seated, 0, y, 0) <= REACH) seatedFoundationInRange++;
+            if (BeyondStructureCarver.the_beyond$carveOutsideDist(floating, 0, y, 0) <= REACH) floatingBelowInRange++;
         }
         // a seated structure still erodes its SIDES above the base (2 blocks outside the footprint, mid-height)
-        int seatedSideDist = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(seated, 10, 120, 0);
+        int seatedSideDist = BeyondStructureCarver.the_beyond$carveOutsideDist(seated, 10, 120, 0);
 
         System.out.printf("[foundationProtectedGate] seatedFoundationInRange=%d floatingBelowInRange=%d seatedSideDist=%d%n",
                 seatedFoundationInRange, floatingBelowInRange, seatedSideDist);
@@ -481,13 +481,13 @@ class BodyBurialScanTest {
         List<BeyondEndChunkGenerator.CarveMask> masks =
                 List.of(BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(lobeA, lobeB), false));
 
-        int dInA = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(masks, 10, 72, 10);
-        int dInB = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(masks, 70, 72, 10);
-        final int SCAN = BeyondEndChunkGenerator.CARVE_SCAN_REACH;
+        int dInA = BeyondStructureCarver.the_beyond$carveOutsideDist(masks, 10, 72, 10);
+        int dInB = BeyondStructureCarver.the_beyond$carveOutsideDist(masks, 70, 72, 10);
+        final int SCAN = BeyondStructureCarver.CARVE_SCAN_REACH;
         long gapInRange = 0, gapCells = 0;
         for (int x = 20 + SCAN + 1; x <= 60 - SCAN - 1; x++) {
             gapCells++;
-            if (BeyondEndChunkGenerator.the_beyond$carveOutsideDist(masks, x, 72, 10) <= REACH) gapInRange++;
+            if (BeyondStructureCarver.the_beyond$carveOutsideDist(masks, x, 72, 10) <= REACH) gapInRange++;
         }
 
         System.out.printf("[occupancyMaskGate] dInA=%d dInB=%d gapInRange=%d/%d%n", dInA, dInB, gapInRange, gapCells);
@@ -506,14 +506,14 @@ class BodyBurialScanTest {
         List<BeyondEndChunkGenerator.CarveMask> mask =
                 List.of(BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(low, high), false));
         int x = 50, z = 0;
-        int VM = BeyondEndChunkGenerator.FLOAT_VMARGIN;
+        int VM = BeyondStructureCarver.FLOAT_VMARGIN;
         int clearedHigh = 0, marginCleared = 0, longShaft = 0;
         for (int y = 180; y <= 200; y++)
-            if (BeyondEndChunkGenerator.the_beyond$carveOutsideDist(mask, x, y, z) == 0) clearedHigh++;
+            if (BeyondStructureCarver.the_beyond$carveOutsideDist(mask, x, y, z) == 0) clearedHigh++;
         for (int y = 180 - VM; y < 180; y++)
-            if (BeyondEndChunkGenerator.the_beyond$carveOutsideDist(mask, x, y, z) == 0) marginCleared++;
+            if (BeyondStructureCarver.the_beyond$carveOutsideDist(mask, x, y, z) == 0) marginCleared++;
         for (int y = 105; y < 180 - VM; y++)
-            if (BeyondEndChunkGenerator.the_beyond$carveOutsideDist(mask, x, y, z) == 0) longShaft++;
+            if (BeyondStructureCarver.the_beyond$carveOutsideDist(mask, x, y, z) == 0) longShaft++;
         System.out.printf("[noShaftBelowColumnLowest] clearedHigh=%d marginCleared=%d/%d longShaft=%d%n",
                 clearedHigh, marginCleared, VM, longShaft);
         Assertions.assertEquals(21, clearedHigh, "high lobe body must be fully cleared (no burial)");
@@ -528,8 +528,8 @@ class BodyBurialScanTest {
         final int gLo = 100, highColLo = 180, natTop = 99;
         int correctFill = 0, badFill = 0;
         for (int y = 105; y <= 179; y++) {
-            if (BeyondEndChunkGenerator.the_beyond$isFoundationFill(y, gLo, natTop)) correctFill++;
-            if (BeyondEndChunkGenerator.the_beyond$isFoundationFill(y, highColLo, natTop)) badFill++;
+            if (BeyondStructureCarver.the_beyond$isFoundationFill(y, gLo, natTop)) correctFill++;
+            if (BeyondStructureCarver.the_beyond$isFoundationFill(y, highColLo, natTop)) badFill++;
         }
         System.out.printf("[seatedMultiBaseNoPillar] correctFill(gLo=100)=%d badFill(colLo=180)=%d%n", correctFill, badFill);
         Assertions.assertEquals(0, correctFill,
@@ -558,12 +558,12 @@ class BodyBurialScanTest {
 
         int clearedHigh = 0;
         for (int y = 180; y <= 200; y++)
-            if (BeyondEndChunkGenerator.the_beyond$carveOutsideDist(masks, x, y, z) == 0) clearedHigh++;
+            if (BeyondStructureCarver.the_beyond$carveOutsideDist(masks, x, y, z) == 0) clearedHigh++;
 
         // a colLo-keyed guard would collapse erodedUnderside to 0 (protect the whole run instead).
         int protectedRun = 0, erodedUnderside = 0;
         for (int y = 105; y <= 179; y++) {
-            int dd = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(masks, x, y, z);
+            int dd = BeyondStructureCarver.the_beyond$carveOutsideDist(masks, x, y, z);
             if (dd > REACH) protectedRun++; else erodedUnderside++;
         }
 
@@ -571,8 +571,8 @@ class BodyBurialScanTest {
         final int natTop = gLo - 1;
         int correctFill = 0, badFill = 0;
         for (int y = 105; y <= 179; y++) {
-            if (BeyondEndChunkGenerator.the_beyond$isFoundationFill(y, gLo, natTop)) correctFill++;
-            if (BeyondEndChunkGenerator.the_beyond$isFoundationFill(y, colLo, natTop)) badFill++;
+            if (BeyondStructureCarver.the_beyond$isFoundationFill(y, gLo, natTop)) correctFill++;
+            if (BeyondStructureCarver.the_beyond$isFoundationFill(y, colLo, natTop)) badFill++;
         }
 
         System.out.printf("[seatedMultiBaseCarveNoPillar] gLo=%d colLo=%d clearedHigh=%d/21 protectedRun=%d erodedUnderside=%d correctFill=%d badFill=%d%n",
@@ -591,7 +591,7 @@ class BodyBurialScanTest {
 
     @Test
     void floatingVerticalMarginGate() {
-        int VM = BeyondEndChunkGenerator.FLOAT_VMARGIN;
+        int VM = BeyondStructureCarver.FLOAT_VMARGIN;
         BoundingBox box = new BoundingBox(-8, 100, -8, 8, 104, 8);
         List<BeyondEndChunkGenerator.CarveMask> floating =
                 List.of(BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(box), false));
@@ -600,11 +600,11 @@ class BodyBurialScanTest {
         int x = 0, z = 0;
         int floatAbove = 0, floatBelow = 0, seatAbove = 0;
         for (int y = 105; y < 105 + VM; y++)
-            if (BeyondEndChunkGenerator.the_beyond$carveOutsideDist(floating, x, y, z) == 0) floatAbove++;
+            if (BeyondStructureCarver.the_beyond$carveOutsideDist(floating, x, y, z) == 0) floatAbove++;
         for (int y = 100 - VM; y < 100; y++)
-            if (BeyondEndChunkGenerator.the_beyond$carveOutsideDist(floating, x, y, z) == 0) floatBelow++;
+            if (BeyondStructureCarver.the_beyond$carveOutsideDist(floating, x, y, z) == 0) floatBelow++;
         for (int y = 105; y < 105 + VM; y++)
-            if (BeyondEndChunkGenerator.the_beyond$carveOutsideDist(seated, x, y, z) == 0) seatAbove++;
+            if (BeyondStructureCarver.the_beyond$carveOutsideDist(seated, x, y, z) == 0) seatAbove++;
         System.out.printf("[floatingVerticalMargin] floatAbove=%d/%d floatBelow=%d/%d seatAbove=%d%n",
                 floatAbove, VM, floatBelow, VM, seatAbove);
         Assertions.assertEquals(VM, floatAbove, "FLOATING must clear the vertical margin ABOVE the piece (bridge headroom)");
@@ -625,15 +625,15 @@ class BodyBurialScanTest {
         int cx = 20, cz = 20;   // ring centre, 15 blocks from any edge, only the fill can clear it
         int centreBody = 0;
         for (int y = 100; y <= 120; y++)
-            if (BeyondEndChunkGenerator.the_beyond$carveOutsideDist(closedMasks, cx, y, cz) == 0) centreBody++;
-        int VM = BeyondEndChunkGenerator.FLOAT_VMARGIN;
-        int centreFarAbove = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(closedMasks, cx, 120 + VM + 30, cz);
+            if (BeyondStructureCarver.the_beyond$carveOutsideDist(closedMasks, cx, y, cz) == 0) centreBody++;
+        int VM = BeyondStructureCarver.FLOAT_VMARGIN;
+        int centreFarAbove = BeyondStructureCarver.the_beyond$carveOutsideDist(closedMasks, cx, 120 + VM + 30, cz);
 
         // same ring with the top edge removed: the centre now opens to the border.
         BeyondEndChunkGenerator.CarveMask open =
                 BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(bottom, left, right), false);
         List<BeyondEndChunkGenerator.CarveMask> openMasks = List.of(open);
-        int openCentre = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(openMasks, cx, 110, cz);
+        int openCentre = BeyondStructureCarver.the_beyond$carveOutsideDist(openMasks, cx, 110, cz);
 
         System.out.printf("[holeFillEnclosed] closedFilled=%d centreBody=%d/21 centreFarAbove=%d openFilled=%d openCentre=%d%n",
                 closed.filledHoles, centreBody, centreFarAbove, open.filledHoles, openCentre);
@@ -647,7 +647,7 @@ class BodyBurialScanTest {
 
     @Test
     void antiShaftFilledColumnGate() {
-        int VM = BeyondEndChunkGenerator.FLOAT_VMARGIN;
+        int VM = BeyondStructureCarver.FLOAT_VMARGIN;
         BoundingBox top    = new BoundingBox(0,  180, 0,  40, 200, 5);
         BoundingBox bottom = new BoundingBox(0,  180, 35, 40, 200, 40);
         BoundingBox left   = new BoundingBox(0,  180, 0,  5,  200, 40);
@@ -663,10 +663,10 @@ class BodyBurialScanTest {
 
         int bodyCleared = 0;
         for (int y = 180 - VM; y <= 200 + VM; y++)
-            if (BeyondEndChunkGenerator.the_beyond$carveOutsideDist(masks, cx, y, cz) == 0) bodyCleared++;
+            if (BeyondStructureCarver.the_beyond$carveOutsideDist(masks, cx, y, cz) == 0) bodyCleared++;
         int shaft = 0;
         for (int y = 105; y < 180 - VM; y++)
-            if (BeyondEndChunkGenerator.the_beyond$carveOutsideDist(masks, cx, y, cz) == 0) shaft++;
+            if (BeyondStructureCarver.the_beyond$carveOutsideDist(masks, cx, y, cz) == 0) shaft++;
 
         System.out.printf("[antiShaftFilledColumn] gLo=%d colLo=%d colHi=%d bodyCleared=%d shaft=%d%n",
                 mask.gLo, mask.colLo(bit), mask.colHi(bit), bodyCleared, shaft);
@@ -694,8 +694,8 @@ class BodyBurialScanTest {
                 "seated courtyard centre must be a FILLED column (so the foundation path skips it)");
         int centreCleared = 0;
         for (int y = 100; y <= 120; y++)
-            if (BeyondEndChunkGenerator.the_beyond$carveOutsideDist(masks, cx, y, cz) == 0) centreCleared++;
-        int belowBaseProtected = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(masks, cx, 95, cz);
+            if (BeyondStructureCarver.the_beyond$carveOutsideDist(masks, cx, y, cz) == 0) centreCleared++;
+        int belowBaseProtected = BeyondStructureCarver.the_beyond$carveOutsideDist(masks, cx, 95, cz);
 
         System.out.printf("[seatedEnclosedNoFoundation] filled=%d centreCleared=%d belowBaseProtected=%d%n",
                 mask.filledHoles, centreCleared, belowBaseProtected);
@@ -707,7 +707,7 @@ class BodyBurialScanTest {
 
     @Test
     void closingFillsNarrowSlotKeepsWideBay() {
-        int R = BeyondEndChunkGenerator.CLOSE_RADIUS, SCAN = BeyondEndChunkGenerator.CARVE_SCAN_REACH;
+        int R = BeyondStructureCarver.CLOSE_RADIUS, SCAN = BeyondStructureCarver.CARVE_SCAN_REACH;
         BoundingBox nA = new BoundingBox(0,  100, 0, 5,  120, 30);
         BoundingBox nB = new BoundingBox(16, 100, 0, 21, 120, 30);
         BeyondEndChunkGenerator.CarveMask narrow = BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(nA, nB), false, R);
@@ -715,20 +715,20 @@ class BodyBurialScanTest {
         BoundingBox wC = new BoundingBox(50, 100, 0, 55, 120, 30);
         BeyondEndChunkGenerator.CarveMask wide = BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(wA, wC), false, R);
 
-        int narrowMid  = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(List.of(narrow), 10, 110, 15);
-        int narrowBelow= BeyondEndChunkGenerator.the_beyond$carveOutsideDist(List.of(narrow), 10, 80,  15);
-        int wideMid    = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(List.of(wide),   27, 110, 15);
+        int narrowMid  = BeyondStructureCarver.the_beyond$carveOutsideDist(List.of(narrow), 10, 110, 15);
+        int narrowBelow= BeyondStructureCarver.the_beyond$carveOutsideDist(List.of(narrow), 10, 80,  15);
+        int wideMid    = BeyondStructureCarver.the_beyond$carveOutsideDist(List.of(wide),   27, 110, 15);
 
         System.out.printf("[closingSlot] R=%d SCAN=%d narrowMid=%d narrowBelow=%d wideMid=%d%n", R, SCAN, narrowMid, narrowBelow, wideMid);
 
         Assertions.assertEquals(0, narrowMid, "the FLOATING lateral band clears a narrow gap's middle (no horizontal hug)");
         Assertions.assertNotEquals(0, narrowBelow, "the CARVE must not shaft below the walls' band (no R10 pillar)");
-        Assertions.assertTrue(wideMid > BeyondEndChunkGenerator.CARVE_ERODE_REACH, "a WIDE bay centre (≫ 2·CARVE_SCAN_REACH) must stay terrain (interleaving)");
+        Assertions.assertTrue(wideMid > BeyondStructureCarver.CARVE_ERODE_REACH, "a WIDE bay centre (≫ 2·CARVE_SCAN_REACH) must stay terrain (interleaving)");
     }
 
     @Test
     void closingSealsPerforatedDomeWindow() {
-        int R = BeyondEndChunkGenerator.CLOSE_RADIUS;
+        int R = BeyondStructureCarver.CLOSE_RADIUS;
         // ring at x[10,40] z[10,40] (margin 10 to the 0..50 envelope), body y[100,120], with a window in the top wall.
         BoundingBox left   = new BoundingBox(10, 100, 10, 12, 120, 40);
         BoundingBox right  = new BoundingBox(38, 100, 10, 40, 120, 40);
@@ -743,8 +743,8 @@ class BodyBurialScanTest {
         BeyondEndChunkGenerator.CarveMask leaky  = BeyondEndChunkGenerator.CarveMask.fromBoxes(ringBoxes, false, 0);
 
         int cx = 25, cz = 25;   // ring interior centre, far beyond R, only sealing+flood reaches it
-        int sealedCentre = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(List.of(sealed), cx, 110, cz);
-        int leakyCentre  = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(List.of(leaky),  cx, 110, cz);
+        int sealedCentre = BeyondStructureCarver.the_beyond$carveOutsideDist(List.of(sealed), cx, 110, cz);
+        int leakyCentre  = BeyondStructureCarver.the_beyond$carveOutsideDist(List.of(leaky),  cx, 110, cz);
 
         System.out.printf("[closingDome] R=%d sealedCentre=%d leakyCentre=%d sealedFilled=%d leakyFilled=%d%n",
                 R, sealedCentre, leakyCentre, sealed.filledHoles, leaky.filledHoles);
@@ -755,7 +755,7 @@ class BodyBurialScanTest {
 
     @Test
     void closingFillsBorderFlushThinShell() {
-        int R = BeyondEndChunkGenerator.CLOSE_RADIUS;
+        int R = BeyondStructureCarver.CLOSE_RADIUS;
         BoundingBox top    = new BoundingBox(0,  100, 0,  19, 120, 0);    // 1-thick ring flush with x/z edges 0..19
         BoundingBox bottom = new BoundingBox(0,  100, 19, 19, 120, 19);
         BoundingBox left   = new BoundingBox(0,  100, 0,  0,  120, 19);
@@ -764,8 +764,8 @@ class BodyBurialScanTest {
         BeyondEndChunkGenerator.CarveMask atR = BeyondEndChunkGenerator.CarveMask.fromBoxes(ring, false, R);
         BeyondEndChunkGenerator.CarveMask at0 = BeyondEndChunkGenerator.CarveMask.fromBoxes(ring, false, 0);
         int cx = 10, cz = 10;   // interior centre, 9 from any wall, only the sealed flood reaches it
-        int centreR = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(List.of(atR), cx, 110, cz);
-        int centre0 = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(List.of(at0), cx, 110, cz);
+        int centreR = BeyondStructureCarver.the_beyond$carveOutsideDist(List.of(atR), cx, 110, cz);
+        int centre0 = BeyondStructureCarver.the_beyond$carveOutsideDist(List.of(at0), cx, 110, cz);
         System.out.printf("[closingExtensive] R=%d centreR=%d centre0=%d filledR=%d filled0=%d%n",
                 R, centreR, centre0, atR.filledHoles, at0.filledHoles);
         Assertions.assertEquals(0, centre0, "enclosed-only (closeR=0) fills a sealed interior — the R8 floor");
@@ -774,7 +774,7 @@ class BodyBurialScanTest {
 
     @Test
     void closingNoShaftNestedStackedEnclosures() {
-        int R = BeyondEndChunkGenerator.CLOSE_RADIUS;
+        int R = BeyondStructureCarver.CLOSE_RADIUS;
         java.util.List<BoundingBox> boxes = new java.util.ArrayList<>();
         // small low ring (nested, walls x{18..20,30..32}), y[100,130]
         boxes.add(new BoundingBox(18, 100, 18, 32, 130, 20));
@@ -792,8 +792,8 @@ class BodyBurialScanTest {
         List<BeyondEndChunkGenerator.CarveMask> masks = List.of(mask);
         int cx = 25, cz = 25;
         int cbit = mask.nearestOccupiedBit(cx, cz, R);
-        int lowCleared = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(masks, cx, 115, cz);
-        int gapCleared = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(masks, cx, 155, cz);
+        int lowCleared = BeyondStructureCarver.the_beyond$carveOutsideDist(masks, cx, 115, cz);
+        int gapCleared = BeyondStructureCarver.the_beyond$carveOutsideDist(masks, cx, 155, cz);
         System.out.printf("[nestedNoShaft] R=%d lowCleared=%d gapCleared=%d filled=%d centreBand=[%d,%d]%n",
                 R, lowCleared, gapCleared, mask.filledHoles,
                 cbit >= 0 ? mask.colLo(cbit) : -1, cbit >= 0 ? mask.colHi(cbit) : -1);
@@ -804,17 +804,17 @@ class BodyBurialScanTest {
 
     @Test
     void filledColumnNoVerticalMargin() {
-        int R = BeyondEndChunkGenerator.CLOSE_RADIUS;
-        // Narrow slot → the middle (8,15) is a FILLED column with band [100,120]; the walls (x[0,5],x[12,17]) are REAL.
+        int R = BeyondStructureCarver.CLOSE_RADIUS;
+        // Narrow slot → the middle (8,15) is a FILLED column with band [100,120], the walls (x[0,5],x[12,17]) are REAL.
         BoundingBox a = new BoundingBox(0,  100, 0, 5,  120, 30);
         BoundingBox b = new BoundingBox(12, 100, 0, 17, 120, 30);
         BeyondEndChunkGenerator.CarveMask mask = BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(a, b), false, R);
         List<BeyondEndChunkGenerator.CarveMask> masks = List.of(mask);
         int fillBit = mask.nearestOccupiedBit(8, 15, R);
         Assertions.assertTrue(fillBit >= 0 && mask.isFilled(fillBit), "(8,15) must be a filled column");
-        int filledMid = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(masks, 8, 110, 15);
-        int headroom  = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(masks, 8, 125, 15);
-        int farBelow  = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(masks, 8, 80,  15);
+        int filledMid = BeyondStructureCarver.the_beyond$carveOutsideDist(masks, 8, 110, 15);
+        int headroom  = BeyondStructureCarver.the_beyond$carveOutsideDist(masks, 8, 125, 15);
+        int farBelow  = BeyondStructureCarver.the_beyond$carveOutsideDist(masks, 8, 80,  15);
         System.out.printf("[filledNoMargin] R=%d filledMid=%d headroom=%d farBelow=%d%n", R, filledMid, headroom, farBelow);
         Assertions.assertEquals(0, filledMid, "the filled column's trapped band is cleared");
         Assertions.assertEquals(0, headroom, "the adjacent REAL walls supply the vertical headroom around the filled column (union)");
@@ -827,7 +827,7 @@ class BodyBurialScanTest {
         BoundingBox wA = new BoundingBox(0, 100, 0, 1, 120, 30);
         BoundingBox wB = new BoundingBox(7, 100, 0, 8, 120, 30);
         BeyondEndChunkGenerator.CarveMask channel =
-                BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(wA, wB), false, BeyondEndChunkGenerator.CLOSE_RADIUS);
+                BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(wA, wB), false, BeyondStructureCarver.CLOSE_RADIUS);
         System.out.printf("[revertLattice] channelFilled=%d%n", channel.filledHoles);
         Assertions.assertEquals(0, channel.filledHoles,
                 "an open channel that drains to the border is never filled (no phantom occupancy → no carve where no block exists)");
@@ -839,8 +839,8 @@ class BodyBurialScanTest {
         BoundingBox stub = new BoundingBox(11, 100, 0, 11, 102, 5);
         BeyondEndChunkGenerator.CarveMask m =
                 BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(tall, stub), false, 0);
-        int viaTall = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(List.of(m), 11, 135, 2);
-        int belowAll = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(List.of(m), 11, 80, 2);
+        int viaTall = BeyondStructureCarver.the_beyond$carveOutsideDist(List.of(m), 11, 135, 2);
+        int belowAll = BeyondStructureCarver.the_beyond$carveOutsideDist(List.of(m), 11, 80, 2);
         System.out.printf("[union] viaTall=%d belowAll=%d%n", viaTall, belowAll);
         Assertions.assertEquals(0, viaTall, "the union must let a TALL neighbor clear a high cell the nearest SHORT column would leave (no hug)");
         Assertions.assertNotEquals(0, belowAll, "the CARVE must not over-clear below the bands (the GUARD vetoes the stub, the carve leaves terrain)");
@@ -848,20 +848,20 @@ class BodyBurialScanTest {
 
     @Test
     void floatHMarginLateralBand() {
-        int HM = BeyondEndChunkGenerator.FLOAT_HMARGIN, R = BeyondEndChunkGenerator.CARVE_ERODE_REACH;
+        int HM = BeyondStructureCarver.FLOAT_HMARGIN, R = BeyondStructureCarver.CARVE_ERODE_REACH;
         BoundingBox box = new BoundingBox(-8, 100, -8, 8, 104, 8);
         List<BeyondEndChunkGenerator.CarveMask> floating = List.of(BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(box), false));
         List<BeyondEndChunkGenerator.CarveMask> seated   = List.of(BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(box), true));
-        int WM = BeyondEndChunkGenerator.WARP_MAX;
-        int bandClear    = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(floating, 8 + HM, 102, 0);
-        int beyondBand   = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(floating, 8 + HM + WM + R + 1, 102, 0);
-        int seatedLateral= BeyondEndChunkGenerator.the_beyond$carveOutsideDist(seated,   8 + HM, 102, 0);
+        int WM = BeyondStructureCarver.WARP_MAX;
+        int bandClear    = BeyondStructureCarver.the_beyond$carveOutsideDist(floating, 8 + HM, 102, 0);
+        int beyondBand   = BeyondStructureCarver.the_beyond$carveOutsideDist(floating, 8 + HM + WM + R + 1, 102, 0);
+        int seatedLateral= BeyondStructureCarver.the_beyond$carveOutsideDist(seated,   8 + HM, 102, 0);
         // just past the hard core, the cleared edge undulates per cell (organic, not a flat Chebyshev plane).
         int warpCleared = 0, warpTotal = 0;
         for (int zc = -8; zc <= 8; zc++)
             for (int yc = 100; yc <= 104; yc++) {
                 warpTotal++;
-                if (BeyondEndChunkGenerator.the_beyond$carveOutsideDist(floating, 8 + HM + 2, yc, zc) == 0) warpCleared++;
+                if (BeyondStructureCarver.the_beyond$carveOutsideDist(floating, 8 + HM + 2, yc, zc) == 0) warpCleared++;
             }
         System.out.printf("[floatHMargin] HM=%d R=%d WM=%d bandClear=%d beyondBand=%d seatedLateral=%d warpCleared=%d/%d%n",
                 HM, R, WM, bandClear, beyondBand, seatedLateral, warpCleared, warpTotal);
@@ -874,18 +874,18 @@ class BodyBurialScanTest {
 
     @Test
     void guardVetoesBelowBaseStubCarveDoesNot() {
-        int HM = BeyondEndChunkGenerator.FLOAT_HMARGIN, SD = BeyondEndChunkGenerator.GUARD_STUB_DEPTH;
-        int VM = BeyondEndChunkGenerator.FLOAT_VMARGIN, GU = BeyondEndChunkGenerator.GUARD_GROWTH_UP;
+        int HM = BeyondStructureCarver.FLOAT_HMARGIN, SD = BeyondStructureCarver.GUARD_STUB_DEPTH;
+        int VM = BeyondStructureCarver.FLOAT_VMARGIN, GU = BeyondStructureCarver.GUARD_GROWTH_UP;
         BoundingBox box = new BoundingBox(-10, 200, -10, 10, 240, 10);
         List<BeyondEndChunkGenerator.CarveMask> m = List.of(BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(box), false));
-        int carveStub    = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(m, 5, 180, 0);
-        int guardStub    = BeyondEndChunkGenerator.the_beyond$guardOutsideDist(m, 5, 180, 0);
-        int guardTooDeep = BeyondEndChunkGenerator.the_beyond$guardOutsideDist(m, 5, 200 - SD - 7, 0);
-        int carveGrowUp  = BeyondEndChunkGenerator.the_beyond$carveOutsideDist(m, 5, 240 + VM + 10, 0);
-        int guardGrowUp  = BeyondEndChunkGenerator.the_beyond$guardOutsideDist(m, 5, 240 + VM + 10, 0);
-        int guardTooHigh = BeyondEndChunkGenerator.the_beyond$guardOutsideDist(m, 5, 240 + VM + GU + 7, 0);
-        int outBand      = 10 + HM + BeyondEndChunkGenerator.WARP_MAX + BeyondEndChunkGenerator.CARVE_ERODE_REACH + 1;
-        int guardOutBand = BeyondEndChunkGenerator.the_beyond$guardOutsideDist(m, outBand, 180, 0);
+        int carveStub    = BeyondStructureCarver.the_beyond$carveOutsideDist(m, 5, 180, 0);
+        int guardStub    = BeyondStructureCarver.the_beyond$guardOutsideDist(m, 5, 180, 0);
+        int guardTooDeep = BeyondStructureCarver.the_beyond$guardOutsideDist(m, 5, 200 - SD - 7, 0);
+        int carveGrowUp  = BeyondStructureCarver.the_beyond$carveOutsideDist(m, 5, 240 + VM + 10, 0);
+        int guardGrowUp  = BeyondStructureCarver.the_beyond$guardOutsideDist(m, 5, 240 + VM + 10, 0);
+        int guardTooHigh = BeyondStructureCarver.the_beyond$guardOutsideDist(m, 5, 240 + VM + GU + 7, 0);
+        int outBand      = 10 + HM + BeyondStructureCarver.WARP_MAX + BeyondStructureCarver.CARVE_ERODE_REACH + 1;
+        int guardOutBand = BeyondStructureCarver.the_beyond$guardOutsideDist(m, outBand, 180, 0);
         System.out.printf("[guardStub] SD=%d GU=%d carveStub=%d guardStub=%d guardTooDeep=%d carveGrowUp=%d guardGrowUp=%d guardTooHigh=%d guardOutBand=%d%n",
                 SD, GU, carveStub, guardStub, guardTooDeep, carveGrowUp, guardGrowUp, guardTooHigh, guardOutBand);
         Assertions.assertNotEquals(0, carveStub, "the CARVE leaves the below-base stub as terrain (no pillar / cross-structure bridge)");
@@ -902,10 +902,10 @@ class BodyBurialScanTest {
         BoundingBox station = new BoundingBox(-60, 100, -40, 60, 160, 40);
         List<BeyondEndChunkGenerator.CarveMask> masks =
                 List.of(BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(station), false));
-        final int HM = BeyondEndChunkGenerator.FLOAT_HMARGIN, REACH = BeyondEndChunkGenerator.CARVE_ERODE_REACH;
+        final int HM = BeyondStructureCarver.FLOAT_HMARGIN, REACH = BeyondStructureCarver.CARVE_ERODE_REACH;
 
         BoundingBox inside = new BoundingBox(-6, 128, -6, 6, 140, 6);
-        int outMinX = 60 + HM + BeyondEndChunkGenerator.WARP_MAX + REACH + 4;
+        int outMinX = 60 + HM + BeyondStructureCarver.WARP_MAX + REACH + 4;
         BoundingBox outside = new BoundingBox(outMinX, 128, -6, outMinX + 12, 140, 6);
 
         double fracInside  = footprintHoleFraction(masks, inside);
@@ -919,7 +919,7 @@ class BodyBurialScanTest {
                 "landmark beyond the station band+fringe must NOT reject (frac==0), got " + fracOutside);
     }
 
-    /** Fraction of a landmark's footprint columns with a cell at carveOutsideDist==0; mirrors the_beyond$landmarkInForeignCavity's reject metric. */
+    /** Share of a landmark's footprint at carveOutsideDist==0, the reject metric of the_beyond$landmarkInForeignCavity. */
     private static double footprintHoleFraction(List<BeyondEndChunkGenerator.CarveMask> masks, BoundingBox lm) {
         BeyondEndChunkGenerator.CarveMask own =
                 BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(lm), false);
@@ -932,7 +932,7 @@ class BodyBurialScanTest {
                 int wx = own.oX + i, wz = own.oZ + j;
                 probed++;
                 for (int y = own.colLo(bit); y <= own.colHi(bit); y++) {
-                    if (BeyondEndChunkGenerator.the_beyond$carveOutsideDist(masks, wx, y, wz) == 0) { inHole++; break; }
+                    if (BeyondStructureCarver.the_beyond$carveOutsideDist(masks, wx, y, wz) == 0) { inHole++; break; }
                 }
             }
         }
@@ -943,25 +943,25 @@ class BodyBurialScanTest {
     @Test
     void organicCarvePenaltyGate() {
         final int lo = 100, hi = 140;
-        final int LAT = BeyondEndChunkGenerator.CARVE_LAT_REACH;
-        final double WARP = BeyondEndChunkGenerator.CARVE_WARP_AMT;
-        final int guardLat = BeyondEndChunkGenerator.FLOAT_HMARGIN + BeyondEndChunkGenerator.CARVE_ERODE_REACH;
+        final int LAT = BeyondStructureCarver.CARVE_LAT_REACH;
+        final double WARP = BeyondStructureCarver.CARVE_WARP_AMT;
+        final int guardLat = BeyondStructureCarver.FLOAT_HMARGIN + BeyondStructureCarver.CARVE_ERODE_REACH;
         final int[] LO = {lo}, HI = {hi}, GLO = {lo}; final boolean[] NO = {false};
         // FLOATING ignores d3 entirely (the distributed branch is the only d3 reader), so any out-of-range value works.
-        final int[] D3F = {BeyondEndChunkGenerator.DT3_CAP + 1};
+        final int[] D3F = {BeyondStructureCarver.DT3_CAP + 1};
 
         Assertions.assertEquals(Double.POSITIVE_INFINITY,
-                BeyondEndChunkGenerator.the_beyond$carvePenalty(new int[]{0}, LO, HI, GLO, NO, NO, NO, 1,120, WARP, D3F),
+                BeyondStructureCarver.the_beyond$carvePenalty(new int[]{0}, LO, HI, GLO, NO, NO, NO, 1,120, WARP, D3F),
                 "occupied-span cell must signal unconditional clear (no burial), even with inward warp");
         Assertions.assertEquals(0.0,
-                BeyondEndChunkGenerator.the_beyond$carvePenalty(new int[]{guardLat}, LO, HI, GLO, NO, NO, NO, 1,120, WARP, D3F), 1e-9,
+                BeyondStructureCarver.the_beyond$carvePenalty(new int[]{guardLat}, LO, HI, GLO, NO, NO, NO, 1,120, WARP, D3F), 1e-9,
                 "max-inward-warp must NOT clear at the guard's lateral edge (else a feature floats); guardLat=" + guardLat);
-        double latP = BeyondEndChunkGenerator.the_beyond$carvePenalty(new int[]{8}, LO, HI, GLO, NO, NO, NO, 1,120, 0.0, D3F);
-        double vertP = BeyondEndChunkGenerator.the_beyond$carvePenalty(new int[]{0}, LO, HI, GLO, NO, NO, NO, 1,hi + 8, 0.0, D3F);
+        double latP = BeyondStructureCarver.the_beyond$carvePenalty(new int[]{8}, LO, HI, GLO, NO, NO, NO, 1,120, 0.0, D3F);
+        double vertP = BeyondStructureCarver.the_beyond$carvePenalty(new int[]{0}, LO, HI, GLO, NO, NO, NO, 1,hi + 8, 0.0, D3F);
         Assertions.assertTrue(vertP > latP,
                 "elliptical: a vertical offset keeps more penalty than the same lateral offset (vertP=" + vertP + " latP=" + latP + ")");
-        double pIn  = BeyondEndChunkGenerator.the_beyond$carvePenalty(new int[]{7}, LO, HI, GLO, NO, NO, NO, 1,120, +WARP, D3F);
-        double pOut = BeyondEndChunkGenerator.the_beyond$carvePenalty(new int[]{7}, LO, HI, GLO, NO, NO, NO, 1,120, -WARP, D3F);
+        double pIn  = BeyondStructureCarver.the_beyond$carvePenalty(new int[]{7}, LO, HI, GLO, NO, NO, NO, 1,120, +WARP, D3F);
+        double pOut = BeyondStructureCarver.the_beyond$carvePenalty(new int[]{7}, LO, HI, GLO, NO, NO, NO, 1,120, -WARP, D3F);
         Assertions.assertTrue(pIn > pOut + 0.1,
                 "the 3D warp must move the cut at a fixed lateral column (vertical de-straightening); pIn=" + pIn + " pOut=" + pOut);
 
@@ -973,7 +973,7 @@ class BodyBurialScanTest {
             double density = D0 + AMP * Math.sin(y * 0.4);
             int boundary = LAT;
             for (int dxz = 1; dxz <= LAT; dxz++) {
-                double pen = BeyondEndChunkGenerator.the_beyond$carvePenalty(new int[]{dxz}, LO, HI, GLO, NO, NO, NO, 1,y, 0.0, D3F);
+                double pen = BeyondStructureCarver.the_beyond$carvePenalty(new int[]{dxz}, LO, HI, GLO, NO, NO, NO, 1,y, 0.0, D3F);
                 if (density - pen > T) { boundary = dxz; break; }
             }
             minB = Math.min(minB, boundary); maxB = Math.max(maxB, boundary);
@@ -989,17 +989,17 @@ class BodyBurialScanTest {
     void guardSparesIntactTerrainVetoesRemovedAir() {
         BoundingBox box = new BoundingBox(-10, 200, -10, 10, 240, 10);   // FLOATING station, gLo=200, colHi=240
         var m = List.of(BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(box), false));
-        Assertions.assertTrue(BeyondEndChunkGenerator.the_beyond$carveRemovedAirAt(m, 0, 220, 0),
+        Assertions.assertTrue(BeyondStructureCarver.the_beyond$carveRemovedAirAt(m, 0, 220, 0),
                 "occupied span is carve-removed → feature in the cavity stays vetoed");
-        Assertions.assertFalse(BeyondEndChunkGenerator.the_beyond$carveRemovedAirAt(m, 0, 200 - 30, 0),
+        Assertions.assertFalse(BeyondStructureCarver.the_beyond$carveRemovedAirAt(m, 0, 200 - 30, 0),
                 "intact terrain 30 BELOW the base is not carve-removed → island feature spared (the over-veto fix)");
-        Assertions.assertFalse(BeyondEndChunkGenerator.the_beyond$carveRemovedAirAt(m, 0, 240 + 30, 0),
+        Assertions.assertFalse(BeyondStructureCarver.the_beyond$carveRemovedAirAt(m, 0, 240 + 30, 0),
                 "intact terrain 30 ABOVE the top is not carve-removed → ceiling-island feature spared");
-        Assertions.assertFalse(BeyondEndChunkGenerator.the_beyond$carveRemovedAirAt(m, 50, 220, 0),
+        Assertions.assertFalse(BeyondStructureCarver.the_beyond$carveRemovedAirAt(m, 50, 220, 0),
                 "far-lateral intact terrain is not carve-removed → spared");
     }
 
-    /** Per-column Y-offsets used to clamp to a single byte (max 255); 16-bit offsets decode the true top instead. */
+    /** Per-column Y-offsets are 16-bit, so a top above 255 decodes exactly where a single byte would clamp it. */
     @Test
     void tallTowerSpanNotClamped() {
         BoundingBox tall = new BoundingBox(-5, 100, -5, 5, 400, 5);
@@ -1009,10 +1009,10 @@ class BodyBurialScanTest {
         Assertions.assertEquals(400, mask.colHi(bit),
                 "tower top must decode to 400, not the old byte clamp (gLo+255=355) that left it un-carved");
         var m = List.of(mask);
-        Assertions.assertEquals(0, BeyondEndChunkGenerator.the_beyond$carveOutsideDist(m, 0, 400, 0),
+        Assertions.assertEquals(0, BeyondStructureCarver.the_beyond$carveOutsideDist(m, 0, 400, 0),
                 "the top of a >255-tall tower must be CARVED (16-bit span), not stranded above the old 255 clamp");
-        Assertions.assertNotEquals(0, BeyondEndChunkGenerator.the_beyond$carveOutsideDist(
-                        m, 0, 400 + BeyondEndChunkGenerator.FLOAT_VMARGIN + 10, 0),
+        Assertions.assertNotEquals(0, BeyondStructureCarver.the_beyond$carveOutsideDist(
+                        m, 0, 400 + BeyondStructureCarver.FLOAT_VMARGIN + 10, 0),
                 "well above the tower top stays un-carved (bounded — no phantom clear)");
     }
 
@@ -1020,95 +1020,95 @@ class BodyBurialScanTest {
     @Test
     void distributedCarveSurgicalGate() {
         final int lo = 100, hi = 170;
-        final int LAT  = BeyondEndChunkGenerator.CARVE_DIST_LAT_REACH;
-        final int VERT = BeyondEndChunkGenerator.CARVE_DIST_VERT_REACH;
-        final int BAND = BeyondEndChunkGenerator.DIST_SUPPORT_BAND;
-        final double WARP = BeyondEndChunkGenerator.CARVE_WARP_AMT;
+        final int LAT  = BeyondStructureCarver.CARVE_DIST_LAT_REACH;
+        final int VERT = BeyondStructureCarver.CARVE_DIST_VERT_REACH;
+        final int BAND = BeyondStructureCarver.DIST_SUPPORT_BAND;
+        final double WARP = BeyondStructureCarver.CARVE_WARP_AMT;
         final int[] LO = {lo}, HI = {hi}, GLO = {lo};
         final boolean[] YES = {true}, NO = {false};
-        final int R3 = BeyondEndChunkGenerator.DT3_REACH;
-        final int[] D3_NEAR = {2}, D3_FAR = {R3 + 1}, D3_F = {BeyondEndChunkGenerator.DT3_CAP + 1};
+        final int R3 = BeyondStructureCarver.DT3_REACH;
+        final int[] D3_NEAR = {2}, D3_FAR = {R3 + 1}, D3_F = {BeyondStructureCarver.DT3_CAP + 1};
 
         Assertions.assertEquals(Double.POSITIVE_INFINITY,
-                BeyondEndChunkGenerator.the_beyond$carvePenalty(new int[]{0}, LO, HI, GLO, YES, NO, YES, 1, 130, 0.0, new int[]{0}),
+                BeyondStructureCarver.the_beyond$carvePenalty(new int[]{0}, LO, HI, GLO, YES, NO, YES, 1, 130, 0.0, new int[]{0}),
                 "distributed occupied-span cell must clear unconditionally (no burial)");
 
         int yUpper = lo + BAND + 4;
-        double pNear = BeyondEndChunkGenerator.the_beyond$carvePenalty(new int[]{2}, LO, HI, GLO, YES, NO, YES, 1, yUpper, 0.0, D3_NEAR);
+        double pNear = BeyondStructureCarver.the_beyond$carvePenalty(new int[]{2}, LO, HI, GLO, YES, NO, YES, 1, yUpper, 0.0, D3_NEAR);
         Assertions.assertTrue(pNear > 0.0, "distributed carve must peel an island hugging the structure (penalty>0); got " + pNear);
 
-        double pFar     = BeyondEndChunkGenerator.the_beyond$carvePenalty(new int[]{LAT + 3}, LO, HI, GLO, YES, NO, YES, 1, yUpper, 0.0, D3_FAR);
-        double pFarWarp = BeyondEndChunkGenerator.the_beyond$carvePenalty(new int[]{LAT + 3}, LO, HI, GLO, YES, NO, YES, 1, yUpper, WARP, D3_FAR);
+        double pFar     = BeyondStructureCarver.the_beyond$carvePenalty(new int[]{LAT + 3}, LO, HI, GLO, YES, NO, YES, 1, yUpper, 0.0, D3_FAR);
+        double pFarWarp = BeyondStructureCarver.the_beyond$carvePenalty(new int[]{LAT + 3}, LO, HI, GLO, YES, NO, YES, 1, yUpper, WARP, D3_FAR);
         Assertions.assertEquals(0.0, pFar, 1e-9, "distributed carve must NOT clear past DT3_REACH (no bubble); got " + pFar);
         Assertions.assertEquals(0.0, pFarWarp, 1e-9, "even at max inward warp the distributed carve stays bounded; got " + pFarWarp);
 
-        double pBelow = BeyondEndChunkGenerator.the_beyond$carvePenalty(new int[]{2}, LO, HI, GLO, YES, NO, YES, 1, lo - 1, 0.0, D3_NEAR);
+        double pBelow = BeyondStructureCarver.the_beyond$carvePenalty(new int[]{2}, LO, HI, GLO, YES, NO, YES, 1, lo - 1, 0.0, D3_NEAR);
         Assertions.assertEquals(0.0, pBelow, 1e-9, "distributed carve must NOT clear below the base (support kept); got " + pBelow);
 
-        double pAtBase = BeyondEndChunkGenerator.the_beyond$carvePenalty(new int[]{2}, LO, HI, GLO, YES, NO, YES, 1, lo, 0.0, D3_NEAR);
-        double pRamp1  = BeyondEndChunkGenerator.the_beyond$carvePenalty(new int[]{2}, LO, HI, GLO, YES, NO, YES, 1, lo + 1, 0.0, D3_NEAR);
-        double pRamp2  = BeyondEndChunkGenerator.the_beyond$carvePenalty(new int[]{2}, LO, HI, GLO, YES, NO, YES, 1, lo + 2, 0.0, D3_NEAR);
+        double pAtBase = BeyondStructureCarver.the_beyond$carvePenalty(new int[]{2}, LO, HI, GLO, YES, NO, YES, 1, lo, 0.0, D3_NEAR);
+        double pRamp1  = BeyondStructureCarver.the_beyond$carvePenalty(new int[]{2}, LO, HI, GLO, YES, NO, YES, 1, lo + 1, 0.0, D3_NEAR);
+        double pRamp2  = BeyondStructureCarver.the_beyond$carvePenalty(new int[]{2}, LO, HI, GLO, YES, NO, YES, 1, lo + 2, 0.0, D3_NEAR);
         Assertions.assertEquals(0.0, pAtBase, 1e-9, "no moat: the skirt is exactly 0 at the global base level; got " + pAtBase);
         Assertions.assertTrue(pRamp1 > 0.0 && pRamp2 > pRamp1,
                 "support contact must RAMP up organically above the base (no flat shelf, no moat); pRamp1=" + pRamp1 + " pRamp2=" + pRamp2);
 
-        int dxzMid = (LAT + BeyondEndChunkGenerator.CARVE_LAT_REACH) / 2;
-        double pFloat = BeyondEndChunkGenerator.the_beyond$carvePenalty(new int[]{dxzMid}, LO, HI, GLO, NO,  NO, NO,  1, 130, 0.0, D3_F);
-        double pDist  = BeyondEndChunkGenerator.the_beyond$carvePenalty(new int[]{dxzMid}, LO, HI, GLO, YES, NO, YES, 1, 130, 0.0, D3_FAR);
+        int dxzMid = (LAT + BeyondStructureCarver.CARVE_LAT_REACH) / 2;
+        double pFloat = BeyondStructureCarver.the_beyond$carvePenalty(new int[]{dxzMid}, LO, HI, GLO, NO,  NO, NO,  1, 130, 0.0, D3_F);
+        double pDist  = BeyondStructureCarver.the_beyond$carvePenalty(new int[]{dxzMid}, LO, HI, GLO, YES, NO, YES, 1, 130, 0.0, D3_FAR);
         Assertions.assertTrue(pFloat > 0.0, "FLOATING must clear at dxz=" + dxzMid + " (wide skirt); got " + pFloat);
         Assertions.assertEquals(0.0, pDist, 1e-9, "DISTRIBUTED must NOT clear at dxz=" + dxzMid + " (surgical); got " + pDist);
 
-        double pCantilever = BeyondEndChunkGenerator.the_beyond$carvePenalty(
+        double pCantilever = BeyondStructureCarver.the_beyond$carvePenalty(
                 new int[]{2}, new int[]{140}, new int[]{170}, new int[]{100}, YES, NO, YES, 1, 141, 0.0, D3_NEAR);
         Assertions.assertTrue(pCantilever > 0.0,
                 "a cantilevered piece's underside must peel (moat guard keys off the GLOBAL base, not colLo); got " + pCantilever);
 
         // guard superset (parity): reaches pinned below the FLOAT_* band by construction.
-        Assertions.assertTrue(LAT <= BeyondEndChunkGenerator.FLOAT_HMARGIN + BeyondEndChunkGenerator.CARVE_ERODE_REACH,
+        Assertions.assertTrue(LAT <= BeyondStructureCarver.FLOAT_HMARGIN + BeyondStructureCarver.CARVE_ERODE_REACH,
                 "CARVE_DIST_LAT_REACH must stay within the guard's covered extent FLOAT_HMARGIN+CARVE_ERODE_REACH (carve ⊆ guard, no floating feature)");
-        Assertions.assertTrue(VERT <= BeyondEndChunkGenerator.FLOAT_VMARGIN + BeyondEndChunkGenerator.CARVE_ERODE_REACH,
+        Assertions.assertTrue(VERT <= BeyondStructureCarver.FLOAT_VMARGIN + BeyondStructureCarver.CARVE_ERODE_REACH,
                 "CARVE_DIST_VERT_REACH must stay within the guard's covered extent FLOAT_VMARGIN+CARVE_ERODE_REACH (carve ⊆ guard)");
         Assertions.assertTrue(
-                LAT * Math.sqrt(1.0 + BeyondEndChunkGenerator.CARVE_DIST_WARP_GAIN * BeyondEndChunkGenerator.CARVE_WARP_AMT)
-                        < BeyondEndChunkGenerator.FLOAT_HMARGIN,
+                LAT * Math.sqrt(1.0 + BeyondStructureCarver.CARVE_DIST_WARP_GAIN * BeyondStructureCarver.CARVE_WARP_AMT)
+                        < BeyondStructureCarver.FLOAT_HMARGIN,
                 "the MAX warped distributed lateral clear must stay inside FLOAT_HMARGIN's hard guard band (warp parity, no feature floats)");
         BoundingBox dbox = new BoundingBox(-9, lo, -9, 9, hi, 9);
         BeyondEndChunkGenerator.CarveMask dmask =
-                BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(dbox), true, BeyondEndChunkGenerator.CLOSE_RADIUS, true);
+                BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(dbox), true, BeyondStructureCarver.CLOSE_RADIUS, true);
         Assertions.assertTrue(dmask.distributed, "fromBoxes(..., distributed=true) must build a DISTRIBUTED mask");
         var dmasks = List.of(dmask);
-        Assertions.assertTrue(BeyondEndChunkGenerator.the_beyond$carveRemovedAirAt(dmasks, 0, 130, 0),
+        Assertions.assertTrue(BeyondStructureCarver.the_beyond$carveRemovedAirAt(dmasks, 0, 130, 0),
                 "distributed body cell must be carve-removed");
-        Assertions.assertTrue(BeyondEndChunkGenerator.the_beyond$guardOutsideDist(dmasks, 0, 130, 0)
-                <= BeyondEndChunkGenerator.CARVE_ERODE_REACH, "guard must cover the carved body (parity)");
-        Assertions.assertFalse(BeyondEndChunkGenerator.the_beyond$carveRemovedAirAt(dmasks, 9 + LAT + 10, 130, 0),
+        Assertions.assertTrue(BeyondStructureCarver.the_beyond$guardOutsideDist(dmasks, 0, 130, 0)
+                <= BeyondStructureCarver.CARVE_ERODE_REACH, "guard must cover the carved body (parity)");
+        Assertions.assertFalse(BeyondStructureCarver.the_beyond$carveRemovedAirAt(dmasks, 9 + LAT + 10, 130, 0),
                 "far-lateral terrain past the skirt must NOT be carve-removed (neighbour island untouched)");
-        Assertions.assertFalse(BeyondEndChunkGenerator.the_beyond$carveRemovedAirAt(dmasks, 0, lo - 8, 0),
+        Assertions.assertFalse(BeyondStructureCarver.the_beyond$carveRemovedAirAt(dmasks, 0, lo - 8, 0),
                 "terrain below the base must NOT be carve-removed (support kept)");
 
-        double pDistNear  = BeyondEndChunkGenerator.the_beyond$carvePenalty(new int[]{1}, LO, HI, GLO, YES, NO, YES, 1, yUpper, 0.0, new int[]{1});
-        double pFloatNear = BeyondEndChunkGenerator.the_beyond$carvePenalty(new int[]{1}, LO, HI, GLO, NO,  NO, NO,  1, yUpper, 0.0, D3_F);
-        Assertions.assertTrue(pDistNear <= BeyondEndChunkGenerator.CARVE_DIST_AMP + 1e-9,
+        double pDistNear  = BeyondStructureCarver.the_beyond$carvePenalty(new int[]{1}, LO, HI, GLO, YES, NO, YES, 1, yUpper, 0.0, new int[]{1});
+        double pFloatNear = BeyondStructureCarver.the_beyond$carvePenalty(new int[]{1}, LO, HI, GLO, NO,  NO, NO,  1, yUpper, 0.0, D3_F);
+        Assertions.assertTrue(pDistNear <= BeyondStructureCarver.CARVE_DIST_AMP + 1e-9,
                 "distributed penalty must stay <= CARVE_DIST_AMP (bounded, strict subset of the guard band); got " + pDistNear);
         Assertions.assertTrue(pDistNear < 0.5 && pFloatNear > 1.0,
                 "distributed must be DE-SATURATED (O(gap)) while FLOATING saturates (O(AMP)) — the de-square invariant; pDist=" + pDistNear + " pFloat=" + pFloatNear);
 
         System.out.printf("[distributedCarveSurgical] LAT=%d VERT=%d BAND=%d amp=%.2f pNear=%.3f pFar=%.3f pAtBase=%.3f pRamp1=%.3f pRamp2=%.3f pDistNear=%.3f pFloatNear=%.2f pCant=%.3f%n",
-                LAT, VERT, BAND, BeyondEndChunkGenerator.CARVE_DIST_AMP, pNear, pFar, pAtBase, pRamp1, pRamp2, pDistNear, pFloatNear, pCantilever);
+                LAT, VERT, BAND, BeyondStructureCarver.CARVE_DIST_AMP, pNear, pFar, pAtBase, pRamp1, pRamp2, pDistNear, pFloatNear, pCantilever);
     }
 
     /** Tower↔ship topology (Y-disjoint, same XZ footprint): the 2.5D fallback bridges the gap, true-3D does not. */
     @Test
     void distributedTrueModelGate() {
-        final int R3 = BeyondEndChunkGenerator.DT3_REACH;
-        Assertions.assertTrue(BeyondEndChunkGenerator.DT3_REACH + BeyondEndChunkGenerator.DT3_WARP_AMP
-                        <= BeyondEndChunkGenerator.FLOAT_HMARGIN,
+        final int R3 = BeyondStructureCarver.DT3_REACH;
+        Assertions.assertTrue(BeyondStructureCarver.DT3_REACH + BeyondStructureCarver.DT3_WARP_AMP
+                        <= BeyondStructureCarver.FLOAT_HMARGIN,
                 "DT3_REACH + DT3_WARP_AMP must be <= FLOAT_HMARGIN (carve ⊆ guard band)");
         // two solid pieces, SAME XZ footprint, Y-disjoint with a gap [109,139] (31 > 2·DT3_REACH=12).
         BoundingBox low  = new BoundingBox(0, 100, 0, 8, 108, 8);
         BoundingBox high = new BoundingBox(0, 140, 0, 8, 148, 8);
         BeyondEndChunkGenerator.CarveMask mask =
-                BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(low, high), true, BeyondEndChunkGenerator.CLOSE_RADIUS, true);
+                BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(low, high), true, BeyondStructureCarver.CLOSE_RADIUS, true);
         Assertions.assertTrue(mask.distributed, "fromBoxes(..., distributed=true) must build a DISTRIBUTED mask");
         Assertions.assertNotNull(mask.dt3, "a distributed fromBoxes mask must build the TRUE-3D field");
         var masks = List.of(mask);
@@ -1116,12 +1116,12 @@ class BodyBurialScanTest {
         final int gapY = 124;
         final int wallX = 9;
 
-        Assertions.assertFalse(BeyondEndChunkGenerator.the_beyond$carveRemovedAirAt(masks, wallX, gapY, 0),
+        Assertions.assertFalse(BeyondStructureCarver.the_beyond$carveRemovedAirAt(masks, wallX, gapY, 0),
                 "the inter-piece gap must NOT be bridged (true-3D topology-following); the 2.5D convex union cleared this");
-        double oldNl = 1.0 / BeyondEndChunkGenerator.CARVE_DIST_LAT_REACH;
+        double oldNl = 1.0 / BeyondStructureCarver.CARVE_DIST_LAT_REACH;
         double oldBase2 = oldNl * oldNl;
         double oldEllipsePenalty = oldBase2 < 1.0
-                ? BeyondEndChunkGenerator.CARVE_DIST_AMP * (1.0 - smoother(Math.sqrt(oldBase2))) : 0.0;
+                ? BeyondStructureCarver.CARVE_DIST_AMP * (1.0 - smoother(Math.sqrt(oldBase2))) : 0.0;
         Assertions.assertTrue(oldEllipsePenalty > 0.0,
                 "non-vacuity: the OLD 2.5D ellipse WOULD bridge the gap (penalty>0), so (a) is a real de-bridge; got " + oldEllipsePenalty);
         // WHITE-BOX: the field itself discriminates, far in the gap and near at a wall (un-warped lookup).
@@ -1130,19 +1130,19 @@ class BodyBurialScanTest {
         Assertions.assertTrue(ddGap > R3, "the 3D field must read PAST the skirt in the gap interior; ddGap=" + ddGap);
         Assertions.assertTrue(ddWall <= R3, "the 3D field must HUG the shell one block off a wall; ddWall=" + ddWall);
 
-        Assertions.assertTrue(BeyondEndChunkGenerator.the_beyond$carveRemovedAirAt(masks, 4, 104, 0),
+        Assertions.assertTrue(BeyondStructureCarver.the_beyond$carveRemovedAirAt(masks, 4, 104, 0),
                 "an occupied body cell must be carve-removed (no burial)");
 
-        Assertions.assertFalse(BeyondEndChunkGenerator.the_beyond$carveRemovedAirAt(masks, 4, 100 - 8, 0),
+        Assertions.assertFalse(BeyondStructureCarver.the_beyond$carveRemovedAirAt(masks, 4, 100 - 8, 0),
                 "terrain below the support base must NOT be carve-removed (support kept)");
 
         int removed = 0, parityViolations = 0;
         for (int x = -R3 - 4; x <= 8 + R3 + 4; x++) {
             for (int z = -R3 - 4; z <= 8 + R3 + 4; z++) {
                 for (int y = 100 - R3 - 4; y <= 148 + R3 + 4; y++) {
-                    if (!BeyondEndChunkGenerator.the_beyond$carveRemovedAirAt(masks, x, y, z)) continue;
+                    if (!BeyondStructureCarver.the_beyond$carveRemovedAirAt(masks, x, y, z)) continue;
                     removed++;
-                    if (BeyondEndChunkGenerator.the_beyond$guardOutsideDist(masks, x, y, z) > BeyondEndChunkGenerator.CARVE_ERODE_REACH)
+                    if (BeyondStructureCarver.the_beyond$guardOutsideDist(masks, x, y, z) > BeyondStructureCarver.CARVE_ERODE_REACH)
                         parityViolations++;
                 }
             }
@@ -1156,49 +1156,49 @@ class BodyBurialScanTest {
 
     @Test
     void baseAnchorPreserveGate() {
-        Assertions.assertTrue(BeyondEndChunkGenerator.BEARD_LAT_REACH <= BeyondEndChunkGenerator.FLOAT_HMARGIN,
+        Assertions.assertTrue(BeyondStructureCarver.BEARD_LAT_REACH <= BeyondStructureCarver.FLOAT_HMARGIN,
                 "preserve lateral reach (BEARD_LAT_REACH) must stay inside the guard band (FLOAT_HMARGIN)");
-        Assertions.assertTrue(BeyondEndChunkGenerator.DT3_REACH + BeyondEndChunkGenerator.DT3_WARP_AMP
-                        <= BeyondEndChunkGenerator.FLOAT_HMARGIN,
+        Assertions.assertTrue(BeyondStructureCarver.DT3_REACH + BeyondStructureCarver.DT3_WARP_AMP
+                        <= BeyondStructureCarver.FLOAT_HMARGIN,
                 "carve ⊆ guard pin (unchanged): DT3_REACH + DT3_WARP_AMP <= FLOAT_HMARGIN");
 
         final int gLo = 100, lo = 120, hi = 170;
         final int[] HI = {hi}, GLO = {gLo}, LO = {lo}, DXZ2 = {2}, D3 = {2};
         final boolean[] YES = {true}, NO = {false};
         final boolean[] BASE_T = {true}, BASE_F = {false};
-        Assertions.assertTrue(lo - 2 - gLo > BeyondEndChunkGenerator.DIST_SUPPORT_BAND,
+        Assertions.assertTrue(lo - 2 - gLo > BeyondStructureCarver.DIST_SUPPORT_BAND,
                 "test cell must be past the support-contact ramp band so only the base-anchor clip can preserve it");
 
-        double pIsland = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, YES, NO, YES, 1, lo - 2, 0.0, D3, true,  0.0, BASE_T);
-        double pVoid   = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, YES, NO, YES, 1, lo - 2, 0.0, D3, false, 0.0, BASE_T);
+        double pIsland = BeyondStructureCarver.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, YES, NO, YES, 1, lo - 2, 0.0, D3, true,  0.0, BASE_T);
+        double pVoid   = BeyondStructureCarver.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, YES, NO, YES, 1, lo - 2, 0.0, D3, false, 0.0, BASE_T);
         Assertions.assertEquals(0.0, pIsland, 1e-9, "base fringe below base WITH island below is PRESERVED (welds the start_platform)");
         Assertions.assertTrue(pVoid > 0.0, "the SAME cell over the VOID (rockBelow=false) is still CARVED (no §16 float)");
 
-        double pCantilever = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, YES, NO, YES, 1, lo - 2, 0.0, D3, true, 0.0, BASE_F);
+        double pCantilever = BeyondStructureCarver.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, YES, NO, YES, 1, lo - 2, 0.0, D3, true, 0.0, BASE_F);
         Assertions.assertTrue(pCantilever > 0.0, "preserve is confined to the start footprint (does NOT weld cantilever underside island)");
 
-        double pAbove = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, YES, NO, YES, 1, lo + 3, 0.0, D3, true, 0.0, BASE_T);
+        double pAbove = BeyondStructureCarver.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, YES, NO, YES, 1, lo + 3, 0.0, D3, true, 0.0, BASE_T);
         Assertions.assertTrue(pAbove > 0.0, "preserve is y<lo only; above-base is still carved");
 
         // boundary y==lo: the clip uses '<' not '<=', so the base row is left to the existing occupied-span/dd==0 logic.
-        double pAtBase = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, YES, NO, YES, 1, lo, 0.0, D3, true, 0.0, BASE_T);
+        double pAtBase = BeyondStructureCarver.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, YES, NO, YES, 1, lo, 0.0, D3, true, 0.0, BASE_T);
         Assertions.assertTrue(pAtBase > 0.0, "y==lo is NOT clip-handled (the '<' boundary; the base row stays with the skirt/ramp)");
 
-        double pBody = BeyondEndChunkGenerator.the_beyond$carvePenalty(new int[]{0}, LO, HI, GLO, YES, NO, YES, 1, 130, 0.0, new int[]{0}, true, 0.0, BASE_T);
+        double pBody = BeyondStructureCarver.the_beyond$carvePenalty(new int[]{0}, LO, HI, GLO, YES, NO, YES, 1, 130, 0.0, new int[]{0}, true, 0.0, BASE_T);
         Assertions.assertEquals(Double.POSITIVE_INFINITY, pBody, "no-burial: occupied-span cell clears unconditionally; ship/body untouched");
 
         // parity sweep on a mask WITH a start baseBox: the clip only shrinks the removed set, so this must stay 0.
         BoundingBox start = new BoundingBox(0, 108, 0, 8, 116, 8);
-        var masks = List.of(BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(start), true, BeyondEndChunkGenerator.CLOSE_RADIUS, true));
+        var masks = List.of(BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(start), true, BeyondStructureCarver.CLOSE_RADIUS, true));
         Assertions.assertNotNull(masks.get(0).baseBox, "the start mask must carry a baseBox so the preserve scope is live");
         int removed = 0, parityViolations = 0;
-        final int R3 = BeyondEndChunkGenerator.DT3_REACH;
+        final int R3 = BeyondStructureCarver.DT3_REACH;
         for (int x = -R3 - 6; x <= 8 + R3 + 6; x++)
             for (int z = -R3 - 6; z <= 8 + R3 + 6; z++)
                 for (int y = 108 - R3 - 6; y <= 116 + R3 + 6; y++) {
-                    if (!BeyondEndChunkGenerator.the_beyond$carveRemovedAirAt(masks, x, y, z)) continue;
+                    if (!BeyondStructureCarver.the_beyond$carveRemovedAirAt(masks, x, y, z)) continue;
                     removed++;
-                    if (BeyondEndChunkGenerator.the_beyond$guardOutsideDist(masks, x, y, z) > BeyondEndChunkGenerator.CARVE_ERODE_REACH)
+                    if (BeyondStructureCarver.the_beyond$guardOutsideDist(masks, x, y, z) > BeyondStructureCarver.CARVE_ERODE_REACH)
                         parityViolations++;
                 }
         System.out.printf("[baseAnchorPreserve] pIsland=%f pVoid=%f pCantilever=%f pAbove=%f pAtBase=%f pBody=%f removed=%d parityViolations=%d%n",
@@ -1210,107 +1210,107 @@ class BodyBurialScanTest {
 
     @Test
     void baseBeardCoverGate() {
-        final double AMP = BeyondEndChunkGenerator.BASE_BEARD_AMP;
-        final int VFADE = BeyondEndChunkGenerator.BASE_BEARD_VFADE;
-        final int REACH = BeyondEndChunkGenerator.BEARD_LAT_REACH;
-        final int COVER = BeyondEndChunkGenerator.PLATFORM_COVER;
+        final double AMP = BeyondStructureCarver.BASE_BEARD_AMP;
+        final int VFADE = BeyondStructureCarver.BASE_BEARD_VFADE;
+        final int REACH = BeyondStructureCarver.BEARD_LAT_REACH;
+        final int COVER = BeyondStructureCarver.PLATFORM_COVER;
 
         // amp window: above the far-field gap p90 (reliable fill), below the p99 tail where the cover flattens into a slab
         Assertions.assertTrue(AMP >= 0.35 && AMP < 0.55, "BASE_BEARD_AMP must stay in [0.35,0.55) — rounds, not a flat slab");
-        Assertions.assertTrue(REACH <= BeyondEndChunkGenerator.FLOAT_HMARGIN,
+        Assertions.assertTrue(REACH <= BeyondStructureCarver.FLOAT_HMARGIN,
                 "cover lateral reach (BEARD_LAT_REACH) must stay inside the guard band (FLOAT_HMARGIN) — no float");
 
         final int floorY = 120;
         final int colLo = floorY - COVER, colHi = 170, natTop = colLo - 6;
         final int target = Math.min(colLo + (COVER - 1), floorY - 1);
 
-        Assertions.assertEquals(AMP, BeyondEndChunkGenerator.the_beyond$baseBeardDelta(natTop, colLo, colHi, floorY, 0, colLo + 1), 1e-9,
+        Assertions.assertEquals(AMP, BeyondStructureCarver.the_beyond$baseBeardDelta(natTop, colLo, colHi, floorY, 0, colLo + 1), 1e-9,
                 "directly under the foot, below the platform top, the cover adds full amp");
-        Assertions.assertEquals(AMP, BeyondEndChunkGenerator.the_beyond$baseBeardDelta(natTop, colLo, colHi, floorY, 0, target), 1e-9,
+        Assertions.assertEquals(AMP, BeyondStructureCarver.the_beyond$baseBeardDelta(natTop, colLo, colHi, floorY, 0, target), 1e-9,
                 "at the platform top the cover still adds full amp (y<=target)");
 
         for (int dxz = 0; dxz <= REACH; dxz++)
             for (int y = natTop - 4; y <= floorY + 4; y++)
-                Assertions.assertEquals(0.0, BeyondEndChunkGenerator.the_beyond$baseBeardDelta(Integer.MIN_VALUE, colLo, colHi, floorY, dxz, y), 1e-9,
+                Assertions.assertEquals(0.0, BeyondStructureCarver.the_beyond$baseBeardDelta(Integer.MIN_VALUE, colLo, colHi, floorY, dxz, y), 1e-9,
                         "no connected island below ⇒ ZERO cover (cannot float)");
 
-        Assertions.assertEquals(0.0, BeyondEndChunkGenerator.the_beyond$baseBeardDelta(natTop, colLo, colHi, floorY, 0, natTop), 1e-9, "no add at the island top");
-        Assertions.assertEquals(0.0, BeyondEndChunkGenerator.the_beyond$baseBeardDelta(natTop, colLo, colHi, floorY, 0, natTop - 1), 1e-9, "no add below the island");
+        Assertions.assertEquals(0.0, BeyondStructureCarver.the_beyond$baseBeardDelta(natTop, colLo, colHi, floorY, 0, natTop), 1e-9, "no add at the island top");
+        Assertions.assertEquals(0.0, BeyondStructureCarver.the_beyond$baseBeardDelta(natTop, colLo, colHi, floorY, 0, natTop - 1), 1e-9, "no add below the island");
 
         // the core invariant, swept over every taper column the platform can produce.
         for (int tcl = floorY - COVER; tcl <= floorY - 1; tcl++)
             for (int dxz = 0; dxz <= REACH; dxz++)
                 for (int y = floorY; y <= floorY + COVER + VFADE; y++)
-                    Assertions.assertEquals(0.0, BeyondEndChunkGenerator.the_beyond$baseBeardDelta(tcl - 6, tcl, colHi, floorY, dxz, y), 1e-9,
+                    Assertions.assertEquals(0.0, BeyondStructureCarver.the_beyond$baseBeardDelta(tcl - 6, tcl, colHi, floorY, dxz, y), 1e-9,
                             "cover must NEVER fill at/above the building floor (taper colLo=" + tcl + ", y=" + y + ")");
 
         double prevV = AMP + 1;
         for (int y = target; y <= floorY; y++) {
-            double d = BeyondEndChunkGenerator.the_beyond$baseBeardDelta(natTop, colLo, colHi, floorY, 0, y);
+            double d = BeyondStructureCarver.the_beyond$baseBeardDelta(natTop, colLo, colHi, floorY, 0, y);
             Assertions.assertTrue(d <= prevV + 1e-9, "vertical profile must be non-increasing toward the floor ceiling");
             prevV = d;
         }
-        Assertions.assertEquals(0.0, BeyondEndChunkGenerator.the_beyond$baseBeardDelta(natTop, colLo, colHi, floorY, 0, floorY), 1e-9, "hard ceiling at the building floor");
+        Assertions.assertEquals(0.0, BeyondStructureCarver.the_beyond$baseBeardDelta(natTop, colLo, colHi, floorY, 0, floorY), 1e-9, "hard ceiling at the building floor");
 
         double prevL = AMP + 1;
         for (int dxz = 0; dxz <= REACH; dxz++) {
-            double d = BeyondEndChunkGenerator.the_beyond$baseBeardDelta(natTop, colLo, colHi, floorY, dxz, colLo + 1);
+            double d = BeyondStructureCarver.the_beyond$baseBeardDelta(natTop, colLo, colHi, floorY, dxz, colLo + 1);
             Assertions.assertTrue(d <= prevL + 1e-9, "lateral apron must be non-increasing outward (rounded face)");
             prevL = d;
         }
-        Assertions.assertEquals(0.0, BeyondEndChunkGenerator.the_beyond$baseBeardDelta(natTop, colLo, colHi, floorY, REACH, colLo + 1), 1e-9, "apron tapers to 0 at BEARD_LAT_REACH");
-        Assertions.assertEquals(0.0, BeyondEndChunkGenerator.the_beyond$baseBeardDelta(natTop, colLo, colHi, floorY, REACH + 1, colLo + 1), 1e-9, "no add beyond the reach");
+        Assertions.assertEquals(0.0, BeyondStructureCarver.the_beyond$baseBeardDelta(natTop, colLo, colHi, floorY, REACH, colLo + 1), 1e-9, "apron tapers to 0 at BEARD_LAT_REACH");
+        Assertions.assertEquals(0.0, BeyondStructureCarver.the_beyond$baseBeardDelta(natTop, colLo, colHi, floorY, REACH + 1, colLo + 1), 1e-9, "no add beyond the reach");
 
         // anti-bury: colHi clamps the target so a short cantilever box is never over-covered.
         final int thinHi = colLo + 1;
-        Assertions.assertEquals(0.0, BeyondEndChunkGenerator.the_beyond$baseBeardDelta(natTop, colLo, thinHi, floorY, 0, target), 1e-9,
+        Assertions.assertEquals(0.0, BeyondStructureCarver.the_beyond$baseBeardDelta(natTop, colLo, thinHi, floorY, 0, target), 1e-9,
                 "thin piece: the cover never exceeds the piece's own top (anti-bury), so no add at the full platform-top target");
 
         for (int dxz = 0; dxz <= REACH + 3; dxz++)
             for (int y = natTop - 3; y <= colHi + 5; y++) {
-                double d = BeyondEndChunkGenerator.the_beyond$baseBeardDelta(natTop, colLo, colHi, floorY, dxz, y);
+                double d = BeyondStructureCarver.the_beyond$baseBeardDelta(natTop, colLo, colHi, floorY, dxz, y);
                 if (d <= 0.0) continue;
-                Assertions.assertTrue(dxz < REACH && dxz <= BeyondEndChunkGenerator.FLOAT_HMARGIN,
+                Assertions.assertTrue(dxz < REACH && dxz <= BeyondStructureCarver.FLOAT_HMARGIN,
                         "cover add only inside the float-safe lateral band");
                 Assertions.assertTrue(y > natTop && y < floorY,
                         "cover add only in (natTop, floorY) — never below the island, never at/into the building");
             }
 
         final int[] LO = {colLo}, HI = {colHi}, NAT = {natTop}, FLOOR = {floorY}, DXZ0 = {0};
-        Assertions.assertEquals(AMP, BeyondEndChunkGenerator.the_beyond$baseBeardDeltaAt(DXZ0, LO, HI, new boolean[]{true}, NAT, FLOOR, 1, colLo + 1), 1e-9,
+        Assertions.assertEquals(AMP, BeyondStructureCarver.the_beyond$baseBeardDeltaAt(DXZ0, LO, HI, new boolean[]{true}, NAT, FLOOR, 1, colLo + 1), 1e-9,
                 "an in-footprint base column with island below covers at full amp under the foot");
-        Assertions.assertEquals(AMP, BeyondEndChunkGenerator.the_beyond$baseBeardDeltaAt(DXZ0, LO, HI, new boolean[]{false}, NAT, FLOOR, 1, colLo + 1), 1e-9,
+        Assertions.assertEquals(AMP, BeyondStructureCarver.the_beyond$baseBeardDeltaAt(DXZ0, LO, HI, new boolean[]{false}, NAT, FLOOR, 1, colLo + 1), 1e-9,
                 "FULL-FOOTPRINT: a ground-contact column OUTSIDE the start footprint is NOW bearded too (gated on island-below, not base[k])");
-        Assertions.assertEquals(0.0, BeyondEndChunkGenerator.the_beyond$baseBeardDeltaAt(DXZ0, LO, HI, new boolean[]{false}, new int[]{Integer.MIN_VALUE}, FLOOR, 1, colLo + 1), 1e-9,
+        Assertions.assertEquals(0.0, BeyondStructureCarver.the_beyond$baseBeardDeltaAt(DXZ0, LO, HI, new boolean[]{false}, new int[]{Integer.MIN_VALUE}, FLOOR, 1, colLo + 1), 1e-9,
                 "a non-base column over VOID (baseNat=MIN, a true cantilever) adds nothing — no weld/bridge");
-        Assertions.assertEquals(0.0, BeyondEndChunkGenerator.the_beyond$baseBeardDeltaAt(DXZ0, LO, HI, new boolean[]{true}, new int[]{Integer.MIN_VALUE}, FLOOR, 1, colLo + 1), 1e-9,
+        Assertions.assertEquals(0.0, BeyondStructureCarver.the_beyond$baseBeardDeltaAt(DXZ0, LO, HI, new boolean[]{true}, new int[]{Integer.MIN_VALUE}, FLOOR, 1, colLo + 1), 1e-9,
                 "a base column with NO island below adds nothing (no float)");
-        Assertions.assertEquals(natTop, BeyondEndChunkGenerator.the_beyond$groundRestNatTop(natTop + BeyondEndChunkGenerator.FOUNDATION_MAX_LIP, natTop),
+        Assertions.assertEquals(natTop, BeyondStructureCarver.the_beyond$groundRestNatTop(natTop + BeyondStructureCarver.FOUNDATION_MAX_LIP, natTop),
                 "ground-rest: a column within MAX_LIP of its island is ground-contact (bearded)");
-        Assertions.assertEquals(Integer.MIN_VALUE, BeyondEndChunkGenerator.the_beyond$groundRestNatTop(natTop + BeyondEndChunkGenerator.FOUNDATION_MAX_LIP + 1, natTop),
+        Assertions.assertEquals(Integer.MIN_VALUE, BeyondStructureCarver.the_beyond$groundRestNatTop(natTop + BeyondStructureCarver.FOUNDATION_MAX_LIP + 1, natTop),
                 "ground-rest: a cantilever floating >MAX_LIP above an incidental island is NOT welded (anti-bridge)");
         final int seatFloor = 100;
-        Assertions.assertEquals(seatFloor - BeyondEndChunkGenerator.BEARD_SEAT_DROP,
-                BeyondEndChunkGenerator.the_beyond$seatConfinedNatTop(seatFloor - BeyondEndChunkGenerator.BEARD_SEAT_DROP, seatFloor),
+        Assertions.assertEquals(seatFloor - BeyondStructureCarver.BEARD_SEAT_DROP,
+                BeyondStructureCarver.the_beyond$seatConfinedNatTop(seatFloor - BeyondStructureCarver.BEARD_SEAT_DROP, seatFloor),
                 "seat-confine: an island exactly BEARD_SEAT_DROP below the seat floor (bunker) stays welded");
         Assertions.assertEquals(Integer.MIN_VALUE,
-                BeyondEndChunkGenerator.the_beyond$seatConfinedNatTop(seatFloor - BeyondEndChunkGenerator.BEARD_SEAT_DROP - 1, seatFloor),
+                BeyondStructureCarver.the_beyond$seatConfinedNatTop(seatFloor - BeyondStructureCarver.BEARD_SEAT_DROP - 1, seatFloor),
                 "seat-confine: an island >BEARD_SEAT_DROP below the seat floor (lower pancake) is dropped — no wall-silhouette");
         Assertions.assertEquals(seatFloor - 40,
-                BeyondEndChunkGenerator.the_beyond$seatConfinedNatTop(seatFloor - 40, Integer.MIN_VALUE),
+                BeyondStructureCarver.the_beyond$seatConfinedNatTop(seatFloor - 40, Integer.MIN_VALUE),
                 "seat-confine: no baseBox (seatFloor=MIN) is a pass-through (legacy/unconfined)");
         Assertions.assertEquals(Integer.MIN_VALUE,
-                BeyondEndChunkGenerator.the_beyond$seatConfinedNatTop(Integer.MIN_VALUE, seatFloor),
+                BeyondStructureCarver.the_beyond$seatConfinedNatTop(Integer.MIN_VALUE, seatFloor),
                 "seat-confine: a MIN natTop (no island) stays MIN");
-        double union = BeyondEndChunkGenerator.the_beyond$baseBeardDeltaAt(new int[]{3, 0}, new int[]{colLo, colLo}, new int[]{colHi, colHi},
+        double union = BeyondStructureCarver.the_beyond$baseBeardDeltaAt(new int[]{3, 0}, new int[]{colLo, colLo}, new int[]{colHi, colHi},
                 new boolean[]{true, true}, new int[]{natTop, natTop}, new int[]{floorY, floorY}, 2, colLo + 1);
         Assertions.assertEquals(AMP, union, 1e-9, "union takes the max over base columns (the nearest dominates)");
 
         final int[] TAPER_LO = {floorY - 1}, TAPER_HI = {colHi}, TAPER_NAT = {floorY - 1 - 6};
-        Assertions.assertEquals(AMP, BeyondEndChunkGenerator.the_beyond$baseBeardDeltaAt(DXZ0, TAPER_LO, TAPER_HI, new boolean[]{true}, TAPER_NAT, FLOOR, 1, floorY - 1), 1e-9,
+        Assertions.assertEquals(AMP, BeyondStructureCarver.the_beyond$baseBeardDeltaAt(DXZ0, TAPER_LO, TAPER_HI, new boolean[]{true}, TAPER_NAT, FLOOR, 1, floorY - 1), 1e-9,
                 "taper column: cover still tops the platform at floorY-1");
         for (int y = floorY; y <= floorY + COVER; y++)
-            Assertions.assertEquals(0.0, BeyondEndChunkGenerator.the_beyond$baseBeardDeltaAt(DXZ0, TAPER_LO, TAPER_HI, new boolean[]{true}, TAPER_NAT, FLOOR, 1, y), 1e-9,
+            Assertions.assertEquals(0.0, BeyondStructureCarver.the_beyond$baseBeardDeltaAt(DXZ0, TAPER_LO, TAPER_HI, new boolean[]{true}, TAPER_NAT, FLOOR, 1, y), 1e-9,
                     "taper column MAX must NOT bury the building (y=" + y + " >= floor)");
 
         System.out.printf("[baseBeardCover] amp=%.3f vfade=%d reach=%d cover=%d floor=%d target(capped)=%d%n", AMP, VFADE, REACH, COVER, floorY, target);
@@ -1325,41 +1325,41 @@ class BodyBurialScanTest {
         final boolean[] BURIED_T = {true}, BURIED_F = {false};
         // A SHELL test cell: dxz=2 (offset), y in [lo,hi] (so y<=hi → SHELL true), past the support ramp.
         final int yShell = 130;
-        Assertions.assertTrue(yShell - gLo >= BeyondEndChunkGenerator.DIST_SUPPORT_BAND,
+        Assertions.assertTrue(yShell - gLo >= BeyondStructureCarver.DIST_SUPPORT_BAND,
                 "shell test cell must be past the support-contact ramp so only the keep clause acts");
 
-        double pKeep  = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_F, BURIED_T);
-        double pCarve = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_F, BURIED_F);
+        double pKeep  = BeyondStructureCarver.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_F, BURIED_T);
+        double pCarve = BeyondStructureCarver.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_F, BURIED_F);
         Assertions.assertEquals(0.0, pKeep, 1e-9, "buried-column shell WITH island beneath is KEPT (island buries the bunker)");
         Assertions.assertTrue(pCarve > 0.0, "non-vacuity: signal off (buriedAbove=false) WOULD peel the same shell cell");
 
         final int[] HI_LOW = {130};
         final int yCap = 131;
-        double pCap    = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ0, LO, HI_LOW, GLO, SEAT, FILL_N, DIST, 1, yCap, 0.0, D3, true, 0.0, BASE_F, BURIED_T);
-        double pCapOld = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ0, LO, HI_LOW, GLO, SEAT, FILL_N, DIST, 1, yCap, 0.0, D3, true, 0.0, BASE_F, BURIED_F);
+        double pCap    = BeyondStructureCarver.the_beyond$carvePenalty(DXZ0, LO, HI_LOW, GLO, SEAT, FILL_N, DIST, 1, yCap, 0.0, D3, true, 0.0, BASE_F, BURIED_T);
+        double pCapOld = BeyondStructureCarver.the_beyond$carvePenalty(DXZ0, LO, HI_LOW, GLO, SEAT, FILL_N, DIST, 1, yCap, 0.0, D3, true, 0.0, BASE_F, BURIED_F);
         Assertions.assertEquals(0.0, pCap, 1e-9, "the island CAP directly above the buried roof is KEPT (buries it)");
         Assertions.assertEquals(Double.POSITIVE_INFINITY, pCapOld, "pre-fix: the A2 ceiling clear removed the cap (the rectangular pit over the bunker)");
 
-        final int yAboveCap = hi + BeyondEndChunkGenerator.CARVE_CEIL_REACH + 4;
-        double pAbove = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yAboveCap, 0.0, new int[]{1}, true, 0.0, BASE_F, BURIED_F);
+        final int yAboveCap = hi + BeyondStructureCarver.CARVE_CEIL_REACH + 4;
+        double pAbove = BeyondStructureCarver.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yAboveCap, 0.0, new int[]{1}, true, 0.0, BASE_F, BURIED_F);
         Assertions.assertTrue(pAbove > 0.0, "above the cap reach the skirt is unchanged (surface part exposed)");
 
-        double pBaseT = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_T, BURIED_T);
-        double pBaseF = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_T, BURIED_F);
-        double p14    = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_F);
-        double p15null= BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_F, (boolean[]) null);
+        double pBaseT = BeyondStructureCarver.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_T, BURIED_T);
+        double pBaseF = BeyondStructureCarver.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_T, BURIED_F);
+        double p14    = BeyondStructureCarver.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_F);
+        double p15null= BeyondStructureCarver.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_F, (boolean[]) null);
         Assertions.assertEquals(pBaseF, pBaseT, 1e-9, "in-footprint (base[k]=true) is byte-identical with/without buriedAbove (end_city untouched)");
         Assertions.assertTrue(pBaseT > 0.0, "in-footprint cell still carves (scoped out by !base[k])");
         Assertions.assertEquals(p15null, p14, 1e-9, "the 14-arg overload == 15-arg buriedAbove=null (existing callers/guard proxy byte-identical)");
 
-        double pVoid = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, false, 0.0, BASE_F, BURIED_T);
+        double pVoid = BeyondStructureCarver.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, false, 0.0, BASE_F, BURIED_T);
         Assertions.assertTrue(pVoid > 0.0, "buried shell over VOID (rockBelow=false) is still carved (ship floats, no §16 bump)");
 
         // the pre-loop keep detects `occupied` and falls through regardless of buriedAbove.
-        double pOcc = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ0, LO, HI, GLO, SEAT, FILL_N, DIST, 1, 130, 0.0, D30, true, 0.0, BASE_F, BURIED_T);
+        double pOcc = BeyondStructureCarver.the_beyond$carvePenalty(DXZ0, LO, HI, GLO, SEAT, FILL_N, DIST, 1, 130, 0.0, D30, true, 0.0, BASE_F, BURIED_T);
         Assertions.assertEquals(Double.POSITIVE_INFINITY, pOcc, "occupied span clears unconditionally (room stays hollow)");
 
-        final int CR = BeyondEndChunkGenerator.CARVE_CEIL_REACH, FR = BeyondEndChunkGenerator.FACE_ROUGH;
+        final int CR = BeyondStructureCarver.CARVE_CEIL_REACH, FR = BeyondStructureCarver.FACE_ROUGH;
         final int[] HI_SEAT = {150};
         int minCeil = Integer.MAX_VALUE, maxCeil = Integer.MIN_VALUE;
         for (int i = 0; i <= 20; i++) {
@@ -1367,7 +1367,7 @@ class BodyBurialScanTest {
             // Find the max cleared headroom (largest (y-hi) that returns +INF) for this rough.
             int ceil = 0;
             for (int off = 1; off <= CR + 2; off++) {
-                double p = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ0, LO, HI_SEAT, GLO, SEAT, FILL_N, DIST, 1, 150 + off, 0.0, new int[]{DT3CAPSENTINEL()}, true, rough, BASE_F, BURIED_F);
+                double p = BeyondStructureCarver.the_beyond$carvePenalty(DXZ0, LO, HI_SEAT, GLO, SEAT, FILL_N, DIST, 1, 150 + off, 0.0, new int[]{DT3CAPSENTINEL()}, true, rough, BASE_F, BURIED_F);
                 if (p == Double.POSITIVE_INFINITY) ceil = off; else break;
             }
             if (ceil < minCeil) minCeil = ceil;
@@ -1383,13 +1383,13 @@ class BodyBurialScanTest {
             double rough = -1.0 + 2.0 * i / 10.0;
             int ceil = 0;
             for (int off = 1; off <= CR + 2; off++) {
-                double p = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ0, LO, HI_SEAT, GLO, SEAT, FILL_N, DIST_F, 1, 150 + off, 0.0, new int[]{DT3CAPSENTINEL()}, true, rough, BASE_F, BURIED_F);
+                double p = BeyondStructureCarver.the_beyond$carvePenalty(DXZ0, LO, HI_SEAT, GLO, SEAT, FILL_N, DIST_F, 1, 150 + off, 0.0, new int[]{DT3CAPSENTINEL()}, true, rough, BASE_F, BURIED_F);
                 if (p == Double.POSITIVE_INFINITY) ceil = off; else break;
             }
             Assertions.assertEquals(CR, ceil, "FACE B is dist-gated: an all-floating (seated) column's A2 ceiling == CARVE_CEIL_REACH exactly (rough inert, station byte-identical); rough=" + rough);
         }
 
-        double pOpen = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_F, BURIED_F);
+        double pOpen = BeyondStructureCarver.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_F, BURIED_F);
         Assertions.assertTrue(pOpen > 0.0, "open (buriedAbove=false) sunken floor is CARVED, never walled in");
 
         // (G10) the blocker gate (2-bit): bits {buried k0 at dxz=0, non-buried n at dxz=2}.
@@ -1400,53 +1400,53 @@ class BodyBurialScanTest {
         final boolean[] SEAT_2 = {true, true}, FILL_2 = {false, false}, DIST_2 = {true, true}, BASE_2 = {false, false};
         final boolean[] BURIED_2 = {true, false};
         final int[] D3_2 = {2, 2};
-        double p2bit = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ_2BIT, LO_2BIT, HI_2BIT, GLO_2BIT, SEAT_2, FILL_2, DIST_2, 2, 131, 0.0, D3_2, true, 0.0, BASE_2, BURIED_2);
+        double p2bit = BeyondStructureCarver.the_beyond$carvePenalty(DXZ_2BIT, LO_2BIT, HI_2BIT, GLO_2BIT, SEAT_2, FILL_2, DIST_2, 2, 131, 0.0, D3_2, true, 0.0, BASE_2, BURIED_2);
         Assertions.assertEquals(0.0, p2bit, 1e-9, "G10: the buried column's CAP stays KEPT even though a non-buried lateral neighbour's skirt would carve it (dominating pre-loop return-0; the per-bit-continue leak)");
         final boolean[] BURIED_2_OFF = {false, false};
-        double p2bitOff = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ_2BIT, LO_2BIT, HI_2BIT, GLO_2BIT, SEAT_2, FILL_2, DIST_2, 2, 131, 0.0, D3_2, true, 0.0, BASE_2, BURIED_2_OFF);
+        double p2bitOff = BeyondStructureCarver.the_beyond$carvePenalty(DXZ_2BIT, LO_2BIT, HI_2BIT, GLO_2BIT, SEAT_2, FILL_2, DIST_2, 2, 131, 0.0, D3_2, true, 0.0, BASE_2, BURIED_2_OFF);
         Assertions.assertTrue(p2bitOff == Double.POSITIVE_INFINITY || p2bitOff > 0.0,
                 "G10 non-vacuity: with NO buried bit the same cell IS carved (so the keep is doing real work); got " + p2bitOff);
 
         final int[] FLOOR_ABOVE = {hi - 40};
-        double pShipAbove = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_F, BURIED_T, FLOOR_ABOVE);
+        double pShipAbove = BeyondStructureCarver.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_F, BURIED_T, FLOOR_ABOVE);
         Assertions.assertTrue(pShipAbove > 0.0, "G11: a buried shell whose roof is AT/ABOVE the surface seat (end_city ship in a stacked region) is CARVED, not kept");
         final int[] FLOOR_SUB = {hi + 20};
-        double pBunkerKept = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_F, BURIED_T, FLOOR_SUB);
+        double pBunkerKept = BeyondStructureCarver.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_F, BURIED_T, FLOOR_SUB);
         Assertions.assertEquals(0.0, pBunkerKept, 1e-9, "G12: a buried shell whose roof is BELOW the surface seat (mirestone bunker) is KEPT (still buried)");
-        double p16null = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_F, BURIED_T, (int[]) null);
+        double p16null = BeyondStructureCarver.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_F, BURIED_T, (int[]) null);
         Assertions.assertEquals(pKeep, p16null, 1e-9, "G13: 16-arg baseFloor=null is byte-identical to the 15-arg legacy keep (no sub-surface gate)");
 
         final int[] FLOOR_AT = {hi};
-        double pCeilAtSeat = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_F, BURIED_T, FLOOR_AT);
+        double pCeilAtSeat = BeyondStructureCarver.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_F, BURIED_T, FLOOR_AT);
         Assertions.assertEquals(0.0, pCeilAtSeat, 1e-9, "G14: a buried room ceiling AT the surface seat (hi == baseFloor — the mirestone bunker) is KEPT (a strict < would re-expose it)");
         final int[] FLOOR_BELOW1 = {hi - 1};
-        double pAboveSeat1 = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_F, BURIED_T, FLOOR_BELOW1);
+        double pAboveSeat1 = BeyondStructureCarver.the_beyond$carvePenalty(DXZ2, LO, HI, GLO, SEAT, FILL_N, DIST, 1, yShell, 0.0, D3, true, 0.0, BASE_F, BURIED_T, FLOOR_BELOW1);
         Assertions.assertTrue(pAboveSeat1 > 0.0, "G15: a buried roof 1 ABOVE the seat (entrance throat / surface part) is CARVED (only AT/below the seat is kept)");
 
         System.out.printf("[buriedAbove] keepReach=%d ceilReach=%d faceRough=%d pKeep=%.3f pCap=%.3f pCarve=%.3f ceil[min=%d max=%d] p2bit=%.3f pShipAbove=%.3f pBunkerKept=%.3f pCeilAtSeat=%.3f pAboveSeat1=%.3f%n",
-                BeyondEndChunkGenerator.SUBSURF_KEEP_REACH, CR, FR, pKeep, pCap, pCarve, minCeil, maxCeil, p2bit, pShipAbove, pBunkerKept, pCeilAtSeat, pAboveSeat1);
+                BeyondStructureCarver.SUBSURF_KEEP_REACH, CR, FR, pKeep, pCap, pCarve, minCeil, maxCeil, p2bit, pShipAbove, pBunkerKept, pCeilAtSeat, pAboveSeat1);
     }
 
     /** A DT3 distance sentinel meaning "no field / out of range" (DT3_CAP+1) so the FACE B kernel cases isolate the A2
      *  ceiling path (the dd==DT3_CAP+1 branch falls to the 2.5D fallback, but for dxz==0 the A2 ceiling fires first). */
     private static int DT3CAPSENTINEL() {
-        return BeyondEndChunkGenerator.DT3_CAP + 1;
+        return BeyondStructureCarver.DT3_CAP + 1;
     }
 
     @Test
     void faceRoughInwardOnlyAndWandersGate() {
-        Assertions.assertTrue(BeyondEndChunkGenerator.FACE_ROUGH >= 0
-                        && BeyondEndChunkGenerator.FACE_ROUGH < BeyondEndChunkGenerator.DT3_REACH,
+        Assertions.assertTrue(BeyondStructureCarver.FACE_ROUGH >= 0
+                        && BeyondStructureCarver.FACE_ROUGH < BeyondStructureCarver.DT3_REACH,
                 "FACE_ROUGH must be in [0, DT3_REACH) (reachEff stays positive and never exceeds DT3_REACH)");
 
-        final int R3 = BeyondEndChunkGenerator.DT3_REACH;
-        final int WARP = (int) Math.ceil(BeyondEndChunkGenerator.DT3_WARP_AMP);
+        final int R3 = BeyondStructureCarver.DT3_REACH;
+        final int WARP = (int) Math.ceil(BeyondStructureCarver.DT3_WARP_AMP);
         final int OUTER_BOUND = R3 + WARP;
 
         // A wide, flat distributed slab, 1 thick in Z so the +X/+Z faces are flat planes (the flat-cut case).
         BoundingBox slab = new BoundingBox(0, 100, 0, 40, 108, 0);
         BeyondEndChunkGenerator.CarveMask mask =
-                BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(slab), true, BeyondEndChunkGenerator.CLOSE_RADIUS, true);
+                BeyondEndChunkGenerator.CarveMask.fromBoxes(List.of(slab), true, BeyondStructureCarver.CLOSE_RADIUS, true);
         Assertions.assertTrue(mask.distributed, "fromBoxes(..., distributed=true) must build a DISTRIBUTED mask");
         Assertions.assertNotNull(mask.dt3, "a distributed fromBoxes mask must build the TRUE-3D field");
         var masks = List.of(mask);
@@ -1455,7 +1455,7 @@ class BodyBurialScanTest {
         for (int x = -R3 - WARP - 3; x <= 40 + R3 + WARP + 3; x++) {
             for (int z = -R3 - WARP - 3; z <= R3 + WARP + 3; z++) {
                 for (int y = 100 - R3 - WARP - 3; y <= 108 + R3 + WARP + 3; y++) {
-                    if (!BeyondEndChunkGenerator.the_beyond$carveRemovedAirAt(masks, x, y, z)) continue;
+                    if (!BeyondStructureCarver.the_beyond$carveRemovedAirAt(masks, x, y, z)) continue;
                     removed++;
                     int trueDist = mask.dt3At(x, y, z);   // exact un-warped Chebyshev distance to a real slab block
                     if (trueDist > OUTER_BOUND) outwardViolations++;
@@ -1472,7 +1472,7 @@ class BodyBurialScanTest {
         for (int z = -6; z <= 6; z++) {
             int outer = Integer.MIN_VALUE;
             for (int x = 9; x <= 14; x++) {
-                if (BeyondEndChunkGenerator.the_beyond$carveRemovedAirAt(masks, x, yMid, z)) outer = x;
+                if (BeyondStructureCarver.the_beyond$carveRemovedAirAt(masks, x, yMid, z)) outer = x;
             }
             if (outer == Integer.MIN_VALUE) continue;
             faces++;
@@ -1577,45 +1577,45 @@ class BodyBurialScanTest {
 
     @Test
     void distributedFootingNotGlobalGate() {
-        int DEEP = BeyondEndChunkGenerator.FOUNDATION_DEPTH;   // the production footing reach (= mask.foundationDepth = 8)
+        int DEEP = BeyondStructureCarver.FOUNDATION_DEPTH;   // the production footing reach (= mask.foundationDepth = 8)
         int footingColLo = 150;
-        int seat = BeyondEndChunkGenerator.the_beyond$foundationNatTop(footingColLo, DEEP, yy -> yy <= footingColLo - 2);
+        int seat = BeyondStructureCarver.the_beyond$foundationNatTop(footingColLo, DEEP, yy -> yy <= footingColLo - 2);
         Assertions.assertEquals(footingColLo - 2, seat, "a footing column seats on the natural island within reach (1-block lip)");
         int cantColLo = 200;
-        int noSeat = BeyondEndChunkGenerator.the_beyond$foundationNatTop(cantColLo, DEEP, yy -> yy <= 120);
+        int noSeat = BeyondStructureCarver.the_beyond$foundationNatTop(cantColLo, DEEP, yy -> yy <= 120);
         Assertions.assertEquals(Integer.MIN_VALUE, noSeat,
                 "a cantilevered/hanging column with no ground within reach gets NO foundation (no flat slab under the whole footprint)");
         // contiguity: a void gap wider than FOUNDATION_MAX_LIP must NOT seat (would weld onto a disconnected sliver).
         int dipColLo = 150;
         Assertions.assertEquals(Integer.MIN_VALUE,
-                BeyondEndChunkGenerator.the_beyond$foundationNatTop(dipColLo, DEEP, yy -> yy <= dipColLo - 6),
+                BeyondStructureCarver.the_beyond$foundationNatTop(dipColLo, DEEP, yy -> yy <= dipColLo - 6),
                 "a 6-block VOID gap to a lower island must NOT glue a fill (round-7 no-float fix)");
         int lipNat = dipColLo - 3;
         Assertions.assertEquals(lipNat,
-                BeyondEndChunkGenerator.the_beyond$foundationNatTop(dipColLo, DEEP, yy -> yy <= lipNat),
+                BeyondStructureCarver.the_beyond$foundationNatTop(dipColLo, DEEP, yy -> yy <= lipNat),
                 "a ≤MAX_LIP(3) surface lip to the SAME island still seats (legitimate flank, no leap)");
         System.out.printf("[footing] DEEP=%d MAX_LIP=%d footingSeat=%d cantileverSeat=%d lipSeat=%d%n",
-                DEEP, BeyondEndChunkGenerator.FOUNDATION_MAX_LIP, seat, noSeat, lipNat);
+                DEEP, BeyondStructureCarver.FOUNDATION_MAX_LIP, seat, noSeat, lipNat);
     }
 
     @Test
     void fringeBaseFloatCarvedSupportKeptGate() {
         final int gLo = 100, hi = 170;
-        final int BAND = BeyondEndChunkGenerator.DIST_SUPPORT_BAND;
+        final int BAND = BeyondStructureCarver.DIST_SUPPORT_BAND;
         final int loHigh = gLo + BAND + 6;
         final int[] HI = {hi}, GLO = {gLo};
         final boolean[] YES = {true}, NO = {false};
         final int[] D3_NEAR = {2};
-        Assertions.assertEquals(0.0, BeyondEndChunkGenerator.the_beyond$carvePenalty(
+        Assertions.assertEquals(0.0, BeyondStructureCarver.the_beyond$carvePenalty(
                 new int[]{0}, new int[]{loHigh}, HI, GLO, YES, NO, YES, 1, loHigh - 1, 0.0, D3_NEAR), 1e-9,
                 "TRUE support column (dXZ==0) below its base must be kept");
-        Assertions.assertTrue(BeyondEndChunkGenerator.the_beyond$carvePenalty(
+        Assertions.assertTrue(BeyondStructureCarver.the_beyond$carvePenalty(
                 new int[]{2}, new int[]{loHigh}, HI, GLO, YES, NO, YES, 1, gLo + BAND + 2, 0.0, D3_NEAR) > 0.0,
                 "isolated lateral fringe (dXZ>0) above the base band must be CARVED (the floating-block fix)");
-        Assertions.assertEquals(0.0, BeyondEndChunkGenerator.the_beyond$carvePenalty(
+        Assertions.assertEquals(0.0, BeyondStructureCarver.the_beyond$carvePenalty(
                 new int[]{2}, new int[]{gLo}, HI, GLO, YES, NO, YES, 1, gLo, 0.0, D3_NEAR), 1e-9,
                 "genuine base contact (dXZ>0, y<=gLo) stays kept via the ramp (no moat)");
-        Assertions.assertEquals(Double.POSITIVE_INFINITY, BeyondEndChunkGenerator.the_beyond$carvePenalty(
+        Assertions.assertEquals(Double.POSITIVE_INFINITY, BeyondStructureCarver.the_beyond$carvePenalty(
                 new int[]{0}, new int[]{gLo}, HI, GLO, YES, NO, YES, 1, 130, 0.0, new int[]{0}),
                 "no-burial: occupied-span cell still clears unconditionally");
     }
@@ -1626,21 +1626,21 @@ class BodyBurialScanTest {
         final int[] DXZ = {2}, LO = {lo}, HI = {hi}, GLO = {gLo}, D3 = {2};
         final boolean[] YES = {true}, NO = {false};
         final int yBand = gLo + 2;
-        double pVoid = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ, LO, HI, GLO, YES, NO, YES, 1, yBand, 0.0, D3, false);
-        double pRock = BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ, LO, HI, GLO, YES, NO, YES, 1, yBand, 0.0, D3, true);
+        double pVoid = BeyondStructureCarver.the_beyond$carvePenalty(DXZ, LO, HI, GLO, YES, NO, YES, 1, yBand, 0.0, D3, false);
+        double pRock = BeyondStructureCarver.the_beyond$carvePenalty(DXZ, LO, HI, GLO, YES, NO, YES, 1, yBand, 0.0, D3, true);
         Assertions.assertTrue(pVoid > pRock,
                 "fringe over the VOID (rockBelow=false) is carved MORE than over island (the floating-bump fix)");
         Assertions.assertTrue(pVoid > 0.0, "the void fringe in the band is actually carved (full skirt, no ramp)");
         // at aboveBase==0 (the base level itself).
-        Assertions.assertEquals(0.0, BeyondEndChunkGenerator.the_beyond$carvePenalty(
+        Assertions.assertEquals(0.0, BeyondStructureCarver.the_beyond$carvePenalty(
                 DXZ, LO, HI, GLO, YES, NO, YES, 1, gLo, 0.0, D3, true), 1e-9,
                 "base-contact fringe WITH island below stays kept (ramp, no moat)");
-        Assertions.assertTrue(BeyondEndChunkGenerator.the_beyond$carvePenalty(
+        Assertions.assertTrue(BeyondStructureCarver.the_beyond$carvePenalty(
                 DXZ, LO, HI, GLO, YES, NO, YES, 1, gLo, 0.0, D3, false) > 0.0,
                 "base-level fringe over the VOID is carved (no floating bump at the global base = the ship level)");
         Assertions.assertEquals(
-                BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ, LO, HI, GLO, YES, NO, YES, 1, yBand, 0.0, D3, true),
-                BeyondEndChunkGenerator.the_beyond$carvePenalty(DXZ, LO, HI, GLO, YES, NO, YES, 1, yBand, 0.0, D3),
+                BeyondStructureCarver.the_beyond$carvePenalty(DXZ, LO, HI, GLO, YES, NO, YES, 1, yBand, 0.0, D3, true),
+                BeyondStructureCarver.the_beyond$carvePenalty(DXZ, LO, HI, GLO, YES, NO, YES, 1, yBand, 0.0, D3),
                 1e-9, "11-arg overload = ramp-on (rockBelow=true), byte-identical for the existing gates");
     }
 

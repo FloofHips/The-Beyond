@@ -362,7 +362,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         ColumnScratch scratch = SCRATCH.get();
         initColumnScratch(x, z, distanceFromOrigin, scratch);
 
-        // scanTop must track generateEndTerrain's fill range (dimMaxY-33): a pancake can sit anywhere below it.
+        // scanTop must track generateEndTerrain's fill range (dimMaxY-33): an island layer can sit anywhere below it.
         int scanTop = level.getMaxBuildHeight() - 33;
         for (int y = scanTop; y >= level.getMinBuildHeight(); y--) {
             if (isSolidTerrainScratch(y, scratch)) {
@@ -1724,7 +1724,6 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         }
     }
 
-    /** The carve constants and kernel live in BeyondStructureCarver, these thin forwarders keep callers unchanged. */
     private final BeyondStructureCarver the_beyond$carver = new BeyondStructureCarver(this);
 
     public List<CarveMask> the_beyond$collectCarveMasks(StructureManager sm, ChunkPos cp) {
@@ -1805,7 +1804,10 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         }
     }
 
-    /** Split out of edgeGradient with no rounding change, so the air-gap skip can bound the peak density. */
+    public static int islandBandBottom(int dimMinY) { return dimMinY + 64 - TERRAIN_Y_OFFSET + 1; }
+    public static int islandBandTop(int dimMaxY) { return dimMaxY - TERRAIN_Y_OFFSET - 1; }
+
+    /** edgeGradient's factor on its own, so the air-gap skip can bound the peak density. */
     static double edgeGradientFactor(double y, int dimMinY, int dimMaxY) {
         final double bottomZeroY = dimMinY + 64;
         final double bottomFadeEnd = bottomZeroY + 64;

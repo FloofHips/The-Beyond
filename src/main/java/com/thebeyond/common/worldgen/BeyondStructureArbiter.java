@@ -22,16 +22,15 @@ public final class BeyondStructureArbiter {
 
     private BeyondStructureArbiter() {}
 
-    private static final Set<StructureStart> VETOED = ConcurrentHashMap.newKeySet();
+    private static final Set<StructureStart> VETOED =
+            java.util.Collections.newSetFromMap(java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>()));
 
     private static final int PIECE_CROSS_DEPTH = 2;
 
-    /** Big enough that anything inside it is a mistake, and kept because vanilla only remembers starts within 8 chunks. */
     private static final int GIANT_SPAN = 48;
     private static final int GIANT_CAP = 512;
     private static final Set<StructureStart> GIANTS = ConcurrentHashMap.newKeySet();
 
-    /** Recent starts, so small structures from different chunks still meet. The oldest leave first: generation is local. */
     private static final int RECENT_CAP = 3072;
     private static final Set<StructureStart> RECENT = ConcurrentHashMap.newKeySet();
     private static final java.util.concurrent.ConcurrentLinkedQueue<StructureStart> RECENT_ORDER =

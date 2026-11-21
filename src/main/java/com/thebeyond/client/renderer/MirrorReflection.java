@@ -16,6 +16,7 @@ import com.thebeyond.common.registry.BeyondRenderTypes;
 import com.thebeyond.common.registry.BeyondShaders;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
@@ -36,6 +37,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -65,7 +67,6 @@ public final class MirrorReflection {
     private static final float ALPHA_NEAR = 0.7f;
     private static final float ALPHA_FAR = 0.0f;
     private static final int MAX_REFLECTED_ENTITIES = 16;
-    // Keep each sub-quad small on screen so affine UVs ≈ projective.
     private static final int MAX_SUBDIV = 32;
     private static final float SUBDIV_TARGET_PX = 24.0f;
 
@@ -102,13 +103,10 @@ public final class MirrorReflection {
 
     private static Slot[] slots;
 
-    // Cached per state: CTM/dynamic models vary only texture, not these positions, so the cache stays correct.
     private static final java.util.Map<BlockState, float[]> OCCLUDER_MODEL_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
 
-    // shared over a frame so each chunk is fetched once per frame, render thread only
     private static final Long2ObjectOpenHashMap<net.minecraft.world.level.chunk.LevelChunk> LOS_CHUNK_CACHE =
             new Long2ObjectOpenHashMap<>();
-    // Frame-shared so the (possibly mod-intercepted) light lookup runs once per entity, not per entity per plane.
     private static final Object2IntOpenHashMap<Entity> LIGHT_CACHE = new Object2IntOpenHashMap<>();
 
     private MirrorReflection() {
@@ -215,7 +213,8 @@ public final class MirrorReflection {
 
         Map<PlaneKey, PlaneInfo> planes = new HashMap<>();
         for (MirrorBlockEntity be : MirrorBlockEntity.LOADED) {
-            if (be.isRemoved()) {
+            if (!isInChunk(be, mc.level)) {
+                MirrorBlockEntity.LOADED.remove(be);
                 continue;
             }
             BlockState st = be.getBlockState();
@@ -345,6 +344,15 @@ public final class MirrorReflection {
             RenderSystem.restoreProjectionMatrix();
             main.bindWrite(true);
         }
+    }
+
+    private static boolean isInChunk(MirrorBlockEntity be, ClientLevel level) {
+        if (be.isRemoved() || be.getLevel() != level) {
+            return false;
+        }
+        BlockPos pos = be.getBlockPos();
+        LevelChunk chunk = level.getChunkSource().getChunk(pos.getX() >> 4, pos.getZ() >> 4, false);
+        return chunk != null && chunk.getBlockEntity(pos, LevelChunk.EntityCreationType.CHECK) == be;
     }
 
     private static void ensureSized(Slot slot, int fw, int fh, Minecraft mc) {
@@ -482,7 +490,6 @@ public final class MirrorReflection {
             if (rendered >= MAX_OCCLUDER_BLOCKS) {
                 break;
             }
-            // Front-of-plane slab only.
             double d = n.x * (pos.getX() + 0.5 - p0.x)
                     + n.y * (pos.getY() + 0.5 - p0.y)
                     + n.z * (pos.getZ() + 0.5 - p0.z);
@@ -579,12 +586,10 @@ public final class MirrorReflection {
         return arr;
     }
 
-    /** Call on resource reload, the models are re-baked. */
     public static void clearModelCache() {
         OCCLUDER_MODEL_CACHE.clear();
     }
 
-    /** getBlockState memoized per chunk, same result as level.getBlockState. */
     private static final class ChunkMemo {
         private net.minecraft.world.level.chunk.LevelChunk chunk;
         private int cx = Integer.MIN_VALUE, cz = Integer.MIN_VALUE;
@@ -774,7 +779,7 @@ public final class MirrorReflection {
                                 continue;
                             }
                             if (!memo.get(level, mp.set(wx + sd.getStepX(), wy + sd.getStepY(), wz + sd.getStepZ())).canOcclude()) {
-                                continue; // not a solid surface to shade
+                                continue;
                             }
                             int orient;
                             float fx, fa0, fa1, fb0, fb1;

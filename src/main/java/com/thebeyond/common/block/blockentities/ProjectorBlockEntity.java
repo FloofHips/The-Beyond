@@ -278,7 +278,7 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
 
     @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {
-        return ProjectorAcceptance.accepts(stack);
+        return ProjectorAcceptance.accepts(stack) && items.get(slot).isEmpty();
     }
 
     @Override

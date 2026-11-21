@@ -21,11 +21,13 @@
     "EntityCollisionMixin",
     "EnvironmentScanPlacementMixin",
     "FallingBlockEntityAccessor",
+    "FallKickGuardMixin",
     "FeatureGuardMixin",
     "FeatureInstanceScopeMixin",
     "ForeignGroundSeatMixin",
     "ForeignStructureRejectionMixin",
     "HeightmapPlacementMultiSurfaceMixin",
+    "HeightRangePlacementForeignOreMixin",
     "IslandCarveProtectionMixin",
     "JigsawStructureAccessor",
     "JigsawStructureMixin",
@@ -61,7 +63,8 @@
     "ItemFrameRendererMixin",
     "client.ItemEntityMixin",
     "client.BossHealthOverlayAccessor",
-    "client.LevelRendererWeatherSuppressMixin"
+    "client.LevelRendererWeatherSuppressMixin",
+    "client.LevelRendererEndSkyFadeMixin"
   ],
   "server": [],
   "injectors": {

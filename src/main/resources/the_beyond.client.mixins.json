@@ -17,6 +17,7 @@
     "LevelRendererPhotoHideMixin",
     "LevelRendererFabulousDepthMixin",
     "MinecraftMainTargetAccessor",
+    "RenderBuffersCaptureMixin",
     "ResourceOrTagArgumentMixin",
     "ResourceOrTagArgumentParseMixin",
     "ResourceOrTagKeyArgumentParseMixin",

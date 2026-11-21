@@ -3,6 +3,7 @@ package com.thebeyond.client.particle;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.thebeyond.common.entity.EnderglopEntity;
 import net.minecraft.client.Camera;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
 import net.minecraft.util.Mth;
@@ -73,7 +74,8 @@ public class CloudParticle extends TextureSheetParticle {
                 ), this.x, this.y, this.z, 0.01*i*p, 0.01*i*p, 0.01*i*p);
             }
         }
-        if (age%2==0) {
+        if (age%2==0) Minecraft.getInstance().execute(() -> {
+            if (!this.isAlive()) return;
             LivingEntity entity = level.getNearestEntity(LivingEntity.class, TargetingConditions.forNonCombat(), null, x, y, z,
                     getBoundingBox());
             if (entity!=null) {
@@ -89,7 +91,7 @@ public class CloudParticle extends TextureSheetParticle {
                 }
                 this.remove();
             }
-        }
+        });
     }
 
     @Override

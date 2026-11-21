@@ -12,11 +12,11 @@ import java.util.function.IntPredicate;
 class FoundationSeatScanTest {
 
     private static final int GLO = 100;
-    private static final int DEPTH = BeyondEndChunkGenerator.FOUNDATION_DEPTH;   // production bound (8)
+    private static final int DEPTH = BeyondStructureCarver.FOUNDATION_DEPTH;   // production bound (8)
 
     private static boolean fillsAt(int y, IntPredicate naturalSolid) {
-        int natTop = BeyondEndChunkGenerator.the_beyond$foundationNatTop(GLO, DEPTH, naturalSolid);
-        return BeyondEndChunkGenerator.the_beyond$isFoundationFill(y, GLO, natTop);
+        int natTop = BeyondStructureCarver.the_beyond$foundationNatTop(GLO, DEPTH, naturalSolid);
+        return BeyondStructureCarver.the_beyond$isFoundationFill(y, GLO, natTop);
     }
 
     @Test
@@ -28,7 +28,7 @@ class FoundationSeatScanTest {
         Assertions.assertFalse(fillsAt(GLO - 1, island),
                 "natural island block just below the base needs no foundation fill");
         // explicit regression pin: a gLo-start scan would yield natTop==gLo and leave gLo unfilled.
-        int natTop = BeyondEndChunkGenerator.the_beyond$foundationNatTop(GLO, DEPTH, island);
+        int natTop = BeyondStructureCarver.the_beyond$foundationNatTop(GLO, DEPTH, island);
         Assertions.assertEquals(GLO - 1, natTop,
                 "natTop must be the first natural-solid STRICTLY below the carved body (gLo-1), not gLo");
     }
@@ -57,7 +57,7 @@ class FoundationSeatScanTest {
     @Test
     void deepVoid_fillsNothing() {
         IntPredicate empty = y -> false;
-        int natTop = BeyondEndChunkGenerator.the_beyond$foundationNatTop(GLO, DEPTH, empty);
+        int natTop = BeyondStructureCarver.the_beyond$foundationNatTop(GLO, DEPTH, empty);
         Assertions.assertEquals(Integer.MIN_VALUE, natTop, "no natural terrain in band → no anchor");
         for (int y = GLO - DEPTH; y <= GLO + 2; y++) {
             Assertions.assertFalse(fillsAt(y, empty), "deep void: fill nothing (no stilt) at y=" + y);
@@ -68,18 +68,17 @@ class FoundationSeatScanTest {
     void respectsFoundationDepthBound() {
         // deeper than the depth bound → out of reach → no fill.
         IntPredicate deepIsland = y -> y <= GLO - DEPTH;
-        int natTop = BeyondEndChunkGenerator.the_beyond$foundationNatTop(GLO, DEPTH, deepIsland);
+        int natTop = BeyondStructureCarver.the_beyond$foundationNatTop(GLO, DEPTH, deepIsland);
         Assertions.assertEquals(Integer.MIN_VALUE, natTop,
                 "island deeper than FOUNDATION_DEPTH below the base is out of range → no fill");
     }
 
-    // foundationNatTop must not leap a void gap onto a stray sliver or separate lower island: the bridge is
-    // bounded to a real surface lip (FOUNDATION_MAX_LIP air) with a substantial run (FOUNDATION_MIN_RUN) on top.
+    // foundationNatTop never bridges a void gap to a stray sliver: it needs a real lip (MAX_LIP) and a solid run (MIN_RUN)
 
     @Test
     void disconnectedSliver_belowGapBudget_doesNotGlue() {
         IntPredicate sliver = y -> y == GLO - 7;   // gap 6 > MAX_LIP
-        int natTop = BeyondEndChunkGenerator.the_beyond$foundationNatTop(GLO, DEPTH, sliver);
+        int natTop = BeyondStructureCarver.the_beyond$foundationNatTop(GLO, DEPTH, sliver);
         Assertions.assertEquals(Integer.MIN_VALUE, natTop,
                 "a sliver separated from the base by a void gap must NOT anchor a fill (the glued-column bug)");
         for (int y = GLO; y > GLO - DEPTH; y--)
@@ -90,14 +89,14 @@ class FoundationSeatScanTest {
     void separateLowerIsland_beyondLipBudget_doesNotGlue() {
         IntPredicate lower = y -> y <= GLO - 6;   // gap 5 > MAX_LIP
         Assertions.assertEquals(Integer.MIN_VALUE,
-                BeyondEndChunkGenerator.the_beyond$foundationNatTop(GLO, DEPTH, lower),
+                BeyondStructureCarver.the_beyond$foundationNatTop(GLO, DEPTH, lower),
                 "the base must not glue a tall column onto a DIFFERENT lower island it doesn't rest on");
     }
 
     @Test
     void sameIslandRecess_withinLipBudget_stillSeats() {
         IntPredicate recess = y -> y <= GLO - 3;   // 3-block air lip, within MAX_LIP
-        int natTop = BeyondEndChunkGenerator.the_beyond$foundationNatTop(GLO, DEPTH, recess);
+        int natTop = BeyondStructureCarver.the_beyond$foundationNatTop(GLO, DEPTH, recess);
         Assertions.assertEquals(GLO - 3, natTop,
                 "a real same-island recess within the lip budget (≤MAX_LIP air, ≥MIN_RUN solid) STILL seats");
         Assertions.assertTrue(fillsAt(GLO, recess) && fillsAt(GLO - 2, recess),
@@ -108,45 +107,45 @@ class FoundationSeatScanTest {
     void thinSliverAtBase_belowMinRun_doesNotGlue() {
         IntPredicate thinTop = y -> y == GLO - 1;
         Assertions.assertEquals(Integer.MIN_VALUE,
-                BeyondEndChunkGenerator.the_beyond$foundationNatTop(GLO, DEPTH, thinTop),
+                BeyondStructureCarver.the_beyond$foundationNatTop(GLO, DEPTH, thinTop),
                 "a 1-block sliver at the base (run < MIN_RUN) is not ground → no fill");
         // contiguousRockDown sanity: 1 < FOUNDATION_MIN_RUN(3).
-        Assertions.assertEquals(1, BeyondEndChunkGenerator.the_beyond$contiguousRockDown(
-                GLO - 1, BeyondEndChunkGenerator.FOUNDATION_MIN_RUN, thinTop));
+        Assertions.assertEquals(1, BeyondStructureCarver.the_beyond$contiguousRockDown(
+                GLO - 1, BeyondStructureCarver.FOUNDATION_MIN_RUN, thinTop));
     }
 
     // a distributed end_city gets no footing, so its cantilevers skip islands, while a seated tower needs footing under its legs
 
     @Test
     void footingActiveAt_truthTable() {
-        Assertions.assertFalse(BeyondEndChunkGenerator.the_beyond$footingActiveAt(false, false, false),
+        Assertions.assertFalse(BeyondStructureCarver.the_beyond$footingActiveAt(false, false, false),
                 "a pure FLOATING structure has no foundation footing");
-        Assertions.assertTrue(BeyondEndChunkGenerator.the_beyond$footingActiveAt(true, false, false),
+        Assertions.assertTrue(BeyondStructureCarver.the_beyond$footingActiveAt(true, false, false),
                 "a SEATED-but-NOT-distributed tower keeps its footing everywhere (inBaseFootprint ignored, legs need it)");
-        Assertions.assertTrue(BeyondEndChunkGenerator.the_beyond$footingActiveAt(true, false, true),
+        Assertions.assertTrue(BeyondStructureCarver.the_beyond$footingActiveAt(true, false, true),
                 "…still keyed off seated alone for a non-distributed tower (inBaseFootprint ignored)");
-        Assertions.assertFalse(BeyondEndChunkGenerator.the_beyond$footingActiveAt(true, true, true),
+        Assertions.assertFalse(BeyondStructureCarver.the_beyond$footingActiveAt(true, true, true),
                 "a DISTRIBUTED instance gets NO footing even in its base footprint (base on its own start_platform foot)");
-        Assertions.assertFalse(BeyondEndChunkGenerator.the_beyond$footingActiveAt(true, true, false),
+        Assertions.assertFalse(BeyondStructureCarver.the_beyond$footingActiveAt(true, true, false),
                 "a DISTRIBUTED instance OUTSIDE the base footprint also gets no footing (no weld)");
     }
 
     @Test
     void distributed_noFootingAnywhere() {
         IntPredicate islandBelow = y -> y <= GLO - 2;
-        int natTop = BeyondEndChunkGenerator.the_beyond$foundationNatTop(GLO, DEPTH, islandBelow);
+        int natTop = BeyondStructureCarver.the_beyond$foundationNatTop(GLO, DEPTH, islandBelow);
         Assertions.assertEquals(GLO - 2, natTop, "precondition: the island is within reach");
-        Assertions.assertTrue(BeyondEndChunkGenerator.the_beyond$isFoundationFill(GLO, GLO, natTop),
+        Assertions.assertTrue(BeyondStructureCarver.the_beyond$isFoundationFill(GLO, GLO, natTop),
                 "precondition: isFoundationFill WOULD place the fill if the gate allowed it");
-        Assertions.assertFalse(BeyondEndChunkGenerator.the_beyond$footingActiveAt(true, true, true),
+        Assertions.assertFalse(BeyondStructureCarver.the_beyond$footingActiveAt(true, true, true),
                 "distributed base column: footing OFF (no placed slab; base on its own start_platform foot)");
-        Assertions.assertFalse(BeyondEndChunkGenerator.the_beyond$footingActiveAt(true, true, false),
+        Assertions.assertFalse(BeyondStructureCarver.the_beyond$footingActiveAt(true, true, false),
                 "distributed cantilever column: footing OFF (no END_STONE bridge under house/walkway/ship)");
     }
 
     @Test
     void fromBoxes_distributedSuppressesFootingEverywhere() {
-        final int R = BeyondEndChunkGenerator.BEARD_LAT_REACH;
+        final int R = BeyondStructureCarver.BEARD_LAT_REACH;
         var boxes = java.util.List.of(
                 new net.minecraft.world.level.levelgen.structure.BoundingBox(0, 100, 0, 8, 140, 8));
         BeyondEndChunkGenerator.CarveMask mask =
@@ -158,10 +157,10 @@ class FoundationSeatScanTest {
         Assertions.assertFalse(mask.inBaseFootprint(8 + R + 1, 4), "a column past base+reach is a cantilever, not base");
         Assertions.assertFalse(mask.inBaseFootprint(4, 8 + R + 1), "…in Z too");
         Assertions.assertFalse(
-                BeyondEndChunkGenerator.the_beyond$footingActiveAt(mask.seated, mask.distributed, mask.inBaseFootprint(4, 4)),
+                BeyondStructureCarver.the_beyond$footingActiveAt(mask.seated, mask.distributed, mask.inBaseFootprint(4, 4)),
                 "distributed mask: base column footing OFF (slab dropped)");
         Assertions.assertFalse(
-                BeyondEndChunkGenerator.the_beyond$footingActiveAt(mask.seated, mask.distributed, mask.inBaseFootprint(40, 40)),
+                BeyondStructureCarver.the_beyond$footingActiveAt(mask.seated, mask.distributed, mask.inBaseFootprint(40, 40)),
                 "distributed mask: far cantilever column footing OFF");
     }
 }

@@ -500,6 +500,8 @@
   "the_beyond.configuration.PrismographPosterization": "Постеризация призмографа",
   "the_beyond.configuration.PrismographResolution": "Разрешение призмографа",
   "the_beyond.configuration.aeronautics": "Настройка Aeronautics",
+  "the_beyond.configuration.biomeHeightMultiplier": "Высота биомов Энда (экспериментально)",
+  "the_beyond.configuration.biomeWidthMultiplier": "Ширина биомов Энда (экспериментально)",
   "the_beyond.configuration.deafening": "Настройка оглушённости",
   "the_beyond.configuration.disengageOnConeExit": "Отключение эффекта на выходе из конуса",
   "the_beyond.configuration.gameplay": "Игровой процесс",
@@ -510,6 +512,7 @@
   "the_beyond.configuration.voidSeaOffsetAboveFloor": "Пустое море смещено над полом",
   "the_beyond.configuration.wardenEnrageAnger": "Хранитель в ярости",
   "the_beyond.configuration.wardenSmellRadius": "Радиус обоняния хранителяя",
+  "the_beyond.configuration.worldgen": "Генерация мира",
 
 "_comment": "ТУЛТИПЫ",
   "tooltip.block.the_beyond.brittle_metal.desc": "Создайте форму инструмента, затем взаимодействуйте с центральным блоком для отливки",

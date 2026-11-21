@@ -1,5 +1,6 @@
 package com.thebeyond.common.entity;
 
+import com.thebeyond.TheBeyond;
 import com.thebeyond.client.event.ModClientEvents;
 import com.thebeyond.common.entity.util.SlowRotMoveControl;
 import com.thebeyond.common.item.components.Components;
@@ -238,7 +239,13 @@ public class AbyssalNomadEntity extends PathfinderMob implements ITeleportingEnt
     }
 
     public static boolean checkMonsterSpawnRules(EntityType<AbyssalNomadEntity> entityType, ServerLevelAccessor serverLevelAccessor, MobSpawnType mobSpawnType, BlockPos blockPos, RandomSource randomSource) {
-        return blockPos.getY() <= BeyondTerrainState.getDimMinY() + 8;
+        if (blockPos.getY() > BeyondTerrainState.getDimMinY() + 8 || !serverLevelAccessor.getFluidState(blockPos).isEmpty()) return false;
+        BlockPos.MutableBlockPos below = blockPos.mutable();
+        while (below.getY() > serverLevelAccessor.getMinBuildHeight()) {
+            BlockState state = serverLevelAccessor.getBlockState(below.move(Direction.DOWN));
+            if (!state.isAir()) return state.getFluidState().isEmpty() && state.isFaceSturdy(serverLevelAccessor, below, Direction.UP);
+        }
+        return false;
     }
 
     @Override
@@ -529,8 +536,11 @@ public class AbyssalNomadEntity extends PathfinderMob implements ITeleportingEnt
         public void start() {
             super.start();
             // End only, elsewhere prayerSite stays null and the goal stops through canContinueToUse()
-            if (nomad.level().dimension() == Level.END && nomad.level() instanceof ServerLevel serverLevel)
+            if (nomad.level().dimension() == Level.END && nomad.level() instanceof ServerLevel serverLevel) {
                 nomad.prayerSite = serverLevel.getLevel().findNearestMapStructure(BeyondTags.NOMAD_PRAYER_SITE, this.nomad.getOnPos(), 200, false);
+                if (nomad.prayerSite == null)
+                    TheBeyond.LOGGER.warn("[Beyond] nomad at {} found no prayer site within 200 chunks", nomad.blockPosition());
+            }
         }
 
         @Override

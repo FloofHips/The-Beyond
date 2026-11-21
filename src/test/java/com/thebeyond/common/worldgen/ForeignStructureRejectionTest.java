@@ -152,8 +152,8 @@ class ForeignStructureRejectionTest {
 
     @Test
     void stationRejectionAndFitness() {
-        final int ERODE = BeyondEndChunkGenerator.CARVE_ERODE_REACH;
-        final int SCAN  = BeyondEndChunkGenerator.CARVE_SCAN_REACH;
+        final int ERODE = BeyondStructureCarver.CARVE_ERODE_REACH;
+        final int SCAN  = BeyondStructureCarver.CARVE_SCAN_REACH;
         BeyondEndChunkGenerator.ColumnScratch scr = BeyondEndChunkGenerator.getColumnScratch();
         int candidates = 0, clipRejected = 0, acceptedButClipped = 0;
         for (int cx = -200; cx <= 200; cx += 11) {
@@ -180,12 +180,12 @@ class ForeignStructureRejectionTest {
                 int dToBox = Math.max(0, Math.max(Math.abs(ox) - sHalfX, Math.abs(oz) - sHalfZ));
                 if (inFoot) {   // whole body must be hard-cleared (distance 0)
                     for (int y = f; y <= f + sH - 1; y++) {
-                        if (BeyondEndChunkGenerator.the_beyond$carveOutsideDist(sBox, ox, y, oz) != 0) uncovered++;
+                        if (BeyondStructureCarver.the_beyond$carveOutsideDist(sBox, ox, y, oz) != 0) uncovered++;
                     }
                 }
                 if (dToBox > SCAN) {   // beyond the FLOAT_HMARGIN band + erosion fringe: no body cell may be in range
                     for (int y = f; y <= f + sH - 1; y++) {
-                        if (BeyondEndChunkGenerator.the_beyond$carveOutsideDist(sBox, ox, y, oz) <= ERODE) { beyondRing++; break; }
+                        if (BeyondStructureCarver.the_beyond$carveOutsideDist(sBox, ox, y, oz) <= ERODE) { beyondRing++; break; }
                     }
                 }
             }
