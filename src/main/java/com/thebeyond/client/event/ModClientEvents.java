@@ -301,7 +301,6 @@ public class ModClientEvents {
         }
     }
 
-    /** The deafening potion is dark wine-purple, it has no baked effects so vanilla would color it water-blue. */
     @SubscribeEvent
     public static void colorSetupItem(RegisterColorHandlersEvent.Item event) {
         event.register((stack, tintIndex) -> {
@@ -312,7 +311,7 @@ public class ModClientEvents {
             if (contents.potion().map(h -> h.is(BeyondPotions.DEAFENING.getKey())).orElse(false)) {
                 return -12160095;
             }
-            return contents.getColor();
+            return net.minecraft.util.FastColor.ARGB32.opaque(contents.getColor());
         }, net.minecraft.world.item.Items.POTION, net.minecraft.world.item.Items.SPLASH_POTION,
                 net.minecraft.world.item.Items.LINGERING_POTION);
 
