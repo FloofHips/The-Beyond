@@ -144,9 +144,9 @@ public class MagnetItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
-        tooltipComponents.add(Component.literal("On Use:").withStyle(ChatFormatting.GRAY));
-        tooltipComponents.add(Component.literal(" Slingshot towards metal").withStyle(ChatFormatting.BLUE));
-        tooltipComponents.add(Component.literal("Passive:").withStyle(ChatFormatting.GRAY));
-        tooltipComponents.add(Component.literal(" Attract nearby items").withStyle(ChatFormatting.BLUE));
+        tooltipComponents.add(BeyondTooltips.header("on_use"));
+        tooltipComponents.add(BeyondTooltips.effect("slingshot", ChatFormatting.BLUE));
+        tooltipComponents.add(BeyondTooltips.header("passive"));
+        tooltipComponents.add(BeyondTooltips.effect("attract", ChatFormatting.BLUE));
     }
 }

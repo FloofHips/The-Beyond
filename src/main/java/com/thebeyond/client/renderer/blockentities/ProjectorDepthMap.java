@@ -20,6 +20,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.OutlineBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
@@ -49,6 +50,7 @@ import org.lwjgl.opengl.GL30;
 
 import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -70,6 +72,9 @@ public final class ProjectorDepthMap {
     // a private buffer: an endBatch() on mc.renderBuffers() inside the capture corrupts Iris's entity batcher
     private static final MultiBufferSource.BufferSource CAPTURE_BUFFER =
             MultiBufferSource.immediate(new ByteBufferBuilder(4096));
+    private static ProjectorDistEntitySource redirect;
+    private static final OutlineBufferSource OUTLINE_REDIRECT = new CaptureOutlineSource();
+    private static int redirectHits;
     // entity passes wait for AFTER_LEVEL, mid-pipeline they collide with Iris's entity hooks and break capes
     private record PendingEntities(TextureTarget target, TextureTarget targetFar, Matrix4f proj, Matrix4f view,
                                    ProjectorRenderer.Pinhole gather, Vec3 camPos, BlockPos pos,
@@ -82,6 +87,9 @@ public final class ProjectorDepthMap {
     private static final List<PendingEntities> PENDING_ENTITIES = new ArrayList<>();
     private static int skippedGlass;
     private static boolean blocksCapped;
+    private static final List<ConeScan> SCAN_POOL = new ArrayList<>();
+    private static int scansUsed;
+    private static final List<ConeScan> CROSS_SCANS = new ArrayList<>();
 
     private ProjectorDepthMap() {
     }
@@ -101,6 +109,17 @@ public final class ProjectorDepthMap {
 
     static boolean wasCaptured(ProjectorBlockEntity be) {
         return CAPTURED.contains(be);
+    }
+
+    public static MultiBufferSource.BufferSource captureRedirect() {
+        if (redirect != null) {
+            redirectHits++;
+        }
+        return redirect;
+    }
+
+    public static OutlineBufferSource captureOutlineRedirect() {
+        return redirect != null ? OUTLINE_REDIRECT : null;
     }
 
     public static void capture(Camera camera, Frustum frustum, float partialTick) {
@@ -132,6 +151,8 @@ public final class ProjectorDepthMap {
             }
             if (ProjectorRenderer.isOnContraption(be)) {
                 litSub.add(be);
+            } else if (!heldByChunk(be)) {
+                ProjectorBlockEntity.LOADED.remove(be);
             } else if (frustum.isVisible(ProjectorRenderer.coneAABB(ProjectorRenderer.pinhole(be)))) {
                 litHost.add(be);
             }
@@ -204,9 +225,17 @@ public final class ProjectorDepthMap {
         }
     }
 
+    private static boolean heldByChunk(ProjectorBlockEntity be) {
+        BlockPos pos = be.getBlockPos();
+        LevelChunk chunk = be.getLevel().getChunkSource().getChunk(pos.getX() >> 4, pos.getZ() >> 4, false);
+        return chunk != null && chunk.getBlockEntity(pos, LevelChunk.EntityCreationType.CHECK) == be;
+    }
+
     private static void captureOne(Slot slot, ProjectorBlockEntity be, Vec3 camPos, Minecraft mc, float partialTick) {
         skippedGlass = 0;
         blocksCapped = false;
+        scansUsed = 0;
+        CROSS_SCANS.clear();
         ProjectorRenderer.Pinhole ph = ProjectorRenderer.pinhole(be);
         Vec3 eye = ph.eye(), forward = ph.forward(), up = ph.up();
         Vector3f eyeRel = new Vector3f((float) (eye.x - camPos.x), (float) (eye.y - camPos.y), (float) (eye.z - camPos.z));
@@ -233,7 +262,8 @@ public final class ProjectorDepthMap {
 
         MultiBufferSource.BufferSource buf = CAPTURE_BUFFER;
         VertexConsumer vc = buf.getBuffer(BeyondRenderTypes.PROJECTOR_DEPTH_BLOCK);
-        int hostBlocks = emitConeBlocks(vc, mc.level, mc.level::getBlockState, ph, camPos);
+        ConeScan hostScan = scanCone(mc.level, mc.level::getBlockState, ph);
+        int hostBlocks = emitScan(vc, hostScan, camPos, false);
         buf.endBatch();
 
         PENDING_ENTITIES.add(new PendingEntities(slot.target, slot.targetFar, new Matrix4f(proj), new Matrix4f(view), ph, camPos,
@@ -249,7 +279,7 @@ public final class ProjectorDepthMap {
         RenderSystem.setShaderTexture(1, slot.target.getColorTextureId());
         mvStack.set(view);
         RenderSystem.applyModelViewMatrix();
-        emitConeBlocks(buf.getBuffer(BeyondRenderTypes.PROJECTOR_DEPTH_BLOCK_PEEL), mc.level, mc.level::getBlockState, ph, camPos, true);
+        emitScan(buf.getBuffer(BeyondRenderTypes.PROJECTOR_DEPTH_BLOCK_PEEL), hostScan, camPos, true);
         buf.endBatch();
         captureCrossContraptions(buf, ph, view, camPos, partialTick, mc, null,
                 BeyondRenderTypes.PROJECTOR_DEPTH_BLOCK_PEEL, true);
@@ -282,6 +312,7 @@ public final class ProjectorDepthMap {
         try {
             for (PendingEntities p : PENDING_ENTITIES) {
                 try {
+                    redirectHits = 0;
                     RenderSystem.setProjectionMatrix(p.proj(), VertexSorting.DISTANCE_TO_ORIGIN);
                     List<ConeBlockEntity> coneBlockEntities = gatherConeBlockEntities(mc, p, partialTick);
                     List<Entity> coneEntities = gatherConeEntities(mc.level, p.gather(), p.camPos());
@@ -310,6 +341,7 @@ public final class ProjectorDepthMap {
                     p.target().unbindWrite();
                     diag(DIAG_POST_LAST, p.pos(), "post capture: entities=" + coneEntities.size()
                             + " blockLike=" + blockLike.size() + " blockEntities=" + coneBlockEntities.size()
+                            + " redirected=" + redirectHits
                             + (coneEntities.size() >= 16 ? " ENTITIES CAPPED" : "")
                             + (coneBlockEntities.size() >= MAX_CONE_BLOCK_ENTITIES ? " BLOCK ENTITIES CAPPED" : ""));
                 } catch (Throwable t) {
@@ -355,8 +387,17 @@ public final class ProjectorDepthMap {
             }
             mvStack.set(new Matrix4f(view).mul(fr.m()));
             RenderSystem.applyModelViewMatrix();
-            emitted += emitConeBlocks(buf.getBuffer(type), mc.level, reader,
-                    phInGrid, new Vec3(fr.rpx(), fr.rpy(), fr.rpz()), frontOnly);
+            VertexConsumer crossVc = buf.getBuffer(type);
+            Vec3 origin = new Vec3(fr.rpx(), fr.rpy(), fr.rpz());
+            ConeScan scan = frontOnly ? crossScan(phInGrid, origin) : null;
+            if (scan == null) {
+                scan = scanCone(mc.level, reader, phInGrid);
+                scan.origin = origin;
+                if (!frontOnly) {
+                    CROSS_SCANS.add(scan);
+                }
+            }
+            emitted += emitScan(crossVc, scan, origin, frontOnly);
             buf.endBatch();
             used++;
         }
@@ -367,10 +408,12 @@ public final class ProjectorDepthMap {
     private static void captureOneSub(Slot slot, ProjectorBlockEntity be, Vec3 camPos, Minecraft mc, float partialTick) {
         skippedGlass = 0;
         blocksCapped = false;
+        scansUsed = 0;
+        CROSS_SCANS.clear();
         ProjectorRenderer.ProjectorContraptionFrameFn fn = ProjectorRenderer.contraptionFrame;
         if (fn == null) {
             diag(be.getBlockPos(), "sub capture BAIL: no contraption-frame hook -> BER mesh");
-            return; // Sable absent
+            return;
         }
         ProjectorRenderer.ContraptionFrame fr = fn.resolve(be.getLevel(), be.getBlockPos(), camPos, partialTick);
         if (fr == null) {
@@ -387,7 +430,7 @@ public final class ProjectorDepthMap {
             return;
         }
 
-        ProjectorRenderer.Pinhole phGrid = ProjectorRenderer.pinhole(be); // grid frame (plot coords ~2e7)
+        ProjectorRenderer.Pinhole phGrid = ProjectorRenderer.pinhole(be);
         Vec3 eGrid = phGrid.eye(), fGrid = phGrid.forward(), uGrid = phGrid.up(), rGrid = phGrid.right();
         double coneK = phGrid.coneK();
 
@@ -430,12 +473,16 @@ public final class ProjectorDepthMap {
         // own grid blocks, then host world blocks, into one FBO, LEQUAL keeps the nearer frame per texel
         mvStack.set(modelViewB);
         RenderSystem.applyModelViewMatrix();
-        int ownBlocks = emitConeBlocks(buf.getBuffer(BeyondRenderTypes.PROJECTOR_DEPTH_BLOCK), mc.level, gridReader(mc, new HashMap<>()), phGrid, rpOrigin);
+        VertexConsumer ownVc = buf.getBuffer(BeyondRenderTypes.PROJECTOR_DEPTH_BLOCK);
+        ConeScan ownScan = scanCone(mc.level, gridReader(mc, new HashMap<>()), phGrid);
+        int ownBlocks = emitScan(ownVc, ownScan, rpOrigin, false);
         buf.endBatch();
 
         mvStack.set(view);
         RenderSystem.applyModelViewMatrix();
-        int hostBlocks = emitConeBlocks(buf.getBuffer(BeyondRenderTypes.PROJECTOR_DEPTH_BLOCK), mc.level, mc.level::getBlockState, phVis, camPos);
+        VertexConsumer hostVc = buf.getBuffer(BeyondRenderTypes.PROJECTOR_DEPTH_BLOCK);
+        ConeScan hostScan = scanCone(mc.level, mc.level::getBlockState, phVis);
+        int hostBlocks = emitScan(hostVc, hostScan, camPos, false);
         buf.endBatch();
 
         PENDING_ENTITIES.add(new PendingEntities(slot.target, slot.targetFar, new Matrix4f(proj), new Matrix4f(view), phVis,
@@ -451,11 +498,11 @@ public final class ProjectorDepthMap {
         RenderSystem.setShaderTexture(1, slot.target.getColorTextureId());
         mvStack.set(modelViewB);
         RenderSystem.applyModelViewMatrix();
-        emitConeBlocks(buf.getBuffer(BeyondRenderTypes.PROJECTOR_DEPTH_BLOCK_PEEL), mc.level, gridReader(mc, new HashMap<>()), phGrid, rpOrigin, true);
+        emitScan(buf.getBuffer(BeyondRenderTypes.PROJECTOR_DEPTH_BLOCK_PEEL), ownScan, rpOrigin, true);
         buf.endBatch();
         mvStack.set(view);
         RenderSystem.applyModelViewMatrix();
-        emitConeBlocks(buf.getBuffer(BeyondRenderTypes.PROJECTOR_DEPTH_BLOCK_PEEL), mc.level, mc.level::getBlockState, phVis, camPos, true);
+        emitScan(buf.getBuffer(BeyondRenderTypes.PROJECTOR_DEPTH_BLOCK_PEEL), hostScan, camPos, true);
         buf.endBatch();
         captureCrossContraptions(buf, phVis, view, camPos, partialTick, mc, m,
                 BeyondRenderTypes.PROJECTOR_DEPTH_BLOCK_PEEL, true);
@@ -509,11 +556,14 @@ public final class ProjectorDepthMap {
                 double ez = Mth.lerp(partialTick, e.zOld, e.getZ());
                 float eyaw = Mth.rotLerp(partialTick, e.yRotO, e.getYRot());
                 ProjectorDistEntitySource forceDist = new ProjectorDistEntitySource(buf, tex, entityType, blockType);
+                redirect = forceDist;
                 try {
                     disp.render(e, ex - camPos.x, ey - camPos.y, ez - camPos.z, eyaw, partialTick,
                             new PoseStack(), forceDist, LightTexture.FULL_BRIGHT);
                 } catch (Throwable t) {
                     if (loggedActive) TheBeyond.LOGGER.error("Projector entity-depth render failed for {}", e, t);
+                } finally {
+                    redirect = null;
                 }
                 if (forceDist.blockSeen) {
                     drewBlocks.add(e);
@@ -536,7 +586,7 @@ public final class ProjectorDepthMap {
         // Local player included even in 1st person: the body still occludes the beam and casts a shadow behind it.
         for (Entity e : level.getEntities((Entity) null, bounds, Entity::isAlive)) {
             if (ProjectorRenderer.aabbOutside(e.getBoundingBox(), planes)) {
-                continue; // precise cone reject (the AABB query is loose)
+                continue;
             }
             out.add(e);
             if (out.size() >= CAP) {
@@ -575,7 +625,7 @@ public final class ProjectorDepthMap {
     /** Block entities in one frame's cone, projectors and mirrors left out: their renderers drive captures of their own. */
     private static void collectConeBlockEntities(Level level, ProjectorRenderer.Pinhole ph, int frame, Matrix4f modelView,
                                                  Vec3 origin, List<ConeBlockEntity> out) {
-        AABB bounds = ProjectorRenderer.coneAABB(ph).inflate(2.0); // a renderer may draw past its own block (beds, banners)
+        AABB bounds = ProjectorRenderer.coneAABB(ph).inflate(2.0);
         ProjectorRenderer.Plane[] planes = ProjectorRenderer.buildFrustumPlanes(
                 ph.eye(), ph.forward(), ph.right(), ph.up(), ph.coneK(), ProjectorRenderer.MAX_THROW);
         BlockEntityRenderDispatcher dispatcher = Minecraft.getInstance().getBlockEntityRenderDispatcher();
@@ -623,11 +673,14 @@ public final class ProjectorDepthMap {
             BlockPos p = be.getBlockPos();
             PoseStack pose = new PoseStack();
             pose.translate(p.getX() - c.origin().x, p.getY() - c.origin().y, p.getZ() - c.origin().z);
+            redirect = forceDist;
             try {
                 // the renderer itself: the dispatcher's view-distance check reads a plot position as millions of blocks away
                 renderer.render(be, partialTick, pose, forceDist, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
             } catch (Throwable t) {
                 if (loggedActive) TheBeyond.LOGGER.error("Projector block-entity depth render failed for {}", be, t);
+            } finally {
+                redirect = null;
             }
         }
         buf.endBatch();
@@ -651,7 +704,9 @@ public final class ProjectorDepthMap {
     }
 
     /** Entity parts go through {@code entityType}, solid block-model parts through {@code blockType}, a null type drops them. */
-    private static final class ProjectorDistEntitySource implements MultiBufferSource {
+    private static final class ProjectorDistEntitySource extends MultiBufferSource.BufferSource {
+        private static final ByteBufferBuilder UNUSED = new ByteBufferBuilder(256);
+        private static final java.util.LinkedHashMap<RenderType, ByteBufferBuilder> NO_FIXED = new java.util.LinkedHashMap<>();
         private final MultiBufferSource.BufferSource inner;
         private final ResourceLocation tex;
         private final Function<ResourceLocation, RenderType> entityType;
@@ -661,6 +716,7 @@ public final class ProjectorDepthMap {
         ProjectorDistEntitySource(MultiBufferSource.BufferSource inner, ResourceLocation tex,
                                   Function<ResourceLocation, RenderType> entityType,
                                   Function<ResourceLocation, RenderType> blockType) {
+            super(UNUSED, NO_FIXED);
             this.inner = inner;
             this.tex = tex;
             this.entityType = entityType;
@@ -681,6 +737,38 @@ public final class ProjectorDepthMap {
                 }
             }
             return NoOpConsumer.INSTANCE;
+        }
+
+        @Override
+        public void endLastBatch() {
+            inner.endLastBatch();
+        }
+
+        @Override
+        public void endBatch() {
+            inner.endBatch();
+        }
+
+        @Override
+        public void endBatch(RenderType type) {
+            inner.endBatch(); // the vertices sit under the dist type the caller's type was mapped to
+        }
+    }
+
+    /** Glowing entities draw into the capture without their outline copy, which would leak into the next frame. */
+    private static final class CaptureOutlineSource extends OutlineBufferSource {
+        CaptureOutlineSource() {
+            super(CAPTURE_BUFFER);
+        }
+
+        @Override
+        public VertexConsumer getBuffer(RenderType type) {
+            ProjectorDistEntitySource r = redirect;
+            return r != null ? r.getBuffer(type) : NoOpConsumer.INSTANCE;
+        }
+
+        @Override
+        public void endOutlineBatch() {
         }
     }
 
@@ -788,13 +876,74 @@ public final class ProjectorDepthMap {
         };
     }
 
-    /** Emits the solid-block quads inside the cone relative to origin and returns how many it emitted. */
-    private static int emitConeBlocks(VertexConsumer vc, Level level, BlockReader reader, ProjectorRenderer.Pinhole ph, Vec3 origin) {
-        return emitConeBlocks(vc, level, reader, ph, origin, false);
+    /** One walk of a cone: the quads the near pass and the front-only peel pass would each emit, in walk order. */
+    private static final class ConeScan {
+        int count;
+        int[] x = new int[256];
+        int[] y = new int[256];
+        int[] z = new int[256];
+        ProjectorRenderer.ModelQuad[] quads = new ProjectorRenderer.ModelQuad[256];
+        boolean[] near = new boolean[256];
+        boolean[] peel = new boolean[256];
+        int nearGlass;
+        int peelGlass;
+        boolean nearCapped;
+        boolean peelCapped;
+        ProjectorRenderer.Pinhole ph;
+        Vec3 origin;
+
+        void reset() {
+            count = 0;
+            nearGlass = 0;
+            peelGlass = 0;
+            nearCapped = false;
+            peelCapped = false;
+            ph = null;
+            origin = null;
+        }
+
+        void add(int bx, int by, int bz, ProjectorRenderer.ModelQuad q, boolean inNear, boolean inPeel) {
+            if (count == x.length) {
+                int n = count * 2;
+                x = Arrays.copyOf(x, n);
+                y = Arrays.copyOf(y, n);
+                z = Arrays.copyOf(z, n);
+                quads = Arrays.copyOf(quads, n);
+                near = Arrays.copyOf(near, n);
+                peel = Arrays.copyOf(peel, n);
+            }
+            x[count] = bx;
+            y[count] = by;
+            z[count] = bz;
+            quads[count] = q;
+            near[count] = inNear;
+            peel[count] = inPeel;
+            count++;
+        }
     }
 
-    private static int emitConeBlocks(VertexConsumer vc, Level level, BlockReader reader, ProjectorRenderer.Pinhole ph, Vec3 origin,
-                                      boolean frontOnly) {
+    private static ConeScan nextScan() {
+        if (scansUsed == SCAN_POOL.size()) {
+            SCAN_POOL.add(new ConeScan());
+        }
+        ConeScan scan = SCAN_POOL.get(scansUsed++);
+        scan.reset();
+        return scan;
+    }
+
+    private static ConeScan crossScan(ProjectorRenderer.Pinhole ph, Vec3 origin) {
+        for (ConeScan scan : CROSS_SCANS) {
+            if (scan.ph.equals(ph) && scan.origin.equals(origin)) {
+                return scan;
+            }
+        }
+        return null;
+    }
+
+    /** Walks the cone once, keeping each pass's MAX_FACES cap and glass count as if it had walked alone. */
+    private static ConeScan scanCone(Level level, BlockReader reader, ProjectorRenderer.Pinhole ph) {
+        ConeScan scan = nextScan();
+        scan.ph = ph;
         Vec3 eye = ph.eye(), forward = ph.forward(), right = ph.right(), up = ph.up();
         double coneK = ph.coneK();
         ProjectorRenderer.Plane[] planes =
@@ -803,19 +952,22 @@ public final class ProjectorDepthMap {
         if (bounds.maxX - bounds.minX > ProjectorRenderer.MAX_SPAN
                 || bounds.maxY - bounds.minY > ProjectorRenderer.MAX_SPAN
                 || bounds.maxZ - bounds.minZ > ProjectorRenderer.MAX_SPAN) {
-            return 0; // runaway guard
+            return scan; // runaway guard
         }
         BlockPos lo = BlockPos.containing(bounds.minX, bounds.minY, bounds.minZ);
         BlockPos hi = BlockPos.containing(bounds.maxX, bounds.maxY, bounds.maxZ);
         BlockPos.MutableBlockPos mp = new BlockPos.MutableBlockPos();
         BlockPos.MutableBlockPos np = new BlockPos.MutableBlockPos();
-        int emitted = 0;
+        int max = ProjectorRenderer.MAX_FACES;
+        int nearCount = 0;
+        int peelCount = 0;
         for (int x = lo.getX(); x <= hi.getX(); x++) {
             for (int y = lo.getY(); y <= hi.getY(); y++) {
                 for (int z = lo.getZ(); z <= hi.getZ(); z++) {
-                    if (emitted >= ProjectorRenderer.MAX_FACES) {
-                        blocksCapped = true;
-                        return emitted;
+                    if (nearCount >= max && peelCount >= max) {
+                        scan.nearCapped = true;
+                        scan.peelCapped = true;
+                        return scan;
                     }
                     AABB cell = new AABB(x, y, z, x + 1, y + 1, z + 1);
                     if (ProjectorRenderer.aabbOutside(cell, planes)) {
@@ -824,11 +976,16 @@ public final class ProjectorDepthMap {
                     mp.set(x, y, z);
                     BlockState st = reader.at(mp);
                     if (st.isAir() || st.canBeReplaced()) {
-                        continue; // air + vegetation/fluids: beam passes through
+                        continue;
                     }
                     if (ProjectorRenderer.isLightTransmitting(st)) {
-                        skippedGlass++;
-                        continue; // glass-family: beam passes through onto what's behind
+                        if (nearCount < max) {
+                            scan.nearGlass++;
+                        }
+                        if (peelCount < max) {
+                            scan.peelGlass++;
+                        }
+                        continue;
                     }
                     for (ProjectorRenderer.ModelQuad q : ProjectorRenderer.modelQuads(st)) {
                         if (q.cull() >= 0) {
@@ -838,22 +995,41 @@ public final class ProjectorDepthMap {
                                 continue;
                             }
                         }
-                        if (frontOnly) {
-                            // only lens-facing surfaces, an exit face would read as a second wall behind every block
-                            float[] m = q.pos();
-                            double dx = x + m[0] - ph.eye().x, dy = y + m[1] - ph.eye().y, dz = z + m[2] - ph.eye().z;
-                            if (q.nx() * dx + q.ny() * dy + q.nz() * dz >= -1.0e-6) {
-                                continue;
-                            }
+                        // the peel keeps only lens-facing surfaces, an exit face would read as a second wall behind every block
+                        float[] m = q.pos();
+                        double dx = x + m[0] - ph.eye().x, dy = y + m[1] - ph.eye().y, dz = z + m[2] - ph.eye().z;
+                        boolean inNear = nearCount < max;
+                        boolean inPeel = peelCount < max && !(q.nx() * dx + q.ny() * dy + q.nz() * dz >= -1.0e-6);
+                        if (inNear || inPeel) {
+                            scan.add(x, y, z, q, inNear, inPeel);
                         }
-                        emitQuad(vc, q, x, y, z, origin);
-                        if (++emitted >= ProjectorRenderer.MAX_FACES) {
-                            blocksCapped = true;
-                            return emitted;
+                        if (inNear) {
+                            nearCount++;
+                        }
+                        if (inPeel) {
+                            peelCount++;
                         }
                     }
                 }
             }
+        }
+        scan.nearCapped = nearCount >= max;
+        scan.peelCapped = peelCount >= max;
+        return scan;
+    }
+
+    private static int emitScan(VertexConsumer vc, ConeScan scan, Vec3 origin, boolean frontOnly) {
+        int emitted = 0;
+        boolean[] pick = frontOnly ? scan.peel : scan.near;
+        for (int i = 0; i < scan.count; i++) {
+            if (pick[i]) {
+                emitQuad(vc, scan.quads[i], scan.x[i], scan.y[i], scan.z[i], origin);
+                emitted++;
+            }
+        }
+        skippedGlass += frontOnly ? scan.peelGlass : scan.nearGlass;
+        if (frontOnly ? scan.peelCapped : scan.nearCapped) {
+            blocksCapped = true;
         }
         return emitted;
     }

@@ -6,6 +6,7 @@ import com.thebeyond.api.worldgen.BeyondTerrainState;
 import com.thebeyond.common.item.AnchorLeggingsItem;
 import com.thebeyond.common.worldgen.BeyondEndBiomeSource;
 import com.thebeyond.common.worldgen.BeyondEndChunkGenerator;
+import com.thebeyond.common.worldgen.BiomeCellScale;
 import com.thebeyond.common.worldgen.features.AuroraciteLayerDTFeature;
 import com.thebeyond.common.worldgen.features.AuroraciteLayerFeature;
 import com.thebeyond.internal.worldgen.BeyondTerrainStateInternal;
@@ -33,6 +34,7 @@ public final class BeyondCoreLifecycle {
         LevelStem endStem = levelStems.get(LevelStem.END);
         if (endStem != null && endStem.generator().getBiomeSource() instanceof BeyondEndBiomeSource) {
             BeyondTerrainStateInternal.markActive();
+            BiomeCellScale.resolve(event.getServer());
         }
     }
 
@@ -58,10 +60,10 @@ public final class BeyondCoreLifecycle {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void resetCoreState(ServerStoppedEvent event) {
-        // Reset Beyond's own static world-bound state so the next start re-detects.
         BeyondTerrainStateInternal.reset();
         BeyondEndChunkGenerator.resetNoises();
-        com.thebeyond.common.worldgen.BeyondGenDiagnostics.reset();   // re-arm one-shot gen logs for next world
+        BiomeCellScale.reset();
+        com.thebeyond.common.worldgen.BeyondGenDiagnostics.reset();
         com.thebeyond.api.worldgen.BeyondForeignStructureProfiles.clearLayerDistributed();
         com.thebeyond.common.worldgen.AutoHostWarmUp.reset();
         com.thebeyond.common.worldgen.BeyondStructureArbiter.reset();

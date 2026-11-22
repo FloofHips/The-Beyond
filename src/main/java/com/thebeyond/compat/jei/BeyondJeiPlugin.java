@@ -88,9 +88,8 @@ public class BeyondJeiPlugin implements IModPlugin {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null) return;
 
-        // Grab the known set once so we're not re-reading it for every item below.
         Set<ResourceLocation> known = BeyondAwareness.knownSnapshot(player);
-        if (known.equals(lastKnown)) return;   // nothing changed → skip the pass
+        if (known.equals(lastKnown)) return;
         lastKnown = new HashSet<>(known);
 
         // Already-removed stacks aren't in this list, so it's just the newly-hidden ones.
@@ -217,7 +216,7 @@ public class BeyondJeiPlugin implements IModPlugin {
                 }
                 if (!satisfiable) return true;
             }
-            return false;   // every slot has an unlocked option → visible
+            return false;
         }
         // Can't see the inputs here, so just go by the output.
         IIngredientSupplier ingredients = recipeManager.getRecipeIngredients(category, recipe);

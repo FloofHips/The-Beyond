@@ -33,9 +33,8 @@ public abstract class StructureStartSanctionMixin {
             WorldGenLevel level, StructureManager structureManager, ChunkGenerator chunkGenerator,
             RandomSource random, BoundingBox boundingBox, ChunkPos chunkPos,
             Operation<Void> original) {
-        // Gate on the chunkgen instance, not a session flag, so this never fires in another mod's End.
+        // gated on this chunkgen (never another mod's End), sanctioned End-wide since fallback Ends also protect auroracite
         boolean beyondGen = chunkGenerator instanceof BeyondEndChunkGenerator;
-        // Sanctioned across the whole End: the auroracite floor protection also runs in fallback Ends.
         ResourceLocation key = null;
         if (beyondGen || level.getLevel().dimension() == Level.END) {
             try {
@@ -51,7 +50,7 @@ public abstract class StructureStartSanctionMixin {
         if (beyondGen && own && the_beyond$isPancakeSeatedLandmark(key)
                 && ((BeyondEndChunkGenerator) chunkGenerator)
                         .the_beyond$landmarkInForeignCavity(structureManager, (StructureStart) (Object) this, chunkPos)) {
-            return;   // draws nothing this chunk
+            return;
         }
         if (own) SanctionedWrite.enter();
         // marks structure placement so the feature guard lets this structure build in its own box
@@ -81,20 +80,20 @@ public abstract class StructureStartSanctionMixin {
     private static void the_beyond$logCarveLedger() {
         ForeignStructureWrite.Scope scope = ForeignStructureWrite.currentScope();
         if (scope == null) return;
-        if (scope.selfOverwrite > 0
+        if (scope.selfOverwrite > 0 && BeyondGenDiagnostics.TRACE
                 && BeyondGenDiagnostics.loggedCarveLedger.add(scope.structureId + ":self")) {
             com.thebeyond.TheBeyond.LOGGER.debug(
                     "[IslandCarveProtection] {}: self-overwrite allowed {} (first slice)",
                     scope.structureId, scope.selfOverwrite);
         }
-        if (scope.featureVeto > 0
+        if (scope.featureVeto > 0 && BeyondGenDiagnostics.TRACE
                 && BeyondGenDiagnostics.loggedCarveLedger.add(scope.structureId + ":feature")) {
             com.thebeyond.TheBeyond.LOGGER.debug(
                     "[FeatureGuard] {}: {} of its OWN solid blocks refused while it was placing itself"
                     + " (first slice); a nonzero count here is the structure losing its own geometry",
                     scope.structureId, scope.featureVeto);
         }
-        if (scope.terrainVeto > 0
+        if (scope.terrainVeto > 0 && BeyondGenDiagnostics.TRACE
                 && BeyondGenDiagnostics.loggedCarveLedger.add(scope.structureId + ":veto")) {
             com.thebeyond.TheBeyond.LOGGER.debug(
                     "[IslandCarveProtection] {}: terrain veto {} (first slice)",
@@ -111,7 +110,7 @@ public abstract class StructureStartSanctionMixin {
             return;
         }
         if (profile == null || !profile.coverGroundDirt()) return;
-        if (BeyondForeignStructureProfiles.isDirtCoverSuppressed(key)) return;   // authored garden/grass kept
+        if (BeyondForeignStructureProfiles.isDirtCoverSuppressed(key)) return;
         // Clamp to the intersection of this chunk's write region and the structure's own footprint.
         BoundingBox sb = self.getBoundingBox();
         int x0 = Math.max(writeBox.minX(), sb.minX()), x1 = Math.min(writeBox.maxX(), sb.maxX());
@@ -132,7 +131,7 @@ public abstract class StructureStartSanctionMixin {
                 }
             }
         }
-        if (key != null && swapped > 0
+        if (key != null && swapped > 0 && BeyondGenDiagnostics.TRACE
                 && BeyondGenDiagnostics.loggedDirtCover.add(key.toString())) {
             com.thebeyond.TheBeyond.LOGGER.debug(
                     "[Beyond] dirt-cover {} swapped {} ground block(s) -> end_stone (first chunk slice)", key, swapped);

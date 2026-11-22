@@ -4,6 +4,7 @@ import com.thebeyond.common.registry.BeyondEffects;
 import com.thebeyond.common.registry.BeyondEntityTypes;
 import com.thebeyond.mixin.FallingBlockEntityAccessor;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageSources;
@@ -18,6 +19,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Fallable;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
@@ -73,8 +75,11 @@ public class RisingBlockEntity extends FallingBlockEntity {
 
     @Override
     public boolean onGround() {
-        if (this.blockPosition().above().getY() > level().getMaxBuildHeight() + 20) return true;
-        if (!level().getBlockState(this.blockPosition().above()).isAir()) return true;
+        BlockPos above = this.blockPosition().above();
+        if (above.getY() > level().getMaxBuildHeight() + 20) return true;
+        LevelChunk chunk = level().getChunkSource().getChunkNow(
+                SectionPos.blockToSectionCoord(above.getX()), SectionPos.blockToSectionCoord(above.getZ()));
+        if (chunk != null && !chunk.getBlockState(above).isAir()) return true;
         return super.onGround();
     }
 

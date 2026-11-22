@@ -31,10 +31,7 @@ class PingPongWrapTest {
                 () -> "wrap(" + input + ") = " + out + " not in [" + -R + ", " + R + "]");
     }
 
-    /**
-     * Crossing the pivot at ±R must yield adjacent output values — a modulo wrap would jump
-     * from +R to -R, producing a visible reflection line in terrain.
-     */
+    /** Crossing the pivot at ±R must give adjacent values, a modulo wrap would jump to -R and draw a reflection line. */
     @Test
     void continuityAcrossPivot() {
         int a = BeyondEndChunkGenerator.pingPongWrap(R - 1, -R, R);
@@ -45,14 +42,11 @@ class PingPongWrapTest {
         assertEquals(R - 1, c, "crossing +R must reflect back, not jump to -R");
     }
 
-    /**
-     * Full triangle-wave period is {@code 2*(max-min)}, i.e. {@code 4R} for range {@code [-R,R]}
-     * (up-slope and down-slope each take {@code 2R}) — shifting by only {@code 2R} hits the mirrored half.
-     */
+    /** The triangle-wave period is {@code 2*(max-min)}, so {@code 4R} for {@code [-R,R]}: a {@code 2R} shift lands mirrored. */
     @ParameterizedTest
     @ValueSource(ints = {0, 1, 42, -17, 100000, -250000, 249999})
     void periodicityWithDoubleRange(int input) {
-        int period = 4 * R; // 2 * (max - min) = 2 * 2R
+        int period = 4 * R;
         int base = BeyondEndChunkGenerator.pingPongWrap(input, -R, R);
         assertEquals(base, BeyondEndChunkGenerator.pingPongWrap(input + period, -R, R));
         assertEquals(base, BeyondEndChunkGenerator.pingPongWrap(input - period, -R, R));

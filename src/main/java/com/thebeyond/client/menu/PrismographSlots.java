@@ -7,7 +7,7 @@ import net.minecraft.world.item.ItemStack;
 public final class PrismographSlots {
     public static final int SLOTS = 1;
     public static final int FILM = 0;
-    public static final int MAX_FILM = 64; // film stack cap; also drives the item's durability-bar width
+    public static final int MAX_FILM = 64; // film stack cap, which also sets the width of the item's durability bar
 
     private PrismographSlots() {
     }

@@ -135,7 +135,7 @@ public class LivingBlockRenderer extends EntityRenderer<LivingBlock> {
                     rimCount++;
                 }
             }
-            LOGGER.info("[livingblock] baked shape: boxes={} quads={} rim={} fill={}",
+            if (LivingBlock.shouldLog) LOGGER.info("[livingblock] baked shape: boxes={} quads={} rim={} fill={}",
                     boxes.size(), baked.size(), rimCount, baked.size() - rimCount);
             return baked;
         });

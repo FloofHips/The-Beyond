@@ -66,14 +66,12 @@ class WrappedCoordsContractTest {
             "2147483647, -2147483648"   // int range extremes
     })
     void packUnpackRoundtrip(int x, int z) {
-        BeyondEndChunkGenerator.simplexNoise = null;  // null-fallback: pure wrap
+        BeyondEndChunkGenerator.simplexNoise = null;
 
         long packed = BeyondEndChunkGenerator.computeWrappedCoords(x, z);
         int wx = BeyondEndChunkGenerator.unpackWrappedX(packed);
         int wz = BeyondEndChunkGenerator.unpackWrappedZ(packed);
 
-        // No warp in the null-fallback branch — output must match a plain pingPongWrap.
-        // Derive R from DEFAULTS rather than hardcoding, so this stays correct if DEFAULTS changes.
         int R = BeyondTerrainParams.DEFAULTS.wrapRange();
         assertEquals(BeyondEndChunkGenerator.pingPongWrap(x, -R, R), wx);
         assertEquals(BeyondEndChunkGenerator.pingPongWrap(z, -R, R), wz);

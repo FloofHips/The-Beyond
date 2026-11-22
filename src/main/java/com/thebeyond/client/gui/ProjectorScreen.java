@@ -65,7 +65,7 @@ public class ProjectorScreen extends AbstractContainerScreen<ProjectorMenu> {
         this.inventoryLabelX = 8;
         this.inventoryLabelY = 73;
 
-        this.addWidget(Button.builder(Component.literal("Previous Mode"),
+        this.addWidget(Button.builder(Component.translatable("screen.the_beyond.projector.previous"),
                         b -> {
                             rotTarget = cycleMode(menu.getMode() - 1)*90;
                             PacketDistributor.sendToServer(new ProjectorSetModePayload(menu.getBlockPos(), (byte) cycleMode(menu.getMode() - 1)));
@@ -73,7 +73,7 @@ public class ProjectorScreen extends AbstractContainerScreen<ProjectorMenu> {
                 .bounds(x + 48, y, 27, 39)
                 .build());
 
-        this.addWidget(Button.builder(Component.literal("Next Mode"),
+        this.addWidget(Button.builder(Component.translatable("screen.the_beyond.projector.next"),
                         b -> {
                             rotTarget = cycleMode(menu.getMode() + 1)*90;
                             PacketDistributor.sendToServer(new ProjectorSetModePayload(menu.getBlockPos(), (byte) cycleMode(menu.getMode() + 1)));
@@ -95,7 +95,7 @@ public class ProjectorScreen extends AbstractContainerScreen<ProjectorMenu> {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
         if (currentMode.containsPoint(mouseX, mouseY))
-            guiGraphics.renderTooltip(this.font, Component.literal(ProjectorBlockEntity.MODE_NAMES[menu.getMode()]), mouseX, mouseY);
+            guiGraphics.renderTooltip(this.font, Component.translatable(ProjectorBlockEntity.MODE_KEYS[menu.getMode()]), mouseX, mouseY);
         if (nextMode.containsPoint(mouseX, mouseY))
             guiGraphics.renderTooltip(this.font, Component.literal(">"), mouseX, mouseY);
         if (previousMode.containsPoint(mouseX, mouseY))

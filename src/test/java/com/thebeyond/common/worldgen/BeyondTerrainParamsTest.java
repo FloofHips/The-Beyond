@@ -45,8 +45,6 @@ class BeyondTerrainParamsTest {
 
     @Test
     void warpAmplitudeZeroIsAllowed() {
-        // amplitude=0 is a valid "disable warp" configuration (pivot seam will
-        // be visible at the wrap boundary).
         assertDoesNotThrow(() -> new BeyondTerrainParams(250000, 0.0, 0.001));
     }
 

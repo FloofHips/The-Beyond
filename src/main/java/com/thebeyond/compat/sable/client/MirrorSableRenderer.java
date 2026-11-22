@@ -10,6 +10,7 @@ import com.mojang.blaze3d.vertex.VertexSorting;
 import com.thebeyond.client.renderer.RenderFailureLog;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.compat.ShaderCompatLib;
+import com.thebeyond.client.compat.VeilCompat;
 import com.thebeyond.client.renderer.FboTexture;
 import com.thebeyond.client.renderer.MirrorReflection;
 import com.thebeyond.common.block.MirrorBlock;
@@ -94,7 +95,6 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
     private static final int ENTITY_REFRESH_TICKS = 4;
     private static final int MAX_LOS_RECOMPUTES_PER_FRAME = 4;
 
-    private static boolean loggedActive;
     private static final Long2ObjectOpenHashMap<Slot> SLOTS = new Long2ObjectOpenHashMap<>();
     // glint types get buffers of their own: an enchanted item opens its glint and its base buffer at the same time
     private static final MultiBufferSource.BufferSource FBO_BUFFER =
@@ -160,10 +160,6 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         if (faces.isEmpty() || !SableReflectionFrame.valid()) {
             return;
         }
-        if (!loggedActive) {
-            loggedActive = true;
-            TheBeyond.LOGGER.info("[TheBeyond] Sable mirror live reflection active (sub-level capture path).");
-        }
 
         Vec3 camPos = SableReflectionFrame.camPos();
         // Sable baked the local->render transform into this pose, so the plane already follows the sub-level
@@ -219,10 +215,9 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
             float[][] corners = faceQuad(facing, FACE_OUTSET);
             if (slot.packPath) {
                 VertexConsumer vc = buf.getBuffer(BeyondRenderTypes.mirrorPack(slot.texture));
-                // the world cell in front of the face, be.getBlockPos() is the sub-level's plot far away under open sky
+                // light the cell in front of the face (the plot sits under open sky), max subdivision stops grazing UV tears
                 int ambient = LevelRenderer.getLightColor(mc.level, BlockPos.containing(camPos.x + p.x + nf.x / nlen * 0.5,
                         camPos.y + p.y + nf.y / nlen * 0.5, camPos.z + p.z + nf.z / nlen * 0.5));
-                // always max-subdivide: per-corner affine UVs diverge from projective at grazing angles and tear
                 int subdiv = MAX_SUBDIV;
                 for (int i = 0; i < subdiv; i++) {
                     for (int j = 0; j < subdiv; j++) {
@@ -268,6 +263,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         RenderSystem.backupProjectionMatrix();
         Matrix4fStack mvStack = RenderSystem.getModelViewStack();
         mvStack.pushMatrix();
+        boolean veilSuspended = VeilCompat.suspendBuffers();
         try {
             for (Iterator<Slot> it = SLOTS.values().iterator(); it.hasNext(); ) {
                 Slot slot = it.next();
@@ -306,6 +302,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
                 }
             }
         } finally {
+            VeilCompat.resumeBuffers(veilSuspended);
             mvStack.popMatrix();
             RenderSystem.applyModelViewMatrix();
             RenderSystem.restoreProjectionMatrix();
@@ -386,7 +383,7 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         try {
             for (Entity e : reflected) {
                 if (e.isRemoved()) {
-                    continue; // cached selection can outlive an entity by a few ticks
+                    continue;
                 }
                 double ex = Mth.lerp(pt, e.xOld, e.getX());
                 double ey = Mth.lerp(pt, e.yOld, e.getY());
@@ -638,8 +635,8 @@ public final class MirrorSableRenderer implements BlockEntityRenderer<MirrorBloc
         final Vec3 planePoint;
         final Vec3 planeNormal;
         final double camGx, camGy, camGz;
-        final double rpx, rpy, rpz; // rotationPoint
-        final List<double[]> boxes; // grid-space AABBs {minX,minY,minZ,maxX,maxY,maxZ}
+        final double rpx, rpy, rpz;
+        final List<double[]> boxes;
 
         SubBlockFrame(Matrix4f modelViewB, Vec3 planePoint, Vec3 planeNormal,
                       double camGx, double camGy, double camGz, double rpx, double rpy, double rpz, List<double[]> boxes) {

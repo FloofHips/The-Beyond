@@ -3,6 +3,7 @@ package com.thebeyond.common.worldgen.features;
 import com.mojang.serialization.Codec;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.worldgen.BeyondEndBiomeSource;
+import com.thebeyond.common.worldgen.BiomeCellScale;
 import com.thebeyond.util.VoronoiNoise;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
@@ -33,8 +34,10 @@ public class TerrainStepFeature  extends Feature<NoneFeatureConfiguration>  {
         BeyondEndBiomeSource source = (BeyondEndBiomeSource) context.chunkGenerator().getBiomeSource();
         VoronoiNoise.CellResult3D cell = source.getCell(origin.getX(), origin.getY(), origin.getZ());
 
-        double distance = new Vec3(cell.cellX(), cell.cellY(), cell.cellZ()).subtract(origin.getCenter()).length();
-        double t = Mth.clamp(distance / 200.0, 0.0, 1.0);
+        double width = BiomeCellScale.cellWidth();
+        double distance = new Vec3(cell.cellX(), cell.cellY(), cell.cellZ()).subtract(origin.getCenter())
+                .multiply(1.0 / width, 1.0 / BiomeCellScale.cellHeight(), 1.0 / width).length();
+        double t = Mth.clamp(distance, 0.0, 1.0);
 
         //this is to make it so features in the same subchunk or nearby subchunks start at the same y origin
         //to create the illusion of continuity, or else they'll be bound to 3x3 chunks and look kind of bad

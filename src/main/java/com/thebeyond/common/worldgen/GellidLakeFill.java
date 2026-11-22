@@ -180,7 +180,7 @@ public final class GellidLakeFill {
 
     /** Files a lake's cells with the chunks they fall in, saved with each chunk until it settles. */
     public static void hold(WorldGenLevel level, Lake lake, boolean placed) {
-        if (TheBeyond.LOGGER.isDebugEnabled()) log(lake, placed);
+        if (FeatureGuard.debugLogs && TheBeyond.LOGGER.isDebugEnabled()) log(lake, placed);
         if (lake.cells.isEmpty()) return;
         LongSet fluidColumns = new LongOpenHashSet();
         if (!lake.erased) {
@@ -332,8 +332,10 @@ public final class GellidLakeFill {
         }
         int dropped = dropUnsupported(level, loose, pieces);
         int grown = decoration == null ? 0 : decoration.place(level, fill.keySet());
-        TheBeyond.LOGGER.debug("[LakeFill] chunk [{},{}] filled {} undone {} changed {} spill {} cleared {} dropped {} grown {}",
-                cx, cz, fill.size(), undone, changed, spill, cleared, dropped, grown);
+        if (FeatureGuard.debugLogs) {
+            TheBeyond.LOGGER.debug("[LakeFill] chunk [{},{}] filled {} undone {} changed {} spill {} cleared {} dropped {} grown {}",
+                    cx, cz, fill.size(), undone, changed, spill, cleared, dropped, grown);
+        }
     }
 
     /** Solid, dry ground a feature may replace, as a lake takes for its floor. */
@@ -456,17 +458,25 @@ public final class GellidLakeFill {
             }
             Decoration d = new Decoration(features, cols.toLongArray(), lo - 3, hi + 4,
                     level.getSeed() ^ ChunkPos.asLong(cx, cz) * 0x9E3779B97F4A7C15L);
+            // Filters only read the world, so the dry surfaces serve every feature.
+            int[][] drySpots = new int[d.columns.length][];
+            for (int c = 0; c < d.columns.length; c++) {
+                drySpots[c] = d.surfaces(level, BlockPos.getX(d.columns[c]), BlockPos.getZ(d.columns[c]));
+            }
             for (int f = 0; f < features.size(); f++) {
                 PlacementContext ctx = new PlacementContext(level, generator, Optional.of(features.get(f)));
+                CountOnEveryLayerPlacementAccessor count = (CountOnEveryLayerPlacementAccessor) features.get(f).placement().get(0);
                 Long2ObjectMap<boolean[]> perColumn = new Long2ObjectOpenHashMap<>();
-                for (long col : d.columns) {
-                    int x = BlockPos.getX(col), z = BlockPos.getZ(col);
-                    int[] spots = d.surfaces(level, x, z);
+                for (int c = 0; c < d.columns.length; c++) {
+                    int x = BlockPos.getX(d.columns[c]), z = BlockPos.getZ(d.columns[c]);
+                    int[] spots = drySpots[c];
                     boolean[] ok = new boolean[spots.length];
                     for (int l = 0; l < spots.length; l++) {
+                        // place() reads a spot's dry result only when the spot is picked, so unpicked spots skip the filters
+                        if (d.picks(count, f, x, z, l) == 0) continue;
                         ok[l] = filtered(features.get(f), ctx, d.spotSeed(f, x, z, l), new BlockPos(x, spots[l], z)) != null;
                     }
-                    perColumn.put(col, ok);
+                    perColumn.put(d.columns[c], ok);
                 }
                 d.dry.add(perColumn);
             }
@@ -491,9 +501,7 @@ public final class GellidLakeFill {
                     boolean[] wasOk = dry.get(f).get(columns[c]);
                     for (int l = 0; l < spots[c].length; l++) {
                         RandomSource random = RandomSource.create(spotSeed(f, x, z, l) ^ 0x5DEECE66DL);
-                        int picks = 0;
-                        // The layer count draws its columns one at a time out of 256, so a spot is drawn this many times.
-                        for (int i = count.the_beyond$count().sample(random); i > 0; i--) if (random.nextInt(256) == 0) picks++;
+                        int picks = draws(count, random);
                         if (picks == 0) continue;
                         BlockPos at = filtered(feature, ctx, spotSeed(f, x, z, l), new BlockPos(x, spots[c][l], z));
                         if (at == null) continue;
@@ -509,6 +517,17 @@ public final class GellidLakeFill {
                 }
             }
             return grown;
+        }
+
+        private int picks(CountOnEveryLayerPlacementAccessor count, int f, int x, int z, int l) {
+            return draws(count, RandomSource.create(spotSeed(f, x, z, l) ^ 0x5DEECE66DL));
+        }
+
+        /** The layer count draws its columns one at a time out of 256, so a spot is drawn this many times. */
+        private static int draws(CountOnEveryLayerPlacementAccessor count, RandomSource random) {
+            int picks = 0;
+            for (int i = count.the_beyond$count().sample(random); i > 0; i--) if (random.nextInt(256) == 0) picks++;
+            return picks;
         }
 
         /** Tops of solid blocks under open cells inside the window, as the Beyond's layer count finds them. */

@@ -28,7 +28,7 @@ public abstract class WardenVibrationUserMixin {
                                                GameEvent.Context context, CallbackInfoReturnable<Boolean> cir) {
         if (Deafening.isDeafened(this$0)) {
             cir.setReturnValue(false);
-            if (this$0.tickCount % 40 == 0) { // throttled: confirms vibrations are being dropped
+            if (Deafening.TRACE && this$0.tickCount % 40 == 0) {
                 TheBeyond.LOGGER.debug("[Deafening] deaf Warden ignored a vibration");
             }
         }

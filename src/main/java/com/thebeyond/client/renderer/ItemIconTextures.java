@@ -7,6 +7,8 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import com.thebeyond.TheBeyond;
@@ -15,11 +17,19 @@ import com.thebeyond.client.renderer.blockentities.ProjectorGradeLut;
 import com.thebeyond.common.camera.Grade;
 import com.thebeyond.common.camera.Grades;
 import com.thebeyond.common.registry.BeyondShaders;
+import com.thebeyond.compat.exposure.client.ExposureClientCompat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.MapItem;
+import net.minecraft.world.level.saveddata.maps.MapId;
+import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import org.lwjgl.opengl.GL11;
@@ -31,6 +41,12 @@ import java.util.Map;
 /** Must run from {@link #runQueued()} outside {@code renderLevel}, else binding our FBOs corrupts the player's frame. */
 public final class ItemIconTextures {
     private static final int SIZE = 64;
+    private static final int MAP_SIZE = 256;
+    private static final int PHOTO_SIZE = 320;
+    private static final RenderType MAP_BACKGROUND =
+            RenderType.text(ResourceLocation.withDefaultNamespace("textures/map/map_background.png"));
+    private static final RenderType MAP_BACKGROUND_CHECKERBOARD =
+            RenderType.text(ResourceLocation.withDefaultNamespace("textures/map/map_background_checkerboard.png"));
     private static final int MAX_SLOTS = 24;
     private static final int RENDER_GRACE = 2;
     private static final boolean OSX = Minecraft.ON_OSX;
@@ -62,6 +78,8 @@ public final class ItemIconTextures {
         final FboTexture fbo = new FboTexture();
         final ItemStack stack;
         final ResourceLocation gradeId;
+        final boolean map;
+        final boolean photo;
         TextureTarget target;
         TextureTarget gradeTarget;  // populated only when the grade tints and the shader loaded
         long lastRequestedFrame;
@@ -71,6 +89,12 @@ public final class ItemIconTextures {
             this.loc = loc;
             this.stack = stack;
             this.gradeId = gradeId;
+            this.map = stack.has(DataComponents.MAP_ID);
+            this.photo = !map && ExposureClientCompat.isPhotograph(stack);
+        }
+
+        int size() {
+            return map ? MAP_SIZE : photo ? PHOTO_SIZE : SIZE;
         }
 
         void free() {
@@ -149,8 +173,7 @@ public final class ItemIconTextures {
             RenderSystem.backupProjectionMatrix();
 
             // Pass 1: raw icons, GUI-style ortho.
-            RenderSystem.setProjectionMatrix(new Matrix4f().setOrtho(0f, 16f, 16f, 0f, 1000f, 21000f),
-                    VertexSorting.ORTHOGRAPHIC_Z);
+            RenderSystem.setProjectionMatrix(iconProjection(), VertexSorting.ORTHOGRAPHIC_Z);
             mv.pushMatrix();
             pushed = true;
             mv.identity().translate(0f, 0f, -11000f);
@@ -161,7 +184,13 @@ public final class ItemIconTextures {
             boolean anyGraded = false;
             for (Slot slot : POOL.values()) {
                 if (frame - slot.lastRequestedFrame <= RENDER_GRACE) {
-                    renderRaw(slot, gg);
+                    if (slot.map) {
+                        renderMap(slot);
+                    } else if (slot.photo) {
+                        renderPhotograph(slot);
+                    } else {
+                        renderRaw(slot, gg);
+                    }
                     anyGraded |= tints(gradeOf(slot));
                 }
             }
@@ -197,6 +226,62 @@ public final class ItemIconTextures {
         }
     }
 
+    private static Matrix4f iconProjection() {
+        return new Matrix4f().setOrtho(0f, 16f, 16f, 0f, 1000f, 21000f);
+    }
+
+    private static void renderMap(Slot slot) {
+        Minecraft mc = Minecraft.getInstance();
+        if (slot.target == null) {
+            slot.target = new TextureTarget(MAP_SIZE, MAP_SIZE, false, OSX);
+            slot.target.setFilterMode(GL11.GL_NEAREST);
+            mc.getTextureManager().register(slot.loc, slot.fbo);
+        }
+        slot.target.setClearColor(0f, 0f, 0f, 0f);
+        slot.target.clear(OSX);
+        slot.target.bindWrite(true);
+        RenderSystem.setProjectionMatrix(new Matrix4f().setOrtho(-7f, 135f, 135f, -7f, 1000f, 21000f), VertexSorting.ORTHOGRAPHIC_Z);
+
+        MapId id = slot.stack.get(DataComponents.MAP_ID);
+        MapItemSavedData data = MapItem.getSavedData(id, mc.level);
+        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        PoseStack pose = new PoseStack();
+        Matrix4f m = pose.last().pose();
+        VertexConsumer paper = buffers.getBuffer(data == null ? MAP_BACKGROUND : MAP_BACKGROUND_CHECKERBOARD);
+        paper.addVertex(m, -7f, 135f, 0f).setColor(-1).setUv(0f, 1f).setLight(LightTexture.FULL_BRIGHT);
+        paper.addVertex(m, 135f, 135f, 0f).setColor(-1).setUv(1f, 1f).setLight(LightTexture.FULL_BRIGHT);
+        paper.addVertex(m, 135f, -7f, 0f).setColor(-1).setUv(1f, 0f).setLight(LightTexture.FULL_BRIGHT);
+        paper.addVertex(m, -7f, -7f, 0f).setColor(-1).setUv(0f, 0f).setLight(LightTexture.FULL_BRIGHT);
+        if (data != null) {
+            mc.gameRenderer.getMapRenderer().render(pose, buffers, id, data, false, LightTexture.FULL_BRIGHT);
+        }
+        buffers.endBatch();
+        RenderSystem.setProjectionMatrix(iconProjection(), VertexSorting.ORTHOGRAPHIC_Z);
+
+        slot.fbo.setId(slot.target.getColorTextureId());
+        slot.valid = true;
+    }
+
+    private static void renderPhotograph(Slot slot) {
+        Minecraft mc = Minecraft.getInstance();
+        if (slot.target == null) {
+            slot.target = new TextureTarget(PHOTO_SIZE, PHOTO_SIZE, false, OSX);
+            slot.target.setFilterMode(GL11.GL_NEAREST);
+            mc.getTextureManager().register(slot.loc, slot.fbo);
+        }
+        slot.target.setClearColor(0f, 0f, 0f, 0f);
+        slot.target.clear(OSX);
+        slot.target.bindWrite(true);
+        RenderSystem.setProjectionMatrix(new Matrix4f().setOrtho(0f, 1f, 1f, 0f, 1000f, 21000f), VertexSorting.ORTHOGRAPHIC_Z);
+        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        boolean drawn = ExposureClientCompat.renderPhotograph(slot.stack, new PoseStack(), buffers);
+        buffers.endBatch();
+        RenderSystem.setProjectionMatrix(iconProjection(), VertexSorting.ORTHOGRAPHIC_Z);
+
+        slot.fbo.setId(slot.target.getColorTextureId());
+        slot.valid = drawn;
+    }
+
     private static void renderRaw(Slot slot, GuiGraphics gg) {
         if (slot.target == null) {
             slot.target = new TextureTarget(SIZE, SIZE, true /* depth: 3D block items need it */, OSX);
@@ -226,7 +311,7 @@ public final class ItemIconTextures {
             return; // passthrough grade -> keep the raw icon
         }
         if (slot.gradeTarget == null) {
-            slot.gradeTarget = new TextureTarget(SIZE, SIZE, false, OSX);
+            slot.gradeTarget = new TextureTarget(slot.size(), slot.size(), false, OSX);
             slot.gradeTarget.setFilterMode(GL11.GL_NEAREST);
         }
         slot.gradeTarget.setClearColor(0f, 0f, 0f, 0f);

@@ -57,6 +57,7 @@ public class ModGameEvents {
     private static final String TAG_PENDING_TOTEM = "the_beyond:pendingTotem";
     private static final String TAG_TOTEM_ITEMS = "the_beyond:totemItems";
     private static final boolean CURIOS_LOADED = net.neoforged.fml.ModList.get().isLoaded("curios");
+    private static final boolean BACKPACKED_LOADED = net.neoforged.fml.ModList.get().isLoaded("backpacked");
 
     private static RefugeChunkData getChunkData(ServerLevel level, BlockPos pos) {
         // never force-load, a recursive load in runAllUpdates throws, and an unloaded chunk has no refuge anyway
@@ -260,12 +261,16 @@ public class ModGameEvents {
                 }
             }
 
-            // onDrop cancels the normal drops, so grab Curios into the totem here or they vanish.
-            int curiosCount = 0;
+            // onDrop cancels the normal drops, so grab Curios and equipped backpacks into the totem here or they vanish.
             if (CURIOS_LOADED) {
                 for (ItemStack stack : com.thebeyond.compat.curios.BeyondCuriosCompat.collectAndClear(player)) {
                     itemsList.add(stack.save(regAccess));
-                    curiosCount++;
+                }
+            }
+
+            if (BACKPACKED_LOADED) {
+                for (ItemStack stack : com.thebeyond.compat.backpacked.BeyondBackpackedCompat.collectAndClear(player)) {
+                    itemsList.add(stack.save(regAccess));
                 }
             }
 
@@ -273,9 +278,6 @@ public class ModGameEvents {
                 persistent.put(TAG_TOTEM_ITEMS, itemsList);
                 persistent.putBoolean(TAG_PENDING_TOTEM, true);
             }
-
-            TheBeyond.LOGGER.debug("[TotemRespite] totem captured items={} (curios among them={}) curiosLoaded={} corpse={}",
-                    itemsList.size(), curiosCount, CURIOS_LOADED, net.neoforged.fml.ModList.get().isLoaded("corpse"));
 
             player.getPersistentData().put(Player.PERSISTED_NBT_TAG, persistent);
         }

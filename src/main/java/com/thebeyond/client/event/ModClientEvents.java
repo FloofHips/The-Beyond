@@ -76,7 +76,9 @@ import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtension
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.common.util.TriState;
+import net.neoforged.neoforge.event.level.LevelEvent;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Matrix4fStack;
 import org.joml.Vector3f;
 
 import java.util.*;
@@ -147,7 +149,6 @@ public class ModClientEvents {
         BlockEntityRenderers.register(BeyondBlockEntities.MEMOR_FAUCET.get(), MemorFaucetRenderer::new);
         BlockEntityRenderers.register(BeyondBlockEntities.REFUGE.get(), RefugeRenderer::new);
         BlockEntityRenderers.register(BeyondBlockEntities.PROJECTOR.get(), ProjectorRenderer::new);
-        // Mirror has no BER: see onMirrorReflectionCapture / onMirrorDraw. Sable-gated so the class never loads without Sable.
         if (ModList.get().isLoaded("sable")) {
             BeyondSableClientCompat.registerRenderers();
         }
@@ -301,7 +302,6 @@ public class ModClientEvents {
         }
     }
 
-    /** The deafening potion is dark wine-purple, it has no baked effects so vanilla would color it water-blue. */
     @SubscribeEvent
     public static void colorSetupItem(RegisterColorHandlersEvent.Item event) {
         event.register((stack, tintIndex) -> {
@@ -312,7 +312,7 @@ public class ModClientEvents {
             if (contents.potion().map(h -> h.is(BeyondPotions.DEAFENING.getKey())).orElse(false)) {
                 return -12160095;
             }
-            return contents.getColor();
+            return net.minecraft.util.FastColor.ARGB32.opaque(contents.getColor());
         }, net.minecraft.world.item.Items.POTION, net.minecraft.world.item.Items.SPLASH_POTION,
                 net.minecraft.world.item.Items.LINGERING_POTION);
 
@@ -678,6 +678,14 @@ public class ModClientEvents {
         ProjectorDepthMap.clear();
     }
 
+    // a dimension change drops the old client level without setRemoved on its block entities, so they would stay listed
+    @SubscribeEvent
+    public static void onClientLevelUnload(LevelEvent.Unload event) {
+        if (!event.getLevel().isClientSide()) return;
+        MirrorBlockEntity.LOADED.removeIf(be -> be.getLevel() == event.getLevel());
+        ProjectorBlockEntity.LOADED.removeIf(be -> be.getLevel() == event.getLevel());
+    }
+
     @SubscribeEvent
     public static void onRegisterTooltipFactories(RegisterClientTooltipComponentFactoriesEvent event) {
         event.register(SnapshotTooltip.class,
@@ -795,10 +803,27 @@ public class ModClientEvents {
 
     @SubscribeEvent
     public static void renderLast(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
+            drawCracks(event);
+            return;
+        }
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_CUTOUT_BLOCKS) {
             return;
         }
 
+        Matrix4fStack modelView = RenderSystem.getModelViewStack();
+        modelView.pushMatrix();
+        modelView.mul(event.getModelViewMatrix());
+        RenderSystem.applyModelViewMatrix();
+        try {
+            drawLast(event);
+        } finally {
+            modelView.popMatrix();
+            RenderSystem.applyModelViewMatrix();
+        }
+    }
+
+    private static void drawLast(RenderLevelStageEvent event) {
         //renderRefugeDebug(event);
 
         Entity camEntity = event.getCamera().getEntity();
@@ -841,11 +866,18 @@ public class ModClientEvents {
                 renderClouds(poseStack, 112, 200,time/200f, CLOUD_2_MODEL, bufferSource);
             }
         }
-        AuroraBorealisRenderer.renderAurora(poseStack, 0, time, bufferSource, event, mc, player, level);
-        AuroraBorealisRenderer.renderAurora(poseStack, 16, time, bufferSource, event, mc, player, level);
+        AuroraBorealisRenderer.renderAurora(poseStack, time, bufferSource, event, mc, player, level);
 
         bufferSource.endBatch();
         poseStack.popPose();
+    }
+
+    private static void drawCracks(RenderLevelStageEvent event) {
+        Entity camEntity = event.getCamera().getEntity();
+        if (camEntity == null || camEntity.level().dimension() != Level.END || Minecraft.getInstance().player == null) return;
+
+        PoseStack poseStack = event.getPoseStack();
+        MultiBufferSource.BufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
 
         // sky cracks are drawn in the world pass only under a shaderpack, vanilla uses renderSky
         poseStack.pushPose();

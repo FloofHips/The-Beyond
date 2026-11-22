@@ -97,10 +97,7 @@ class HashSimplexNoiseTest {
 
     // ---------- output range ----------
 
-    /**
-     * Generous [-1.5, 1.5] bound (vs. canonical Simplex's ~[-1, 1]) so this only fails on real
-     * regressions — like gradients escaping the expected 12-entry table — not normal wobble.
-     */
+    /** A [-1.5, 1.5] bound, wider than Simplex's ~[-1, 1], so only real breaks fail it, such as a gradient outside the table. */
     @Test
     void outputStaysWithinReasonableRange() {
         HashSimplexNoise n = new HashSimplexNoise(RandomSource.create(555L));

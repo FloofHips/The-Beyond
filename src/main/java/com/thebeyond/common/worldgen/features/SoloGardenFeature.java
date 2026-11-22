@@ -65,7 +65,7 @@ public class SoloGardenFeature extends Feature<NoneFeatureConfiguration> {
             case 0 : {
                 BaubleEntity bauble = new BaubleEntity(BeyondEntityTypes.BAUBLE.get(), worldgenlevel.getLevel());
                 bauble.setPos(blockpos.above().getCenter());
-                worldgenlevel.getLevel().addFreshEntity(bauble);
+                worldgenlevel.addFreshEntity(bauble);
                 return;
             }
             case 1 : {

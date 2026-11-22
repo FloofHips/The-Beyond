@@ -11,6 +11,7 @@ import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.PathPackResources;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackSource;
+import net.minecraft.world.level.block.DispenserBlock;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
@@ -34,7 +35,6 @@ public class TheBeyond {
     public static final String MODID = "the_beyond";
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    // FML injects these constructor params.
     public TheBeyond(IEventBus modEventBus, ModContainer modContainer) {
         modEventBus.addListener(this::commonSetup);
 
@@ -90,7 +90,6 @@ public class TheBeyond {
             PackSelectionConfig selection =
                     new PackSelectionConfig(!convergencePresent, Pack.Position.TOP, false);
 
-            // addons contribute child packs that rewrite the End height bounds, the highest priority wins
             com.thebeyond.api.event.BeyondTerrainPackAssembleEvent assembleEvent =
                     new com.thebeyond.api.event.BeyondTerrainPackAssembleEvent(event);
             net.neoforged.fml.ModLoader.postEvent(assembleEvent);
@@ -142,6 +141,7 @@ public class TheBeyond {
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         hostVanillaEndStructures();
+        event.enqueueWork(() -> DispenserBlock.registerProjectileBehavior(BeyondItems.PEARL_BEAD));
         if (ModList.get().isLoaded("create")) {
             com.thebeyond.compat.create.BeyondCreateCompat.register();
         }

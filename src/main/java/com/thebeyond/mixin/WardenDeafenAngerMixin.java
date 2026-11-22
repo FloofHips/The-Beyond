@@ -26,7 +26,7 @@ public abstract class WardenDeafenAngerMixin {
                 && Deafening.isDeafened(self)
                 && self.distanceTo(entity) > BeyondConfig.WARDEN_SMELL_RADIUS.get()) {
             ci.cancel();
-            if (self.tickCount % 40 == 0) { // throttle: confirms the suppression is firing without per-tick spam
+            if (Deafening.TRACE && self.tickCount % 40 == 0) {
                 TheBeyond.LOGGER.debug("[Deafening] deafened Warden ignored player vibration anger (beyond smell radius)");
             }
         }

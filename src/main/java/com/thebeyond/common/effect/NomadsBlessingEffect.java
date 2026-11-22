@@ -31,7 +31,7 @@ public class NomadsBlessingEffect extends GenericEffect {
             TeleportUtils.randomTeleport(level, livingEntity);
 
             if (livingEntity instanceof Player player) {
-                ModClientEvents.nomadEyes = 1;
+                if (level.isClientSide()) ModClientEvents.nomadEyes = 1;
                 player.level().playSound(player, player.getX(), player.getY(), player.getZ(), BeyondSoundEvents.ABYSSAL_NOMAD_NOD.get(), SoundSource.NEUTRAL);
             }
 

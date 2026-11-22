@@ -21,14 +21,10 @@ final class CityGroundPlan {
     static final double THICKEN_MIN = 0.75;
     static final int EDGE_REACH = 3, EDGE_RUN = 2;
     static final int CLOSE_R = 6, APRON = 3;
-    /** Range of the lift's fade length, picked per column by lobe noise. */
     static final double LIFT_R_LO = 2.0, LIFT_R_HI = 18.0;
-    /** Amplitude of the wave bending the lift's steps off the walls, and how near the feet it may only shorten the distance. */
     static final double LIFT_WAVE_AMP = 3.0, LIFT_WAVE_NEAR = 4.0;
     static final int LIFT_PAD = (int) Math.ceil(LIFT_R_HI + LIFT_WAVE_AMP) + 1;
-    /** Lobed margin beside a raised foot where the carve keeps the island up to the foot's rock. */
     static final double KEEP_LO = 2.0, KEEP_HI = 5.0;
-    /** Feet closing a gap up to four columns wide deck the pocket between them. */
     static final int POCKET_R = 2;
 
     interface Terrain {
@@ -36,7 +32,6 @@ final class CityGroundPlan {
     }
 
     interface Field {
-        /** In [-1, 1]. */
         double at(int x, int z);
     }
 
@@ -46,7 +41,6 @@ final class CityGroundPlan {
     }
 
     interface Pads {
-        /** A floor foot with no full block on it, read as paving. */
         boolean pad(int x, int z);
     }
 
@@ -63,13 +57,9 @@ final class CityGroundPlan {
     int[] liftCap;
     float liftMax;
     int liftColumns;
-    /** Course up to which the carve keeps the island, on the lift's grid. */
     int[] keep;
-    /** Sole of the nearest foot, the higher on a tie: off the floor the plan's own ground stays under it. */
     int[] nearSole;
-    /** Pockets closed in by feet, the nearest raised or paving, decked to the floor like a courtyard. */
     boolean[] deck;
-    /** Chunk-aligned area whose chunks reference the start: the only columns that ever read this plan. */
     int reachX0, reachZ0, reachX1, reachZ1;
 
     private CityGroundPlan(int x0, int z0, int nx, int nz, int floor) {
@@ -181,7 +171,6 @@ final class CityGroundPlan {
             if (T[c] == Integer.MIN_VALUE) { miss[c] = true; p.apron++; }
         }
         if (p.missing > 0 || p.apron > 0) {
-            // Only ground with a gap to bridge needs the island around it.
             for (int j = 0; j < nz; j++) {
                 for (int i = 0; i < nx; i++) {
                     int c = i + j * nx;
@@ -339,7 +328,6 @@ final class CityGroundPlan {
                     if (L[c] != Integer.MIN_VALUE) lo = Math.max(lo, L[c] + LOWER_GAP);
                     if (hi >= lo) { botLo[c] = lo; botHi[c] = hi; }
                 } else {
-                    // Ground rising over the floor is a hill the structure stands into, with nothing to lay under it.
                     if (T[c] != Integer.MIN_VALUE && T[c] > F + SEAT_OVER) continue;
                     if (W[c] && !miss[c]) continue;
                     int hi = G[c] ? S[c] - 1 : W[c] ? nearestRock(G, S, c, CLOSE_R + APRON + 1) : (int) Math.round(wtop[c]);
@@ -451,9 +439,8 @@ final class CityGroundPlan {
                 for (int i = Math.max(0, ci - reachCells); i <= Math.min(w - 1, ci + reachCells); i++) {
                     int e = i + j * w;
                     double d = Math.hypot(i - ci, j - cj), near = Math.min(1.0, d / LIFT_WAVE_NEAR);
-                    // Near the feet the wave may only shorten the distance, so the lift never sinks there into a ring.
+                    // the wave only shortens near the feet (no sunk ring), the raw distance still ends the fade at the reach
                     double push = LIFT_WAVE_AMP * wv[e] * (wv[e] > 0.0 ? near * near * (3.0 - 2.0 * near) : Math.min(1.0, d));
-                    // The raw distance still ends the fade at the reach, where a shortened one would run past it.
                     double f = Math.max(Math.max(0.0, d + push) / Math.min(r[e], safe), d / safe);
                     if (f >= 1.0) continue;
                     float v = (float) (need[q] * (1.0 - f * f * f * (f * (f * 6.0 - 15.0) + 10.0)));

@@ -16,8 +16,6 @@ import com.thebeyond.common.registry.BeyondShaders;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraft.core.NonNullList;
-import net.minecraft.world.item.ItemStack;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
@@ -122,7 +120,6 @@ public final class ProjectorDeferredDecal {
         RenderSystem.setShader(() -> shader);
 
         try {
-            // F3 false-color diagnostics: open=1, +sneak=2 (aliasing), +sprint=3 (fade), else off.
             shader.safeGetUniform("DebugMode").set(!mc.getDebugOverlay().showDebugScreen() ? 0.0f
                     : (mc.player != null && mc.player.isShiftKeyDown() ? 2.0f
                     : (mc.options.keySprint.isDown() ? 3.0f : 1.0f)));
@@ -157,27 +154,16 @@ public final class ProjectorDeferredDecal {
     }
 
     private static void drawProjectorSlots(ShaderInstance shader, ProjectorBlockEntity be, boolean postFinal) {
-        NonNullList<ItemStack> items = be.getItems();
         int mode = be.getMode();
         ResourceLocation gradeId = ProjectorRenderer.frontGlassGradeId(be);
-        int[] filled = be.filledSlots();
-        int f = filled.length;
-        if (f == 0) {
-            return;
-        }
-        int carousel = Math.floorMod(be.getCarouselIndex(), f);
-        for (int j = 0; j < f; j++) {
-            int slot = filled[j];
-            ProjectorRenderer.Resolved base = ProjectorRenderer.resolveTexture(items.get(slot), gradeId);
+        for (ProjectorSlides.Slide slide : ProjectorSlides.of(be)) {
+            ProjectorRenderer.Resolved base = ProjectorRenderer.resolveTexture(slide.stack(), gradeId);
             if (base == null) {
                 continue;
             }
-            if (mode == ProjectorBlockEntity.MODE_CAROUSEL && j != carousel) {
-                continue;
-            }
-            ProjectorTexture.Region region = ProjectorRenderer.regionFor(mode, j, f, base.region());
+            ProjectorTexture.Region region = ProjectorRenderer.regionFor(mode, slide.index(), slide.count(), base.region());
             shader.safeGetUniform("ImageRegion").set(region.u0(), region.v0(), region.u1(), region.v1());
-            shader.safeGetUniform("Flags").set(base.flipV() ? 1.0f : 0.0f, ProjectorTunables.SHADOW_STRENGTH, base.opacity(),
+            shader.safeGetUniform("Flags").set(base.flipV() ? 1.0f : 0.0f, ProjectorTunables.SHADOW_STRENGTH, base.opacity() * slide.opacity(),
                     postFinal ? ProjectorTunables.NEAR_CUTOFF : 0.0f);
             RenderSystem.setShaderTexture(0, base.texture());
             drawFullscreen();

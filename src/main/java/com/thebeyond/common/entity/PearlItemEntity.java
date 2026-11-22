@@ -25,6 +25,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.*;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.event.EventHooks;
 import net.neoforged.neoforge.fluids.FluidType;
 import org.jetbrains.annotations.Nullable;
@@ -85,6 +87,7 @@ public class PearlItemEntity extends ThrowableItemProjectile {
                     this.setDeltaMovement(motion.x * 0.8, -Math.abs(motion.y) * 0.5, motion.z * 0.8);
                     this.playSound(BeyondSoundEvents.PEARL_IMPACT.get(), 0.6F, 1.0F);
                 } else {
+                    if (this.onGround() && this.canStepOnto(blockHit, motion)) return;
                     double bounceX = (face.getStepX() != 0) ? -motion.x * (isInFluidType() ? 1 : 0.7) : motion.x;
                     double bounceZ = (face.getStepZ() != 0) ? -motion.z * (isInFluidType() ? 1 : 0.7) : motion.z;
                     this.setDeltaMovement(bounceX, motion.y * 0.5, bounceZ);
@@ -93,6 +96,19 @@ public class PearlItemEntity extends ThrowableItemProjectile {
                 this.hasImpulse = true;
             }
         }
+    }
+
+    private boolean canStepOnto(BlockHitResult hit, Vec3 motion) {
+        BlockPos pos = hit.getBlockPos();
+        VoxelShape shape = this.level().getBlockState(pos).getCollisionShape(this.level(), pos, CollisionContext.of(this));
+        if (shape.isEmpty()) return false;
+        double rise = pos.getY() + shape.max(Direction.Axis.Y) - this.getY();
+        return rise <= this.maxUpStep() && this.level().noCollision(this, this.getBoundingBox().move(motion.x, rise + 1.0E-5, motion.z));
+    }
+
+    @Override
+    public float maxUpStep() {
+        return 0.125F;
     }
 
     @Override

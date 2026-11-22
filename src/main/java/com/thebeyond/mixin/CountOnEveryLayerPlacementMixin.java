@@ -14,10 +14,14 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import net.minecraft.server.level.WorldGenRegion;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.LevelChunkSection;
+import net.minecraft.world.level.chunk.ProtoChunk;
+
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 /** One position per solid-to-open transition, where vanilla's scan only sees the topmost layer. */
@@ -86,6 +90,10 @@ public abstract class CountOnEveryLayerPlacementMixin {
     }
 
     private static int[] scanColumn(PlacementContext ctx, int x, int z, int minY, int maxY) {
+        if (ctx.getLevel() instanceof WorldGenRegion region) {
+            ChunkAccess chunk = region.getChunk(x >> 4, z >> 4);
+            if (chunk.getClass() == ProtoChunk.class) return scanSections(chunk, x, z, minY, maxY);
+        }
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, maxY, z);
         int[] tmp = new int[8];
         int n = 0;
@@ -110,9 +118,42 @@ public abstract class CountOnEveryLayerPlacementMixin {
         return result;
     }
 
+    /** Reads the sections as ProtoChunk.getBlockState does, skipping an all-air section in one step. */
+    private static int[] scanSections(ChunkAccess chunk, int x, int z, int minY, int maxY) {
+        int[] tmp = new int[8];
+        int n = 0;
+        boolean prevWasSolid = false;
+        int lx = x & 15, lz = z & 15;
+        for (int y = maxY; y >= minY; y--) {
+            boolean isSolid = false;
+            if (!chunk.isOutsideBuildHeight(y)) {
+                LevelChunkSection section = chunk.getSection(chunk.getSectionIndex(y));
+                if (section.hasOnlyAir()) {
+                    y = Math.max(minY, y & ~15);
+                } else {
+                    BlockState state = section.getBlockState(lx, y & 15, lz);
+                    isSolid = !state.isAir() && state.getFluidState().isEmpty();
+                }
+            }
+            if (!prevWasSolid && isSolid) {
+                if (n == tmp.length) {
+                    int[] grown = new int[tmp.length * 2];
+                    System.arraycopy(tmp, 0, grown, 0, n);
+                    tmp = grown;
+                }
+                tmp[n++] = y + 1;
+            }
+            prevWasSolid = isSolid;
+        }
+        if (n == tmp.length) return tmp;
+        int[] result = new int[n];
+        System.arraycopy(tmp, 0, result, 0, n);
+        return result;
+    }
+
     private static final class ChunkColumnCache {
         long currentChunk = Long.MIN_VALUE;
-        final Map<Long, int[]> columns = new HashMap<>();
+        final Long2ObjectOpenHashMap<int[]> columns = new Long2ObjectOpenHashMap<>();
 
         int[] get(long chunkKey, long columnKey) {
             return chunkKey != currentChunk ? null : columns.get(columnKey);

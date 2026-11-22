@@ -65,7 +65,7 @@ public class BellowBlock extends BaseEntityBlock {
     public static final double MIN_FALLOFF = 0.15;   // residual push at the far edge
     public static final int STEM_COUNT = 3;
     public static final double STEM_RADIUS = 0.1;
-    public static final double FLOW_SPEED = 0.3;     // constant; the puff lifetime sets the reach
+    public static final double FLOW_SPEED = 0.3;     // constant, the puff lifetime sets the reach
     public static final int SPLASH_COUNT = 3;
     public static final int SPLASH_LIFETIME = 7;
     public static final double SPLASH_OUT = 0.13;
@@ -169,7 +169,7 @@ public class BellowBlock extends BaseEntityBlock {
     public static void serverPush(ServerLevel level, BlockPos pos, BlockState state, int signal, int strength, Direction direction) {
         serverPush(level, pos, state, signal, strength, direction, false);
     }
-    /** Server: pushes entities in the gust toward the facing; force scales with the signal and fades over the reach. */
+    /** Server: pushes entities in the gust toward the facing, with force scaling with the signal and fading over the reach. */
     public static void serverPush(ServerLevel level, BlockPos pos, BlockState state, int signal, int strength, Direction direction, boolean givesEffect) {
         Direction dir = direction == null ? state.getValue(FACING) : direction;
         Vec3 origin = BeyondCompatHooks.visibleOrCenter(level, pos);

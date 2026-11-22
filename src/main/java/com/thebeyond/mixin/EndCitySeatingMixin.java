@@ -34,21 +34,19 @@ public abstract class EndCitySeatingMixin {
         if (!(context.chunkGenerator() instanceof BeyondEndChunkGenerator beg)) return original.call(context);
         ChunkPos cp = context.chunkPos();
         double cx = cp.getMinBlockX(), cz = cp.getMinBlockZ();
-        // Inside the far-field edge there is no pancake terrain to re-anchor onto.
         if (cx * cx + cz * cz < FAR_FIELD_SQ) return original.call(context);
 
         Structure self = (Structure) (Object) this;
         try {
-            // Drawn before the scan so the rotation stays a function of the structure seed alone.
+            // the rotation is drawn before the scan, so it depends on the seed alone
             Rotation rotation = Rotation.getRandom(context.random());
             beg.computeNoisesIfNotPresent(context.randomState());
-            // Checks the whole footprint (radius 10, 50% coverage), four probes pass a narrow tip over the void.
             int[] spot = the_beyond$bestSeat(beg, cp, context, self, Integer.MAX_VALUE);
             if (spot == null) return original.call(context);
 
             // The shared picker buries the base course, but the End City must sit on the island.
             BlockPos pos = new BlockPos(spot[0], spot[1] + PancakeScan.LAYER_BURY_DEPTH, spot[2]);
-            if (pos.getY() < 60) return Optional.empty();   // vanilla's own floor gate
+            if (pos.getY() < 60) return Optional.empty();
 
             final int ceiling = context.heightAccessor().getMaxBuildHeight() - 1;
             List<StructurePiece> pieces = the_beyond$build(context, pos, rotation);
@@ -64,7 +62,7 @@ public abstract class EndCitySeatingMixin {
                 pos = new BlockPos(layer[0], layer[1] + PancakeScan.LAYER_BURY_DEPTH, layer[2]);
             }
 
-            if (BeyondGenDiagnostics.loggedEndCitySeat.add(cp.toLong())) {
+            if (BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedEndCitySeat.add(cp.toLong())) {
                 // top != y + need would mean the piece list was rebuilt rather than moved.
                 com.thebeyond.TheBeyond.LOGGER.debug(
                         "[Beyond] end_city seated y={} top={} need={} ceiling={} moved={} at {}",
@@ -91,7 +89,7 @@ public abstract class EndCitySeatingMixin {
                     PancakeScan.LAYER_MIN_HEADROOM, (int) tiers[t][0],
                     PancakeScan.FOOTPRINT_SUPPORT_STRIDE, tiers[t][1], maxSeatY, (int) tiers[t][2]);
             if (spot != null) {
-                if (t > 0 && BeyondGenDiagnostics.loggedEndCityTier.add(cp.toLong())) {
+                if (t > 0 && BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedEndCityTier.add(cp.toLong())) {
                     com.thebeyond.TheBeyond.LOGGER.debug(
                             "[Beyond] end_city seated at tier {} (radius {}, {}% coverage) at {}",
                             t, (int) tiers[t][0], Math.round(tiers[t][1] * 100), cp);
@@ -120,7 +118,7 @@ public abstract class EndCitySeatingMixin {
 
     private static Optional<Structure.GenerationStub> the_beyond$logSkip(
             ChunkPos cp, BlockPos pos, int need, int ceiling) {
-        if (BeyondGenDiagnostics.loggedEndCitySeat.add(cp.toLong())) {
+        if (BeyondGenDiagnostics.TRACE && BeyondGenDiagnostics.loggedEndCitySeat.add(cp.toLong())) {
             com.thebeyond.TheBeyond.LOGGER.debug(
                     "[Beyond] end_city skipped at {}: needs {} blocks of headroom, ceiling {}", pos, need, ceiling);
         }

@@ -1,5 +1,6 @@
 package com.thebeyond.common.block.blockentities;
 
+import com.thebeyond.TheBeyond;
 import com.thebeyond.client.particle.CircleColorTransitionOptions;
 import com.thebeyond.client.particle.PixelColorTransitionOptions;
 import com.thebeyond.common.block.MemorFaucetBlock;
@@ -62,6 +63,10 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
     private boolean active = false;
     private NonNullList<ItemStack> items = NonNullList.withSize(getContainerSize(), ItemStack.EMPTY);
     public int birthday = 0;
+    private boolean sentActive;
+    private int sentProgressBits;
+    private ItemStack[] sentItems;
+    private boolean clothRefusedLogged;
 
     public MemorFaucetBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
         super(type, pos, blockState);
@@ -181,7 +186,10 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
             itemEntity.setNeverPickUp();
             itemEntity.setDeltaMovement(dx * 0.1, Math.max(0.2, dy * 0.05 + 0.2), dz * 0.1);
 
-            nomad.level().addFreshEntity(itemEntity);
+            if (!nomad.level().addFreshEntity(itemEntity) && !clothRefusedLogged) {
+                clothRefusedLogged = true;
+                TheBeyond.LOGGER.warn("[Beyond] faucet at {}: the level refused the nomad's cloth", worldPosition);
+            }
         }
     }
 
@@ -353,6 +361,8 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
         // stationary spawns go deep in The Paths and walk up, on a balloon they spawn on a sturdy block near storage
         boolean inSubLevel = com.thebeyond.api.compat.BeyondCompatHooks.visibleOnly(level, pos) != null;
 
+        int placed = 0;
+        int refused = 0;
         for (int i = 0; i < i1; i++) {
             if (inSubLevel) {
                 BlockPos ground = findGroundNear(level, pos, 4, 8);
@@ -360,15 +370,19 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
                 Vec3 spawn = com.thebeyond.api.compat.BeyondCompatHooks.visibleOrCenter(level, ground.above());
                 AbyssalNomadEntity nomad = new AbyssalNomadEntity(BeyondEntityTypes.ABYSSAL_NOMAD.get(), level);
                 nomad.setPos(spawn.x, spawn.y, spawn.z);
-                level.addFreshEntity(nomad);
+                if (level.addFreshEntity(nomad)) placed++; else refused++;
             } else {
                 BlockPos auroracite = findAuroraciteNear(level, a.relative(direction, 10),
                         level.getMinBuildHeight() + 1, 10, 8);
                 if (auroracite == null) continue;
                 AbyssalNomadEntity nomad = new AbyssalNomadEntity(BeyondEntityTypes.ABYSSAL_NOMAD.get(), level);
                 nomad.setPos(auroracite.getX() + 0.5, auroracite.getY() + 1, auroracite.getZ() + 0.5);
-                level.addFreshEntity(nomad);
+                if (level.addFreshEntity(nomad)) placed++; else refused++;
             }
+        }
+        if (placed == 0 || refused > 0) {
+            TheBeyond.LOGGER.warn("[Beyond] faucet at {} spawned {} of {} nomads, {} refused by the level, {} without ground",
+                    pos, placed, i1, refused, i1 - placed - refused);
         }
     }
 
@@ -552,8 +566,28 @@ public class MemorFaucetBlockEntity extends BlockEntity implements Container {
         return tag;
     }
 
+    // a faucet that has run once asks for an update every tick (its lerp never settles), so a packet equal to the last is skipped
     @Override
     public ClientboundBlockEntityDataPacket getUpdatePacket() {
+        if (this.sentItems != null && this.sentActive == this.active
+                && this.sentProgressBits == Float.floatToIntBits(this.activeProgress) && this.sameItemsAsSent()) {
+            return null;
+        }
+        this.sentActive = this.active;
+        this.sentProgressBits = Float.floatToIntBits(this.activeProgress);
+        this.sentItems = new ItemStack[this.items.size()];
+        for (int i = 0; i < this.items.size(); i++) {
+            this.sentItems[i] = this.items.get(i).copy();
+        }
         return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    private boolean sameItemsAsSent() {
+        for (int i = 0; i < this.items.size(); i++) {
+            if (!ItemStack.matches(this.sentItems[i], this.items.get(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 }

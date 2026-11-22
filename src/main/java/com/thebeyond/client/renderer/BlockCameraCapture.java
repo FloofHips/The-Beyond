@@ -5,7 +5,9 @@ import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.camera.CameraAim;
+import com.thebeyond.client.compat.DistantHorizonsCompat;
 import com.thebeyond.client.compat.ShaderCompatLib;
+import com.thebeyond.client.compat.VeilCompat;
 import com.thebeyond.mixin.client.CameraAccessor;
 import com.thebeyond.mixin.client.MinecraftMainTargetAccessor;
 import org.lwjgl.opengl.GL11;
@@ -122,9 +124,9 @@ public final class BlockCameraCapture {
             return true;
         }
 
-        Entity savedCamEntity = mc.cameraEntity; // field, not setter: setter has post-effect side effects
+        // the camera entity is swapped as a field (the setter has post-effect side effects), outline and hand are always on live
+        Entity savedCamEntity = mc.cameraEntity;
         CameraType savedCamType = mc.options.getCameraType();
-        // renderBlockOutline and renderHand have no getters and are always true when live
         CameraAccessor camAcc = (CameraAccessor) gr.getMainCamera();
         float savedEyeHeight = camAcc.the_beyond$getEyeHeight();
         float savedEyeHeightOld = camAcc.the_beyond$getEyeHeightOld();
@@ -160,9 +162,8 @@ public final class BlockCameraCapture {
                 camAcc.the_beyond$setEyeHeight(0.0f);
                 camAcc.the_beyond$setEyeHeightOld(0.0f);
             }
-            // handheld: the player stays the camera, first person hides the model and uses their eyes
+            // handheld: the player is the camera, aimed where the viewfinder was at the click
             if (shot != null) {
-                // Look where the viewfinder was at the click, not where the mouse went during the server round trip.
                 aimer.setYRot(shot.yaw());
                 aimer.yRotO = shot.yaw();
                 aimer.setXRot(shot.pitch());
@@ -173,17 +174,19 @@ public final class BlockCameraCapture {
             target.setClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             target.clear(Minecraft.ON_OSX);
             target.bindWrite(true);
+            DistantHorizonsCompat.relinkIrisDepth();
 
             DeltaTracker delta = mc.getTimer();
             SecondaryViewRenderHook hook = secondaryViewHook;
-            boolean complete;
-            if (hook != null) {
-                complete = hook.render(delta, req.selfPov);
-            } else {
-                mc.gameRenderer.renderLevel(delta);
-                complete = true;
-            }
-            boolean finished = complete || (frameIndex + 1) >= MAX_WARMUP_FRAMES;
+            boolean[] complete = {true};
+            VeilCompat.renderLevel(target, () -> {
+                if (hook != null) {
+                    complete[0] = hook.render(delta, req.selfPov);
+                } else {
+                    mc.gameRenderer.renderLevel(delta);
+                }
+            });
+            boolean finished = complete[0] || (frameIndex + 1) >= MAX_WARMUP_FRAMES;
             if (finished) {
                 SnapshotCapture.downsampleQuantizeUpload(target, req.requestId);
             }
@@ -194,6 +197,7 @@ public final class BlockCameraCapture {
         } finally {
             // restored in reverse order, a miss here corrupts the player's live frame
             ((MinecraftMainTargetAccessor) mc).the_beyond$setMainRenderTarget(realMain);
+            DistantHorizonsCompat.relinkIrisDepth();
             camAcc.the_beyond$setEyeHeight(savedEyeHeight);
             camAcc.the_beyond$setEyeHeightOld(savedEyeHeightOld);
             gr.setRenderHand(true);

@@ -86,7 +86,7 @@ public abstract class StructureTemplatePlaceMixin {
     @Unique
     private void the_beyond$probePlacement(
             ServerLevelAccessor accessor, BlockPos origin, StructurePlaceSettings settings) {
-        if (BeyondGenDiagnostics.placementProbesLogged >= 60) return;
+        if (!BeyondGenDiagnostics.TRACE || BeyondGenDiagnostics.placementProbesLogged >= 60) return;
         ForeignStructureWrite.Scope scope = ForeignStructureWrite.currentScope();
         String id = scope != null ? scope.structureId : null;
         if (id == null) return;

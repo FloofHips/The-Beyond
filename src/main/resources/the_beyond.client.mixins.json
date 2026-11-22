@@ -6,7 +6,9 @@
   "refmap": "the_beyond.refmap.json",
   "priority": 500,
   "mixins": [
+    "AbstractSoundInstanceAccessor",
     "CameraAccessor",
+    "CreativeModeInventoryScreenAccessor",
     "CreativeModeInventoryScreenMixin",
     "CreativeModeTabMixin",
     "EndDimensionEffectsMixin",
@@ -15,6 +17,7 @@
     "LevelRendererPhotoHideMixin",
     "LevelRendererFabulousDepthMixin",
     "MinecraftMainTargetAccessor",
+    "RenderBuffersCaptureMixin",
     "ResourceOrTagArgumentMixin",
     "ResourceOrTagArgumentParseMixin",
     "ResourceOrTagKeyArgumentParseMixin",

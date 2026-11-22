@@ -1,0 +1,13 @@
+{
+  "required": false,
+  "package": "com.thebeyond.mixin.compat.exposure",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "the_beyond.refmap.json",
+  "client": [
+    "ExposureDirectCaptureMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

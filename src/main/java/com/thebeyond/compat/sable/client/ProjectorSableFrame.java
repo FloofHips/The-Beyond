@@ -93,7 +93,7 @@ public final class ProjectorSableFrame {
                     return 1.0;
                 }
                 if (ProjectorRenderer.isLightTransmitting(level.getBlockState(hit.getBlockPos()))) {
-                    from = hit.getLocation().add(dir.scale(1.0e-3)); // glass is not an occluder
+                    from = hit.getLocation().add(dir.scale(1.0e-3));
                     continue;
                 }
                 return hit.getLocation().distanceTo(eye) < dist - 0.06 ? 0.0 : 1.0; // 0.06 = ProjectorRenderer.OCC_EPS

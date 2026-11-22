@@ -23,7 +23,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.UUID;
 
 public class PrismographBlockEntity extends BlockEntity implements Container {
-    // Slot layout and film cap live in PrismographSlots (the shared source); re-exposed here for this container's API and slot overrides.
+    // Slot layout and film cap live in PrismographSlots, re-exposed here for this container's API and slot overrides.
     public static final int SLOTS = PrismographSlots.SLOTS;
     public static final int FILM = PrismographSlots.FILM;
     public static final int MAX_FILM = PrismographSlots.MAX_FILM;

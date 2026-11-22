@@ -24,11 +24,10 @@ public final class SableReflectionFrame {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS) {
             return;
         }
-        // Iris shadow pass fires this stage with the light's view, not the main camera.
+        // skip the Iris shadow pass (light's view) and block-camera captures, either would overwrite the frame's mirror matrices
         if (com.thebeyond.client.compat.ShaderCompatLib.isShadowPass()) {
             return;
         }
-        // A block-camera offscreen POV would overwrite the real frame's mirror matrices.
         if (com.thebeyond.client.renderer.BlockCameraCapture.isCapturing()) {
             return;
         }

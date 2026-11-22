@@ -145,6 +145,8 @@ public class BeyondRenderTypes extends RenderType {
     static RenderStateShard.ShaderStateShard PROJECTOR_DIST_ENTITY_SHADER_STATE = new RenderStateShard.ShaderStateShard(BeyondShaders::getProjectorDistEntity);
     static RenderStateShard.ShaderStateShard PROJECTOR_DIST_BLOCK_ENTITY_SHADER_STATE = new RenderStateShard.ShaderStateShard(BeyondShaders::getProjectorDistBlockEntity);
     static RenderStateShard.ShaderStateShard PROJECTOR_DIST_BLOCK_ENTITY_PEEL_SHADER_STATE = new RenderStateShard.ShaderStateShard(BeyondShaders::getProjectorDistBlockEntityPeel);
+    // Veil rebinds its main buffer for any main_target render type while its lights are on, so the capture uses its own output
+    private static final OutputStateShard PROJECTOR_CAPTURE_TARGET = new OutputStateShard("the_beyond_projector_capture", () -> {}, () -> {});
 
     public static final Function<ResourceLocation, RenderType> MIRROR = Util.memoize((location) -> {
         CompositeState compositeState = CompositeState.builder()
@@ -222,6 +224,7 @@ public class BeyondRenderTypes extends RenderType {
             false,
             CompositeState.builder()
                     .setShaderState(PROJECTOR_DIST_SHADER_STATE)
+                    .setOutputState(PROJECTOR_CAPTURE_TARGET)
                     .setTextureState(new TextureStateShard(TextureAtlas.LOCATION_BLOCKS, false, false))
                     .setWriteMaskState(COLOR_DEPTH_WRITE)
                     .setDepthTestState(LEQUAL_DEPTH_TEST)
@@ -238,6 +241,7 @@ public class BeyondRenderTypes extends RenderType {
             false,
             CompositeState.builder()
                     .setShaderState(PROJECTOR_DIST_PEEL_SHADER_STATE)
+                    .setOutputState(PROJECTOR_CAPTURE_TARGET)
                     .setTextureState(new TextureStateShard(TextureAtlas.LOCATION_BLOCKS, false, false))
                     .setWriteMaskState(COLOR_DEPTH_WRITE)
                     .setDepthTestState(LEQUAL_DEPTH_TEST)
@@ -262,6 +266,7 @@ public class BeyondRenderTypes extends RenderType {
     public static final Function<ResourceLocation, RenderType> PROJECTOR_DEPTH_ENTITY = Util.memoize((location) -> {
         CompositeState compositeState = CompositeState.builder()
                 .setShaderState(PROJECTOR_DIST_ENTITY_SHADER_STATE)
+                .setOutputState(PROJECTOR_CAPTURE_TARGET)
                 .setTextureState(new TextureStateShard(location, false, false))
                 .setWriteMaskState(COLOR_NO_B_DEPTH_WRITE)
                 .setDepthTestState(LEQUAL_DEPTH_TEST)
@@ -278,6 +283,7 @@ public class BeyondRenderTypes extends RenderType {
     public static final Function<ResourceLocation, RenderType> PROJECTOR_DEPTH_BLOCK_ENTITY = Util.memoize((location) -> {
         CompositeState compositeState = CompositeState.builder()
                 .setShaderState(PROJECTOR_DIST_BLOCK_ENTITY_SHADER_STATE)
+                .setOutputState(PROJECTOR_CAPTURE_TARGET)
                 .setTextureState(new TextureStateShard(location, false, false))
                 .setWriteMaskState(COLOR_DEPTH_WRITE)
                 .setDepthTestState(LEQUAL_DEPTH_TEST)
@@ -303,6 +309,7 @@ public class BeyondRenderTypes extends RenderType {
     public static final Function<ResourceLocation, RenderType> PROJECTOR_DEPTH_BLOCK_ENTITY_PEEL = Util.memoize((location) -> {
         CompositeState compositeState = CompositeState.builder()
                 .setShaderState(PROJECTOR_DIST_BLOCK_ENTITY_PEEL_SHADER_STATE)
+                .setOutputState(PROJECTOR_CAPTURE_TARGET)
                 .setTextureState(new TextureStateShard(location, false, false))
                 .setTransparencyState(MIN_BLEND)
                 .setWriteMaskState(COLOR_WRITE)

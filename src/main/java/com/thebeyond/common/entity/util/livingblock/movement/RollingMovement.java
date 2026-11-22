@@ -1,6 +1,8 @@
 package com.thebeyond.common.entity.util.livingblock.movement;
 
 import com.thebeyond.common.entity.util.livingblock.LivingBlock;
+import com.thebeyond.common.entity.util.livingblock.LivingBlockFrames;
+import com.thebeyond.common.entity.util.livingblock.LivingBlockNeighbourhood;
 import com.thebeyond.common.entity.util.livingblock.LivingBlockPivot;
 import com.thebeyond.common.entity.util.livingblock.LivingBlockStep;
 import net.minecraft.core.BlockPos;
@@ -8,7 +10,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -41,7 +42,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
     private static double requiredRise(final LivingBlock entity, final AABB nextPosBounds, final double limit) {
         for (int i = 1; i <= RISE_SAMPLES; i++) {
             double rise = limit * i / RISE_SAMPLES;
-            if (entity.level().noCollision(entity, nextPosBounds.move(0.0, rise, 0.0))) {
+            if (LivingBlockFrames.noCollision(entity, nextPosBounds.move(0.0, rise, 0.0))) {
                 return rise;
             }
         }
@@ -74,8 +75,8 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
         AABB probe = entity.getBoundingBox().deflate(1.0E-6)
                 .move(direction.getStepX() * CLIMB_REACH, 0.0, direction.getStepZ() * CLIMB_REACH);
         return entity.usesOrientedCollision()
-                ? entity.level().noCollision(entity, probe)
-                : entity.level().noBlockCollision(entity, probe);
+                ? LivingBlockFrames.noCollision(entity, probe)
+                : LivingBlockFrames.noBlockCollision(entity, probe);
     }
 
     private static AABB tiltProbe(final LivingBlock entity, final AABB bounds) {
@@ -271,7 +272,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
         AABB hull = entity.getBoundingBox();
         double drop = Math.max(1.0, entity.getBaseShapeBounds().getYsize()) + LEDGE_DROP_SLACK;
         Target order = entity.getMovementTarget();
-        Vec3 wanted = order == null ? null : order.resolvePosition(entity.level());
+        Vec3 wanted = order == null ? null : entity.targetPosition(order);
         Vec3 centre = nextBlockPos.getBottomCenter();
         double half = Math.min(LEDGE_PROBE_HALF,
                 Math.min(hull.getXsize(), hull.getZsize()) * 0.5);
@@ -284,14 +285,14 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
             if (there < here) {
                 AABB fall = new AABB(centre.x - half, hull.minY - LEDGE_FALL_MAX, centre.z - half,
                         centre.x + half, hull.minY - 1.0E-4, centre.z + half);
-                if (!entity.level().noBlockCollision(entity, fall)) {
+                if (!LivingBlockFrames.noBlockCollision(entity, fall)) {
                     return true;
                 }
             }
         }
         AABB under = new AABB(centre.x - half, hull.minY - drop, centre.z - half,
                 centre.x + half, hull.minY - 1.0E-4, centre.z + half);
-        boolean held = !entity.level().noBlockCollision(entity, under);
+        boolean held = !LivingBlockFrames.noBlockCollision(entity, under);
         if (!held && !entity.level().isClientSide()) {
             if (shouldLog) LOGGER.debug("[livingblock] ledge id={} dir={} cell={},{} drop={} order={} hull={} pos={}",
                     entity.getId(), direction,
@@ -314,7 +315,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
         boolean isClimbing = entity.isClimbing();
         RollingMovement.Data data = this.getData(entity);
 
-        if (!isClimbing && entity.level().noCollision(entity, nextPosBounds)) {
+        if (!isClimbing && LivingBlockFrames.noCollision(entity, nextPosBounds)) {
             if (!ledgeHolds(entity, direction, nextBlockPos)) {
                 data.failedMoveAttempts++;
                 logClimb3(entity, data, direction, "ledge", false);
@@ -329,7 +330,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
             if (!this.isAnyEntityStandingOn(entity)) {
                 AABB onTopBounds = nextPosBounds.move(0.0, 1.0, 0.0);
 
-                boolean blockCollision = !entity.level().noBlockCollision(entity, onTopBounds);
+                boolean blockCollision = !LivingBlockFrames.noBlockCollision(entity, onTopBounds);
                 boolean entityHit = !entity.level().getEntityCollisions(entity, onTopBounds).isEmpty();
                 boolean entityCollision = entityHit && !blockCollision;
 
@@ -391,7 +392,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
                     data.failedMoveAttempts++;
                 } else {
                     AABB directlyAboveBounds = entity.getBoundingBox().deflate(1.0E-6).move(0.0, 2.0E-6, 0.0);
-                    if (entity.level().noBlockCollision(entity, directlyAboveBounds)) {
+                    if (LivingBlockFrames.noBlockCollision(entity, directlyAboveBounds)) {
                         this.setMoveStep(entity, RollingMovement.MoveType.CLIMB, nextBlockPos.above(), direction, 0.0F);
                         logClimb3(entity, data, direction, "climb", true);
                         return true;
@@ -594,7 +595,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
                 entity.resetClimbingDirection();
             }
             if (entity.tickCount % STEP_LOG_INTERVAL == 0) {
-                List<LivingBlock> hidden = entity.level().getEntitiesOfClass(LivingBlock.class, nextPosBounds,
+                List<LivingBlock> hidden = LivingBlockNeighbourhood.getEntitiesOfClass(entity.level(), LivingBlock.class, nextPosBounds,
                         other -> other != entity && other.isAlive());
                 if (!hidden.isEmpty()) {
                     if (shouldLog) LOGGER.debug("[livingblock] step id={} hidden={} maxUpStep={} feet={}",
@@ -608,7 +609,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
             RollingMovement.Data data = this.getData(entity);
             if (!this.isAnyEntityStandingOn(entity)) {
                 AABB onTopBounds = nextPosBounds.move(0.0, 1.0, 0.0);
-                boolean blockCollision = !entity.level().noBlockCollision(entity, onTopBounds);
+                boolean blockCollision = !LivingBlockFrames.noBlockCollision(entity, onTopBounds);
                 boolean entityHit = !entity.level().getEntityCollisions(entity, onTopBounds).isEmpty();
                 boolean entityCollision = entityHit && !blockCollision;
 
@@ -693,7 +694,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
                         entity.resetMaxUpStep();
                         return false;
                     }
-                    if (entity.level().noBlockCollision(entity, directlyAboveBounds)) {
+                    if (LivingBlockFrames.noBlockCollision(entity, directlyAboveBounds)) {
                         logRoute(entity, data, "climb", 0.0);
                         entity.climbWhy(direction, "climbstuck",
                                 "target=" + nextBlockPos.above().getY());
@@ -767,7 +768,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
         for (Direction side : new Direction[]{blocked.getClockWise(), blocked.getCounterClockWise()}) {
             AABB probe = hull.expandTowards(side.getStepX() * SIDESTEP_REACH, 0.0,
                     side.getStepZ() * SIDESTEP_REACH).deflate(1.0E-6);
-            if (entity.level().noCollision(entity, probe)
+            if (LivingBlockFrames.noCollision(entity, probe)
                     && ledgeHolds(entity, side, blockPos.relative(side))) {
                 return side;
             }
@@ -879,9 +880,10 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
     private boolean isAnyEntityStandingOn(final LivingBlock entity) {
         AABB aabb = entity.getBoundingBox();
         AABB onTop = new AABB(aabb.minX, aabb.maxY, aabb.minZ, aabb.maxX, aabb.maxY + 1.0, aabb.maxZ).deflate(1.0E-6);
-        return !entity.level()
-                .getEntities(
-                        EntityTypeTest.forClass(Entity.class),
+        return !LivingBlockNeighbourhood
+                .getEntitiesOfClass(
+                        entity.level(),
+                        Entity.class,
                         onTop,
                         other -> other != entity && other.onGround() && (!(other instanceof LivingBlock) || entity.canCollideWith(other))
                 ).isEmpty();
@@ -995,7 +997,7 @@ public class RollingMovement implements MovementStrategy<RollingMovement.Data> {
             Vec3 delta = this.position.subtract(predictedPos);
             if (this.type.isAttachedVertically()) {
                 AABB aabb = entity.getBoundingBox().deflate(1.0E-6).move(this.direction.getStepX() * CLIMB_REACH, this.direction.getStepY() * CLIMB_REACH, this.direction.getStepZ() * CLIMB_REACH);
-                boolean touching = !entity.level().noCollision(entity, aabb);
+                boolean touching = !LivingBlockFrames.noCollision(entity, aabb);
                 if (entity.tickCount % CLIMB_LOG_INTERVAL == 0 && !entity.level().isClientSide()) {
                     if (shouldLog) LOGGER.debug("[livingblock] climbdrive id={} type={} dir={} touching={} targetY={} deltaY={} scale={} velY={}",
                             entity.getId(), this.type, this.direction, touching,

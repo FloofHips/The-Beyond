@@ -84,9 +84,6 @@ public class BeyondBlockLoot extends BlockLootSubProvider {
         dropSelf(BeyondBlocks.PERKA_STALK.get());
         dropSelf(BeyondBlocks.PERKA_STALK_MOUTH.get());
 
-        // Pearl mirror: drops itself AND preserves its reflective-face configuration. copy_state
-        // writes the per-face booleans into the item's block_state component, which BlockItem
-        // re-applies on placement, so breaking + replacing keeps the exact face setup.
         //add(BeyondBlocks.MIRROR.get(), block -> LootTable.lootTable().withPool(
         //        applyExplosionCondition(block, LootPool.lootPool()
         //                .setRolls(ConstantValue.exactly(1.0F))

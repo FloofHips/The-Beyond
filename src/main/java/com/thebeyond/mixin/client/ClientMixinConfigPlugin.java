@@ -9,12 +9,11 @@ import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 import java.util.List;
 import java.util.Set;
 
-/** Vetoes the client mixins on servers so their config can be required, and must reference no game classes. */
+/** Vetoes the client mixins on servers so their config can be required, and must reference no game classes or loggers. */
 public class ClientMixinConfigPlugin implements IMixinConfigPlugin {
 
     @Override
     public void onLoad(String mixinPackage) {
-        // no logging, slf4j may not be wired yet in datagen or JUnit
     }
 
     @Override

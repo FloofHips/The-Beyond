@@ -197,7 +197,7 @@ public class TrinketRenderer extends LivingBlockRenderer {
     @Override
     public ResourceLocation getTextureLocation(LivingBlock entity) {
         if (entity instanceof TrinketEntity trinket) {
-            return VARIANT_TEXTURES.get(trinket.getVariant());
+            return VARIANT_TEXTURES.getOrDefault(trinket.getVariant(), VARIANT_TEXTURES.get("swirl"));
         }
         return null;
     }

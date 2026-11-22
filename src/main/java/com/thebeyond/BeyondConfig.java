@@ -8,11 +8,8 @@ public class BeyondConfig {
     public static ModConfigSpec COMMON_CONFIG;
     public static ModConfigSpec CLIENT_CONFIG;
 
-    // Override End fog with Beyond's custom atmospheric fog.
     public static ModConfigSpec.BooleanValue ENABLE_CUSTOM_FOG;
-    // Tweak the lightmap depending on the Beyond's weather system.
     public static ModConfigSpec.BooleanValue CLAMP_WEATHER_LIGHT_MAP;
-    // Override End fog with Beyond's sky renderer.
     public static ModConfigSpec.BooleanValue ENABLE_CUSTOM_SKY;
     public static ModConfigSpec.BooleanValue ENABLE_MAIN_ISLAND_CLOUDS;
 
@@ -23,6 +20,8 @@ public class BeyondConfig {
     public static ModConfigSpec.EnumValue<PrismographResolution> PRISMOGRAPH_RESOLUTION;
     public static ModConfigSpec.IntValue PRISMOGRAPH_POSTERIZATION;
     public static ModConfigSpec.BooleanValue DROP_TOTEM_OF_RESPITE;
+    public static ModConfigSpec.IntValue OCARINA_MAX_TRINKETS;
+    public static ModConfigSpec.BooleanValue ENADRAKES_RESPECT_MOB_GRIEFING;
 
     public static ModConfigSpec.BooleanValue DEAFENING_DISENGAGE;
     public static ModConfigSpec.IntValue DEAFENING_LOCAL_CAP;
@@ -31,6 +30,8 @@ public class BeyondConfig {
     public static ModConfigSpec.IntValue WARDEN_SMELL_RADIUS;
 
     public static ModConfigSpec.IntValue VOID_SEA_OFFSET;
+    public static ModConfigSpec.DoubleValue BIOME_WIDTH_MULTIPLIER;
+    public static ModConfigSpec.DoubleValue BIOME_HEIGHT_MULTIPLIER;
 
     public enum PrismographResolution {
         x16(16), x32(32), x64(64), x128(128), x256(256);
@@ -116,6 +117,27 @@ public class BeyondConfig {
                 .comment("Posterization quant step: 1 = full color, higher = coarser bands (~10 reads retro).",
                         "Changing this is costless, it is purely to taste")
                 .defineInRange("PrismographPosterization", 10, 1, 20);
+
+        OCARINA_MAX_TRINKETS = COMMON_BUILDER
+                .comment("Most trinkets one player's ocarina commands at once, nearest first. 0 removes the limit")
+                .defineInRange("OcarinaMaxTrinkets", 0, 0, 100000);
+
+        ENADRAKES_RESPECT_MOB_GRIEFING = COMMON_BUILDER
+                .comment("Enadrakes follow mobGriefing like vanilla mobs: with it off they stop taking items, planting, harvesting and building refuges")
+                .define("EnadrakesRespectMobGriefing", false);
+        COMMON_BUILDER.pop();
+
+        COMMON_BUILDER.comment("End world generation").push("worldgen");
+        BIOME_WIDTH_MULTIPLIER = COMMON_BUILDER
+                .comment("EXPERIMENTAL. How wide the End biomes are: 1.0 is the Beyond's original size, 2.0 twice as wide."
+                        + " 0 chooses for you: the original size, or twice it when Isleweaver is installed."
+                        + " Only new worlds use it, existing worlds keep their size")
+                .defineInRange("biomeWidthMultiplier", 0.0, 0.0, 8.0);
+        BIOME_HEIGHT_MULTIPLIER = COMMON_BUILDER
+                .comment("EXPERIMENTAL. How tall the End biomes are: 1.0 is the Beyond's original size, 2.0 twice as tall, so"
+                        + " stacked islands share the same biome more often. 0 chooses for you: the original size, or twice it"
+                        + " when Isleweaver is installed. Only new worlds use it, existing worlds keep their size")
+                .defineInRange("biomeHeightMultiplier", 0.0, 0.0, 8.0);
         COMMON_BUILDER.pop();
 
         COMMON_CONFIG = COMMON_BUILDER.build();

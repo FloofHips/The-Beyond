@@ -18,7 +18,6 @@ repositories {
         url "https://cursemaven.com"
         content { includeGroup "curse.maven" }
     }
-    // JEI: compile-only API, never shipped.
     maven {
         url "https://maven.blamejared.com/"
         content { includeGroup "mezz.jei" }
@@ -30,7 +29,11 @@ repositories {
             includeGroup "dev.ryanhcode.sable-companion"
         }
     }
-    // Test/build deps. After cursemaven so its includeGroup keeps curse artifacts routed right.
+    maven {
+        url "https://api.modrinth.com/maven"
+        content { includeGroup "maven.modrinth" }
+    }
+    // After cursemaven so its includeGroup keeps curse artifacts routed right.
     mavenCentral()
 }
 
@@ -85,8 +88,7 @@ neoForge {
         }
     }
 
-    // Inherit the mod's MC + NeoForge classpath into the `test` source set; without it the test compile
-    // can't resolve net.minecraft/com.mojang/gson. testedMod = our only mod. (moddev 2.0.107+)
+    // Inherit the mod's MC + NeoForge classpath into the `test` source set, without it the test compile can't resolve Minecraft
     unitTest {
         enable()
         testedMod = mods.named(mod_id)
@@ -94,6 +96,30 @@ neoForge {
 }
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+// runData deletes every file under src/generated it did not write (HashCache), so a hand-placed translation stops it first
+def generatedRoot = file('src/generated/resources')
+tasks.configureEach { task ->
+    if (task.name == 'runData') {
+        task.doFirst {
+            def written = [] as Set
+            new File(generatedRoot, '.cache').listFiles()?.each { cache ->
+                cache.eachLine { line -> if (!line.startsWith('//')) written << line.substring(line.indexOf(' ') + 1) }
+            }
+            def stray = []
+            generatedRoot.eachFileRecurse(groovy.io.FileType.FILES) { f ->
+                def path = generatedRoot.toPath().relativize(f.toPath()).toString().replace('\\', '/')
+                boolean generated = written ? written.contains(path) : !path.matches('assets/[^/]+/lang/(?!en_us\\.json).+\\.json')
+                if (!path.startsWith('.cache/') && path != 'version.json' && !generated) {
+                    stray << path
+                }
+            }
+            if (stray) {
+                throw new GradleException("runData would delete files it did not write, move them to src/main/resources: ${stray.join(', ')}")
+            }
+        }
+    }
+}
 
 configurations {
     runtimeClasspath.extendsFrom localRuntime
@@ -103,21 +129,20 @@ dependencies {
     implementation "curse.maven:ctm-267602:5587515"
     jarJar "curse.maven:ctm-267602:5587515"
 
-    // Optional compat: JEI API, compileOnly (never shipped). Without JEI the @JeiPlugin class is never loaded.
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
 
-    // Optional compat: Create + Sable. compileOnly — not on runClient. Gated by ModList at runtime.
     compileOnly "curse.maven:create-328085:7963363"
     compileOnly "curse.maven:sable-1312371:8007005"
     compileOnly "dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:1.6.0"
-    // Sodium: secondary-view block-camera capture. compileOnly (never shipped), gated by ModList + a non-required mixin config.
     compileOnly "curse.maven:sodium-394468:5909717"
 
-    // Optional Curios compat (compileOnly, gated by ModList.isLoaded) — Totem of Respite saves curio slots on death.
-    compileOnly "curse.maven:curios-309927:6529130"
+    compileOnly "maven.modrinth:exposure:iBvaR6AK"
 
-    // JUnit 5 for pure-function tests (math/packing logic); they don't spin up Minecraft.
+    compileOnly "curse.maven:curios-309927:6529130"
+    compileOnly "curse.maven:backpacked-352835:7866688"
+    compileOnly "curse.maven:framework-549225:7530361"
+
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -125,12 +150,9 @@ dependencies {
 
 tasks.named('test', Test).configure {
     useJUnitPlatform()
-    // The heavy worldgen scan tests OOM the default 512m heap when run together; give them 2g and a fresh
-    // JVM per class so scans can't accumulate (also isolates the static generator-noise fields each test swaps).
+    // Worldgen scan tests need 2g and a JVM per class, and a run-scoped results dir avoids the IDE's file lock on Windows
     maxHeapSize = '2g'
     forkEvery = 1
-    // The default build/test-results/test/binary is held open by the IDE test view on Windows, so gradle's
-    // pre-run delete fails; a run-scoped output dir sidesteps the lock without disrupting the IDE.
     binaryResultsDirectory = layout.buildDirectory.dir("test-run/binary")
     reports.junitXml.outputLocation = layout.buildDirectory.dir("test-run/junitxml")
     reports.html.outputLocation = layout.buildDirectory.dir("test-run/html")
@@ -151,6 +173,7 @@ tasks.withType(ProcessResources).configureEach {
             mod_license            : mod_license,
             mod_version            : mod_version,
             mod_authors            : mod_authors,
+            mod_credits            : mod_credits,
             mod_description        : mod_description,
             jei_version            : jei_version
     ]

@@ -52,10 +52,9 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
     static final float CRACK_SIZE_FLASH = 2.0F;
     static final int MIN_RENDER_DISTANCE = 2;
 
-    // Custom sky colors (RGBA)
-    private static final Vector4f HORIZON_COLOR = new Vector4f(0.8f, 0.3f, 0.8f, 1.0f); // Blue-ish
-    private static final Vector4f BLACK_COLOR = new Vector4f(0.1f, 0.0f, 0.2f, 1.0f); // Black
-    private static final Vector4f TS_COLOR = new Vector4f(0.0f, 0.0f, 0.0f, 0.0f); // Black
+    private static final Vector4f HORIZON_COLOR = new Vector4f(0.8f, 0.3f, 0.8f, 1.0f);
+    private static final Vector4f BLACK_COLOR = new Vector4f(0.1f, 0.0f, 0.2f, 1.0f);
+    private static final Vector4f TS_COLOR = new Vector4f(0.0f, 0.0f, 0.0f, 0.0f);
 
     private static final ResourceLocation CLOUD_LOCATION_1 = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/environment/cloud_1.png");
     private static final ResourceLocation CLOUD_LOCATION_2 = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID, "textures/environment/cloud_2.png");
@@ -120,9 +119,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
     @Override
     public Vec3 getBrightnessDependentFogColor(Vec3 biomeFogColor, float daylight) {
         Level level = Minecraft.getInstance().level;
-//
         if (level == null) return biomeFogColor;
-//
         Vec3 result;
         if (level.isThundering()) {
             result = biomeFogColor.subtract(0, 1 * level.getThunderLevel(0), 0);
@@ -201,9 +198,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
                     colors.z()
             );
         }
-            ////i think the skylight is being fucked with by thunderstorms... or ambient light
 
-        //0.22983016
         colors.set(
                 Mth.lerp(bossFog, colors.x() * 0.9f, colors.x()),
                 Mth.lerp(bossFog, Mth.clamp(colors.y() * 1.1f, 0, 1), colors.y()*0.6),
@@ -245,6 +240,8 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
             bossFog = (float) Mth.clamp(bossFog - 0.005, 0, 1);
         }
         effectFog = ModClientEvents.finalEffectFog(camera);
+        float executiveSky = com.thebeyond.client.compat.ExecutiveZones.skyShare();
+        if (executiveSky >= 1f) return false;
 
         PoseStack poseStack = new PoseStack();
 
@@ -287,7 +284,7 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
 
         RenderSystem.depthMask(true);
         RenderSystem.disableBlend();
-        return true;
+        return executiveSky <= 0f;
     }
 
     private void handleCracks(ClientLevel level, PoseStack poseStack, Tesselator tesselator) {
@@ -321,7 +318,6 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
     private void createCrack(ClientLevel level) {
         Vec3 position = the_beyond$crackPosition(level.random.nextDouble(), level.random.nextDouble());
         float size = the_beyond$crackSize(level.random.nextFloat());
-        // Full life on creation: seeding from the noise faded about one crack in six before it was ever seen.
         thunderCracks.add(new ThunderCrack(position, 1.0f, size));
         playThunderSound(level, size, 0.05f, 0.02f);
     }
@@ -520,7 +516,6 @@ public class EndSpecialEffects extends DimensionSpecialEffects {
         RenderSystem.setShaderColor(1, 1, 1, Math.min(crack.lifeTime, 0.8f));
         //RenderSystem.setShaderColor(1, 1, 1, 0.5f);
 
-        // crack.position is already camera-relative in sky space, so the billboard is built from it alone.
         poseStack.mulPose(Axis.YP.rotationDegrees(90.0f));
 
         Matrix4f matrix4f3 = poseStack.last().pose();

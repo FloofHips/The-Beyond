@@ -3,6 +3,7 @@ package com.thebeyond.common.event;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.common.entity.*;
 import com.thebeyond.common.entity.util.livingblock.LivingBlock;
+import com.thebeyond.common.registry.BeyondBlockEntities;
 import com.thebeyond.common.registry.BeyondEntityTypes;
 import com.thebeyond.common.camera.Grade;
 import com.thebeyond.common.camera.Grades;
@@ -11,8 +12,11 @@ import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
+import net.neoforged.neoforge.items.wrapper.InvWrapper;
 
 @EventBusSubscriber(modid = TheBeyond.MODID, bus = EventBusSubscriber.Bus.MOD)
 public class ModEvents {
@@ -57,6 +61,11 @@ public class ModEvents {
                 BaubleEntity::checkSpawnRules,
                 RegisterSpawnPlacementsEvent.Operation.REPLACE
         );
+    }
+
+    @SubscribeEvent
+    public static void registerCapabilities(RegisterCapabilitiesEvent event) {
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, BeyondBlockEntities.PROJECTOR.get(), (be, side) -> new InvWrapper(be));
     }
 
     /** Synced datapack registry of snapshot filters, from data/<ns>/the_beyond/grade/*.json. */

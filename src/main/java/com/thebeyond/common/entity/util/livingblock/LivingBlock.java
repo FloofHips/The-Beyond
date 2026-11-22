@@ -32,6 +32,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.level.Level;
@@ -1138,7 +1139,7 @@ public class LivingBlock extends Mob {
         RollingMovement.Data data = this.getMovementData() instanceof RollingMovement.Data d ? d : null;
         AABB hull = this.getBoundingBox();
         Vec3 vel = this.getDeltaMovement();
-        Vec3 want = order.resolvePosition(this.level());
+        Vec3 want = this.targetPosition(order);
         double pen = this.penetrationNow();
         double dpen = pen - this.penLast;
         this.penLast = pen;
@@ -1187,7 +1188,7 @@ public class LivingBlock extends Mob {
         }
         RollingMovement.Data data = this.getMovementData() instanceof RollingMovement.Data d ? d : null;
         AABB hull = this.getBoundingBox();
-        Vec3 wanted = target.resolvePosition(this.level());
+        Vec3 wanted = this.targetPosition(target);
         double gap = wanted == null ? Double.NaN
                 : Math.sqrt(new Vec3(wanted.x - this.getX(), 0.0, wanted.z - this.getZ()).lengthSqr());
         if (shouldLog) LOGGER.debug("[livingblock] frozen id={} ticks={} target={} mv={} moveticks={} gap={}/{} step={} fails={} streak={} route={} settled={} seq={} align={} phase={} ground={} air={} inwall={} tilt={} ori={} hull={} pos={}",
@@ -1239,7 +1240,7 @@ public class LivingBlock extends Mob {
     }
 
     public boolean livingBlockInWay(final AABB area) {
-        for (LivingBlock other : this.level().getEntitiesOfClass(LivingBlock.class, area,
+        for (LivingBlock other : LivingBlockNeighbourhood.getEntitiesOfClass(this.level(), LivingBlock.class, area,
                 candidate -> candidate != this && candidate.isAlive() && this.canCollideWith(candidate))) {
             LivingBlockCollisionShapes.Placement placement =
                     LivingBlockCollisionShapes.preciseGeometry(other);
@@ -2232,6 +2233,7 @@ public class LivingBlock extends Mob {
         for (VoxelShape shape : this.level().getBlockCollisions(this, probe)) {
             around.addAll(shape.toAabbs());
         }
+        LivingBlockFrames.addAlignedExtraTerrain(this.level(), probe, around);
         return LivingBlockPivot.anchorDistance(around, point);
     }
 
@@ -2258,6 +2260,7 @@ public class LivingBlock extends Mob {
         for (VoxelShape shape : this.level().getBlockCollisions(this, probe)) {
             blocks.addAll(shape.toAabbs());
         }
+        LivingBlockFrames.addAlignedExtraTerrain(this.level(), probe, blocks);
         if (LivingBlockPivot.anchorHeld(blocks, world, BODY_ANCHOR_TOLERANCE)) {
             return;
         }
@@ -3234,6 +3237,7 @@ public class LivingBlock extends Mob {
 
     @Override
     public void tick() {
+        this.tickFrames();
         if (this.hurtTime > 0) {
             this.hurtTime--;
         }
@@ -3371,7 +3375,7 @@ public class LivingBlock extends Mob {
                 if (holder != null) {
                     this.setMovementTarget(Target.followingEntity(holder, 2.0));
                 } else if (this.isEntropicForm()) {
-                    Player nearest = this.level().getNearestPlayer(this, AGGRO_RANGE);
+                    Player nearest = this.nearestPlayer(AGGRO_RANGE);
                     if (nearest != null && !nearest.isCreative() && !nearest.isSpectator()) {
                         if (!(this.getMovementTarget() instanceof Target.EntityTarget following)
                                 || !following.entityUUID().equals(nearest.getUUID())) {
@@ -3386,7 +3390,7 @@ public class LivingBlock extends Mob {
             this.releaseStuckSequence();
 
             Target target = this.getMovementTarget();
-            Vec3 targetPos = target.resolvePosition(this.level());
+            Vec3 targetPos = this.targetPosition(target);
             if (targetPos != null && !this.isHoldingForRider()) {
                 boolean moved = this.movement.moveTowardsTarget(this, target, targetPos);
                 if (!moved && target.clearWhenNear()) {
@@ -3423,7 +3427,7 @@ public class LivingBlock extends Mob {
         }
 
         AABB nudgeBounds = this.getBoundingBox();
-        for (Entity entity : this.level().getEntities(this, AABB.ofSize(nudgeBounds.getCenter(), 0.05, 0.05, 0.05), t -> t instanceof LivingBlock)) {
+        for (Entity entity : LivingBlockNeighbourhood.getEntities(this.level(), this, AABB.ofSize(nudgeBounds.getCenter(), 0.05, 0.05, 0.05), t -> t instanceof LivingBlock)) {
             entity.push(this);
         }
 
@@ -3762,7 +3766,7 @@ public class LivingBlock extends Mob {
 
     private boolean rollingIsPossible() {
         Target target = this.getMovementTarget();
-        Vec3 targetPos = target.resolvePosition(this.level());
+        Vec3 targetPos = this.targetPosition(target);
         if (targetPos == null) {
             return false;
         }
@@ -3992,7 +3996,7 @@ public class LivingBlock extends Mob {
     }
 
     public boolean spaceFree(final AABB area) {
-        if (this.level().noCollision(this, area)) {
+        if (LivingBlockFrames.noCollision(this, area)) {
             return true;
         }
         if (!this.level().getEntityCollisions(this, area).isEmpty()) {
@@ -4094,6 +4098,13 @@ public class LivingBlock extends Mob {
                         worst = depth;
                         escape.set(axis);
                     }
+                }
+            }
+            for (OrientedBox part : LivingBlockFrames.extraTerrain(this.level(), box)) {
+                double depth = OrientedBox.penetration(mine, part, axis);
+                if (depth > worst) {
+                    worst = depth;
+                    escape.set(axis);
                 }
             }
         }
@@ -4323,7 +4334,9 @@ public class LivingBlock extends Mob {
         }
         this.holdingGround = other instanceof Player;
         try {
-            if (ours) {
+            if (LivingBlockFrames.hooks != null && LivingBlockFrames.frameOf(other) != LivingBlockFrames.frameOf(this)) {
+                this.pushAcrossFrames(other);
+            } else if (ours) {
                 super.doPush(other);
             } else {
                 super.push(other);
@@ -4351,6 +4364,178 @@ public class LivingBlock extends Mob {
 
     public Vec3 adjustStepUpMovement(final Vec3 movement) {
         return this.movement.adjustStepUpMovement(this, movement);
+    }
+
+    /** The movement target's position in the frame this block lives in. */
+    public @Nullable Vec3 targetPosition(final Target target) {
+        Vec3 pos = target.resolvePosition(this.level());
+        return pos == null ? null : LivingBlockFrames.inFrameOf(this, pos);
+    }
+
+    private @Nullable Player nearestPlayer(final double range) {
+        if (LivingBlockFrames.frameOf(this) == null) {
+            return this.level().getNearestPlayer(this, range);
+        }
+        Vec3 me = LivingBlockFrames.worldPosition(this);
+        Player best = null;
+        double bestSqr = range * range;
+        for (Player player : this.level().players()) {
+            if (!EntitySelector.NO_SPECTATORS.test(player)) {
+                continue;
+            }
+            double sqr = LivingBlockFrames.worldPosition(player).distanceToSqr(me);
+            if (sqr < bestSqr) {
+                bestSqr = sqr;
+                best = player;
+            }
+        }
+        return best;
+    }
+
+    // Entity.push in world space, each side pushed along its own frame's axes
+    private void pushAcrossFrames(final Entity other) {
+        if (this.isPassengerOfSameVehicle(other) || other.noPhysics || this.noPhysics) {
+            return;
+        }
+        Vec3 me = LivingBlockFrames.worldPosition(this);
+        Vec3 them = LivingBlockFrames.worldPosition(other);
+        double dx = them.x - me.x;
+        double dz = them.z - me.z;
+        double d = Mth.absMax(dx, dz);
+        if (d < 0.01F) {
+            return;
+        }
+        d = Math.sqrt(d);
+        double scale = Math.min(1.0, 1.0 / d) * 0.05F / d;
+        dx *= scale;
+        dz *= scale;
+        if (!this.isVehicle() && this.isPushable()) {
+            Vec3 push = LivingBlockFrames.dirInFrameOf(this, new Vec3(-dx, 0.0, -dz));
+            this.push(push.x, push.y, push.z);
+        }
+        if (!other.isVehicle() && other.isPushable()) {
+            Vec3 push = LivingBlockFrames.dirInFrameOf(other, new Vec3(dx, 0.0, dz));
+            other.push(push.x, push.y, push.z);
+        }
+    }
+
+    private static final int BOARD_TICKS = 3;
+    private static final double BOARD_TILT_DEGREES = 40.0;
+    private static final double LEAVE_TILT_DEGREES = 60.0;
+    private static final double LEAVE_MARGIN = 2.0;
+    private static final double LEAVE_MARGIN_ABOVE = 4.0;
+    @Nullable
+    private Object residentFrame;
+    private final Quaternionf residentOrientation = new Quaternionf();
+    private int boardTicks;
+    @Nullable
+    private Object clientFrame;
+    private final Quaternionf clientFrameOrientation = new Quaternionf();
+
+    /** Moves into the plot of a sub-level it settled on and back out when it leaves, so it lives in the ship's axes. */
+    private void tickFrames() {
+        LivingBlockFrames.Hooks frames = LivingBlockFrames.hooks;
+        if (frames == null) {
+            return;
+        }
+        if (this.level().isClientSide()) {
+            this.tickClientFrame(frames);
+            return;
+        }
+        Object home = frames.frameAt(this.level(), this.position());
+        if (home != null) {
+            if (frames.alive(home) && this.leavesFrame(frames, home)) {
+                this.crossFrame(frames, home, false);
+            } else {
+                this.residentFrame = home;
+                this.residentOrientation.set(frames.orientation(home));
+            }
+            return;
+        }
+        if (this.residentFrame != null) {
+            // Sable put it back in the world when its sub-level went away, its rotation still reads in that frame
+            this.turnFrame(this.residentOrientation);
+            this.residentFrame = null;
+        }
+        Object deck = frames.standingOn(this);
+        if (deck != null && frames.alive(deck) && this.onGround() && this.quiescent() && !this.isPassenger()
+                && LivingBlockFrames.tiltDegrees(frames.orientation(deck)) < BOARD_TILT_DEGREES) {
+            if (++this.boardTicks >= BOARD_TICKS) {
+                this.crossFrame(frames, deck, true);
+            }
+        } else {
+            this.boardTicks = 0;
+        }
+    }
+
+    private boolean leavesFrame(final LivingBlockFrames.Hooks frames, final Object home) {
+        AABB bounds = frames.blockBounds(home);
+        // a pogo hop or a climb over the top wall still counts as on board, only falling clear of the hull leaves it
+        AABB reach = bounds == null ? null : new AABB(bounds.minX - LEAVE_MARGIN, bounds.minY - LEAVE_MARGIN, bounds.minZ - LEAVE_MARGIN,
+                bounds.maxX + LEAVE_MARGIN, bounds.maxY + LEAVE_MARGIN_ABOVE, bounds.maxZ + LEAVE_MARGIN);
+        return reach == null || !reach.contains(this.position())
+                || LivingBlockFrames.tiltDegrees(frames.orientation(home)) > LEAVE_TILT_DEGREES;
+    }
+
+    private void crossFrame(final LivingBlockFrames.Hooks frames, final Object frame, final boolean entering) {
+        Vec3 pos = this.position();
+        Vec3 framePos = entering ? frames.toFrame(frame, pos) : pos;
+        Vec3 deckVelocity = frames.pointVelocity(this.level(), frame, framePos);
+        Quaternionf turn = frames.orientation(frame);
+        Vec3 velocity;
+        Vec3 target;
+        if (entering) {
+            velocity = frames.dirToFrame(frame, this.getDeltaMovement().subtract(deckVelocity));
+            target = framePos;
+            turn.conjugate();
+        } else {
+            velocity = frames.dirToWorld(frame, this.getDeltaMovement()).add(deckVelocity);
+            target = frames.toWorld(frame, pos);
+        }
+        this.residentFrame = entering ? frame : null;
+        this.residentOrientation.set(frames.orientation(frame));
+        this.boardTicks = 0;
+        this.turnFrame(turn);
+        this.moveTo(target.x, target.y, target.z);
+        this.setDeltaMovement(velocity);
+        this.movement.resetMovement(this);
+    }
+
+    /** Re-expresses the held rotations in a frame turned by turn and rests on that frame's nearest face. */
+    private void turnFrame(final Quaternionf turn) {
+        this.rotation.premul(turn);
+        this.lastRotation.premul(turn);
+        this.drawnFrom.premul(turn);
+        this.tickStartRotation.premul(turn);
+        LivingBlockOrientation nearest = LivingBlockOrientation.fromQuaternion(this.rotation);
+        this.rotation.set(nearest.quaternion());
+        this.entityData.set(DATA_ORIENTATION, nearest.index());
+        this.entityData.set(DATA_ROTATION, new Quaternionf(this.rotation));
+        this.setBoundingBox(this.makeBoundingBox());
+    }
+
+    // the server's new rotation arrives already in the new frame, so the client turns what it interpolates from
+    private void tickClientFrame(final LivingBlockFrames.Hooks frames) {
+        Object frame = frames.frameAt(this.level(), this.position());
+        if (frame != this.clientFrame) {
+            Quaternionf turn = this.clientFrame != null ? new Quaternionf(this.clientFrameOrientation) : new Quaternionf();
+            if (frame != null) {
+                turn.premul(frames.orientation(frame).conjugate());
+            }
+            this.rotation.premul(turn);
+            this.lastRotation.premul(turn);
+            this.drawnFrom.premul(turn);
+            this.tickStartRotation.premul(turn);
+            this.clientFrame = frame;
+        }
+        if (frame != null) {
+            this.clientFrameOrientation.set(frames.orientation(frame));
+        }
+    }
+
+    private boolean quiescent() {
+        return !this.climbPivotSequence && !this.descentSequence && !this.stepLifting && !this.stepApproaching
+                && !this.stepHolding && !this.stepDropping;
     }
 
     @Override
@@ -4474,7 +4659,7 @@ public class LivingBlock extends Mob {
 
         if (settled && nearest.index() != this.entityData.get(DATA_ORIENTATION)) {
             AABB candidate = this.boundingBoxFor(nearest);
-            boolean fits = this.level().noBlockCollision(this, candidate.deflate(SETTLE_FIT_EPSILON));
+            boolean fits = LivingBlockFrames.noBlockCollision(this, candidate.deflate(SETTLE_FIT_EPSILON));
             if (fits || !this.usesOrientedCollision()) {
                 if (!fits) {
                     if (shouldLog) LOGGER.debug("[livingblock] facemiss id={} index={} box={} pos={}",
@@ -4535,7 +4720,7 @@ public class LivingBlock extends Mob {
     }
 
     public @Nullable Vec3 getTargetPosition() {
-        return this.getMovementTarget().resolvePosition(this.level());
+        return this.targetPosition(this.getMovementTarget());
     }
 
     public boolean hasMovementTarget() {

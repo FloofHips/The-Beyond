@@ -246,7 +246,7 @@ public class LivingBlockCollisionHandler {
     }
 
     public static BodyTerrain bodyTerrain(final LivingBlock entity, final AABB probe) {
-        List<LivingBlock> others = entity.level().getEntitiesOfClass(LivingBlock.class, probe,
+        List<LivingBlock> others = LivingBlockNeighbourhood.getEntitiesOfClass(entity.level(), LivingBlock.class, probe,
                 candidate -> candidate != entity && candidate.isAlive()
                         && entity.canCollideWith(candidate));
         if (others.isEmpty()) {
@@ -276,7 +276,7 @@ public class LivingBlockCollisionHandler {
         if (!entity.usesOrientedCollision()) {
             return null;
         }
-        for (LivingBlock other : entity.level().getEntitiesOfClass(LivingBlock.class, probe,
+        for (LivingBlock other : LivingBlockNeighbourhood.getEntitiesOfClass(entity.level(), LivingBlock.class, probe,
                 candidate -> candidate != entity && candidate.isAlive()
                         && entity.canCollideWith(candidate))) {
             LivingBlockCollisionShapes.Placement placement =
@@ -306,6 +306,7 @@ public class LivingBlockCollisionHandler {
         for (VoxelShape shape : entity.level().getBlockCollisions(entity, probe)) {
             blocks.addAll(shape.toAabbs());
         }
+        LivingBlockFrames.addAlignedExtraTerrain(entity.level(), probe, blocks);
         BodyTerrain bodies = entity.usesOrientedCollision()
                 ? bodyTerrain(entity, probe)
                 : new BodyTerrain(List.of(), 0, 0.0);
@@ -352,6 +353,7 @@ public class LivingBlockCollisionHandler {
         for (VoxelShape shape : entity.level().getBlockCollisions(entity, probe)) {
             terrain.addAll(shape.toAabbs());
         }
+        LivingBlockFrames.addAlignedExtraTerrain(entity.level(), probe, terrain);
         terrain.addAll(bodyTerrain(entity, probe).boxes());
         return LivingBlockPivot.wallDirection(hull, terrain, preferred, reach, fallback);
     }
@@ -373,6 +375,13 @@ public class LivingBlockCollisionHandler {
         for (OrientedBox mine : own) {
             AABB world = mine.getWorldAABB();
             envelope = envelope == null ? world : envelope.minmax(world);
+            List<OrientedBox> moving = LivingBlockFrames.extraTerrain(entity.level(), world.inflate(slop));
+            for (OrientedBox part : moving) {
+                double depth = OrientedBox.penetration(mine, part, axis);
+                if (depth > slop) {
+                    return new ClimbPoseFailure("contraption", depth, "contraption");
+                }
+            }
             for (VoxelShape shape : entity.level().getBlockCollisions(entity, world.inflate(slop))) {
                 for (AABB block : shape.toAabbs()) {
                     double depth = OrientedBox.penetration(mine, new OrientedBox(block), axis);
@@ -387,7 +396,7 @@ public class LivingBlockCollisionHandler {
         if (envelope == null) {
             return new ClimbPoseFailure("geometry", 0.0, "none");
         }
-        for (Entity other : entity.level().getEntities(entity, envelope.inflate(slop),
+        for (Entity other : LivingBlockNeighbourhood.getEntities(entity.level(), entity, envelope.inflate(slop),
                 e -> e.isAlive() && e.canBeCollidedWith())) {
             LivingBlockCollisionShapes.Placement placement = LivingBlockCollisionShapes.preciseGeometry(other);
             if (placement == null) {
@@ -468,13 +477,13 @@ public class LivingBlockCollisionHandler {
         }
 
         AABB hull = mover.getBoundingBox();
-        List<LivingBlock> others = mover.level().getEntitiesOfClass(LivingBlock.class,
+        List<LivingBlock> others = LivingBlockNeighbourhood.getEntitiesOfClass(mover.level(), LivingBlock.class,
                 hull.inflate(RIM_PROBE), other -> other != mover && other.isAlive());
         boolean sample = mover.tickCount % OVERLAP_LOG_INTERVAL == 0;
         if (others.isEmpty() && sample) {
             if (shouldLog) LOGGER.debug("[livingblock] sep id={} others=0 near={} hull={} boxes={}",
                     mover.getId(),
-                    mover.level().getEntitiesOfClass(LivingBlock.class, hull.inflate(1.0),
+                    LivingBlockNeighbourhood.getEntitiesOfClass(mover.level(), LivingBlock.class, hull.inflate(1.0),
                             other -> other != mover && other.isAlive()).size(),
                     fmt(hull), fmt(union(own.boxes())));
         }
@@ -676,6 +685,7 @@ public class LivingBlockCollisionHandler {
                 blocks.add(new OrientedBox(box));
             }
         }
+        blocks.addAll(LivingBlockFrames.extraTerrain(mover.level(), area));
         return blocks;
     }
 
@@ -710,7 +720,7 @@ public class LivingBlockCollisionHandler {
     }
 
     public static List<LivingBlock> overlapNeighbours(final LivingBlock mover, final double margin) {
-        return mover.level().getEntitiesOfClass(LivingBlock.class,
+        return LivingBlockNeighbourhood.getEntitiesOfClass(mover.level(), LivingBlock.class,
                 mover.getBoundingBox().inflate(margin),
                 other -> other != mover && other.isAlive());
     }
@@ -747,7 +757,7 @@ public class LivingBlockCollisionHandler {
     public static double[] rollOverlapPair(final LivingBlock mover, final double reach) {
         AABB hull = mover.getBoundingBox().inflate(reach);
         List<OrientedBox> terrain = blockObbs(mover, hull.inflate(TERRAIN_ESCAPE_MARGIN));
-        List<LivingBlock> neighbours = mover.level().getEntitiesOfClass(LivingBlock.class, hull,
+        List<LivingBlock> neighbours = LivingBlockNeighbourhood.getEntitiesOfClass(mover.level(), LivingBlock.class, hull,
                 candidate -> candidate != mover && candidate.isAlive());
         Vector3f axis = new Vector3f();
         double[] out = new double[2];
@@ -777,7 +787,7 @@ public class LivingBlockCollisionHandler {
     public static String rollOverlapReport(final LivingBlock mover, final double reach) {
         AABB hull = mover.getBoundingBox().inflate(reach);
         List<OrientedBox> terrain = blockObbs(mover, hull.inflate(TERRAIN_ESCAPE_MARGIN));
-        List<LivingBlock> neighbours = mover.level().getEntitiesOfClass(LivingBlock.class, hull,
+        List<LivingBlock> neighbours = LivingBlockNeighbourhood.getEntitiesOfClass(mover.level(), LivingBlock.class, hull,
                 candidate -> candidate != mover && candidate.isAlive());
         LivingBlockCollisionShapes.Placement rest = LivingBlockCollisionShapes.preciseGeometry(mover);
         List<List<OrientedBox>> shapes = List.of(
@@ -829,7 +839,7 @@ public class LivingBlockCollisionHandler {
         List<OrientedBox> terrain = blockObbs(mover, hull.inflate(TERRAIN_ESCAPE_MARGIN));
         List<LivingBlockCollisionShapes.Placement> others = new ArrayList<>();
         if (mover.usesOrientedCollision()) {
-            for (LivingBlock other : mover.level().getEntitiesOfClass(LivingBlock.class, hull,
+            for (LivingBlock other : LivingBlockNeighbourhood.getEntitiesOfClass(mover.level(), LivingBlock.class, hull,
                     candidate -> candidate != mover && candidate.isAlive())) {
                 LivingBlockCollisionShapes.Placement theirs = LivingBlockCollisionShapes.preciseGeometry(other);
                 if (theirs != null) {
@@ -1123,9 +1133,18 @@ public class LivingBlockCollisionHandler {
 
     private static List<OrientedBox> entityColliders(LivingBlock mover, AABB swept, int[] drifting) {
         List<OrientedBox> colliders = new ArrayList<>();
-        for (Entity other : mover.level().getEntities(mover, swept,
+        for (Entity other : LivingBlockNeighbourhood.getEntities(mover.level(), mover, swept,
                 EntitySelector.NO_SPECTATORS.and(mover::canCollideWith))) {
             LivingBlockCollisionShapes.Placement precise = LivingBlockCollisionShapes.preciseGeometry(other);
+            List<OrientedBox> carried = LivingBlockCollisionShapes.crossFrameBoxes(mover, other, precise);
+            if (carried != null) {
+                for (OrientedBox box : carried) {
+                    if (box.getWorldAABB().intersects(swept)) {
+                        colliders.add(box);
+                    }
+                }
+                continue;
+            }
             if (precise == null) {
                 colliders.add(new OrientedBox(other.getBoundingBox()));
                 continue;
@@ -1299,7 +1318,7 @@ public class LivingBlockCollisionHandler {
         int neighbours = 0;
         int boxes = 0;
         double bestY = 0.0;
-        for (LivingBlock other : mover.level().getEntitiesOfClass(LivingBlock.class, probe,
+        for (LivingBlock other : LivingBlockNeighbourhood.getEntitiesOfClass(mover.level(), LivingBlock.class, probe,
                 candidate -> candidate.isAlive() && candidate != mover)) {
             neighbours++;
             LivingBlockCollisionShapes.Placement placement =
@@ -1355,12 +1374,12 @@ public class LivingBlockCollisionHandler {
                 String.format("%.7f", now),
                 String.format("%.7f", bodyOverlapAt(mover, box.move(slide))),
                 String.format("%.7f", bodyOverlapAt(mover, box.move(half))),
-                mover.level().noBlockCollision(mover, box.move(slide)));
+                LivingBlockFrames.noBlockCollision(mover, box.move(slide)));
         return null;
     }
 
     private static boolean destinationFree(final Entity mover, final AABB dest, final double now) {
-        return mover.level().noBlockCollision(mover, dest)
+        return LivingBlockFrames.noBlockCollision(mover, dest)
                 && bodyOverlapAt(mover, dest) <= now + RAMP_SLACK;
     }
 
@@ -1368,7 +1387,7 @@ public class LivingBlockCollisionHandler {
         OrientedBox target = new OrientedBox(box);
         Vector3f axis = new Vector3f();
         double worst = 0.0;
-        for (LivingBlock other : mover.level().getEntitiesOfClass(LivingBlock.class, box.inflate(RAMP_PROBE),
+        for (LivingBlock other : LivingBlockNeighbourhood.getEntitiesOfClass(mover.level(), LivingBlock.class, box.inflate(RAMP_PROBE),
                 candidate -> candidate.isAlive() && candidate != mover)) {
             LivingBlockCollisionShapes.Placement placement =
                     LivingBlockCollisionShapes.preciseGeometry(other);
@@ -1394,7 +1413,7 @@ public class LivingBlockCollisionHandler {
         }
         AABB foot = new AABB(low.x - CONTACT_FOOT, low.y - GROUND_ON_BODY, low.z - CONTACT_FOOT,
                 low.x + CONTACT_FOOT, low.y + GROUND_ON_BODY, low.z + CONTACT_FOOT);
-        for (LivingBlock other : mover.level().getEntitiesOfClass(LivingBlock.class, foot,
+        for (LivingBlock other : LivingBlockNeighbourhood.getEntitiesOfClass(mover.level(), LivingBlock.class, foot,
                 candidate -> candidate != mover && candidate.isAlive()
                         && mover.canCollideWith(candidate))) {
             LivingBlockCollisionShapes.Placement placement =
@@ -1614,7 +1633,7 @@ public class LivingBlockCollisionHandler {
         RigidStep step = null;
 
         AABB searchArea = mob.getBoundingBox().inflate(0.5, 1.0, 0.5);
-        for (Entity rider : mob.level().getEntities(mob, searchArea,
+        for (Entity rider : LivingBlockNeighbourhood.getEntities(mob.level(), mob, searchArea,
                 e -> !e.isPassenger()
                         && !(e instanceof LivingBlock body && !body.usesOrientedCollision())
                         && (clientSide

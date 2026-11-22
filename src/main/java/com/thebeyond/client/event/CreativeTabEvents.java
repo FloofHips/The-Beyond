@@ -6,8 +6,7 @@ import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.registry.BeyondComponents;
 import com.thebeyond.common.registry.BeyondItems;
 import com.thebeyond.common.registry.BeyondPotions;
-import com.thebeyond.mixin.CreativeModeInventoryScreenAccessor;
-import com.thebeyond.mixin.CreativeModeTabAccessor;
+import com.thebeyond.mixin.client.CreativeModeInventoryScreenAccessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -43,7 +42,6 @@ public class CreativeTabEvents {
     static float headerAlpha = 0f;
     static float emptyAlpha = 0f;
 
-    static boolean changed = false;
     static boolean biomes = false;
 
     static ResourceLocation BIOME = ResourceLocation.fromNamespaceAndPath(TheBeyond.MODID,"textures/gui/container/creative_inventory/biome.png");
@@ -54,6 +52,12 @@ public class CreativeTabEvents {
 
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
+        buildLayouts();
+    }
+
+    // dedicated servers never run client setup, yet mods build the creative tabs there too (CC: Tweaked at server start)
+    private static synchronized void buildLayouts() {
+        if (category_items != null) return;
         category_items = new ArrayList<ItemStack>();
         biome_items = new ArrayList<ItemStack>();
 
@@ -488,13 +492,6 @@ public class CreativeTabEvents {
         GuiGraphics guiGraphics = event.getGuiGraphics();
         CreativeModeInventoryScreen mainScreen = (CreativeModeInventoryScreen) creativeScreen;
 
-        if (!changed && selectedTab instanceof CreativeModeTabAccessor creativeTab) {
-            CreativeModeInventoryScreen inventoryScreen = (CreativeModeInventoryScreen) creativeScreen;
-            inventoryScreen.getMenu().items.clear();
-            inventoryScreen.getMenu().items.addAll(category_items);
-            changed = true;
-        }
-
         for (int i = 0; i < 5; i++) {
             Slot slot = mainScreen.getMenu().slots.get(i*9);
             if (slot.getItem().has(DataComponents.CUSTOM_NAME)) {
@@ -513,6 +510,10 @@ public class CreativeTabEvents {
         return biomes ? BIOME : CATEGORY;
     }
 
+    public static Collection<ItemStack> layout() {
+        return biomes ? biome_items : category_items;
+    }
+
     @SubscribeEvent
     public static void onRenderToolTip(RenderTooltipEvent.Pre event) {
         if (event.getItemStack().getItem() == BeyondItems.CATEGORY.get()) event.setCanceled(true);
@@ -528,18 +529,9 @@ public class CreativeTabEvents {
         if (tabKey == null || !(tabKey.toString().equals("the_beyond:the_beyond"))) return;
         CreativeModeInventoryScreen mainScreen = (CreativeModeInventoryScreen) creativeScreen;
 
-        if (selectedTab instanceof CreativeModeTabAccessor creativeTab) {
-            if(!isOverArea(mainScreen.getGuiLeft() + buttonX, mainScreen.getGuiTop() + buttonY, 14, 8, event.getMouseX(), event.getMouseY())) return;
-            if (biomes) {
-                creativeTab.setDisplayItems(category_items);
-                biomes = !biomes;
-            }
-                else {
-                creativeTab.setDisplayItems(biome_items);
-                biomes = !biomes;
-            }
-            creativeScreen.callRefreshSearchResults();
-        }
+        if(!isOverArea(mainScreen.getGuiLeft() + buttonX, mainScreen.getGuiTop() + buttonY, 14, 8, event.getMouseX(), event.getMouseY())) return;
+        biomes = !biomes;
+        creativeScreen.callRefreshSearchResults();
     }
 
     public static boolean isOverArea(int x, int y, int xSize, int ySize, double mouseX, double mouseY) {
@@ -558,6 +550,7 @@ public class CreativeTabEvents {
             List<ItemStack> uniqueItems = new ArrayList<>();
             Set<Item> addedItems = new HashSet<>();
 
+            buildLayouts();
             for (ItemStack stack : category_items) {
                 if (stack.isEmpty()) continue;
                 if (stack.has(BeyondComponents.COLOR_COMPONENT)) continue;

@@ -158,15 +158,12 @@ public class EnadrakeHutBlockEntity extends BlockEntity implements ContainerSing
         //    be.reservations.values().removeIf(timer -> timer <= 0);
         //}
 
-        // Validate capacity: if stack shrunk, exit excess enadrakes
         //be.validateCapacity();
 
-        // Rain exit: all enadrakes leave when it rains to harvest
         if (!be.storedEnadrake.isEmpty() && level.isRaining() && level.random.nextFloat() < 0.7) {
             be.tryToExit(false);
         }
 
-        // pod behaviour lives in EnadrakeEntity's commented sections, uncomment them to enable it
 
         boolean hasItem = (be.item != null && !be.getItem(0).isEmpty());
         if (!hasItem) {

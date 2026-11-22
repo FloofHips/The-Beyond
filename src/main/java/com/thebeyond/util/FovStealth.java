@@ -26,7 +26,7 @@ public final class FovStealth {
         double dz = targetEyeZ - mobEyeZ;
 
         double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (dist < MIN_DIST) return true;  // overlapping, noticed whatever the facing
+        if (dist < MIN_DIST) return true;
 
         // head frame without roll: forward is the view vector, right is F x up (yaw only when vertical), up is R x F
         double yr = Math.toRadians(yawDeg);
@@ -36,7 +36,7 @@ public final class FovStealth {
         double fy = -Math.sin(pr);
         double fz = Math.cos(yr) * cp;
 
-        double rx = -fz, rz = fx;                 // F × worldUp = (−fz, 0, fx)
+        double rx = -fz, rz = fx;
         double rLen = Math.sqrt(rx * rx + rz * rz);
         if (rLen < MIN_DIST) {  // gazing straight up or down, right from yaw alone
             rx = -Math.cos(yr);
@@ -45,16 +45,14 @@ public final class FovStealth {
             rx /= rLen;
             rz /= rLen;
         }
-        double ux = -rz * fy;                     // U = R × F (R has y = 0)
+        double ux = -rz * fy;
         double uy = rz * fx - rx * fz;
         double uz = rx * fy;
 
-        // Vertical first (cheap): normalized head-up component vs the asymmetric limits.
         double du = dx * ux + dy * uy + dz * uz;
         double nu = du / dist;
         if (nu > SIN_V_UP || nu < SIN_V_DOWN) return false;
 
-        // Horizontal: remove the head-up component, normalize, compare against the gaze forward.
         double hx = dx - du * ux;
         double hy = dy - du * uy;
         double hz = dz - du * uz;
