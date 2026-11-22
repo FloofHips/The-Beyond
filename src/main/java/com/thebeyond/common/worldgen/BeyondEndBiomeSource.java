@@ -274,7 +274,6 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
             return bottomBiome;
 
         if (BeyondEndChunkGenerator.biomeSimplexNoise == null) return centerBiome;
-        if (voronoiNoise == null) voronoiNoise = Suppliers.memoize(() -> new VoronoiNoise(BeyondEndChunkGenerator.seed, (short) 0));
 
         // Inside 690 radius, skip getTerrainDensity (the costliest call here) entirely.
         if (distanceFromO <= 690) {
@@ -316,7 +315,16 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
     /** Scaling y by width over height makes the cells that tall, and equal sizes give back the plain cubic cell. */
     private long cellId(int x, int y, int z) {
         double width = BiomeCellScale.cellWidth();
-        return voronoiNoise.get().cellId3D(x, y * (width / BiomeCellScale.cellHeight()), z, 1.0 / width);
+        return voronoi().cellId3D(x, y * (width / BiomeCellScale.cellHeight()), z, 1.0 / width);
+    }
+
+    private VoronoiNoise voronoi() {
+        Supplier<VoronoiNoise> noise = voronoiNoise;
+        if (noise == null) {
+            noise = Suppliers.memoize(() -> new VoronoiNoise(BeyondEndChunkGenerator.seed, (short) 0));
+            voronoiNoise = noise;
+        }
+        return noise.get();
     }
 
     private int selectBiome(long cellId, List<Holder<Biome>> biomePool) {
