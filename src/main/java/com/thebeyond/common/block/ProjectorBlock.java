@@ -46,6 +46,7 @@ public class ProjectorBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
     public static final BooleanProperty TRIGGERED = BlockStateProperties.TRIGGERED;
+    static final int QUIET_PULSE_TICKS = 10;
     static boolean DIAG_LIT = false;
 
     public ProjectorBlock(Properties properties) {
@@ -182,8 +183,13 @@ public class ProjectorBlock extends BaseEntityBlock {
         boolean signal = level.hasNeighborSignal(pos);
         boolean rising = signal && !state.getValue(TRIGGERED);
         BlockState next = state.setValue(POWERED, lightBlock).setValue(TRIGGERED, signal);
+        ProjectorBlockEntity be = level.getBlockEntity(pos) instanceof ProjectorBlockEntity found ? found : null;
+        long now = level.getGameTime();
+        boolean quiet = be != null && (rising ? be.risingPulse(now, QUIET_PULSE_TICKS) : be.inFastPulses(now, QUIET_PULSE_TICKS));
         if (next != state) {
-            level.playSound(null, pos, BeyondSoundEvents.PROJECTOR_IDLE.value(), SoundSource.BLOCKS, 0.5f, 0.9f + level.random.nextFloat());
+            if (!quiet) {
+                level.playSound(null, pos, BeyondSoundEvents.PROJECTOR_IDLE.value(), SoundSource.BLOCKS, 0.5f, 0.9f + level.random.nextFloat());
+            }
             level.setBlock(pos, next, Block.UPDATE_CLIENTS);
             if (lightBlock != state.getValue(POWERED)) {
                 logLit(level, pos, next, "neighbour");
@@ -191,12 +197,14 @@ public class ProjectorBlock extends BaseEntityBlock {
             }
         }
 
-        if (rising && level.getBlockEntity(pos) instanceof ProjectorBlockEntity be && be.getMode() == ProjectorBlockEntity.MODE_CAROUSEL) {
+        if (rising && be != null && be.getMode() == ProjectorBlockEntity.MODE_CAROUSEL) {
             be.advanceCarousel();
-            level.playSound(null, pos, BeyondSoundEvents.PROJECTOR_SWITCH.value(), SoundSource.BLOCKS, 1f, 0.9f + level.random.nextFloat()*0.3f);
-            if (level instanceof ServerLevel serverLevel) {
-                for (int i = 0; i < 6; i++) {
-                    makeParticle(serverLevel, pos, 1);
+            if (!quiet) {
+                level.playSound(null, pos, BeyondSoundEvents.PROJECTOR_SWITCH.value(), SoundSource.BLOCKS, 1f, 0.9f + level.random.nextFloat()*0.3f);
+                if (level instanceof ServerLevel serverLevel) {
+                    for (int i = 0; i < 6; i++) {
+                        makeParticle(serverLevel, pos, 1);
+                    }
                 }
             }
         }

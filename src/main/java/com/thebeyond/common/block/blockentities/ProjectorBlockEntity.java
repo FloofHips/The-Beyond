@@ -76,6 +76,8 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
 
     private int mode = MODE_MIXUP;
     private int carouselIndex = 0;
+    private long lastPulse = Long.MIN_VALUE / 2;
+    private boolean fastPulses;
 
     private final ContainerData dataAccess = new ContainerData() {
         @Override
@@ -159,6 +161,16 @@ public class ProjectorBlockEntity extends BlockEntity implements Container, Menu
     public void stepCarousel(int delta) {
         this.carouselIndex += delta;
         setChanged();
+    }
+
+    public boolean risingPulse(long gameTime, int quietTicks) {
+        fastPulses = gameTime - lastPulse < quietTicks;
+        lastPulse = gameTime;
+        return fastPulses;
+    }
+
+    public boolean inFastPulses(long gameTime, int quietTicks) {
+        return fastPulses && gameTime - lastPulse < quietTicks;
     }
 
     public boolean isGroupComplete(ResourceLocation group) {

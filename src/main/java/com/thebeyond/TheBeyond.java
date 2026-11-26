@@ -66,6 +66,9 @@ public class TheBeyond {
         modEventBus.addListener(BeyondNetworking::onRegisterPayloads);
         modEventBus.addListener(com.thebeyond.common.data.BeyondDataMapTypes::onRegisterDataMaps);
         modEventBus.addListener(this::addBuiltinPacks);
+        if (ModList.get().isLoaded("create")) {
+            com.thebeyond.compat.create.ProjectorArmPointType.register(modEventBus);
+        }
 
         modContainer.registerConfig(ModConfig.Type.COMMON, BeyondConfig.COMMON_CONFIG);
         modContainer.registerConfig(ModConfig.Type.CLIENT, BeyondConfig.CLIENT_CONFIG);
