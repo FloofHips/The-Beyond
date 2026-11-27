@@ -139,10 +139,6 @@ dependencies {
 
     compileOnly "maven.modrinth:exposure:iBvaR6AK"
 
-    compileOnly "curse.maven:curios-309927:6529130"
-    compileOnly "curse.maven:backpacked-352835:7866688"
-    compileOnly "curse.maven:framework-549225:7530361"
-
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
