@@ -24,6 +24,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -59,8 +60,6 @@ public class ModGameEvents {
 
     private static final String TAG_PENDING_TOTEM = "the_beyond:pendingTotem";
     private static final String TAG_TOTEM_ITEMS = "the_beyond:totemItems";
-    private static final boolean CURIOS_LOADED = net.neoforged.fml.ModList.get().isLoaded("curios");
-    private static final boolean BACKPACKED_LOADED = net.neoforged.fml.ModList.get().isLoaded("backpacked");
 
     private static RefugeChunkData getChunkData(ServerLevel level, BlockPos pos) {
         // never force-load, a recursive load in runAllUpdates throws, and an unloaded chunk has no refuge anyway
@@ -246,57 +245,13 @@ public class ModGameEvents {
             persistent.remove(TAG_PENDING_TOTEM);
             persistent.remove(TAG_TOTEM_ITEMS);
 
-            ListTag itemsList = new ListTag();
-            RegistryAccess regAccess = player.registryAccess();
-
-            boolean hasConsumedTotem = false;
-
             if (player.getMainHandItem().is(BeyondItems.TOTEM_OF_RESPITE)) {
                 player.getMainHandItem().shrink(1);
-                hasConsumedTotem = true;
-            }
-            if (!hasConsumedTotem && player.getOffhandItem().is(BeyondItems.TOTEM_OF_RESPITE)) {
+            } else if (player.getOffhandItem().is(BeyondItems.TOTEM_OF_RESPITE)) {
                 player.getOffhandItem().shrink(1);
             }
 
-            for (ItemStack stack : player.getInventory().items) {
-                if (!stack.isEmpty()) {
-                    Tag itemTag = stack.save(regAccess);
-                    itemsList.add(itemTag);
-                }
-            }
-
-            for (ItemStack stack : player.getInventory().armor) {
-                if (!stack.isEmpty()) {
-                    Tag itemTag = stack.save(regAccess);
-                    itemsList.add(itemTag);
-                }
-            }
-
-            for (ItemStack stack : player.getInventory().offhand) {
-                if (!stack.isEmpty()) {
-                    Tag itemTag = stack.save(regAccess);
-                    itemsList.add(itemTag);
-                }
-            }
-
-            // onDrop cancels the normal drops, so grab Curios and equipped backpacks into the totem here or they vanish.
-            if (CURIOS_LOADED) {
-                for (ItemStack stack : com.thebeyond.compat.curios.BeyondCuriosCompat.collectAndClear(player)) {
-                    itemsList.add(stack.save(regAccess));
-                }
-            }
-
-            if (BACKPACKED_LOADED) {
-                for (ItemStack stack : com.thebeyond.compat.backpacked.BeyondBackpackedCompat.collectAndClear(player)) {
-                    itemsList.add(stack.save(regAccess));
-                }
-            }
-
-            if (!itemsList.isEmpty()) {
-                persistent.put(TAG_TOTEM_ITEMS, itemsList);
-                persistent.putBoolean(TAG_PENDING_TOTEM, true);
-            }
+            persistent.putBoolean(TAG_PENDING_TOTEM, true);
 
             player.getPersistentData().put(Player.PERSISTED_NBT_TAG, persistent);
         }
@@ -308,7 +263,28 @@ public class ModGameEvents {
 
         if (event.getEntity() instanceof Player player) {
             CompoundTag persistent = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
-            if (persistent.getBoolean(TAG_PENDING_TOTEM)) event.setCanceled(true);
+            if (persistent.getBoolean(TAG_PENDING_TOTEM)) {
+                ListTag itemsList = new ListTag();
+                RegistryAccess regAccess = player.registryAccess();
+
+                for (ItemEntity itemEntity : event.getDrops()) {
+                    ItemStack stack = itemEntity.getItem();
+
+                    if (!stack.isEmpty()) {
+                        Tag itemTag = stack.save(regAccess);
+                        itemsList.add(itemTag);
+                    }
+                }
+
+                if (!itemsList.isEmpty()) {
+                    persistent.put(TAG_TOTEM_ITEMS, itemsList);
+                } else {
+                    persistent.remove(TAG_PENDING_TOTEM);
+                }
+
+                player.getPersistentData().put(Player.PERSISTED_NBT_TAG, persistent);
+                event.setCanceled(true);
+            }
         }
     }
 
