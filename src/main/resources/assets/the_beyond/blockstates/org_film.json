@@ -1,0 +1,31 @@
+{
+  "variants": {
+    "band=0": {
+      "model": "the_beyond:block/org_film_0"
+    },
+    "band=1": {
+      "model": "the_beyond:block/org_film_1"
+    },
+    "band=2": {
+      "model": "the_beyond:block/org_film_2"
+    },
+    "band=3": {
+      "model": "the_beyond:block/org_film_3"
+    },
+    "band=4": {
+      "model": "the_beyond:block/org_film_4"
+    },
+    "band=5": {
+      "model": "the_beyond:block/org_film_5"
+    },
+    "band=6": {
+      "model": "the_beyond:block/org_film_6"
+    },
+    "band=7": {
+      "model": "the_beyond:block/org_film_7"
+    },
+    "band=8": {
+      "model": "the_beyond:block/org_film_8"
+    }
+  }
+}

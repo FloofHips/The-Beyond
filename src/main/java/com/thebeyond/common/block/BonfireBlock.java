@@ -5,6 +5,8 @@ import com.mojang.serialization.MapCodec;
 import com.thebeyond.TheBeyond;
 import com.thebeyond.client.particle.PixelColorTransitionOptions;
 import com.thebeyond.common.block.blockentities.BonfireBlockEntity;
+import com.thebeyond.common.worldgen.OrganicClean;
+import com.thebeyond.common.worldgen.OrganicFire;
 import com.thebeyond.common.item.components.Components;
 import com.thebeyond.common.network.ShowBonfireTutorialToastPacket;
 import com.thebeyond.common.registry.*;
@@ -98,6 +100,7 @@ public class BonfireBlock extends BaseEntityBlock {
 
                 level.playSound(null, pos,  BeyondSoundEvents.BONFIRE_ACTIVATE.get(), SoundSource.BLOCKS, 1, 1);
                 level.setBlockAndUpdate(pos, state.setValue(LIT, true));
+                if (level instanceof ServerLevel server) OrganicFire.lit(server, pos);
 
                 if (level instanceof ServerLevel serverLevel)
                     serverLevel.sendParticles(getParticle(level), pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 20, 0.25, 1, 0.25, 0.015);
@@ -272,8 +275,16 @@ public class BonfireBlock extends BaseEntityBlock {
         if (bonfire instanceof BonfireBlockEntity bonfireBlockEntity) {
             if (bonfireBlockEntity.isItMyBirthdayToday()) {
                 level.setBlockAndUpdate(pos, state.setValue(LIT, false));
+                OrganicClean.onBonfireOut(level, pos);
+                OrganicFire.out(level, pos);
             }
         }
+    }
+
+    @Override
+    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        if (!state.is(newState.getBlock()) && state.getValue(LIT) && level instanceof ServerLevel server) OrganicFire.out(server, pos);
+        super.onRemove(state, level, pos, newState, movedByPiston);
     }
 
     @Override

@@ -3,13 +3,17 @@ package com.thebeyond.common.worldgen.features;
 import com.mojang.serialization.Codec;
 import com.thebeyond.common.registry.BeyondBlocks;
 import com.thebeyond.common.worldgen.BeyondEndBiomeSource;
-import com.thebeyond.common.worldgen.BiomeCellScale;
+import com.thebeyond.common.worldgen.BiomeEdgeQuery;
 import com.thebeyond.util.VoronoiNoise;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -17,7 +21,6 @@ import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import net.minecraft.world.level.levelgen.synth.SimplexNoise;
-import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
 public class TerrainStepFeature  extends Feature<NoneFeatureConfiguration>  {
@@ -34,11 +37,6 @@ public class TerrainStepFeature  extends Feature<NoneFeatureConfiguration>  {
         BeyondEndBiomeSource source = (BeyondEndBiomeSource) context.chunkGenerator().getBiomeSource();
         VoronoiNoise.CellResult3D cell = source.getCell(origin.getX(), origin.getY(), origin.getZ());
 
-        double width = BiomeCellScale.cellWidth();
-        double distance = new Vec3(cell.cellX(), cell.cellY(), cell.cellZ()).subtract(origin.getCenter())
-                .multiply(1.0 / width, 1.0 / BiomeCellScale.cellHeight(), 1.0 / width).length();
-        double t = Mth.clamp(distance, 0.0, 1.0);
-
         //this is to make it so features in the same subchunk or nearby subchunks start at the same y origin
         //to create the illusion of continuity, or else they'll be bound to 3x3 chunks and look kind of bad
         int chunkX = origin.getX() >> 4;
@@ -54,8 +52,11 @@ public class TerrainStepFeature  extends Feature<NoneFeatureConfiguration>  {
 
         //do not make the max bigger than 13 or else there will be issues (13 + 13 + noise addon is usually just shy enough of 3x3 chunks)
         int radius = level.getRandom().nextInt(7, 13);
-        int height = (int) Mth.lerp(t, 13, 7);
         SimplexNoise noise = new SimplexNoise(randomsource);
+        Fit fit = fit(level, level.getBiomeManager(), source, origin, fixedY, radius);
+        if (fit == null) return false;
+        double t = fit.t();
+        int height = (int) Mth.lerp(t, 13, 7);
 
         for(int j = -radius; j <= radius; ++j) {
             for(int k = -radius; k <= radius; ++k) {
@@ -79,8 +80,21 @@ public class TerrainStepFeature  extends Feature<NoneFeatureConfiguration>  {
                 }
             }
         }
-
         return true;
+    }
+
+    public record Fit(double t, double toEdge) {}
+
+    public static Fit fit(LevelHeightAccessor level, BiomeManager biomes, BeyondEndBiomeSource source, BlockPos origin, int fixedY,
+                          int radius) {
+        if (fixedY < level.getMinBuildHeight() || fixedY - radius >= level.getMaxBuildHeight()) return null;
+        BlockPos center = new BlockPos(origin.getX(), Math.min(fixedY, level.getMaxBuildHeight() - 1), origin.getZ());
+        Holder<Biome> home = biomes.getBiome(origin);
+        if (!home.equals(biomes.getBiome(center))) return null;
+        BiomeEdgeQuery.Edge edge = new BiomeEdgeQuery(source, biomes, level, BiomeEdgeQuery.Density.READ)
+                .nearestOutside(center, home::equals, BiomeEdgeQuery.Shape.SPHERE, radius);
+        double toEdge = edge == null ? radius : edge.distance();
+        return new Fit(Math.max(0, 1 - toEdge / radius), toEdge);
     }
 
     private static final Block[] WOOLS = {

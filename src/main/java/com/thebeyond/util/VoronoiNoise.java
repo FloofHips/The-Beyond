@@ -355,6 +355,24 @@ public class VoronoiNoise {
         return new Nearest(closestCellId, xCandidate, yCandidate, zCandidate, minDist, secondDist, xInt, yInt, zInt);
     }
 
+    /** Writes the site of one lattice corner to out in noise units (same hash as nearest) and returns its cellId. */
+    public long site3D(int xCur, int yCur, int zCur, double[] out) {
+        long cellSeed = (long)xCur * 1619L + (long)yCur * 31337L + (long)zCur * 6971L + this.seed;
+        long s = (cellSeed ^ 0x5DEECE66DL) & 0xFFFFFFFFFFFFL;
+        s = (s * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFFL;
+        int h1 = (int)(s >>> 16);
+        s = (s * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFFL;
+        int l1 = (int)(s >>> 16);
+        s = (s * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFFL;
+        int h2 = (int)(s >>> 16);
+        s = (s * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFFL;
+        int l2 = (int)(s >>> 16);
+        out[0] = xCur + valueNoise3D(xCur, yCur, zCur, cellSeed);
+        out[1] = yCur + valueNoise3D(xCur, yCur, zCur, ((long) h1 << 32) + l1);
+        out[2] = zCur + valueNoise3D(xCur, yCur, zCur, ((long) h2 << 32) + l2);
+        return cellSeed;
+    }
+
     public record CellResult(long cellId, double distance, double cellX, double cellZ) {}
     public record CellResult3D(long cellId, double distance, double cellX, double cellY, double cellZ) {}
 }

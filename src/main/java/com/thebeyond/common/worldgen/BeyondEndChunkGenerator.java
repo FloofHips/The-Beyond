@@ -92,6 +92,9 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     private static final int TERRAIN_Y_OFFSET = 32;
     static final double MAX_NOISE = 1.20;
     static final double OCTAVE_BOUND = 1.0;
+    // octave 0 changes at most 6.31 per unit of y input on any seed, plus 0.0059 at each of two simplex seams, rounded up below
+    static final double OCTAVE0_SLOPE = 6.6;
+    static final double OCTAVE0_SEAMS = 0.013;
     private static final double[] REMAINING_AMPLITUDE = new double[NUM_OCTAVES];
     private static final double TOTAL_AMPLITUDE;
     static {
@@ -701,6 +704,11 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
     /** Same as noiseDensity, or AIR_SENTINEL once the octaves left cannot lift the density above limit. */
     static double noiseDensityOrAir(int shiftedY, ColumnScratch s, double ef, double cyc, double limit) {
+        if (s.octave0Set) {
+            double rise = OCTAVE0_SLOPE * s.vScales[0] * Math.abs(shiftedY - s.octave0Y) + OCTAVE0_SEAMS;
+            double peak = (s.octave0Value + rise + REMAINING_AMPLITUDE[0] * OCTAVE_BOUND) / TOTAL_AMPLITUDE;
+            if (ef * (peak * cyc) <= limit - 1.0e-9) return AIR_SENTINEL;
+        }
         HashSimplexNoise noise = simplexNoise;
         double[] hScales = s.hScales, vScales = s.vScales;
         int[] wrappedXs = s.wrappedXs, wrappedZs = s.wrappedZs;
@@ -727,6 +735,11 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                 octaveNoise = noise.getValue(wrappedXs[octave] * hScale, sampleY, wrappedZs[octave] * hScale);
             }
             noiseValue += octaveNoise * amplitude;
+            if (octave == 0) {
+                s.octave0Y = shiftedY;
+                s.octave0Value = noiseValue;
+                s.octave0Set = true;
+            }
             maxAmplitude += amplitude;
             amplitude *= PERSISTENCE;
             if (octave < NUM_OCTAVES - 1) {
@@ -755,6 +768,9 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         public double islandEnvelope;
         public int dimMinY;
         public int dimMaxY;
+        int octave0Y;
+        double octave0Value;
+        boolean octave0Set;
         // The carve reads the same cells' solidity many times per column, so each answer is kept until the next init.
         private int[] solidStamp = new int[0];
         private boolean[] solidMemo = new boolean[0];
@@ -799,6 +815,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         s.islandEnvelope = useIslandEnvelope ? getIslandEnvelope(globalX, globalZ) : 1.0;
         s.dimMinY = BeyondTerrainState.getDimMinY();
         s.dimMaxY = BeyondTerrainState.getDimMaxY();
+        s.octave0Set = false;
         int span = s.dimMaxY - s.dimMinY + 1;
         if (s.solidStamp.length != span) {
             s.solidStamp = new int[span];
@@ -816,6 +833,58 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                 s.wrappedXs, s.wrappedZs, useBandBlend ? s.bbLoIdx : null,
                 useBandBlend ? s.bbT : null, s.dimMinY, s.dimMaxY);
         return density * s.islandEnvelope;
+    }
+
+    /** Every mutable input of the column fields, so a kept column is reused only while none of them changed. */
+    private static final class DensityInputs {
+        final Object simplex = simplexNoise, biomeSimplex = biomeSimplexNoise, warpZ = warpZSimplexNoise, h = globalHOffsetNoise,
+                v = globalVOffsetNoise, c = globalCOffsetNoise, params = activeTerrainParams, cycle = cycleHeightOverride,
+                hScale = hScaleOverride, vScale = vScaleOverride;
+        final double cycleFreq = cycleHeightFrequencyMultiplier, envelopeH = islandEnvelopeHScale, envLow = envelopeLow,
+                envHigh = envelopeHigh, envScale = envelopeScale;
+        final boolean noWrap = wrapDisabled, noWarp = warpDisabled, multirotation = hScaleMultirotation,
+                hashH = hScaleUseHashNoise, blur = hScaleBlur3x3, adaptive = hScaleDistanceAdaptive, localWrap = hScaleLocalWrap,
+                envelope = useIslandEnvelope, bands = useBandBlend;
+        final int minY = BeyondTerrainState.getDimMinY(), maxY = BeyondTerrainState.getDimMaxY();
+
+        boolean current() {
+            return simplex == simplexNoise && biomeSimplex == biomeSimplexNoise && warpZ == warpZSimplexNoise
+                    && h == globalHOffsetNoise && v == globalVOffsetNoise && c == globalCOffsetNoise && params == activeTerrainParams
+                    && cycle == cycleHeightOverride && hScale == hScaleOverride && vScale == vScaleOverride
+                    && cycleFreq == cycleHeightFrequencyMultiplier && envelopeH == islandEnvelopeHScale && envLow == envelopeLow
+                    && envHigh == envelopeHigh && envScale == envelopeScale && noWrap == wrapDisabled && noWarp == warpDisabled
+                    && multirotation == hScaleMultirotation && hashH == hScaleUseHashNoise && blur == hScaleBlur3x3
+                    && adaptive == hScaleDistanceAdaptive && localWrap == hScaleLocalWrap && envelope == useIslandEnvelope
+                    && bands == useBandBlend && minY == BeyondTerrainState.getDimMinY() && maxY == BeyondTerrainState.getDimMaxY();
+        }
+    }
+
+    private static final class ColumnMemo {
+        final ColumnScratch[] columns = new ColumnScratch[16];
+        final long[] keys = new long[16];
+        final DensityInputs[] inputs = new DensityInputs[16];
+        int next;
+    }
+
+    private static volatile DensityInputs densityInputs;
+    private static final ThreadLocal<ColumnMemo> COLUMN_MEMO = ThreadLocal.withInitial(ColumnMemo::new);
+
+    /** getTerrainDensity for the biome fill, which reads each column at every quart of height, so its column fields are kept. */
+    public static double getTerrainDensityKept(int globalX, int globalY, int globalZ) {
+        DensityInputs in = densityInputs;
+        if (in == null || !in.current()) densityInputs = in = new DensityInputs();
+        ColumnMemo m = COLUMN_MEMO.get();
+        long key = ((long) globalX << 32) | (globalZ & 0xFFFFFFFFL);
+        for (int i = 0; i < m.keys.length; i++) {
+            if (m.inputs[i] == in && m.keys[i] == key) return getTerrainDensityScratch(globalY, m.columns[i]);
+        }
+        int i = m.next;
+        m.next = (i + 1) % m.keys.length;
+        if (m.columns[i] == null) m.columns[i] = new ColumnScratch();
+        initColumnScratch(globalX, globalZ, (float) Math.sqrt((double) globalX * globalX + (double) globalZ * globalZ), m.columns[i]);
+        m.keys[i] = key;
+        m.inputs[i] = in;
+        return getTerrainDensityScratch(globalY, m.columns[i]);
     }
 
     public static boolean isSolidTerrainScratch(int globalY, ColumnScratch s) {
@@ -876,6 +945,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
             } finally {
                 BUILDING_BEARD.set(Boolean.FALSE);
             }
+            boolean beardEmpty = BeardSkip.empty(beard);
             List<CarveMask> carveMasks = the_beyond$collectCarveMasks(structureManager, chunkPos);
 
             // A Beardifier lift or carve mask can make a gap cell solid, so each cell bounds the noise by its own lifts.
@@ -899,7 +969,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
                     }
 
                     else if (distanceFromOrigin >= 650) {
-                      generateEndTerrain(chunk, globalX, globalZ, distanceFromOrigin, beard, carveMasks, chunkBeardCap);
+                      generateEndTerrain(chunk, globalX, globalZ, distanceFromOrigin, beard, carveMasks, chunkBeardCap, beardEmpty);
                     }
                 }
             }
@@ -938,7 +1008,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
     }
 
-    private void generateEndTerrain(ChunkAccess chunk, int globalX, int globalZ, float distanceFromOrigin, Beardifier beard, List<CarveMask> carveMasks, double beardCap) {
+    private void generateEndTerrain(ChunkAccess chunk, int globalX, int globalZ, float distanceFromOrigin, Beardifier beard, List<CarveMask> carveMasks, double beardCap, boolean beardEmpty) {
         ColumnScratch s = SCRATCH.get();
         initColumnScratch(globalX, globalZ, distanceFromOrigin, s);
         double cycleHeight = s.cycleHeight;
@@ -971,7 +1041,7 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
         // loops skip the 32-block zero bands at both ends, and the beard only lifts (its gouging half is left to the carve)
         final int loopStart = dimMinY + 33;
         final int loopEnd = dimMaxY - 32;
-        final boolean noBeard = suppressBeard;
+        final boolean noBeard = suppressBeard || beardEmpty;
         final java.util.function.IntToDoubleFunction beardAt =
                 yy -> { if (noBeard) return 0.0; bc.y = yy; return Math.max(0.0, beard.compute(bc)); };
         for (int y = loopStart; y < loopEnd; y++) {
@@ -1948,6 +2018,9 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
 
     @Override
     public void buildSurface(WorldGenRegion level, StructureManager structureManager, RandomState random, ChunkAccess chunk) {
+        if (OrganicExperiment.ON && getBiomeSource() instanceof BeyondEndBiomeSource source) {
+            OrganicGrowth.prefetch(level, chunk, source, this);
+        }
         computeNoisesIfNotPresent(random);
         BeyondTerrainStateInternal.setDimBounds(level.getMinBuildHeight(), level.getMaxBuildHeight());
         super.buildSurface(level, structureManager, random, chunk);
@@ -2038,6 +2111,9 @@ public class BeyondEndChunkGenerator extends NoiseBasedChunkGenerator {
     public void applyBiomeDecoration(WorldGenLevel level, ChunkAccess chunk, StructureManager structureManager) {
         BeyondTerrainStateInternal.setDimBounds(level.getMinBuildHeight(), level.getMaxBuildHeight());
         super.applyBiomeDecoration(level, chunk, structureManager);
+        if (OrganicExperiment.ON && getBiomeSource() instanceof BeyondEndBiomeSource source) {
+            OrganicPainter.paintChunk(level, chunk, source, this, structureManager);
+        }
 
         // Clear column (0,0) so its heightmap re-primes on Beyond's stone, or the exit portal spawns on a foreign top.
         if (BeyondTerrainState.isActive()) {

@@ -263,14 +263,18 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
     }
 
     public Holder<Biome> getBiome(int blockX, int blockY, int blockZ) {
+        Holder<Biome> fixed = densityFreeBiome(blockX, blockY, blockZ);
+        return fixed != null ? fixed : sideBiome(blockX, blockY, blockZ, isVoid(blockX, blockY, blockZ));
+    }
+
+    Holder<Biome> densityFreeBiome(int blockX, int blockY, int blockZ) {
         float distanceFromO = (float) Math.sqrt((double) blockX * blockX + (double) blockZ * blockZ);
 
         // centerBiome first: BiomeFilter runs at y = min_y, and bottomBiome there would reject every ring spike
         if (distanceFromO <= 116)
             return centerBiome;
 
-        int dimMinY = BeyondTerrainState.getDimMinY();
-        if (blockY < dimMinY + 10)
+        if (blockY < BeyondTerrainState.getDimMinY() + 10)
             return bottomBiome;
 
         if (BeyondEndChunkGenerator.biomeSimplexNoise == null) return centerBiome;
@@ -281,12 +285,17 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
             int inner_void_index = selectBiome(blockX, blockY, blockZ, innerVoidBiomeList);
             return innerVoidBiomeList.get(inner_void_index);
         }
+        return null;
+    }
 
-        boolean isVoid = BeyondEndChunkGenerator.getTerrainDensity(blockX, blockY, blockZ) < 0.01f;
+    boolean isVoid(int blockX, int blockY, int blockZ) {
+        return BeyondEndChunkGenerator.getTerrainDensityKept(blockX, blockY, blockZ) < 0.01f;
+    }
 
+    Holder<Biome> sideBiome(int blockX, int blockY, int blockZ, boolean isVoid) {
         if (isVoid) {
             // the_void stays in a band above the_paths so deep dimensions are not mostly void
-            List<Holder<Biome>> voidPool = blockY < dimMinY + 32
+            List<Holder<Biome>> voidPool = blockY < BeyondTerrainState.getDimMinY() + 32
                     ? outerVoidBiomeList
                     : (outerVoidBiomeListNoTheVoid.isEmpty() ? outerVoidBiomeList : outerVoidBiomeListNoTheVoid);
             if (voidPool.isEmpty()) return centerBiome;

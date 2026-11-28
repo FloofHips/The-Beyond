@@ -113,6 +113,19 @@ public class BeyondBlocks {
             .noOcclusion()
             .sound(BeyondSoundTypes.BONFIRE))
     );
+    // placeholders of the organic network, the look is still to be chosen
+    public static final DeferredBlock<Block> ORG_TUBE = registerBlockWithoutItem("org_tube",
+            () -> new OrganicTissueBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.TERRACOTTA)));
+    public static final DeferredBlock<Block> ORG_ROOT = registerBlockWithoutItem("org_root",
+            () -> new OrganicTissueBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.TERRACOTTA)));
+    public static final DeferredBlock<Block> ORG_FILM = registerBlockWithoutItem("org_film",
+            () -> new OrganicFilmBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS)));
+    public static final DeferredBlock<Block> ORG_NUCLEUS = registerBlockWithoutItem("org_nucleus",
+            () -> new OrganicBulbBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.STONE).mapColor(MapColor.COLOR_PURPLE)
+                    .destroyTime(OrganicBulbBlock.NUCLEUS_HARDNESS)));
+    public static final DeferredBlock<Block> ORG_BULB = registerBlockWithoutItem("org_bulb",
+            () -> new OrganicBulbBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.STONE).mapColor(MapColor.GOLD)
+                    .destroyTime(OrganicBulbBlock.BULB_HARDNESS)));
     public static final DeferredBlock<Block> PORTELAIN = registerBlock("portelain", () -> new Block(BlockBehaviour.Properties.of()
             .mapColor(MapColor.ICE)
             .requiresCorrectToolForDrops()

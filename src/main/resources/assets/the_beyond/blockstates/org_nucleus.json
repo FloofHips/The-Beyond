@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "core=false,exposed=false,regrown=false": {
+      "model": "the_beyond:block/org_nucleus"
+    },
+    "core=false,exposed=false,regrown=true": {
+      "model": "the_beyond:block/org_nucleus"
+    },
+    "core=false,exposed=true,regrown=false": {
+      "model": "the_beyond:block/org_nucleus_exposed"
+    },
+    "core=false,exposed=true,regrown=true": {
+      "model": "the_beyond:block/org_nucleus_exposed"
+    },
+    "core=true,exposed=false,regrown=false": {
+      "model": "the_beyond:block/org_nucleus_core"
+    },
+    "core=true,exposed=false,regrown=true": {
+      "model": "the_beyond:block/org_nucleus_core"
+    },
+    "core=true,exposed=true,regrown=false": {
+      "model": "the_beyond:block/org_nucleus_core_exposed"
+    },
+    "core=true,exposed=true,regrown=true": {
+      "model": "the_beyond:block/org_nucleus_core_exposed"
+    }
+  }
+}

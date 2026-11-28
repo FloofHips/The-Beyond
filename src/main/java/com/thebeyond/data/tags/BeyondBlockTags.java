@@ -117,7 +117,11 @@ public class BeyondBlockTags extends BlockTagsProvider {
                 .add(BeyondBlocks.GAUSSANITE.get())
                 .add(BeyondBlocks.GAUSS_VENT.get())
                 .add(BeyondBlocks.BEDAZZLED_END_STONE.get())
-                .add(BeyondBlocks.AMPHORA.get());
+                .add(BeyondBlocks.AMPHORA.get())
+                .add(BeyondBlocks.ORG_TUBE.get())
+                .add(BeyondBlocks.ORG_ROOT.get())
+                .add(BeyondBlocks.ORG_NUCLEUS.get())
+                .add(BeyondBlocks.ORG_BULB.get());
 
         tag(BlockTags.MINEABLE_WITH_HOE)
                 .addTag(BeyondTags.NACRE)

@@ -37,6 +37,9 @@ public class TheBeyond {
 
     public TheBeyond(IEventBus modEventBus, ModContainer modContainer) {
         modEventBus.addListener(this::commonSetup);
+        // the organic corruption sub-biome only exists where the network paints it, never as a biome any pool may pick
+        com.thebeyond.api.worldgen.BeyondBiomeRegistration
+                .addPoolExcludedBiome(com.thebeyond.common.worldgen.OrganicBlight.BLIGHT.location());
 
         BeyondBlocks.BLOCKS.register(modEventBus);
         BeyondBlockEntities.BLOCK_ENTITY_TYPES.register(modEventBus);
@@ -66,6 +69,9 @@ public class TheBeyond {
         modEventBus.addListener(BeyondNetworking::onRegisterPayloads);
         modEventBus.addListener(com.thebeyond.common.data.BeyondDataMapTypes::onRegisterDataMaps);
         modEventBus.addListener(this::addBuiltinPacks);
+        if (ModList.get().isLoaded("create")) {
+            com.thebeyond.compat.create.ProjectorArmPointType.register(modEventBus);
+        }
 
         modContainer.registerConfig(ModConfig.Type.COMMON, BeyondConfig.COMMON_CONFIG);
         modContainer.registerConfig(ModConfig.Type.CLIENT, BeyondConfig.CLIENT_CONFIG);

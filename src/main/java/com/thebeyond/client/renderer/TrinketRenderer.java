@@ -143,33 +143,33 @@ public class TrinketRenderer extends LivingBlockRenderer {
             switch (d) {
                 case UP -> {
                     if (x + width > tWidth || y + width > tDepth) continue;
-                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r*255, g*255, b*255, 230F, Direction.Axis.Y, true, minX+(x/16f), maxY+(0.0001f*offset), minZ+(y/16f), width, width);
-                    if (isSpike) renderSpike(getAabb(d, size.toInt()), minX+((x+1)/16f), maxY+(0.0001f*offset), minZ+((y+1)/16f), poseStack, buffer, packedLight,r*255, g*255, b*255, 230F );
+                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r*255, g*255, b*255, 1f, Direction.Axis.Y, true, minX+(x/16f), maxY+(0.0001f*offset), minZ+(y/16f), width, width);
+                    if (isSpike) renderSpike(getAabb(d, size.toInt()), minX+((x+1)/16f), maxY+(0.0001f*offset), minZ+((y+1)/16f), poseStack, buffer, packedLight,r*255, g*255, b*255, 1f );
                 }
                 case DOWN -> {
                     if (x + width > tWidth || y + width > tDepth) continue;
-                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r * 255, g * 255, b * 255, 230, Direction.Axis.Y, false, minX+(x/16f), minY-(0.0001f*offset), minZ+(y/16f), width, width);
-                    if (isSpike) renderSpike(getAabb(d, size.toInt()), minX+((x+1)/16f), minY-(0.0001f*offset), minZ+((y+1)/16f), poseStack, buffer, packedLight,r*255, g*255, b*255, 230F );
+                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r * 255, g * 255, b * 255, 1f, Direction.Axis.Y, false, minX+(x/16f), minY-(0.0001f*offset), minZ+(y/16f), width, width);
+                    if (isSpike) renderSpike(getAabb(d, size.toInt()), minX+((x+1)/16f), minY-(0.0001f*offset), minZ+((y+1)/16f), poseStack, buffer, packedLight,r*255, g*255, b*255, 1f );
                 }
                 case WEST -> {
                     if (x + width > tHeight || y + width > tDepth) continue;
-                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r * 255, g * 255, b * 255, 230, Direction.Axis.X, true, minX-(0.0001f*offset), minY+(x/16f), minZ+(y/16f), width, width);
-                    if (isSpike) renderSpike(getAabb(d, size.toInt()), minX-(0.0001f*offset), minY+((x+1)/16f), minZ+((y+1)/16f), poseStack, buffer, packedLight,r*255, g*255, b*255, 230F );
+                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r * 255, g * 255, b * 255, 1f, Direction.Axis.X, true, minX-(0.0001f*offset), minY+(x/16f), minZ+(y/16f), width, width);
+                    if (isSpike) renderSpike(getAabb(d, size.toInt()), minX-(0.0001f*offset), minY+((x+1)/16f), minZ+((y+1)/16f), poseStack, buffer, packedLight,r*255, g*255, b*255, 1f );
                 }
                 case EAST -> {
                     if (x + width > tHeight || y + width > tDepth) continue;
-                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r * 255, g * 255, b * 255, 230, Direction.Axis.X, false, maxX+(0.0001f*offset), minY+(x/16f), minZ+(y/16f), width, width);
-                    if (isSpike) renderSpike(getAabb(d, size.toInt()), maxX+(0.0001f*offset), minY+((x+1)/16f), minZ+((y+1)/16f), poseStack, buffer, packedLight,r*255, g*255, b*255, 230F );
+                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r * 255, g * 255, b * 255, 1f, Direction.Axis.X, false, maxX+(0.0001f*offset), minY+(x/16f), minZ+(y/16f), width, width);
+                    if (isSpike) renderSpike(getAabb(d, size.toInt()), maxX+(0.0001f*offset), minY+((x+1)/16f), minZ+((y+1)/16f), poseStack, buffer, packedLight,r*255, g*255, b*255, 1f );
                 }
                 case NORTH -> {
                     if (x + width > tWidth || y + width > tHeight) continue;
-                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r * 255, g * 255, b * 255, 230, Direction.Axis.Z, true, minX+(x/16f), minY+(y/16f), minZ-(0.0001f*offset), width, width);
-                    if (isSpike) renderSpike(getAabb(d, size.toInt()), minX+((x+1)/16f), minY+((y+1)/16f), minZ-(0.0001f*offset), poseStack, buffer, packedLight,r*255, g*255, b*255, 230F );
+                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r * 255, g * 255, b * 255, 1f, Direction.Axis.Z, true, minX+(x/16f), minY+(y/16f), minZ-(0.0001f*offset), width, width);
+                    if (isSpike) renderSpike(getAabb(d, size.toInt()), minX+((x+1)/16f), minY+((y+1)/16f), minZ-(0.0001f*offset), poseStack, buffer, packedLight,r*255, g*255, b*255, 1f );
                 }
                 case SOUTH -> {
                     if (x + width > tWidth || y + width > tHeight) continue;
-                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r * 255, g * 255, b * 255, 230, Direction.Axis.Z, false, minX+(x/16f), minY+(y/16f), maxZ+(0.0001f*offset), width, width);
-                    if (isSpike) renderSpike(getAabb(d, size.toInt()), minX+((x+1)/16f), minY+((y+1)/16f), maxZ+(0.0001f*offset), poseStack, buffer, packedLight,r*255, g*255, b*255, 230F );
+                    RenderUtils.renderQuadOnAxis(buffer.getBuffer(RenderType.entityCutout(f.getTexture(size))), matrix, normalMatrix, packedLight, r * 255, g * 255, b * 255, 1f, Direction.Axis.Z, false, minX+(x/16f), minY+(y/16f), maxZ+(0.0001f*offset), width, width);
+                    if (isSpike) renderSpike(getAabb(d, size.toInt()), minX+((x+1)/16f), minY+((y+1)/16f), maxZ+(0.0001f*offset), poseStack, buffer, packedLight,r*255, g*255, b*255, 1f );
                 }
             }
         }
