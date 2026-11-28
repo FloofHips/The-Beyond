@@ -16,6 +16,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -218,13 +219,12 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
         if (isFlying()) {
             if (this.getY() > 190 && this.getY() < 200) {
                 navigation.stop();
-
-                if (getSize() == 3) {
-                    float x = ((int)this.getBlockX()/8)*8;
-                    navigation.moveTo(x, 197f, this.getBlockZ() - 10, 0.7);
-                }
-
-                else navigation.moveTo(getX(), 197f, this.getZ()-10, 0.7);
+                Vec3 v = getDeltaMovement();
+                double side = getSize() == 3 ? 0 : (random.nextDouble() - 0.5) * 0.01;
+                v = v.add(side, Mth.clamp((197 - getY()) * 0.01, -0.008, 0.008) - v.y * 0.1, -0.008);
+                setDeltaMovement(v);
+                setYRot(Mth.approachDegrees(getYRot(), (float)(Mth.atan2(v.z, v.x) * Mth.RAD_TO_DEG) - 90, 1));
+                setXRot(Mth.approachDegrees(getXRot(), (float)(-Mth.atan2(v.y, v.horizontalDistance()) * Mth.RAD_TO_DEG), 1));
             } else {
                 if (tickCount % 40 == 0) {
                     navigation.stop();
@@ -254,8 +254,9 @@ public class LanternEntity extends PathfinderMob implements PlayerRideable {
             level().addParticle(ParticleTypes.SOUL_FIRE_FLAME, this.getX(), this.getY() + this.getBbHeight()/2, this.getZ(), 0, 0.01, 0);
         }
 
-        if (!isFlying() && getTarget() != null && getTarget() instanceof LanternEntity) {
-            this.getNavigation().moveTo(getTarget(), 0.7);
+        if (!isFlying() && getTarget() instanceof LanternEntity target) {
+            navigation.stop();
+            if (distanceToSqr(target) > 1) getMoveControl().setWantedPosition(target.getX(), target.getY(), target.getZ(), 0.7);
         }
     }
 

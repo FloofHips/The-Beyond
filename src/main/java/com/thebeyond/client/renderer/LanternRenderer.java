@@ -87,6 +87,10 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
         float alpha = Math.max(((transMax - distance) / (float) transMax), entity.level().getRainLevel(partialTicks));
 
         int finalAlpha = ModClientEvents.aimingWithCamera() ? 255 : (int) Math.max(255 * alpha, entity.getAlpha());
+        if (finalAlpha == 0) {
+            poseStack.popPose();
+            return;
+        }
         int color = (finalAlpha << 24) | (0xFF << 16) | (finalAlpha << 8) | 0xFF;
 
         ResourceLocation textureLocation = getTextureLocation(entity);
@@ -95,7 +99,9 @@ public class LanternRenderer extends MobRenderer<LanternEntity, LanternLargeMode
         RenderType leviathanRenderType = ShaderCompatLib.isShaderPackActive()
                 ? BeyondRenderTypes.entityTranslucentNoCulled(textureLocation)
                 : BeyondRenderTypes.entityTranslucentNoCulledUnlit(textureLocation);
-        RenderType smallRenderType = BeyondRenderTypes.unlitTranslucent(textureLocation);
+        RenderType smallRenderType = ShaderCompatLib.isShaderPackActive()
+                ? BeyondRenderTypes.entityTranslucentCulled(textureLocation)
+                : BeyondRenderTypes.unlitTranslucent(textureLocation);
 
         model.renderToBuffer(poseStack, buffer.getBuffer(entity.getSize()==3 ? leviathanRenderType : smallRenderType), packedLight, OverlayTexture.NO_OVERLAY, color);
 

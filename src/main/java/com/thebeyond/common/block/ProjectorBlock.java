@@ -5,6 +5,7 @@ import com.thebeyond.TheBeyond;
 import com.thebeyond.client.particle.PixelColorTransitionOptions;
 import com.thebeyond.common.block.blockentities.ProjectorBlockEntity;
 import com.thebeyond.common.registry.BeyondSoundEvents;
+import com.thebeyond.compat.offgrid.OffgridCompat;
 import com.thebeyond.util.ColorUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -245,7 +246,7 @@ public class ProjectorBlock extends BaseEntityBlock {
         Direction facing = state.getValue(ProjectorBlock.FACING);
         BlockPos behind = pos.relative(facing.getOpposite());
         BlockState behindState = level.getBlockState(behind);
-        return behindState.getLightEmission(level, behind) > 0;
+        return behindState.getLightEmission(level, behind) > 0 || OffgridCompat.overlayLight(level, behind) > 0;
     }
 
     @Override

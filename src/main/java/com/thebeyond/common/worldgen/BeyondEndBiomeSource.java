@@ -282,7 +282,7 @@ public class BeyondEndBiomeSource extends BiomeSource implements BeyondEndBiomeS
             return innerVoidBiomeList.get(inner_void_index);
         }
 
-        boolean isVoid = BeyondEndChunkGenerator.getTerrainDensity(blockX, blockY, blockZ) < 0.01f;
+        boolean isVoid = BeyondEndChunkGenerator.getTerrainDensityKept(blockX, blockY, blockZ) < 0.01f;
 
         if (isVoid) {
             // the_void stays in a band above the_paths so deep dimensions are not mostly void
